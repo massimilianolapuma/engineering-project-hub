@@ -1,9 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Minimal end-to-end smoke test against the built static site (astro preview).
- * Run: npm run build && npm run test:e2e   (needs: npx playwright install chromium)
+ * End-to-end tests against the built static site (astro preview).
+ * Self-contained: the web server builds the site from the golden mock snapshots into
+ * .e2e-dist/, so a local dist/ built from other data never affects the results.
+ * Run: npm run test:e2e   (needs: npx playwright install chromium)
  */
+const astro = 'node ./node_modules/astro/bin/astro.mjs';
 export default defineConfig({
   testDir: 'tests/e2e',
   timeout: 30_000,
@@ -15,9 +18,12 @@ export default defineConfig({
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
   ],
   webServer: {
-    command: 'npx astro preview --host 127.0.0.1 --port 4321',
+    // --ignore-lock: keep the server in the foreground (Astro 7 auto-backgrounds the preview
+    // when it detects an AI agent), so Playwright always stops it when the run ends.
+    command: `${astro} build --outDir .e2e-dist && ${astro} preview --outDir .e2e-dist --host 127.0.0.1 --port 4321 --ignore-lock`,
+    env: { SNAPSHOT_DIR: 'fixtures/snapshots', ASTRO_TELEMETRY_DISABLED: '1' },
     url: 'http://127.0.0.1:4321',
-    reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
+    reuseExistingServer: false,
+    timeout: 120_000,
   },
 });

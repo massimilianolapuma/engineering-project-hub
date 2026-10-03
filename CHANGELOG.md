@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Repositories that cannot be read (e.g. 404 from a wrong catalog) no longer turn their skipped calls into "workflow missing" or "status file missing": workflows, controls and the manifest are Unknown, so Delivery, Coverage and Overall are grey instead of amber. Skipped calls are not reported as extra errors and do not affect capability availability.
+
+### Added
+
+- Local, git-ignored catalog (`config.local/`) documented for collecting real repositories without committing their names to this public repository.
+
 ### Added
 
 - Submodule SHA resolution: the SHA pinned by the coordinator is resolved to a component tag (verified version) or, when untagged, compared with the latest release (ahead / behind / diverged).

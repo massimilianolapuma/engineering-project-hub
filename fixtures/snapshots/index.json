@@ -11,7 +11,7 @@
     "capabilities": {
       "metadata": "partial",
       "contents": "available",
-      "actions": "partial",
+      "actions": "available",
       "codeScanning": "available",
       "dependabot": "available",
       "secretScanning": "partial"

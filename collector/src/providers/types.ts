@@ -126,6 +126,12 @@ export interface ProviderError {
   httpStatus?: number;
   /** Short provider message. Sanitised again before publication. */
   message?: string;
+  /**
+   * Call not made because the repository itself is not accessible. Such results mean
+   * "unknown" (never "absent"), are not reported as separate collection errors and do not
+   * count towards capability availability.
+   */
+  skipped?: boolean;
 }
 
 export type ProviderResult<T> = { ok: true; data: T } | { ok: false; error: ProviderError };

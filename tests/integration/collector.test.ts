@@ -324,3 +324,35 @@ describe('snapshot schema versions', () => {
   });
   it('rejects invalid JSON', () => expect(validateProject('{').ok).toBe(false));
 });
+
+describe('repositories that are not accessible', () => {
+  it('are Unknown, never "workflow missing" / "status file missing" (all repos 404)', async () => {
+    const { catalog, policies } = await loadConfig('config');
+    const clock = fixedClock(GOLDEN_NOW);
+    // Empty fixtures directory: every repository returns 404, as with a wrong catalog.
+    const result = await runCollection({
+      catalog,
+      policies,
+      provider: new MockProvider(tmpdir(), clock),
+      clock,
+    });
+    for (const p of result.projects) {
+      expect(p.overallHealth.status, p.project.id).toBe('grey');
+      expect(p.deliveryHealth.status).toBe('grey');
+      expect(p.securityCoverage.status).toBe('grey');
+      expect(p.securityCoverage.percentage).toBeNull();
+      expect(p.workflows.every((w) => w.state === 'unknown')).toBe(true);
+      expect(p.governanceHealth.reasons.map((r) => r.code)).not.toContain(
+        'standard-workflow-missing',
+      );
+      // One error per repository, not one per skipped call.
+      expect(
+        p.collectionErrors.every(
+          (e) => e.source === 'repository' && e.classification === 'not-found',
+        ),
+      ).toBe(true);
+    }
+    expect(result.index.run.repositories).toMatchObject({ total: 11, unavailable: 11 });
+    expect(result.index.run.capabilities.actions).toBe('not-used');
+  });
+});

@@ -59,6 +59,10 @@ function capabilities(raws: RawProjectData[]): Record<Capability, Availability> 
     outcomes.contents.push(raw.manifest, raw.gitmodules);
     for (const w of raw.workflows) outcomes.actions.push(w.runs);
   }
+  // Calls skipped because the repository was not accessible say nothing about permissions.
+  for (const cap of CapabilitySchema.options) {
+    outcomes[cap] = outcomes[cap].filter((r) => r.ok || !r.error.skipped);
+  }
   // A 404 / "not configured" still proves the permission works.
   const usable = (r: ProviderResult<unknown>) =>
     r.ok || r.error.classification === 'not-found' || r.error.classification === 'not-configured';

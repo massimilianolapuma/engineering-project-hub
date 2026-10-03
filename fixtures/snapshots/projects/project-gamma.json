@@ -28,7 +28,7 @@
     "latestRelease": null,
     "manifest": {
       "path": "release-manifest.yaml",
-      "status": "missing"
+      "status": "unknown"
     },
     "submodules": []
   },
@@ -125,7 +125,7 @@
         {
           "control": "containerScanning",
           "required": false,
-          "state": "not-configured",
+          "state": "unknown",
           "tool": null,
           "lastScanAt": null,
           "counts": null,
@@ -134,7 +134,7 @@
         {
           "control": "iacScanning",
           "required": false,
-          "state": "not-configured",
+          "state": "unknown",
           "tool": null,
           "lastScanAt": null,
           "counts": null,
@@ -143,7 +143,7 @@
         {
           "control": "dast",
           "required": false,
-          "state": "not-configured",
+          "state": "unknown",
           "tool": null,
           "lastScanAt": null,
           "counts": null,
@@ -152,7 +152,7 @@
         {
           "control": "sbom",
           "required": false,
-          "state": "not-configured",
+          "state": "unknown",
           "tool": null,
           "lastScanAt": null,
           "counts": null,
@@ -161,7 +161,7 @@
         {
           "control": "artifactSignature",
           "required": false,
-          "state": "not-configured",
+          "state": "unknown",
           "tool": null,
           "lastScanAt": null,
           "counts": null,

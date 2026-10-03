@@ -116,8 +116,11 @@ async function call<T>(
 }
 
 function skipped<T>(repo: ProviderResult<RepositoryDTO>): ProviderResult<T> {
-  // Repository metadata failed: dependent calls would fail the same way, so reuse the error.
-  return repo.ok ? fail({ classification: 'error' }) : fail(repo.error);
+  // Repository metadata failed, so dependent calls are not made. A 404 on the repository must
+  // not read as "workflow / file / release absent": keep only "not authorised" vs "error".
+  const classification =
+    !repo.ok && repo.error.classification === 'not-authorised' ? 'not-authorised' : 'error';
+  return fail({ classification, message: 'repository not accessible', skipped: true });
 }
 
 export async function collectRepository(

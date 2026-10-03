@@ -231,3 +231,7 @@ playwright-report/
 .env.*
 !.env.example
 *.pem
+
+# Local catalog for real repositories (never commit: this repository is public)
+config.local/
+.e2e-dist/
