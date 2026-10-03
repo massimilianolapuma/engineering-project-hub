@@ -273,7 +273,7 @@ Local commands:
 | Validate snapshots    | `npm run validate:snapshots`                                        |
 | Lint / format / types | `npm run lint` · `npm run format:check` · `npm run typecheck`       |
 | Tests                 | `npm test` (unit + integration) · `npm run ci:test` (with coverage) |
-| E2E                   | `npm run build && npm run test:e2e`                                 |
+| E2E                   | `npm run test:e2e`                                                  |
 | Build                 | `npm run build`                                                     |
 | Preview               | `npm run preview`                                                   |
 | Secret scan of output | `npm run scan:output`                                               |

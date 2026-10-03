@@ -284,7 +284,7 @@ Comandi locali:
 | Validazione snapshot        | `npm run validate:snapshots`                                       |
 | Lint / formattazione / tipi | `npm run lint` · `npm run format:check` · `npm run typecheck`      |
 | Test                        | `npm test` (unit + integration) · `npm run ci:test` (con coverage) |
-| E2E                         | `npm run build && npm run test:e2e`                                |
+| E2E                         | `npm run test:e2e`                                                 |
 | Build                       | `npm run build`                                                    |
 | Anteprima                   | `npm run preview`                                                  |
 | Secret scan dell'output     | `npm run scan:output`                                              |

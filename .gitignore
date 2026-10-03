@@ -234,3 +234,4 @@ playwright-report/
 
 # Local catalog for real repositories (never commit: this repository is public)
 config.local/
+.e2e-dist/
