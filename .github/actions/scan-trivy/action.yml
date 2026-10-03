@@ -50,7 +50,7 @@ runs:
       run: mkdir -p "$GITHUB_WORKSPACE/.trivy-tmp"
 
     - name: Trivy scan — table (log)
-      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # 0.36.0
       env:
         TMPDIR: ${{ github.workspace }}/.trivy-tmp
       with:
@@ -67,7 +67,7 @@ runs:
         cache: ${{ inputs['db-already-cached'] == 'true' && 'false' || 'true' }}
 
     - name: Trivy scan — SARIF (gate + Code Scanning)
-      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # 0.36.0
       env:
         # Keep Trivy's OCI download temp dir off /tmp, which can be a small tmpfs: the Java
         # DB download writes ~300 MB to $TMPDIR before moving it to the cache dir.
@@ -90,7 +90,7 @@ runs:
     # !env.ACT: Code Scanning upload is not available under nektos/act.
     - name: Upload SARIF to GitHub Code Scanning
       if: ${{ always() && !env.ACT }}
-      uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4
+      uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4
       with:
         sarif_file: ${{ inputs.sarif-output }}
         category: ${{ inputs.sarif-category }}
