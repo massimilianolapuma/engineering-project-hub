@@ -22,6 +22,21 @@ import { githubRepositoryFromUrl, parseGitmodules } from '../util/gitmodules';
  */
 
 const MAX_COMPONENTS = 30;
+/**
+ * Workspace manifests come from the scanned repositories (untrusted input): bound how many
+ * patterns are expanded (one API call each) so a crafted manifest cannot exhaust the API
+ * budget or stall the run.
+ */
+export const MAX_WORKSPACE_PATTERNS = 10;
+
+/** Unique slug with a numeric suffix ("api", "api-2", "api-3"…), never "coordinator". */
+export function uniqueSlug(base: string, used: Set<string>): string {
+  const root = slugify(base).slice(0, 58);
+  let id = root;
+  for (let n = 2; used.has(id) || id === 'coordinator'; n++) id = `${root}-${n}`;
+  used.add(id);
+  return id;
+}
 const CRITICAL_WORKFLOW = /^(ci|build|test|release|rel-|cd|deploy)/i;
 
 export const slugify = (s: string): string =>
@@ -264,9 +279,7 @@ export async function discover(
         const target = remote ? known.get(remote) : undefined;
         if (!target) return [];
         claimed.push({ repository: target.fullName, by: repo.fullName });
-        let id = slugify(e.path.split('/').pop() ?? e.path);
-        while (used.has(id) || id === 'coordinator') id = `${id}-2`;
-        used.add(id);
+        const id = uniqueSlug(e.path.split('/').pop() ?? e.path, used);
         return [
           {
             id,
@@ -282,7 +295,8 @@ export async function discover(
     } else {
       const ws = workspacePatterns(a.files);
       const dirs = new Set<string>();
-      for (const pattern of ws.patterns) {
+      for (const pattern of ws.patterns.slice(0, MAX_WORKSPACE_PATTERNS)) {
+        if (dirs.size >= MAX_COMPONENTS) break;
         if (pattern.endsWith('/*')) {
           const parent = pattern.slice(0, -2);
           const listing = await p.listDirectory(repo.fullName, parent);
@@ -300,9 +314,7 @@ export async function discover(
           .sort()
           .slice(0, MAX_COMPONENTS)
           .map((path) => {
-            let id = slugify(path.split('/').pop() ?? path);
-            while (used.has(id) || id === 'coordinator') id = `${id}-2`;
-            used.add(id);
+            const id = uniqueSlug(path.split('/').pop() ?? path, used);
             return {
               id,
               name: titleCase(path.split('/').pop() ?? path),

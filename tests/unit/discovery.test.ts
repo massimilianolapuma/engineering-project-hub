@@ -137,3 +137,63 @@ describe('discovery (mock owner example-org)', () => {
     });
   });
 });
+
+describe('discovery resource bounds (untrusted manifests)', () => {
+  it('expands at most MAX_WORKSPACE_PATTERNS patterns and caps components', async () => {
+    const { MAX_WORKSPACE_PATTERNS } = await import('../../collector/src/discovery/discover');
+    const listed: string[] = [];
+    const repo = {
+      owner: 'example-org',
+      name: 'huge-mono',
+      fullName: 'example-org/huge-mono',
+      htmlUrl: 'https://github.com/example-org/huge-mono',
+      visibility: 'public' as const,
+      defaultBranch: 'main',
+      archived: false,
+      updatedAt: null,
+      topics: [],
+    };
+    const provider = {
+      listOwnerRepositories: async () => ({ ok: true as const, data: [repo] }),
+      getFile: async (_r: string, path: string) =>
+        path === 'package.json'
+          ? {
+              ok: true as const,
+              data: {
+                text: JSON.stringify({
+                  workspaces: Array.from({ length: 500 }, (_, i) => `pkg${i}/*`),
+                }),
+              },
+            }
+          : { ok: false as const, error: { classification: 'not-found' as const } },
+      listWorkflows: async () => ({ ok: true as const, data: [] }),
+      listDirectory: async (_r: string, path: string) => {
+        listed.push(path);
+        return path === ''
+          ? { ok: true as const, data: [{ name: 'package.json', type: 'file' as const }] }
+          : {
+              ok: true as const,
+              data: Array.from({ length: 50 }, (_, i) => ({
+                name: 'svc',
+                type: 'dir' as const,
+                i,
+              })).map((e, i) => ({ name: `${e.name}${i}`, type: e.type })),
+            };
+      },
+    };
+    const c = { provider: provider as never, limit: createLimiter(4), cache: new Map() };
+    const r = (await discover(c, catalog({ enabled: true, owners: ['example-org'] }), policies()))!;
+    // Root listing + at most MAX_WORKSPACE_PATTERNS expansions, and the loop stops at 30 dirs.
+    expect(listed.length).toBeLessThanOrEqual(1 + MAX_WORKSPACE_PATTERNS);
+    expect(r.proposals[0]!.project.components.length).toBeLessThanOrEqual(30);
+  });
+
+  it('generates short unique ids with numeric suffixes', async () => {
+    const { uniqueSlug } = await import('../../collector/src/discovery/discover');
+    const used = new Set<string>();
+    const ids = Array.from({ length: 5 }, () => uniqueSlug('api', used));
+    expect(ids).toEqual(['api', 'api-2', 'api-3', 'api-4', 'api-5']);
+    expect(uniqueSlug('coordinator', new Set())).toBe('coordinator-2');
+    expect(uniqueSlug('x'.repeat(200), new Set()).length).toBeLessThanOrEqual(63);
+  });
+});
