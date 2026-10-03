@@ -1,0 +1,26 @@
+---
+/** Current component version, the source it came from and the configured versionSource. */
+import type { ComponentSnapshot } from '@model/index';
+import type { I18n } from '../i18n';
+import { displayVersion } from '../lib/format';
+interface Props {
+  c: ComponentSnapshot;
+  i18n: I18n;
+}
+const { c, i18n } = Astro.props;
+const { d } = i18n;
+---
+
+<span class="stack">
+  {displayVersion(c.effectiveVersion) ? (
+    <strong>{displayVersion(c.effectiveVersion)}</strong>
+  ) : (
+    <span class="muted">{d.common.unknown}</span>
+  )}
+  <span class="sub">
+    {i18n.f(d.project.versionFrom, { source: d.versionSource[c.effectiveVersionSource] })}
+    {c.versionSource !== 'auto' && (
+      <> · {i18n.f(d.versionsPage.configuredSource, { source: c.versionSource })}</>
+    )}
+  </span>
+</span>

@@ -77,7 +77,9 @@ flowchart TB
    call fails, dependent calls are skipped and inherit its classified error.
 4. **Collect per project**: the release manifest and `.gitmodules` from the coordinator,
    the submodule SHAs, and the tracked workflow runs (the last 20 on the default branch),
-   plus the failed job and step names of the last failed run.
+   plus the failed job and step names of the last failed run. Each submodule linked to a
+   component is resolved: the component's tags are matched against the pinned SHA, and if
+   no tag matches, the SHA is compared with the latest release (ahead / behind / diverged).
 5. **Normalise**: provider values become the model's enums. `originalSeverity` and
    `originalStatus` are kept.
 6. **Evaluate**: delivery, version, security risk, coverage, governance, freshness and
@@ -153,8 +155,10 @@ universal risk ratings.
 - **Version**:
   - red when the manifest references an unknown component, or a submodule cannot be
     resolved
-  - amber when there is component drift, an environment is behind or mismatched, there is
-    an unmapped submodule, or the manifest is missing or invalid
+  - amber when the current version (per `versionSource`) differs from the latest release,
+    the coordinator pins an untagged SHA, the manifest disagrees with the pinned tag, an
+    environment is behind or mismatched, there is an unmapped submodule, or the manifest is
+    missing or invalid
   - green when everything is aligned
   - grey when no version can be determined
 - **Security risk**:

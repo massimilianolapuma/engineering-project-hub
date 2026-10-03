@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { ComponentTypeSchema, ControlIdSchema, LifecycleSchema, type ControlId } from './enums';
 
+export const VersionSourceSchema = z.enum(['auto', 'submodule', 'manifest', 'release']);
+export type VersionSource = z.infer<typeof VersionSourceSchema>;
+
 const slug = z
   .string()
   .regex(/^[a-z0-9][a-z0-9-]{0,62}$/, 'must be a lowercase slug (a-z, 0-9, "-")');
@@ -61,6 +64,14 @@ export const ComponentConfigSchema = z
     releaseTagPrefix: z.string().max(50).optional(),
     /** Controls that make no sense for this component (e.g. container scanning on a Helm repo). */
     notApplicableControls: z.array(ControlIdSchema).default([]),
+    /**
+     * Where the component's current version comes from:
+     * - auto: submodule (tag resolved from the SHA pinned by the coordinator) → manifest → latest release
+     * - submodule: only the tag resolved from the submodule SHA (verified)
+     * - manifest: only the version declared in the coordinator's release manifest
+     * - release: the component's latest release
+     */
+    versionSource: VersionSourceSchema.default('auto'),
   })
   .strict();
 export type ComponentConfig = z.infer<typeof ComponentConfigSchema>;

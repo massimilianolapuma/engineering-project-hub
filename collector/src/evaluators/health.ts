@@ -165,12 +165,37 @@ export function evaluateVersion(input: VersionInputs, policies: Policies): Healt
       reasons.push(
         reason('component-version-drift', v.componentDrift, {
           component: c.name,
-          declared: c.declaredVersion ?? '',
+          current: c.effectiveVersion ?? '',
+          source: c.effectiveVersionSource,
           latest: c.latestRelease?.tag ?? '',
         }),
       );
     } else if (c.drift === 'unknown')
       reasons.push(reason('component-version-unknown', 'info', { component: c.name }));
+    if (
+      c.pin &&
+      (c.pin.status === 'ahead' || c.pin.status === 'diverged' || c.pin.status === 'behind')
+    ) {
+      reasons.push(
+        reason('submodule-untagged', v.untaggedSubmodule, {
+          component: c.name,
+          sha: c.submodule?.sha?.slice(0, 7) ?? '',
+          status: c.pin.status,
+          base: c.pin.comparedTo ?? '',
+          ahead: c.pin.aheadBy ?? '',
+          behind: c.pin.behindBy ?? '',
+        }),
+      );
+    }
+    if (c.manifestConsistency === 'mismatch') {
+      reasons.push(
+        reason('manifest-submodule-mismatch', v.manifestSubmoduleMismatch, {
+          component: c.name,
+          declared: c.declaredVersion ?? '',
+          pinned: c.pin?.version ?? '',
+        }),
+      );
+    }
   }
   for (const e of input.environments) {
     const p = {

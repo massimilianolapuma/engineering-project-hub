@@ -17,7 +17,7 @@ interface Props {
 }
 const { i18n, title, page, alternates, index } = Astro.props;
 const { d, locale } = i18n;
-const nav: PageKey[] = ['portfolio', 'workflows', 'versions', 'security', 'dataQuality'];
+const nav: PageKey[] = ['portfolio', 'workflows', 'versions', 'security', 'dataQuality', 'catalog'];
 const run = index?.run;
 const staleHours = run?.policy.snapshotStaleHours ?? 24;
 ---

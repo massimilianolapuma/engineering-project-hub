@@ -35,6 +35,7 @@ projects:
         type: service # service | webapp | worker | deployment | infrastructure | library | other
         defaultBranch: main # optional
         submodulePath: services/backend # optional: path of the submodule in the coordinator
+        versionSource: auto # optional: auto | submodule | manifest | release (see below)
         releaseTagPrefix: backend- # optional: stripped before version comparison
         notApplicableControls: [] # optional: controls that do not apply (e.g. containerScanning on Helm)
 
@@ -85,6 +86,39 @@ Le associazioni sono **esplicite**. Nulla viene dedotto dai nomi dei repository.
 3. Un componente con `submodulePath` che non compare in `.gitmodules` è **non
    risolvibile**, il che è rosso per impostazione predefinita.
 
+### Risoluzione dello SHA del submodule e `versionSource`
+
+Per ogni componente associato a un submodule, il collector legge lo **SHA fissato dal
+coordinator** (Contents API) e lo risolve nel repository del componente:
+
+| Stato del pin | Significato                                                                                  |
+| ------------- | -------------------------------------------------------------------------------------------- |
+| `tagged`      | Lo SHA è esattamente un tag (se più tag, vince la semver più alta): versione **verificata**. |
+| `ahead`       | Nessun tag; N commit dopo l'ultima release (è fissato codice non rilasciato).                |
+| `behind`      | Nessun tag; più vecchio dell'ultima release.                                                 |
+| `diverged`    | Nessun tag; fuori dalla storia dell'ultima release.                                          |
+| `unknown`     | SHA, tag o confronto non leggibili.                                                          |
+
+Vengono esaminati fino ai 300 tag più recenti (`GET /tags`); se nessun tag corrisponde, una
+chiamata `GET /compare/{ultimaRelease}...{sha}` fornisce la distanza (si conservano solo stato
+e contatori).
+
+`versionSource` (per componente, default `auto`) sceglie la **versione attuale**:
+
+| Valore      | Versione attuale                                                                         |
+| ----------- | ---------------------------------------------------------------------------------------- |
+| `auto`      | Pin verificato (tag sullo SHA del submodule) → dichiarazione del manifest → sconosciuta. |
+| `submodule` | Solo il pin verificato.                                                                  |
+| `manifest`  | Solo la dichiarazione del release manifest.                                              |
+| `release`   | L'ultima release del componente (componente rilasciato con una cadenza propria).         |
+
+Controlli sulle versioni (livelli in `policies.yaml` → `version`):
+
+- **drift**: versione attuale ≠ ultima release (`componentDrift`);
+- **pin senza tag**: il coordinator fissa uno SHA che non è un tag di release (`untaggedSubmodule`);
+- **manifest vs submodule**: il manifest dichiara una versione diversa dal tag fissato
+  (`manifestSubmoduleMismatch`).
+
 ### Monitoraggio dei workflow
 
 Per ogni workflow monitorato e per ogni target (`appliesTo`, per impostazione predefinita
@@ -126,6 +160,25 @@ vecchia di `freshness.workflowRunStaleDays`.
    `.security/project-security-status.json` ai componenti.
 5. Apri una PR. La CI valida la configurazione.
 
+### Editor del catalogo
+
+La pagina **Catalogo** del portale (`/catalog/`, `/it/catalog/`) modifica il catalogo senza
+scrivere YAML a mano: scegli un progetto (o creane uno), collega coordinator, componenti,
+ambienti, workflow monitorati e controlli obbligatori, e scegli il `versionSource` di ogni
+componente. Il pannello **Suggerimenti** elenca i submodule del coordinator non collegati
+ad alcun componente (dall'ultima esecuzione del collector); _Aggiungi come componente_ crea
+un componente collegato tramite il suo `submodulePath` configurato, con il repository
+precompilato quando noto.
+
+La pagina resta statica e in sola lettura: è generata da `public/data/catalog.json` (scritto
+dal collector, non legge mai direttamente `config/`), valida in tempo reale nel browser con
+lo stesso schema Zod di `npm run validate:config` e genera l'**intero**
+`config/projects.yaml` (valori vuoti e predefiniti omessi). Non chiama mai le API di GitHub
+e non contiene token: copia o scarica lo YAML, apri `config/projects.yaml` nell'editor di
+GitHub (link derivato da `repository.url` in `package.json`), committa su un nuovo branch e
+apri una PR. Si applicano i tuoi permessi GitHub e la CI valida il risultato. I commenti del
+file scritto a mano non vengono conservati: rivedi il diff prima del commit.
+
 ## `config/policies.yaml`: policy di salute
 
 Sono policy dell'MVP, non valutazioni del rischio universali. Modificarle non richiede
@@ -152,6 +205,8 @@ interventi sul codice o sul frontend.
 | `version.unresolvableSubmodule`         | red                           | Un submodule configurato non può essere risolto.                                                                                   |
 | `version.unknownManifestComponent`      | red                           | Il manifest fa riferimento a un componente sconosciuto.                                                                            |
 | `version.unmappedSubmodule`             | amber                         | Un submodule non associato ad alcun componente.                                                                                    |
+| `version.untaggedSubmodule`             | amber                         | Il coordinator fissa uno SHA che non è un tag di release del componente.                                                           |
+| `version.manifestSubmoduleMismatch`     | amber                         | Il manifest dichiara una versione diversa da quella fissata dal submodule.                                                         |
 | `governance.*`                          | amber                         | Workflow standard mancante, repository archiviato, file di stato mancante o non valido, branch predefinito non corrispondente.     |
 | `overall.criticalDimensions`            | [delivery, version, security] | Un rosso in queste dimensioni rende rosso il progetto. Un rosso altrove conta come ambra.                                          |
 | `overall.requiredDimensions`            | tutte e cinque                | Devono essere tutte verdi perché lo stato Complessivo sia verde.                                                                   |

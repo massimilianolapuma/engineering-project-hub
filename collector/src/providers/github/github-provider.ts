@@ -10,6 +10,7 @@ import {
   type CodeScanningAlertDTO,
   type CodeScanningAnalysisDTO,
   type CommitRefDTO,
+  type CompareDTO,
   type DependabotAlertDTO,
   type FileDTO,
   type ProviderResult,
@@ -160,6 +161,28 @@ export class GitHubProvider implements SourceProvider {
       const tag = data[0];
       if (!tag) throw Object.assign(new Error('no tags'), { status: 404 });
       return { name: tag.name, sha: tag.commit.sha };
+    });
+  }
+
+  listTags(repo: string): Promise<ProviderResult<TagDTO[]>> {
+    type Tag = Awaited<ReturnType<Client['rest']['repos']['listTags']>>['data'][number];
+    return guard(() =>
+      this.paginate<Tag, TagDTO>(this.client.rest.repos.listTags, split(repo), (t) => ({
+        name: t.name,
+        sha: t.commit.sha,
+      })),
+    );
+  }
+
+  compareCommits(repo: string, base: string, head: string): Promise<ProviderResult<CompareDTO>> {
+    return guard(async () => {
+      // per_page=1: only the status and counters are used, never the commits or files.
+      const { data } = await this.client.rest.repos.compareCommitsWithBasehead({
+        ...split(repo),
+        basehead: `${base}...${head}`,
+        per_page: 1,
+      });
+      return { status: data.status, aheadBy: data.ahead_by, behindBy: data.behind_by };
     });
   }
 

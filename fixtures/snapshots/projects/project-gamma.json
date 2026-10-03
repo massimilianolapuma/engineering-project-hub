@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0",
+  "schemaVersion": "1.1",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-gamma",
@@ -51,9 +51,14 @@
         "topics": [],
         "latestCommit": null
       },
+      "versionSource": "auto",
       "declaredVersion": null,
       "latestRelease": null,
       "submodule": null,
+      "pin": null,
+      "effectiveVersion": null,
+      "effectiveVersionSource": "unknown",
+      "manifestConsistency": "unknown",
       "drift": "unknown"
     }
   ],

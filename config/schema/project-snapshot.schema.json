@@ -5,7 +5,7 @@
     "schemaVersion": {
       "type": "string",
       "enum": [
-        "1.0"
+        "1.1"
       ]
     },
     "generatedAt": {
@@ -589,6 +589,15 @@
             ],
             "additionalProperties": false
           },
+          "versionSource": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "submodule",
+              "manifest",
+              "release"
+            ]
+          },
           "declaredVersion": {
             "anyOf": [
               {
@@ -744,6 +753,122 @@
               }
             ]
           },
+          "pin": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "tagged",
+                      "ahead",
+                      "behind",
+                      "diverged",
+                      "unknown"
+                    ]
+                  },
+                  "tag": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "version": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "comparedTo": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "aheadBy": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "behindBy": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "status",
+                  "tag",
+                  "version",
+                  "comparedTo",
+                  "aheadBy",
+                  "behindBy"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "effectiveVersion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "effectiveVersionSource": {
+            "type": "string",
+            "enum": [
+              "submodule",
+              "manifest",
+              "release",
+              "unknown"
+            ]
+          },
+          "manifestConsistency": {
+            "type": "string",
+            "enum": [
+              "consistent",
+              "mismatch",
+              "unknown"
+            ]
+          },
           "drift": {
             "type": "string",
             "enum": [
@@ -758,9 +883,14 @@
           "name",
           "type",
           "repository",
+          "versionSource",
           "declaredVersion",
           "latestRelease",
           "submodule",
+          "pin",
+          "effectiveVersion",
+          "effectiveVersionSource",
+          "manifestConsistency",
           "drift"
         ],
         "additionalProperties": false
@@ -1765,6 +1895,8 @@
                   "submodule-unresolvable",
                   "submodule-unmapped",
                   "component-version-drift",
+                  "submodule-untagged",
+                  "manifest-submodule-mismatch",
                   "component-version-unknown",
                   "environment-behind",
                   "environment-mismatch",
@@ -1875,6 +2007,8 @@
                   "submodule-unresolvable",
                   "submodule-unmapped",
                   "component-version-drift",
+                  "submodule-untagged",
+                  "manifest-submodule-mismatch",
                   "component-version-unknown",
                   "environment-behind",
                   "environment-mismatch",
@@ -1985,6 +2119,8 @@
                   "submodule-unresolvable",
                   "submodule-unmapped",
                   "component-version-drift",
+                  "submodule-untagged",
+                  "manifest-submodule-mismatch",
                   "component-version-unknown",
                   "environment-behind",
                   "environment-mismatch",
@@ -2255,6 +2391,8 @@
                   "submodule-unresolvable",
                   "submodule-unmapped",
                   "component-version-drift",
+                  "submodule-untagged",
+                  "manifest-submodule-mismatch",
                   "component-version-unknown",
                   "environment-behind",
                   "environment-mismatch",
@@ -2471,6 +2609,8 @@
                   "submodule-unresolvable",
                   "submodule-unmapped",
                   "component-version-drift",
+                  "submodule-untagged",
+                  "manifest-submodule-mismatch",
                   "component-version-unknown",
                   "environment-behind",
                   "environment-mismatch",
@@ -2581,6 +2721,8 @@
                   "submodule-unresolvable",
                   "submodule-unmapped",
                   "component-version-drift",
+                  "submodule-untagged",
+                  "manifest-submodule-mismatch",
                   "component-version-unknown",
                   "environment-behind",
                   "environment-mismatch",

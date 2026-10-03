@@ -35,6 +35,8 @@ version:
   unresolvableSubmodule: red
   unknownManifestComponent: red
   unmappedSubmodule: amber
+  untaggedSubmodule: amber # coordinator pins a SHA that is not a release tag
+  manifestSubmoduleMismatch: amber # manifest version ≠ version pinned by the submodule
 
 governance:
   missingStandardWorkflow: amber

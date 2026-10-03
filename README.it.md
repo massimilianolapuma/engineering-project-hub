@@ -203,15 +203,15 @@ Crea una GitHub App di proprietà dell'organizzazione e **installala solo sui re
 monitorati**. Assegnale questi permessi di repository **in sola lettura**. I nomi sono stati
 verificati sulla documentazione GitHub il 2026-10-03.
 
-| Permesso (UI)          | Chiave API               | Usato per                                                           |
-| ---------------------- | ------------------------ | ------------------------------------------------------------------- |
-| Metadata               | `metadata`               | metadati del repository, tag (obbligatorio, sola lettura)           |
-| Contents               | `contents`               | head del branch, release, `.gitmodules`, manifest, file di stato    |
-| Actions                | `actions`                | esecuzioni e job dei workflow (elenca anche gli ambienti, se usati) |
-| Code scanning alerts   | `security_events`        | alert e analisi di code scanning                                    |
-| Dependabot alerts      | `vulnerability_alerts`   | alert Dependabot                                                    |
-| Secret scanning alerts | `secret_scanning_alerts` | alert di secret scanning (recuperati con `hide_secret=true`)        |
-| Deployments            | `deployments`            | _non usato dall'MVP_ (roadmap)                                      |
+| Permesso (UI)          | Chiave API               | Usato per                                                                                                     |
+| ---------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| Metadata               | `metadata`               | metadati del repository, tag (obbligatorio, sola lettura)                                                     |
+| Contents               | `contents`               | head del branch, release, `.gitmodules`, manifest, file di stato, confronto commit (SHA submodule vs release) |
+| Actions                | `actions`                | esecuzioni e job dei workflow (elenca anche gli ambienti, se usati)                                           |
+| Code scanning alerts   | `security_events`        | alert e analisi di code scanning                                                                              |
+| Dependabot alerts      | `vulnerability_alerts`   | alert Dependabot                                                                                              |
+| Secret scanning alerts | `secret_scanning_alerts` | alert di secret scanning (recuperati con `hide_secret=true`)                                                  |
+| Deployments            | `deployments`            | _non usato dall'MVP_ (roadmap)                                                                                |
 
 Non concedere alcun permesso di scrittura, né permessi Environments, Pages o di
 organizzazione. Poi aggiungi a questo repository questi **Actions secrets** di repository:

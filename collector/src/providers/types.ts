@@ -36,6 +36,13 @@ export interface TagDTO {
   sha: string;
 }
 
+/** Result of comparing two commits (base...head). */
+export interface CompareDTO {
+  status: 'ahead' | 'behind' | 'identical' | 'diverged';
+  aheadBy: number;
+  behindBy: number;
+}
+
 export interface FileDTO {
   /** Decoded text. Only parsed by the collector; never published. */
   text: string;
@@ -138,6 +145,10 @@ export interface SourceProvider {
   getBranchHead(repo: string, branch: string): Promise<ProviderResult<CommitRefDTO>>;
   getLatestRelease(repo: string): Promise<ProviderResult<ReleaseDTO>>;
   getLatestTag(repo: string): Promise<ProviderResult<TagDTO>>;
+  /** Most recent tags (name + commit SHA), bounded; used to resolve submodule SHAs to versions. */
+  listTags(repo: string): Promise<ProviderResult<TagDTO[]>>;
+  /** Compares base...head (e.g. latest release tag ... submodule SHA). */
+  compareCommits(repo: string, base: string, head: string): Promise<ProviderResult<CompareDTO>>;
   /** Only called with allow-listed paths (.gitmodules, release manifest, security status file). */
   getFile(repo: string, path: string, ref?: string): Promise<ProviderResult<FileDTO>>;
   getSubmoduleRef(

@@ -104,5 +104,15 @@
       "htmlUrl": "https://github.com/example-org/project-alpha-frontend/security/dependabot/5"
     }
   ],
-  "secretScanningAlerts": []
+  "secretScanningAlerts": [],
+  "tags": [
+    {
+      "name": "v2.2.0",
+      "sha": "ae58b9aead8cecd84d9b8f0acf4df0aa492d6f00"
+    },
+    {
+      "name": "v2.1.0",
+      "sha": "7482a4cab7d0cbbb5b9bde9cb303ab22b02ef963"
+    }
+  ]
 }

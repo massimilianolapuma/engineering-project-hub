@@ -173,6 +173,23 @@
             "amber",
             "grey"
           ]
+        },
+        "untaggedSubmodule": {
+          "default": "amber",
+          "type": "string",
+          "enum": [
+            "red",
+            "amber",
+            "grey"
+          ]
+        },
+        "manifestSubmoduleMismatch": {
+          "default": "amber",
+          "type": "string",
+          "enum": [
+            "red",
+            "amber"
+          ]
         }
       },
       "additionalProperties": false

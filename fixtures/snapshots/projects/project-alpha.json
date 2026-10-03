@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0",
+  "schemaVersion": "1.1",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-alpha",
@@ -104,6 +104,7 @@
           "committedAt": "2026-01-15T10:00:00.000Z"
         }
       },
+      "versionSource": "auto",
       "declaredVersion": "1.4.0",
       "latestRelease": {
         "tag": "v1.4.0",
@@ -121,6 +122,17 @@
         "association": "configured-path",
         "status": "resolved"
       },
+      "pin": {
+        "status": "tagged",
+        "tag": "v1.4.0",
+        "version": "1.4.0",
+        "comparedTo": null,
+        "aheadBy": null,
+        "behindBy": null
+      },
+      "effectiveVersion": "1.4.0",
+      "effectiveVersionSource": "submodule",
+      "manifestConsistency": "consistent",
       "drift": "aligned"
     },
     {
@@ -148,6 +160,7 @@
           "committedAt": "2026-01-15T07:00:00.000Z"
         }
       },
+      "versionSource": "auto",
       "declaredVersion": "2.1.0",
       "latestRelease": {
         "tag": "v2.2.0",
@@ -165,6 +178,17 @@
         "association": "configured-path",
         "status": "resolved"
       },
+      "pin": {
+        "status": "tagged",
+        "tag": "v2.1.0",
+        "version": "2.1.0",
+        "comparedTo": null,
+        "aheadBy": null,
+        "behindBy": null
+      },
+      "effectiveVersion": "2.1.0",
+      "effectiveVersionSource": "submodule",
+      "manifestConsistency": "consistent",
       "drift": "drift"
     },
     {
@@ -192,6 +216,7 @@
           "committedAt": "2026-01-14T12:00:00.000Z"
         }
       },
+      "versionSource": "auto",
       "declaredVersion": "1.2.0",
       "latestRelease": {
         "tag": "v1.2.0",
@@ -209,6 +234,17 @@
         "association": "configured-path",
         "status": "resolved"
       },
+      "pin": {
+        "status": "ahead",
+        "tag": null,
+        "version": null,
+        "comparedTo": "v1.2.0",
+        "aheadBy": 3,
+        "behindBy": 0
+      },
+      "effectiveVersion": "1.2.0",
+      "effectiveVersionSource": "manifest",
+      "manifestConsistency": "unknown",
       "drift": "aligned"
     },
     {
@@ -236,6 +272,7 @@
           "committedAt": "2026-01-14T12:00:00.000Z"
         }
       },
+      "versionSource": "release",
       "declaredVersion": "0.9.0",
       "latestRelease": {
         "tag": "v0.9.0",
@@ -253,6 +290,17 @@
         "association": "configured-path",
         "status": "resolved"
       },
+      "pin": {
+        "status": "tagged",
+        "tag": "v0.9.0",
+        "version": "0.9.0",
+        "comparedTo": null,
+        "aheadBy": null,
+        "behindBy": null
+      },
+      "effectiveVersion": "0.9.0",
+      "effectiveVersionSource": "release",
+      "manifestConsistency": "consistent",
       "drift": "aligned"
     }
   ],
@@ -1258,8 +1306,21 @@
         "level": "amber",
         "params": {
           "component": "Frontend",
-          "declared": "2.1.0",
+          "current": "2.1.0",
+          "source": "submodule",
           "latest": "v2.2.0"
+        }
+      },
+      {
+        "code": "submodule-untagged",
+        "level": "amber",
+        "params": {
+          "component": "Settlement worker",
+          "sha": "ae58979",
+          "status": "ahead",
+          "base": "v1.2.0",
+          "ahead": 3,
+          "behind": 0
         }
       },
       {

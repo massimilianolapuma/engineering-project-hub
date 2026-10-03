@@ -1,8 +1,10 @@
 ---
 import ErrorsTable from '../../../components/ErrorsTable.astro';
+import EffectiveVersion from '../../../components/EffectiveVersion.astro';
 import ExtLink from '../../../components/ExtLink.astro';
 import HealthTile from '../../../components/HealthTile.astro';
 import Pill from '../../../components/Pill.astro';
+import PinCell from '../../../components/PinCell.astro';
 import RelTime from '../../../components/RelTime.astro';
 import SeverityKpis from '../../../components/SeverityKpis.astro';
 import StatusBadge from '../../../components/StatusBadge.astro';
@@ -219,10 +221,10 @@ const cov = s?.securityCoverage;
               <tr>
                 <th scope="col">{d.common.component}</th>
                 <th scope="col">{d.common.repository}</th>
-                <th scope="col">{d.project.declared}</th>
+                <th scope="col">{d.versionsPage.effective}</th>
                 <th scope="col">{d.project.latestRelease}</th>
                 <th scope="col">{d.project.latestCommit}</th>
-                <th scope="col">{d.project.submodule}</th>
+                <th scope="col">{d.versionsPage.pinned}</th>
                 <th scope="col">{d.project.drift}</th>
               </tr>
             </thead>
@@ -252,10 +254,8 @@ const cov = s?.securityCoverage;
                       </>
                     )}
                   </td>
-                  <td data-label={d.project.declared}>
-                    {displayVersion(c.declaredVersion) ?? (
-                      <span class="muted">{d.common.unknown}</span>
-                    )}
+                  <td data-label={d.versionsPage.effective}>
+                    <EffectiveVersion c={c} i18n={i18n} />
                   </td>
                   <td data-label={d.project.latestRelease}>
                     {c.latestRelease ? (
@@ -273,17 +273,8 @@ const cov = s?.securityCoverage;
                       <span class="muted">{d.common.unknown}</span>
                     )}
                   </td>
-                  <td data-label={d.project.submodule}>
-                    {c.submodule?.sha ? (
-                      <code>{shortSha(c.submodule.sha)}</code>
-                    ) : c.submodule ? (
-                      <Pill
-                        tone={c.submodule.status === 'unresolvable' ? 'red' : 'grey'}
-                        label={d.submoduleStatus[c.submodule.status]}
-                      />
-                    ) : (
-                      <span class="muted">{d.common.notApplicable}</span>
-                    )}
+                  <td data-label={d.versionsPage.pinned}>
+                    <PinCell c={c} i18n={i18n} />
                   </td>
                   <td data-label={d.project.drift}>
                     <Pill tone={driftTone(c.drift)} label={d.drift[c.drift]} />
