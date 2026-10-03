@@ -136,7 +136,9 @@ export function countOpen(findings: SecurityFinding[]): SeverityCounts {
   return c;
 }
 
-function stateFromError(c: ErrorClassification): ControlState {
+function stateFromError(c: ErrorClassification, skipped = false): ControlState {
+  // Repository not accessible: nothing was asked, so the control is simply unknown.
+  if (skipped) return c === 'not-authorised' ? 'not-authorised' : 'unknown';
   switch (c) {
     case 'not-configured':
       return 'not-configured';
@@ -156,13 +158,19 @@ export type ParsedStatusFile =
       status: 'missing' | 'invalid' | 'unavailable';
       file: null;
       classification?: ErrorClassification;
+      skipped?: boolean;
     };
 
 export function parseStatusFile(ctx: BuildContext, data: RepoData): ParsedStatusFile {
   const r = data.securityStatusFile;
   if (!r.ok) {
     if (r.error.classification === 'not-found') return { status: 'missing', file: null };
-    return { status: 'unavailable', file: null, classification: r.error.classification };
+    return {
+      status: 'unavailable',
+      file: null,
+      classification: r.error.classification,
+      skipped: r.error.skipped === true,
+    };
   }
   let json: unknown;
   try {
@@ -215,7 +223,7 @@ function nativeControl(
   if (!result.ok)
     return {
       ...base,
-      state: stateFromError(result.error.classification),
+      state: stateFromError(result.error.classification, result.error.skipped === true),
       lastScanAt: null,
       counts: null,
     };
@@ -305,7 +313,10 @@ function externalControl(
   const base = { control, required, tool: null, lastScanAt: null, counts: null, reportUrl: null };
   if (statusFile.status === 'missing') return { ...base, state: 'not-configured' };
   if (statusFile.status === 'unavailable')
-    return { ...base, state: stateFromError(statusFile.classification ?? 'error') };
+    return {
+      ...base,
+      state: stateFromError(statusFile.classification ?? 'error', statusFile.skipped === true),
+    };
   if (statusFile.status !== 'ok') return { ...base, state: 'unknown' }; // invalid file
   const file = statusFile.file;
   const entry = file.controls[control as keyof SecurityStatusFile['controls']];

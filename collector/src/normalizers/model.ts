@@ -53,6 +53,8 @@ export function recordError(
   opts: { expectedNotFound?: boolean } = {},
 ): void {
   if (!result || result.ok) return;
+  // Already reported once as the repository error.
+  if (result.error.skipped) return;
   const { classification } = result.error;
   const reportable =
     ERROR_CLASSES.has(classification) || (classification === 'not-found' && !opts.expectedNotFound);

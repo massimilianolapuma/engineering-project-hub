@@ -173,6 +173,22 @@ Vengono registrati come errori di raccolta classificati e mostrati come Unknown
 (Sconosciuto) o Not authorised (Non autorizzato). Non vengono mai trattati come "nessun
 problema".
 
+> ℹ️ Il `config/projects.yaml` versionato descrive i progetti **sintetici** di
+> `example-org`. In modalità GitHub ogni repository risulta quindi `not-found` (404) e tutti i
+> progetti sono Sconosciuti. Per raccogliere i **tuoi** repository usa un catalogo locale non
+> versionato (questo repository è pubblico):
+>
+> ```bash
+> mkdir -p config.local && cp config/policies.yaml config.local/   # config.local/ è in .gitignore
+> # scrivi config.local/projects.yaml con i tuoi progetti (o generalo con /it/catalog/)
+> npm run validate:config -- config.local
+> npm run collect:github -- --config config.local
+> npm run build:site && npm run preview      # solo anteprima locale — non pubblicare dati reali
+> ```
+>
+> Il token deve poter leggere quei repository (PAT fine-grained: selezionali in
+> _Repository access_; permessi nella tabella più sotto).
+
 ## Configurazione
 
 - `config/projects.yaml` è il **catalogo**: progetti, coordinator, componenti, path dei

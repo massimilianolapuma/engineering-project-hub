@@ -163,6 +163,22 @@ Errors on individual repositories (403, 404, rate limit) do **not** stop the run
 recorded as classified collection errors and shown as Unknown or Not authorised. They are
 never treated as "no problems".
 
+> ℹ️ The committed `config/projects.yaml` describes the **synthetic** `example-org`
+> projects. Run against it in GitHub mode and every repository is `not-found` (404), so all
+> projects are Unknown. To collect **your** repositories, use a local catalog that is not
+> committed (this repository is public):
+>
+> ```bash
+> mkdir -p config.local && cp config/policies.yaml config.local/   # config.local/ is git-ignored
+> # write config.local/projects.yaml with your projects (or generate it with /catalog/)
+> npm run validate:config -- config.local
+> npm run collect:github -- --config config.local
+> npm run build:site && npm run preview      # local preview only — do not publish real data
+> ```
+>
+> The token needs read access to those repositories (fine-grained PAT: select them under
+> _Repository access_; permissions in the table below).
+
 ## Configuration
 
 - `config/projects.yaml` is the **catalog**: projects, coordinator, components, submodule
