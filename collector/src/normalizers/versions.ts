@@ -126,6 +126,37 @@ export function coordinatorVersion(
   return { version: null, source: 'unknown' };
 }
 
+/**
+ * Latest release of a component. With a releaseTagPrefix (monorepos: "api-v1.2.0") the
+ * repository-wide release may belong to another component, so the highest matching tag wins.
+ */
+export function componentRelease(
+  ctx: BuildContext,
+  raw: RawProjectData,
+  comp: ProjectConfig['components'][number],
+  data: RawProjectData['repos'][number],
+): ReleaseInfo | null {
+  const prefix = comp.releaseTagPrefix;
+  if (!prefix) return toReleaseInfo(ctx, comp.repository, data.release, data.tag);
+  const tags = raw.componentTags.get(comp.id);
+  if (!tags?.ok) return null;
+  const best = tags.data
+    .filter((t) => t.name.startsWith(prefix))
+    .map((t) => ({ name: t.name, version: normaliseVersion(t.name, prefix) }))
+    .filter((t): t is { name: string; version: string } => !!t.version)
+    .sort((a, b) => compareVersions(b.version, a.version) ?? 0)[0];
+  if (!best) return null;
+  return toReleaseInfo(
+    ctx,
+    comp.repository,
+    { ok: false, error: { classification: 'not-found' } },
+    {
+      ok: true,
+      data: { name: best.name, sha: '' },
+    },
+  );
+}
+
 /** Resolves the SHA pinned by the coordinator into a tag, or a position vs the latest release. */
 export function resolvePin(
   raw: RawProjectData,
@@ -185,9 +216,7 @@ export function toComponents(
       recordError(ctx, comp.repository, comp.id, 'tag', pin.tags, { expectedNotFound: true });
       recordError(ctx, comp.repository, comp.id, 'tag', pin.compare, { expectedNotFound: true });
     }
-    const latestRelease = data.repo.ok
-      ? toReleaseInfo(ctx, comp.repository, data.release, data.tag)
-      : null;
+    const latestRelease = data.repo.ok ? componentRelease(ctx, raw, comp, data) : null;
     const declared = normaliseVersion(scrubIdentifier(manifest?.components[comp.id]?.version));
     const latest = normaliseVersion(latestRelease?.tag, comp.releaseTagPrefix);
     const submodule = submodules.find((s) => s.componentId === comp.id) ?? null;
@@ -230,6 +259,7 @@ export function toComponents(
       name: comp.name,
       type: comp.type,
       repository: toRepositoryInfo(ctx, data),
+      path: scrubIdentifier(comp.path, 255),
       versionSource: comp.versionSource,
       declaredVersion: declared,
       latestRelease,

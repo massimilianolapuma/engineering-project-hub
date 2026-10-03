@@ -1,0 +1,603 @@
+{
+  "schemaVersion": "1.2",
+  "generatedAt": "2026-01-15T12:00:00.000Z",
+  "project": {
+    "id": "platform",
+    "name": "Platform (monorepo)",
+    "description": "Synthetic monorepo with a web app, an API and a worker in one repository.",
+    "businessUnit": "Platform",
+    "lifecycle": "production"
+  },
+  "coordinator": {
+    "repository": {
+      "fullName": "example-org/platform-mono",
+      "owner": "example-org",
+      "name": "platform-mono",
+      "url": "https://github.com/example-org/platform-mono",
+      "status": "ok",
+      "visibility": "public",
+      "defaultBranch": "main",
+      "configuredDefaultBranch": "main",
+      "archived": false,
+      "updatedAt": "2026-01-14T12:00:00.000Z",
+      "topics": [
+        "demo",
+        "monorepo"
+      ],
+      "latestCommit": {
+        "sha": "b85777552b25839b2cea3e76e5c15827386f60ac",
+        "url": "https://github.com/example-org/platform-mono/commit/b85777552b25839b2cea3e76e5c15827386f60ac",
+        "committedAt": "2026-01-15T09:00:00.000Z"
+      }
+    },
+    "version": "2026.10.1",
+    "versionSource": "manifest",
+    "latestRelease": {
+      "tag": "web-v2.0.1",
+      "name": "web-v2.0.1",
+      "publishedAt": "2026-01-13T12:00:00.000Z",
+      "prerelease": false,
+      "url": "https://github.com/example-org/platform-mono/releases/tag/web-v2.0.1",
+      "kind": "release"
+    },
+    "manifest": {
+      "path": "release-manifest.yaml",
+      "status": "ok"
+    },
+    "submodules": []
+  },
+  "components": [
+    {
+      "id": "web",
+      "name": "Web app",
+      "type": "webapp",
+      "repository": {
+        "fullName": "example-org/platform-mono",
+        "owner": "example-org",
+        "name": "platform-mono",
+        "url": "https://github.com/example-org/platform-mono",
+        "status": "ok",
+        "visibility": "public",
+        "defaultBranch": "main",
+        "configuredDefaultBranch": null,
+        "archived": false,
+        "updatedAt": "2026-01-14T12:00:00.000Z",
+        "topics": [
+          "demo",
+          "monorepo"
+        ],
+        "latestCommit": {
+          "sha": "b85777552b25839b2cea3e76e5c15827386f60ac",
+          "url": "https://github.com/example-org/platform-mono/commit/b85777552b25839b2cea3e76e5c15827386f60ac",
+          "committedAt": "2026-01-15T09:00:00.000Z"
+        }
+      },
+      "path": "apps/web",
+      "versionSource": "release",
+      "declaredVersion": "2.0.1",
+      "latestRelease": {
+        "tag": "web-v2.0.1",
+        "name": null,
+        "publishedAt": null,
+        "prerelease": false,
+        "url": "https://github.com/example-org/platform-mono/releases/tag/web-v2.0.1",
+        "kind": "tag"
+      },
+      "submodule": null,
+      "pin": null,
+      "effectiveVersion": "2.0.1",
+      "effectiveVersionSource": "release",
+      "manifestConsistency": "unknown",
+      "drift": "aligned"
+    },
+    {
+      "id": "api",
+      "name": "API",
+      "type": "service",
+      "repository": {
+        "fullName": "example-org/platform-mono",
+        "owner": "example-org",
+        "name": "platform-mono",
+        "url": "https://github.com/example-org/platform-mono",
+        "status": "ok",
+        "visibility": "public",
+        "defaultBranch": "main",
+        "configuredDefaultBranch": null,
+        "archived": false,
+        "updatedAt": "2026-01-14T12:00:00.000Z",
+        "topics": [
+          "demo",
+          "monorepo"
+        ],
+        "latestCommit": {
+          "sha": "b85777552b25839b2cea3e76e5c15827386f60ac",
+          "url": "https://github.com/example-org/platform-mono/commit/b85777552b25839b2cea3e76e5c15827386f60ac",
+          "committedAt": "2026-01-15T09:00:00.000Z"
+        }
+      },
+      "path": "services/api",
+      "versionSource": "manifest",
+      "declaredVersion": "1.8.0",
+      "latestRelease": {
+        "tag": "api-v1.8.0",
+        "name": null,
+        "publishedAt": null,
+        "prerelease": false,
+        "url": "https://github.com/example-org/platform-mono/releases/tag/api-v1.8.0",
+        "kind": "tag"
+      },
+      "submodule": null,
+      "pin": null,
+      "effectiveVersion": "1.8.0",
+      "effectiveVersionSource": "manifest",
+      "manifestConsistency": "unknown",
+      "drift": "aligned"
+    },
+    {
+      "id": "worker",
+      "name": "Worker",
+      "type": "worker",
+      "repository": {
+        "fullName": "example-org/platform-mono",
+        "owner": "example-org",
+        "name": "platform-mono",
+        "url": "https://github.com/example-org/platform-mono",
+        "status": "ok",
+        "visibility": "public",
+        "defaultBranch": "main",
+        "configuredDefaultBranch": null,
+        "archived": false,
+        "updatedAt": "2026-01-14T12:00:00.000Z",
+        "topics": [
+          "demo",
+          "monorepo"
+        ],
+        "latestCommit": {
+          "sha": "b85777552b25839b2cea3e76e5c15827386f60ac",
+          "url": "https://github.com/example-org/platform-mono/commit/b85777552b25839b2cea3e76e5c15827386f60ac",
+          "committedAt": "2026-01-15T09:00:00.000Z"
+        }
+      },
+      "path": "services/worker",
+      "versionSource": "release",
+      "declaredVersion": "0.4.0",
+      "latestRelease": {
+        "tag": "worker-v0.4.0",
+        "name": null,
+        "publishedAt": null,
+        "prerelease": false,
+        "url": "https://github.com/example-org/platform-mono/releases/tag/worker-v0.4.0",
+        "kind": "tag"
+      },
+      "submodule": null,
+      "pin": null,
+      "effectiveVersion": "0.4.0",
+      "effectiveVersionSource": "release",
+      "manifestConsistency": "unknown",
+      "drift": "aligned"
+    }
+  ],
+  "environments": [
+    {
+      "id": "dev",
+      "name": "DEV",
+      "version": "2026.10.1",
+      "source": "manifest",
+      "status": "aligned"
+    },
+    {
+      "id": "prod",
+      "name": "PROD",
+      "version": "2026.10.1",
+      "source": "manifest",
+      "status": "aligned"
+    }
+  ],
+  "workflows": [
+    {
+      "workflowId": "ci",
+      "name": "Continuous Integration",
+      "file": "ci.yml",
+      "critical": true,
+      "componentId": "coordinator",
+      "repository": "example-org/platform-mono",
+      "branch": "main",
+      "state": "success",
+      "stale": false,
+      "latestRun": {
+        "id": 9501,
+        "runNumber": 512,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "branch": "main",
+        "event": "push",
+        "sha": "af004c1c87a0b9aa091ea08e56fa209f93f7418e",
+        "createdAt": "2026-01-15T09:00:00.000Z",
+        "updatedAt": "2026-01-15T09:00:00.000Z",
+        "url": "https://github.com/example-org/platform-mono/actions/runs/9501"
+      },
+      "lastCompletedRun": {
+        "id": 9501,
+        "runNumber": 512,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "branch": "main",
+        "event": "push",
+        "sha": "af004c1c87a0b9aa091ea08e56fa209f93f7418e",
+        "createdAt": "2026-01-15T09:00:00.000Z",
+        "updatedAt": "2026-01-15T09:00:00.000Z",
+        "url": "https://github.com/example-org/platform-mono/actions/runs/9501"
+      },
+      "lastFailedRun": null,
+      "activeRun": null,
+      "lastError": null
+    },
+    {
+      "workflowId": "release",
+      "name": "Release",
+      "file": "release.yml",
+      "critical": true,
+      "componentId": "coordinator",
+      "repository": "example-org/platform-mono",
+      "branch": "main",
+      "state": "success",
+      "stale": false,
+      "latestRun": {
+        "id": 9502,
+        "runNumber": 88,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "branch": "main",
+        "event": "workflow_dispatch",
+        "sha": "851462ec068076b54731e045e65ec56df4f293fc",
+        "createdAt": "2026-01-13T12:00:00.000Z",
+        "updatedAt": "2026-01-13T12:00:00.000Z",
+        "url": "https://github.com/example-org/platform-mono/actions/runs/9502"
+      },
+      "lastCompletedRun": {
+        "id": 9502,
+        "runNumber": 88,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "branch": "main",
+        "event": "workflow_dispatch",
+        "sha": "851462ec068076b54731e045e65ec56df4f293fc",
+        "createdAt": "2026-01-13T12:00:00.000Z",
+        "updatedAt": "2026-01-13T12:00:00.000Z",
+        "url": "https://github.com/example-org/platform-mono/actions/runs/9502"
+      },
+      "lastFailedRun": null,
+      "activeRun": null,
+      "lastError": null
+    }
+  ],
+  "securityFindings": [
+    {
+      "id": "example-org/platform-mono#code-scanning#4",
+      "projectId": "platform",
+      "componentId": "web",
+      "repository": "example-org/platform-mono",
+      "source": "github-code-scanning",
+      "category": "code",
+      "severity": "high",
+      "originalSeverity": "high",
+      "status": "open",
+      "originalStatus": "open",
+      "ruleId": "js/xss",
+      "title": "Cross-site scripting",
+      "detectedAt": "2026-01-09T12:00:00.000Z",
+      "updatedAt": "2026-01-09T12:00:00.000Z",
+      "fixAvailable": null,
+      "htmlUrl": "https://github.com/example-org/platform-mono/security/code-scanning/4",
+      "tool": "CodeQL",
+      "repositoryPrivate": false,
+      "dataClassification": "public"
+    },
+    {
+      "id": "example-org/platform-mono#code-scanning#5",
+      "projectId": "platform",
+      "componentId": "api",
+      "repository": "example-org/platform-mono",
+      "source": "github-code-scanning",
+      "category": "code",
+      "severity": "medium",
+      "originalSeverity": "medium",
+      "status": "open",
+      "originalStatus": "open",
+      "ruleId": "js/path-injection",
+      "title": "Uncontrolled data used in path expression",
+      "detectedAt": "2026-01-11T12:00:00.000Z",
+      "updatedAt": "2026-01-11T12:00:00.000Z",
+      "fixAvailable": null,
+      "htmlUrl": "https://github.com/example-org/platform-mono/security/code-scanning/5",
+      "tool": "CodeQL",
+      "repositoryPrivate": false,
+      "dataClassification": "public"
+    },
+    {
+      "id": "example-org/platform-mono#dependabot#9",
+      "projectId": "platform",
+      "componentId": "worker",
+      "repository": "example-org/platform-mono",
+      "source": "github-dependabot",
+      "category": "dependency",
+      "severity": "low",
+      "originalSeverity": "low",
+      "status": "open",
+      "originalStatus": "open",
+      "ruleId": "GHSA-demo-0004-mono",
+      "title": "example-merge: Prototype pollution in example-merge (synthetic advisory)",
+      "detectedAt": "2026-01-07T12:00:00.000Z",
+      "updatedAt": "2026-01-07T12:00:00.000Z",
+      "fixAvailable": true,
+      "htmlUrl": "https://github.com/example-org/platform-mono/security/dependabot/9",
+      "tool": "dependabot",
+      "repositoryPrivate": false,
+      "dataClassification": "public"
+    }
+  ],
+  "securityControls": [
+    {
+      "componentId": "coordinator",
+      "repository": "example-org/platform-mono",
+      "controls": [
+        {
+          "control": "codeScanning",
+          "required": true,
+          "state": "enabled",
+          "tool": null,
+          "lastScanAt": "2026-01-15T09:00:00.000Z",
+          "counts": {
+            "critical": 0,
+            "high": 1,
+            "medium": 1,
+            "low": 0,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": null
+        },
+        {
+          "control": "secretScanning",
+          "required": true,
+          "state": "enabled",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": {
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": null
+        },
+        {
+          "control": "dependabot",
+          "required": true,
+          "state": "enabled",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": {
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 1,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": null
+        },
+        {
+          "control": "containerScanning",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "iacScanning",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "dast",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "sbom",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "artifactSignature",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        }
+      ]
+    }
+  ],
+  "deliveryHealth": {
+    "status": "green",
+    "reasons": [
+      {
+        "code": "critical-workflows-succeeded",
+        "level": "info",
+        "params": {
+          "count": 2
+        }
+      }
+    ]
+  },
+  "versionHealth": {
+    "status": "green",
+    "reasons": [
+      {
+        "code": "versions-aligned",
+        "level": "info",
+        "params": {}
+      }
+    ]
+  },
+  "securityHealth": {
+    "status": "amber",
+    "reasons": [
+      {
+        "code": "open-high-alerts",
+        "level": "amber",
+        "params": {
+          "count": 1
+        }
+      },
+      {
+        "code": "open-medium-low-alerts",
+        "level": "amber",
+        "params": {
+          "count": 2
+        }
+      }
+    ],
+    "openCounts": {
+      "critical": 0,
+      "high": 1,
+      "medium": 1,
+      "low": 1,
+      "informational": 0,
+      "unknown": 0
+    },
+    "countsComplete": true,
+    "openSecretAlerts": 0,
+    "byCategory": {
+      "code": 2,
+      "dependency": 1,
+      "secret": 0,
+      "container": 0,
+      "iac": 0,
+      "dast": 0,
+      "supply-chain": 0,
+      "configuration": 0
+    },
+    "bySource": {
+      "github-code-scanning": 2,
+      "github-dependabot": 1,
+      "github-secret-scanning": 0,
+      "security-status-file": 0
+    }
+  },
+  "securityCoverage": {
+    "status": "green",
+    "reasons": [
+      {
+        "code": "all-required-controls-available",
+        "level": "info",
+        "params": {
+          "count": 3
+        }
+      }
+    ],
+    "percentage": 100,
+    "required": 3,
+    "available": 3,
+    "notConfigured": 0,
+    "notAuthorised": 0,
+    "unknown": 0,
+    "failed": 0,
+    "stale": 0,
+    "collectedAt": "2026-01-15T12:00:00.000Z",
+    "perControl": [
+      {
+        "control": "codeScanning",
+        "required": true,
+        "state": "enabled"
+      },
+      {
+        "control": "secretScanning",
+        "required": true,
+        "state": "enabled"
+      },
+      {
+        "control": "dependabot",
+        "required": true,
+        "state": "enabled"
+      },
+      {
+        "control": "containerScanning",
+        "required": false,
+        "state": "not-configured"
+      },
+      {
+        "control": "iacScanning",
+        "required": false,
+        "state": "not-configured"
+      },
+      {
+        "control": "dast",
+        "required": false,
+        "state": "not-configured"
+      },
+      {
+        "control": "sbom",
+        "required": false,
+        "state": "not-configured"
+      },
+      {
+        "control": "artifactSignature",
+        "required": false,
+        "state": "not-configured"
+      }
+    ]
+  },
+  "governanceHealth": {
+    "status": "green",
+    "reasons": [
+      {
+        "code": "governance-compliant",
+        "level": "info",
+        "params": {}
+      }
+    ]
+  },
+  "overallHealth": {
+    "status": "amber",
+    "reasons": [
+      {
+        "code": "dimension-amber",
+        "level": "amber",
+        "params": {
+          "dimension": "security"
+        }
+      }
+    ]
+  },
+  "dataFreshness": {
+    "status": "green",
+    "collectedAt": "2026-01-15T12:00:00.000Z",
+    "oldestSourceAt": null,
+    "staleSources": []
+  },
+  "collectionErrors": []
+}

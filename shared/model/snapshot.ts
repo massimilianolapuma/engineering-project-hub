@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CatalogSchema, VersionSourceSchema } from './catalog';
+import { CatalogSchema, ProjectConfigSchema, VersionSourceSchema } from './catalog';
 import {
   AuthenticationModeSchema,
   AvailabilitySchema,
@@ -281,6 +281,8 @@ export const ComponentSnapshotSchema = z
     name: z.string().max(100),
     type: ComponentTypeSchema,
     repository: RepositoryInfoSchema,
+    /** Directory inside the repository (monorepo components); null for whole repositories. */
+    path: z.string().max(255).nullable(),
     /** Configured source of the current version (catalog `versionSource`). */
     versionSource: VersionSourceSchema,
     /** Version declared in the coordinator's release manifest. */
@@ -451,6 +453,37 @@ export const PortfolioIndexSchema = z
   .strict();
 export type PortfolioIndex = z.infer<typeof PortfolioIndexSchema>;
 
+export const DiscoveryProposalSchema = z
+  .object({
+    /** coordinator: has .gitmodules · monorepo: workspace manifest · single: one repository. */
+    kind: z.enum(['coordinator', 'monorepo', 'single']),
+    repository: z.string().max(200),
+    url: httpsUrl.nullable(),
+    /** Id of the catalog project that already uses this repository as coordinator. */
+    projectId: z.string().max(64).nullable(),
+    evidence: z.array(z.string().max(200)).max(20),
+    /** Ready-to-edit project configuration proposed for the catalog. */
+    project: ProjectConfigSchema,
+  })
+  .strict();
+export type DiscoveryProposal = z.infer<typeof DiscoveryProposalSchema>;
+
+export const DiscoveryResultSchema = z
+  .object({
+    owners: z.array(z.string().max(100)),
+    scanned: z.number().int().min(0),
+    proposals: z.array(DiscoveryProposalSchema),
+    /** Repositories linked as submodules of a discovered coordinator. */
+    claimed: z.array(
+      z.object({ repository: z.string().max(200), by: z.string().max(200) }).strict(),
+    ),
+    errors: z.array(
+      z.object({ target: z.string().max(200), classification: ErrorClassificationSchema }).strict(),
+    ),
+  })
+  .strict();
+export type DiscoveryResult = z.infer<typeof DiscoveryResultSchema>;
+
 /**
  * catalog.json: the validated catalog as published by the collector, so the site (catalog
  * editor) never reads the YAML directly, plus link suggestions derived from collected data.
@@ -473,6 +506,8 @@ export const CatalogSnapshotSchema = z
         })
         .strict(),
     ),
+    /** Discovery proposals; null when discovery is disabled. */
+    discovery: DiscoveryResultSchema.nullable(),
   })
   .strict();
 export type CatalogSnapshot = z.infer<typeof CatalogSnapshotSchema>;

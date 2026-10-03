@@ -1,0 +1,353 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "description": {
+      "default": "",
+      "type": "string",
+      "maxLength": 500
+    },
+    "businessUnit": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "lifecycle": {
+      "type": "string",
+      "enum": [
+        "experimental",
+        "development",
+        "production",
+        "maintenance",
+        "deprecated"
+      ]
+    },
+    "coordinator": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})\\/[A-Za-z0-9._-]{1,100}$"
+        },
+        "defaultBranch": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[^\\s~^:?*[\\\\]+$"
+        },
+        "manifestPath": {
+          "default": "release-manifest.yaml",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "notApplicableControls": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "codeScanning",
+              "secretScanning",
+              "dependabot",
+              "containerScanning",
+              "iacScanning",
+              "dast",
+              "sbom",
+              "artifactSignature"
+            ]
+          }
+        }
+      },
+      "required": [
+        "repository"
+      ],
+      "additionalProperties": false
+    },
+    "components": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "repository": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})\\/[A-Za-z0-9._-]{1,100}$"
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "service",
+              "webapp",
+              "worker",
+              "deployment",
+              "infrastructure",
+              "library",
+              "other"
+            ]
+          },
+          "defaultBranch": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "pattern": "^[^\\s~^:?*[\\\\]+$"
+          },
+          "submodulePath": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "releaseTagPrefix": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "notApplicableControls": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "codeScanning",
+                "secretScanning",
+                "dependabot",
+                "containerScanning",
+                "iacScanning",
+                "dast",
+                "sbom",
+                "artifactSignature"
+              ]
+            }
+          },
+          "versionSource": {
+            "default": "auto",
+            "type": "string",
+            "enum": [
+              "auto",
+              "submodule",
+              "manifest",
+              "release"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "repository",
+          "type"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "environments": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "trackedWorkflows": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "file": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._-]+\\.ya?ml$"
+          },
+          "critical": {
+            "default": false,
+            "type": "boolean"
+          },
+          "appliesTo": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "file"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "securityControls": {
+      "type": "object",
+      "properties": {
+        "codeScanning": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "secretScanning": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "dependabot": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "containerScanning": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "iacScanning": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "dast": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "sbom": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "artifactSignature": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "codeScanning",
+        "secretScanning",
+        "dependabot",
+        "containerScanning",
+        "iacScanning",
+        "dast",
+        "sbom",
+        "artifactSignature"
+      ],
+      "additionalProperties": false
+    },
+    "securityStatusPath": {
+      "default": ".security/project-security-status.json",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "businessUnit",
+    "lifecycle",
+    "coordinator",
+    "securityControls"
+  ],
+  "additionalProperties": false
+}

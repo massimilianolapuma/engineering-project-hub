@@ -263,6 +263,7 @@ describe('version health', () => {
     name: 'Frontend',
     type: 'webapp' as const,
     repository: {} as never,
+    path: null,
     declaredVersion: '2.1.0',
     latestRelease: {
       tag: 'v2.2.0',

@@ -15,6 +15,18 @@ export interface RepositoryDTO {
   archived: boolean;
   updatedAt: string | null;
   topics: string[];
+  fork?: boolean;
+}
+
+export interface DirectoryEntryDTO {
+  name: string;
+  type: 'file' | 'dir' | 'submodule' | 'symlink';
+}
+
+export interface WorkflowDTO {
+  /** File name in .github/workflows (e.g. ci.yml). */
+  file: string;
+  name: string;
 }
 
 export interface CommitRefDTO {
@@ -85,6 +97,8 @@ export interface CodeScanningAlertDTO {
   createdAt: string | null;
   updatedAt: string | null;
   htmlUrl: string;
+  /** File of the most recent instance; used only to attribute the alert to a monorepo component. */
+  path?: string | null;
 }
 
 export interface CodeScanningAnalysisDTO {
@@ -102,6 +116,8 @@ export interface DependabotAlertDTO {
   summary: string | null;
   packageName: string | null;
   firstPatchedVersion: string | null;
+  /** Manifest declaring the dependency; used only to attribute the alert to a monorepo component. */
+  manifestPath?: string | null;
   createdAt: string | null;
   updatedAt: string | null;
   htmlUrl: string;
@@ -148,6 +164,15 @@ export interface SourceProvider {
   readonly dataSource: DataSource;
   readonly authenticationMode: AuthenticationMode;
   getRepository(repo: string): Promise<ProviderResult<RepositoryDTO>>;
+  /** Discovery: repositories of an owner (organisation or user); public only unless asked. */
+  listOwnerRepositories(
+    owner: string,
+    opts: { includePrivate: boolean; max: number },
+  ): Promise<ProviderResult<RepositoryDTO[]>>;
+  /** Discovery: entries of a directory ("" = repository root). Names only, never contents. */
+  listDirectory(repo: string, path: string): Promise<ProviderResult<DirectoryEntryDTO[]>>;
+  /** Discovery: workflows defined in the repository. */
+  listWorkflows(repo: string): Promise<ProviderResult<WorkflowDTO[]>>;
   getBranchHead(repo: string, branch: string): Promise<ProviderResult<CommitRefDTO>>;
   getLatestRelease(repo: string): Promise<ProviderResult<ReleaseDTO>>;
   getLatestTag(repo: string): Promise<ProviderResult<TagDTO>>;

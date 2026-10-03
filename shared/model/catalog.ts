@@ -56,6 +56,11 @@ export const ComponentConfigSchema = z
     id: slug.refine((id) => id !== 'coordinator', '"coordinator" is reserved'),
     name: z.string().min(1).max(100),
     repository: RepositoryRefSchema,
+    /**
+     * Directory of the component inside its repository (monorepos). Required when the
+     * component lives in the coordinator's repository.
+     */
+    path: relativePath.optional(),
     type: ComponentTypeSchema,
     defaultBranch: branch.optional(),
     /** Path of the Git submodule in the coordinator repository, when the component is one. */
@@ -102,7 +107,8 @@ export const ProjectConfigSchema = z
     businessUnit: z.string().min(1).max(100),
     lifecycle: LifecycleSchema,
     coordinator: CoordinatorConfigSchema,
-    components: z.array(ComponentConfigSchema).min(1),
+    /** Empty for single-repository projects (the coordinator is the only repository). */
+    components: z.array(ComponentConfigSchema).default([]),
     environments: z.array(EnvironmentConfigSchema).default([]),
     trackedWorkflows: z.array(TrackedWorkflowConfigSchema).default([]),
     securityControls: SecurityControlsConfigSchema,
@@ -141,6 +147,32 @@ export const ProjectConfigSchema = z
         message: `duplicate submodulePath "${path}"`,
       });
     }
+    const coordinator = p.coordinator.repository.toLowerCase();
+    p.components.forEach((c, i) => {
+      if (c.repository.toLowerCase() === coordinator && !c.path) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['components', i, 'path'],
+          message: 'required when the component lives in the coordinator repository (monorepo)',
+        });
+      }
+      if (c.path && c.submodulePath) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['components', i, 'submodulePath'],
+          message: 'a component is either a submodule or a monorepo directory, not both',
+        });
+      }
+    });
+    for (const key of dup(
+      p.components.map((c) => `${c.repository.toLowerCase()}:${c.path ?? ''}`),
+    )) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['components'],
+        message: `duplicate component location "${key}"`,
+      });
+    }
     const targets = new Set(['coordinator', ...p.components.map((c) => c.id)]);
     p.trackedWorkflows.forEach((w, i) => {
       for (const target of w.appliesTo ?? []) {
@@ -156,17 +188,49 @@ export const ProjectConfigSchema = z
   });
 export type ProjectConfig = z.infer<typeof ProjectConfigSchema>;
 
+/**
+ * Automatic discovery of repositories. Discovery only produces *proposals* (shown in the
+ * catalog editor): nothing enters the portal until a project file is saved.
+ */
+export const DiscoveryConfigSchema = z
+  .object({
+    enabled: z.boolean().default(false),
+    /** Organisations or users whose repositories are scanned. */
+    owners: z
+      .array(z.string().regex(/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/, 'must be a GitHub owner'))
+      .default([]),
+    /** Ignored (forced false) when publication.audience is "public". */
+    includePrivate: z.boolean().default(false),
+    includeForks: z.boolean().default(false),
+    includeArchived: z.boolean().default(false),
+    /** Upper bound on scanned repositories per run (API budget). */
+    maxRepositories: z.number().int().min(1).max(1000).default(200),
+    /** Reserved: discovery through repository topics / custom properties. */
+    topics: z.boolean().default(false),
+    customProperties: z.boolean().default(false),
+  })
+  .strict();
+export type DiscoveryConfig = z.infer<typeof DiscoveryConfigSchema>;
+
+/** config/catalog.yaml: catalog-wide settings (projects live in config/projects/*.yaml). */
+export const CatalogSettingsSchema = z
+  .object({ discovery: DiscoveryConfigSchema.optional() })
+  .strict();
+
 export const CatalogSchema = z
   .object({
-    /**
-     * Reserved for future discovery through repository topics / custom properties.
-     * Accepted but not used by the MVP collector.
-     */
-    discovery: z
-      .object({ topics: z.boolean().default(false), customProperties: z.boolean().default(false) })
-      .strict()
-      .default({ topics: false, customProperties: false }),
-    projects: z.array(ProjectConfigSchema).min(1),
+    discovery: DiscoveryConfigSchema.default({
+      enabled: false,
+      owners: [],
+      includePrivate: false,
+      includeForks: false,
+      includeArchived: false,
+      maxRepositories: 200,
+      topics: false,
+      customProperties: false,
+    }),
+    /** May be empty when discovery is used to bootstrap the catalog. */
+    projects: z.array(ProjectConfigSchema).default([]),
   })
   .strict()
   .superRefine((c, ctx) => {
@@ -183,14 +247,24 @@ export const CatalogSchema = z
   });
 export type Catalog = z.infer<typeof CatalogSchema>;
 
-/** Every repository a project touches, coordinator first. */
+/** Every repository a project touches, coordinator first (monorepo components repeat it). */
 export function projectTargets(
   project: ProjectConfig,
-): { componentId: string; repository: string }[] {
+): { componentId: string; repository: string; path: string | null }[] {
   return [
-    { componentId: 'coordinator', repository: project.coordinator.repository },
-    ...project.components.map((c) => ({ componentId: c.id, repository: c.repository })),
+    { componentId: 'coordinator', repository: project.coordinator.repository, path: null },
+    ...project.components.map((c) => ({
+      componentId: c.id,
+      repository: c.repository,
+      path: c.path ?? null,
+    })),
   ];
+}
+
+/** True when every component lives in the coordinator repository. */
+export function isMonorepo(project: ProjectConfig): boolean {
+  const coordinator = project.coordinator.repository.toLowerCase();
+  return project.components.every((c) => c.repository.toLowerCase() === coordinator);
 }
 
 export function requiredControls(project: ProjectConfig): ControlId[] {

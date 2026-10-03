@@ -28,7 +28,7 @@ flowchart TB
   end
 
   subgraph Collect["GitHub Actions · job collect (unico job con credenziali)"]
-    CFG["config/projects.yaml<br/>config/policies.yaml"] --> VAL["Validazione Zod"]
+    CFG["config/catalog.yaml<br/>config/projects/*.yaml<br/>config/policies.yaml"] --> VAL["Validazione Zod"]
     VAL --> PROV["Provider<br/>GitHub (Octokit) | Mock (fixtures)"]
     PROV --> NORM["Normalizers<br/>(DTO → modello, valori originali conservati)"]
     NORM --> EVAL["Evaluators<br/>delivery · version · security · coverage · governance · overall"]
@@ -67,7 +67,8 @@ flowchart TB
 
 ## Flusso dei dati
 
-1. **Caricamento e validazione** di `config/projects.yaml` e `config/policies.yaml`. Una
+1. **Caricamento e validazione** del catalogo (`config/catalog.yaml`, `config/projects/*.yaml`)
+   e di `config/policies.yaml`. Una
    config non valida interrompe l'esecuzione.
 2. **Risoluzione delle credenziali** in quest'ordine: GitHub App, `GH_READ_TOKEN`,
    `GITHUB_TOKEN`, poi mock solo se selezionato esplicitamente.
@@ -214,6 +215,7 @@ valutazioni del rischio universali.
 - [ADR 0001: Architettura static-first e GitHub-native](architecture/adr/0001-static-first-github-native.md)
 - [ADR 0002: Contratto degli snapshot e astrazione dei provider](architecture/adr/0002-snapshot-contract-and-provider-abstraction.md)
 - [ADR 0003: Mattoni CI riusabili e separazione collect/build/deploy](architecture/adr/0003-ci-building-blocks-and-collect-deploy-split.md)
+- [ADR 0004: Archivio della configurazione, scoperta e percorso verso un backend](architecture/adr/0004-configuration-store-and-discovery.md)
 
 Altre decisioni:
 

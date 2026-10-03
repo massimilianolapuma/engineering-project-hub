@@ -95,7 +95,7 @@ flowchart LR
 ```
 
 ```text
-config/            catalog (projects.yaml), policies (policies.yaml), generated JSON Schemas
+config/            catalog (catalog.yaml + projects/<id>.yaml), policies.yaml, generated JSON Schemas
 shared/model/      Zod schemas + types: the single contract (catalog, policies, snapshot, contracts)
 shared/security/   credential patterns used by the sanitiser and the output scanner
 collector/src/     providers (GitHub, mock) → normalizers → evaluators → sanitizers → writers
@@ -163,14 +163,15 @@ Errors on individual repositories (403, 404, rate limit) do **not** stop the run
 recorded as classified collection errors and shown as Unknown or Not authorised. They are
 never treated as "no problems".
 
-> ℹ️ The committed `config/projects.yaml` describes the **synthetic** `example-org`
+> ℹ️ The committed `config/projects/*.yaml` describe the **synthetic** `example-org`
 > projects. Run against it in GitHub mode and every repository is `not-found` (404), so all
 > projects are Unknown. To collect **your** repositories, use a local catalog that is not
 > committed (this repository is public):
 >
 > ```bash
 > mkdir -p config.local && cp config/policies.yaml config.local/   # config.local/ is git-ignored
-> # write config.local/projects.yaml with your projects (or generate it with /catalog/)
+> # add config.local/projects/<id>.yaml files (or generate them with /catalog/), or set
+> # discovery in config.local/catalog.yaml to get proposals for your owners
 > npm run validate:config -- config.local
 > npm run collect:github -- --config config.local
 > npm run build:site && npm run preview      # local preview only — do not publish real data
@@ -181,16 +182,22 @@ never treated as "no problems".
 
 ## Configuration
 
-- `config/projects.yaml` is the **catalog**: projects, coordinator, components, submodule
-  paths, environments, tracked workflows (critical or not, `appliesTo`) and required or
-  optional security controls. Associations are explicit, never inferred from repository
-  names.
+- The **catalog** is one file per project, `config/projects/<id>.yaml`: coordinator,
+  components (separate repositories, submodules or monorepo directories), environments,
+  tracked workflows (critical or not, `appliesTo`) and required or optional security
+  controls. Associations are explicit, never inferred from repository names.
+- `config/catalog.yaml` turns on **discovery**: the collector scans the configured owners
+  and proposes coordinators, monorepos and single repositories in the catalog editor
+  (`/catalog/`). Proposals are never applied automatically.
 - `config/policies.yaml` holds the **health policies**: thresholds, staleness, which
   severities make security red or amber, critical and required dimensions, and the
   publication audience.
 
-To add a project, add an entry to `projects.yaml`, then run `npm run validate:config`.
-You do not need to change any code. Policies also change without touching code or the
+To add a project, open `/catalog/`, add a discovered proposal or create a project, and
+choose **Propose on GitHub**: GitHub opens the new file pre-filled and you create a pull
+request. CI validates it, and after the merge every run uses it, so the saved
+configuration is restored on every restart. No code change is needed, and no token is ever
+used in the browser ([ADR 0004](docs/architecture/adr/0004-configuration-store-and-discovery.md)). Policies also change without touching code or the
 frontend. See [docs/configuration.md](docs/configuration.md).
 
 Optional contracts read from monitored repositories:
@@ -298,16 +305,16 @@ Local commands:
 
 ## Troubleshooting
 
-| Symptom                                            | Cause / fix                                                                                                                            |
-| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `Invalid configuration in config/projects.yaml: …` | Zod validation. The message gives the exact path, for example `projects[0].components[1].repository`.                                  |
-| `DATA_SOURCE=github but no credentials found`      | Set the GitHub App secrets or `GH_READ_TOKEN`, or use `DATA_SOURCE=mock`.                                                              |
-| `GitHub App credentials are incomplete`            | All three `GH_APP_*` variables are required. There is no fallback, by design.                                                          |
-| Page shows **Snapshot data unavailable**           | No or invalid snapshot, or an unsupported `schemaVersion`. Run `npm run collect:mock` or `validate:snapshots`.                         |
-| Many **Not authorised** entries                    | Missing App permission or installation, or `GITHUB_TOKEN` used for other repositories. Check the Data quality page.                    |
-| Many **Rate limited** errors                       | Lower the schedule frequency or the number of repositories, or use a GitHub App (higher limits). See [operations](docs/operations.md). |
-| `Sanitisation gate failed for …`                   | A credential-like pattern reached the output. Nothing was written. Investigate the source field.                                       |
-| Deploy fails at `configure-pages`                  | Pages not enabled, or Source not set to **GitHub Actions**.                                                                            |
+| Symptom                                                 | Cause / fix                                                                                                                            |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `Invalid configuration in config/projects/<id>.yaml: …` | Zod validation. The message gives the exact path, for example `projects[0].components[1].repository`.                                  |
+| `DATA_SOURCE=github but no credentials found`           | Set the GitHub App secrets or `GH_READ_TOKEN`, or use `DATA_SOURCE=mock`.                                                              |
+| `GitHub App credentials are incomplete`                 | All three `GH_APP_*` variables are required. There is no fallback, by design.                                                          |
+| Page shows **Snapshot data unavailable**                | No or invalid snapshot, or an unsupported `schemaVersion`. Run `npm run collect:mock` or `validate:snapshots`.                         |
+| Many **Not authorised** entries                         | Missing App permission or installation, or `GITHUB_TOKEN` used for other repositories. Check the Data quality page.                    |
+| Many **Rate limited** errors                            | Lower the schedule frequency or the number of repositories, or use a GitHub App (higher limits). See [operations](docs/operations.md). |
+| `Sanitisation gate failed for …`                        | A credential-like pattern reached the output. Nothing was written. Investigate the source field.                                       |
+| Deploy fails at `configure-pages`                       | Pages not enabled, or Source not set to **GitHub Actions**.                                                                            |
 
 ## MVP limitations
 

@@ -1,5 +1,6 @@
 /**
- * Validates config/projects.yaml and config/policies.yaml against the Zod schemas.
+ * Validates the catalog (config/catalog.yaml + config/projects/*.yaml, or the legacy
+ * config/projects.yaml) and config/policies.yaml against the Zod schemas.
  * Usage: tsx scripts/validate-config.ts [configDir]
  */
 import { ConfigError, loadConfig } from '../collector/src/config/load';
@@ -14,7 +15,7 @@ try {
     ]),
   );
   console.log(
-    `✔ ${dir}/projects.yaml: ${catalog.projects.length} project(s), ${repos.size} repositories`,
+    `✔ ${dir}: ${catalog.projects.length} project(s), ${repos.size} repositories, discovery ${catalog.discovery.enabled ? `on (${catalog.discovery.owners.join(', ') || 'no owners'})` : 'off'}`,
   );
   console.log(
     `✔ ${dir}/policies.yaml: schema ${policies.schemaVersion}, audience=${policies.publication.audience}`,

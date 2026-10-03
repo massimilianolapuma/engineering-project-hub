@@ -41,7 +41,7 @@ describe('mock collection', () => {
   it('reproduces the golden snapshots exactly', async () => {
     const result = await mockRun();
     const { catalog } = await loadConfig('config');
-    await writeSnapshots(out, result.index, result.projects, catalog);
+    await writeSnapshots(out, result.index, result.projects, catalog, result.discovery);
     const golden = 'fixtures/snapshots';
     const files = [
       'index.json',
@@ -117,14 +117,15 @@ describe('mock collection', () => {
 
   it('keeps collecting other repositories when one fails (partial data)', async () => {
     const { index } = await mockRun();
-    expect(index.run.repositories).toMatchObject({ total: 11, unavailable: 2 });
-    expect(index.projects.map((p) => p.overall)).toEqual(['amber', 'red', 'grey']);
+    expect(index.run.repositories).toMatchObject({ total: 12, unavailable: 2 });
+    expect(index.projects.map((p) => p.overall)).toEqual(['amber', 'amber', 'red', 'grey']);
     expect(index.run.capabilities.secretScanning).toBe('partial');
   });
 });
 
 describe('sanitisation end to end', () => {
   const catalog = CatalogSchema.parse({
+    discovery: { enabled: true, owners: ['example-org'] },
     projects: [
       {
         id: 'canary',
@@ -180,29 +181,55 @@ describe('sanitisation end to end', () => {
       }),
     getLatestTag: async () => fail({ classification: 'not-found' }),
     getFile: async (_r, path) =>
-      path.endsWith('.json')
-        ? ok({
-            text: JSON.stringify({
-              schemaVersion: '1.0',
-              generatedAt: GOLDEN_NOW,
-              repository: 'example-org/canary-svc',
-              controls: {
-                containerScanning: {
-                  status: 'completed',
-                  tool: poison,
-                  critical: 0,
-                  reportUrl: url,
+      path === 'package.json'
+        ? ok({ text: JSON.stringify({ workspaces: ['apps/*'], description: poison }) })
+        : path.endsWith('.json')
+          ? ok({
+              text: JSON.stringify({
+                schemaVersion: '1.0',
+                generatedAt: GOLDEN_NOW,
+                repository: 'example-org/canary-svc',
+                controls: {
+                  containerScanning: {
+                    status: 'completed',
+                    tool: poison,
+                    critical: 0,
+                    reportUrl: url,
+                  },
                 },
-              },
+              }),
+            })
+          : fail({
+              classification: 'not-authorised',
+              httpStatus: 403,
+              message: `Bad credentials ${poison} Authorization: token abc`,
             }),
-          })
-        : fail({
-            classification: 'not-authorised',
-            httpStatus: 403,
-            message: `Bad credentials ${poison} Authorization: token abc`,
-          }),
     getSubmoduleRef: async () => fail({ classification: 'not-found' }),
     listTags: async () => ok([{ name: poison, sha: 'e'.repeat(40) }]),
+    listOwnerRepositories: async () =>
+      ok([
+        {
+          owner: 'example-org',
+          name: 'canary-mono',
+          fullName: 'example-org/canary-mono',
+          htmlUrl: url,
+          visibility: 'public',
+          defaultBranch: 'main',
+          archived: false,
+          updatedAt: GOLDEN_NOW,
+          topics: [poison],
+        },
+      ]),
+    listDirectory: async (_r, path) =>
+      ok(
+        path === ''
+          ? [{ name: 'package.json', type: 'file' }]
+          : [
+              { name: 'api', type: 'dir' },
+              { name: 'web', type: 'dir' },
+            ],
+      ),
+    listWorkflows: async () => ok([{ file: 'ci.yml', name: poison }]),
     compareCommits: async () => ok({ status: 'ahead', aheadBy: 1, behindBy: 0 }),
     listWorkflowRuns: async () =>
       ok([
@@ -277,7 +304,9 @@ describe('sanitisation end to end', () => {
     const { policies } = await loadConfig('config');
     const clock = fixedClock(GOLDEN_NOW);
     const result = await runCollection({ catalog, policies, provider: poisoned, clock });
-    const files = serialise(result.index, result.projects); // runs the strict schema + gate
+    // Strict schemas + gate, including catalog.json with the discovery proposals.
+    const files = serialise(result.index, result.projects, catalog, result.discovery);
+    expect(result.discovery?.proposals[0]).toMatchObject({ kind: 'monorepo' });
     const all = [...files.values()].join('\n');
     for (const canary of CANARIES) expect(all).not.toContain(canary);
     expect(all).not.toContain('access_token');
@@ -302,7 +331,7 @@ describe('sanitisation end to end', () => {
 describe('snapshot schema versions', () => {
   it('fails in a controlled way on an unsupported schemaVersion', async () => {
     const text = (await readFile('fixtures/snapshots/index.json', 'utf8')).replace(
-      '"schemaVersion": "1.1"',
+      '"schemaVersion": "1.2"',
       '"schemaVersion": "9.0"',
     );
     const r = validatePortfolio(text);
@@ -352,7 +381,7 @@ describe('repositories that are not accessible', () => {
         ),
       ).toBe(true);
     }
-    expect(result.index.run.repositories).toMatchObject({ total: 11, unavailable: 11 });
+    expect(result.index.run.repositories).toMatchObject({ total: 12, unavailable: 12 });
     expect(result.index.run.capabilities.actions).toBe('not-used');
   });
 });

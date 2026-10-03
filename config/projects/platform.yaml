@@ -1,0 +1,65 @@
+# yaml-language-server: $schema=../schema/project.schema.json
+#
+# Engineering Project Hub — project "platform" (SYNTHETIC demo data: "example-org" is fictional).
+# A MONOREPO: every component lives in the coordinator repository and is identified by its
+# directory (path). Versions come from prefixed tags ("api-v1.8.0"); alerts are attributed to
+# components by file path.
+
+id: platform
+name: Platform (monorepo)
+description: Synthetic monorepo with a web app, an API and a worker in one repository.
+businessUnit: Platform
+lifecycle: production
+
+coordinator:
+  repository: example-org/platform-mono
+  defaultBranch: main
+
+components:
+  - id: web
+    name: Web app
+    repository: example-org/platform-mono
+    path: apps/web
+    type: webapp
+    releaseTagPrefix: web-v
+    versionSource: release
+  - id: api
+    name: API
+    repository: example-org/platform-mono
+    path: services/api
+    type: service
+    releaseTagPrefix: api-v
+    versionSource: manifest
+  - id: worker
+    name: Worker
+    repository: example-org/platform-mono
+    path: services/worker
+    type: worker
+    releaseTagPrefix: worker-v
+    versionSource: release
+
+environments:
+  - { id: dev, name: DEV }
+  - { id: prod, name: PROD }
+
+trackedWorkflows:
+  - id: ci
+    name: Continuous Integration
+    file: ci.yml
+    critical: true
+    appliesTo: [coordinator]
+  - id: release
+    name: Release
+    file: release.yml
+    critical: true
+    appliesTo: [coordinator]
+
+securityControls:
+  codeScanning: { required: true }
+  secretScanning: { required: true }
+  dependabot: { required: true }
+  containerScanning: { required: false }
+  iacScanning: { required: false }
+  dast: { required: false }
+  sbom: { required: false }
+  artifactSignature: { required: false }

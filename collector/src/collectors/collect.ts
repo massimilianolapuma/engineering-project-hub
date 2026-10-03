@@ -88,6 +88,8 @@ export interface RawProjectData {
   submodules: GitmoduleEntry[];
   submoduleRefs: Map<string, ProviderResult<SubmoduleRefDTO>>;
   pins: PinData[];
+  /** Tags of repositories whose components use a releaseTagPrefix (monorepos), by component. */
+  componentTags: Map<string, ProviderResult<TagDTO[]>>;
   workflows: WorkflowData[];
 }
 
@@ -238,6 +240,21 @@ export async function collectProject(
     }),
   );
 
+  // Components versioned by tag prefix (typical in monorepos: "api-v1.2.0"): read the tags.
+  const componentTags = new Map<string, ProviderResult<TagDTO[]>>();
+  await Promise.all(
+    config.components
+      .filter((c) => c.releaseTagPrefix)
+      .map(async (c) => {
+        const data = repos.find((r) => r.componentId === c.id);
+        if (!data?.repo.ok) return;
+        componentTags.set(
+          c.id,
+          await call(ctx, `tags:${c.repository}`, () => p.listTags(c.repository)),
+        );
+      }),
+  );
+
   // Resolve the SHA pinned for each linked component into a tag (or a distance from the
   // latest release when the SHA is not tagged).
   const pins: PinData[] = [];
@@ -303,5 +320,15 @@ export async function collectProject(
     repos.findIndex((r) => r.componentId === w.componentId);
   workflows.sort((a, b) => order(a) - order(b));
 
-  return { config, repos, manifest, gitmodules, submodules, submoduleRefs, pins, workflows };
+  return {
+    config,
+    repos,
+    manifest,
+    gitmodules,
+    submodules,
+    submoduleRefs,
+    pins,
+    componentTags,
+    workflows,
+  };
 }

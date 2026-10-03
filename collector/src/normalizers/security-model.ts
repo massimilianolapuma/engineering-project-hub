@@ -39,6 +39,8 @@ function classification(data: RepoData): {
 export function toFindings(
   ctx: BuildContext,
   data: RepoData,
+  /** Monorepos: maps the alert's file path to the component owning that directory. */
+  componentOf: (path: string | null | undefined) => string = () => data.componentId,
 ): { findings: SecurityFinding[]; withheld: boolean } {
   const findings: SecurityFinding[] = [];
   const reveal = isPublicDetail(ctx, data);
@@ -55,6 +57,7 @@ export function toFindings(
       const sev = codeScanningSeverity(a.securitySeverityLevel, a.ruleSeverity);
       findings.push({
         ...common,
+        componentId: componentOf(a.path),
         id: `${data.repository}#code-scanning#${a.number}`,
         source: 'github-code-scanning',
         category: 'code',
@@ -77,6 +80,7 @@ export function toFindings(
       const title = [a.packageName, a.summary].filter(Boolean).join(': ');
       findings.push({
         ...common,
+        componentId: componentOf(a.manifestPath),
         id: `${data.repository}#dependabot#${a.number}`,
         source: 'github-dependabot',
         category: 'dependency',

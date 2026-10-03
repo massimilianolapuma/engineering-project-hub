@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "discovery": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "type": "boolean"
+        },
+        "owners": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$"
+          }
+        },
+        "includePrivate": {
+          "default": false,
+          "type": "boolean"
+        },
+        "includeForks": {
+          "default": false,
+          "type": "boolean"
+        },
+        "includeArchived": {
+          "default": false,
+          "type": "boolean"
+        },
+        "maxRepositories": {
+          "default": 200,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "topics": {
+          "default": false,
+          "type": "boolean"
+        },
+        "customProperties": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Repository discovery (`config/catalog.yaml`): the collector scans the configured owners (public repositories only while the site is public) and proposes coordinators (`.gitmodules`), monorepos (npm/yarn/pnpm workspaces, lerna, `go.work`, Cargo, turbo/nx) and single repositories, with their workflows. Proposals are published in `catalog.json` and never applied automatically.
+- Catalog stored one file per project (`config/projects/<id>.yaml`); the legacy `config/projects.yaml` is still read. The catalog editor proposes changes as pull requests on GitHub (new / edit / delete file pages), so the saved configuration is restored on every run (ADR 0004).
+- Monorepo support: components with a `path` inside the coordinator repository, versions from prefixed tags (`releaseTagPrefix`), alerts attributed to components by file path, repository-level data evaluated once per repository. Single-repository projects (no components).
+- Demo: `platform` monorepo project and `docs-site` discovery proposal (synthetic).
+
+### Changed
+
+- Snapshot `schemaVersion` 1.2 (component `path`, discovery in `catalog.json`).
+
 ### Fixed
 
 - Repositories that cannot be read (e.g. 404 from a wrong catalog) no longer turn their skipped calls into "workflow missing" or "status file missing": workflows, controls and the manifest are Unknown, so Delivery, Coverage and Overall are grey instead of amber. Skipped calls are not reported as extra errors and do not affect capability availability.

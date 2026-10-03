@@ -44,6 +44,14 @@ const blocking = s
     ]
   : [];
 const cov = s?.securityCoverage;
+const coordinatorRepo = s?.coordinator.repository.fullName.toLowerCase();
+const kindLabel = !s
+  ? ''
+  : s.components.length === 0
+    ? d.project.kindSingle
+    : s.components.every((c) => c.repository.fullName.toLowerCase() === coordinatorRepo)
+      ? d.project.kindMonorepo
+      : d.project.kindMulti;
 ---
 
 <Base i18n={i18n} title={s?.project.name ?? id} page={null} alternates={alternates} index={index}>
@@ -57,6 +65,10 @@ const cov = s?.securityCoverage;
           <h1>{s.project.name}</h1>
           <p class="lead">{s.project.description}</p>
           <dl class="meta-inline">
+            <div>
+              <dt>{d.project.kind}</dt>
+              <dd>{kindLabel}</dd>
+            </div>
             <div>
               <dt>{d.project.businessUnit}</dt>
               <dd>{s.project.businessUnit}</dd>
@@ -234,6 +246,7 @@ const cov = s?.securityCoverage;
                   <th scope="row" data-label={d.common.component}>
                     {c.name}
                     <span class="sub">{d.componentType[c.type]}</span>
+                    {c.path && <code class="sub">{c.path}/</code>}
                   </th>
                   <td data-label={d.common.repository}>
                     {c.repository.status === 'ok' ? (

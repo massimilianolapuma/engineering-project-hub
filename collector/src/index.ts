@@ -57,7 +57,13 @@ async function main(): Promise<number> {
     `Collecting ${catalog.projects.length} project(s) · source=${source} · auth=${provider.authenticationMode}`,
   );
   const result = await runCollection({ catalog, policies, provider, clock });
-  const report = await writeSnapshots(values.out, result.index, result.projects, catalog);
+  const report = await writeSnapshots(
+    values.out,
+    result.index,
+    result.projects,
+    catalog,
+    result.discovery,
+  );
 
   for (const p of result.index.projects)
     console.log(

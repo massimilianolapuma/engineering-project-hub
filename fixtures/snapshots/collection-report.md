@@ -6,12 +6,13 @@
 | Data source | mock |
 | Authentication | mock |
 | Duration | 0 ms |
-| Repositories | 11 total · 6 ok · 3 with errors · 2 unavailable |
+| Repositories | 12 total · 7 ok · 3 with errors · 2 unavailable |
 
 ### Projects
 
 | Project | Overall | Collection errors |
 |---|---|---|
+| platform | amber | 0 |
 | project-alpha | amber | 0 |
 | project-beta | red | 3 |
 | project-gamma | grey | 2 |

@@ -325,6 +325,10 @@ export const it: Dict = {
     blocking: 'Componente bloccante: {component}',
     noComponents: 'Nessun componente configurato.',
     backToPortfolio: 'Torna al portfolio',
+    kind: 'Struttura',
+    kindMulti: 'Multi-repository',
+    kindMonorepo: 'Monorepo',
+    kindSingle: 'Repository singolo',
   },
   workflowsPage: {
     title: 'Workflow',
@@ -420,11 +424,11 @@ export const it: Dict = {
   catalogEditor: {
     title: 'Editor del catalogo',
     intro:
-      'Seleziona i progetti e collega coordinator, componenti e submodule. L’editor genera config/projects.yaml nel browser; poi la modifica si committa su GitHub.',
+      'Seleziona i progetti e collega coordinator, componenti, submodule o cartelle di un monorepo, oppure parti da un repository scoperto. L’editor genera un file per progetto (config/projects/<id>.yaml) nel browser e ogni modifica si propone su GitHub come pull request.',
     readOnly:
-      'Questa pagina non salva nulla e non chiama le API di GitHub: al commit GitHub applica i tuoi permessi. Ricarica la pagina per annullare le modifiche.',
+      'Questa pagina non salva nulla e non chiama le API di GitHub: quando proponi una modifica GitHub applica i tuoi permessi. Ricarica la pagina per annullare le modifiche.',
     noscript:
-      'L’editor del catalogo richiede JavaScript. Puoi comunque modificare direttamente config/projects.yaml.',
+      'L’editor del catalogo richiede JavaScript. Puoi comunque modificare direttamente config/projects/<id>.yaml.',
     projects: 'Progetti',
     newProject: 'Nuovo progetto',
     reset: 'Annulla modifiche',
@@ -438,13 +442,26 @@ export const it: Dict = {
     general: 'Generale',
     coordinator: 'Coordinator',
     coordinatorHelp:
-      'Repository che fissa i componenti come submodule Git e può contenere il release manifest.',
+      'Repository principale del progetto: fissa i componenti come submodule Git, li contiene come cartelle (monorepo) o è l’unico repository. Può contenere il release manifest.',
     components: 'Componenti',
     componentsHelp:
-      'Repository che compongono il progetto. Un componente è collegato a un submodule del coordinator tramite il suo percorso.',
+      'Parti del progetto: un submodule del coordinator (percorso del submodule) o una cartella del repository coordinator (percorso, monorepo). Lascia vuoto per un progetto a repository singolo.',
     componentN: 'Componente {n}',
     addComponent: 'Aggiungi componente',
     removeComponent: 'Rimuovi componente {n}',
+    noComponents:
+      'Nessun componente: progetto a repository singolo (il coordinator è l’unico repository).',
+    projectType: 'Tipo di progetto',
+    projectKind: {
+      multi: 'Multi-repository',
+      monorepo: 'Monorepo',
+      single: 'Repository singolo',
+    },
+    projectKindHelp: {
+      multi: 'I componenti stanno in repository propri, di solito submodule del coordinator.',
+      monorepo: 'Ogni componente è una cartella del repository coordinator.',
+      single: 'Il coordinator è l’unico repository.',
+    },
     environments: 'Ambienti',
     environmentN: 'Ambiente {n}',
     addEnvironment: 'Aggiungi ambiente',
@@ -469,6 +486,7 @@ export const it: Dict = {
       securityStatusPath: 'File di stato sicurezza',
       notApplicableControls: 'Controlli non applicabili',
       type: 'Tipo',
+      path: 'Percorso',
       submodulePath: 'Percorso del submodule',
       releaseTagPrefix: 'Prefisso dei tag di release',
       versionSource: 'Fonte della versione',
@@ -483,6 +501,7 @@ export const it: Dict = {
       manifestPath: 'Vuoto = release-manifest.yaml',
       securityStatusPath: 'Vuoto = .security/project-security-status.json',
       submodulePath: 'Percorso del submodule nel coordinator: collega i due.',
+      path: 'Cartella all’interno del repository (monorepo). Obbligatoria se il repository è il coordinator.',
       releaseTagPrefix: 'Rimosso dai tag prima del confronto (es. backend-v).',
       file: 'Nome del file in .github/workflows, es. ci.yml',
       appliesTo: 'Nessuna selezione = tutti i componenti.',
@@ -513,20 +532,86 @@ export const it: Dict = {
     validation: 'Validazione',
     valid: 'Il catalogo è valido.',
     invalid: '{count} problemi da correggere: la CI rifiuta un catalogo non valido.',
-    output: 'config/projects.yaml generato',
-    outputHelp: 'L’intero catalogo (tutti i progetti). I valori predefiniti e vuoti sono omessi.',
+    output: 'File di progetto generato',
+    outputHelp:
+      'Contenuto del file del progetto selezionato (un file per progetto). I valori predefiniti e vuoti sono omessi.',
     copy: 'Copia YAML',
     copied: 'YAML copiato negli appunti.',
     copyFallback: 'Appunti non disponibili: lo YAML è selezionato, premi Ctrl+C (⌘C su macOS).',
-    download: 'Scarica projects.yaml',
-    downloaded: 'projects.yaml scaricato.',
-    openEditor: 'Apri config/projects.yaml nell’editor di GitHub',
+    download: 'Scarica {file}',
+    downloaded: '{file} scaricato.',
+    downloadAll: 'Scarica tutto (projects.yaml legacy)',
+    downloadAllHelp:
+      'Alternativa: tutti i progetti in un unico config/projects.yaml legacy, ancora accettato dal collector. Usalo al posto dei file in config/projects/, mai insieme (lo stesso id due volte è un errore).',
     howTo: 'Applicare la modifica',
-    step1: 'Copia lo YAML o scarica projects.yaml.',
-    step2: 'Apri config/projects.yaml nell’editor di GitHub e sostituiscine il contenuto.',
-    step3: 'Committa su un nuovo branch e apri una pull request.',
+    flowNote:
+      'Il portale è in sola lettura: le modifiche si propongono come pull request e la CI le applica dopo il merge; alla successiva esecuzione viene sempre ripristinata la configurazione salvata.',
+    step1: 'Correggi ogni problema di validazione: la CI rifiuta un file di progetto non valido.',
+    step2:
+      'In Modifiche in sospeso usa l’azione GitHub di ogni progetto: un nuovo file si apre precompilato, per un file esistente lo YAML viene copiato (seleziona il contenuto del file e incolla), un progetto rimosso apre la pagina di eliminazione.',
+    step2Manual:
+      'Copia o scarica ogni file modificato e committalo in config/projects/ (elimina i file dei progetti rimossi).',
+    step3: 'Scegli "Create a new branch and start a pull request" e apri la pull request.',
     step4:
-      'La CI valida il catalogo (npm run validate:config); dopo il merge la successiva esecuzione del collector lo usa.',
+      'La CI valida la configurazione (npm run validate:config); dopo il merge la successiva esecuzione del collector la usa.',
+    pending: 'Modifiche in sospeso',
+    pendingIntro:
+      'File di progetto diversi dal catalogo pubblicato. Ogni file si propone come modifica a sé.',
+    noPending: 'Nessuna modifica: l’editor corrisponde al catalogo pubblicato.',
+    changeKind: { new: 'Nuovo', modified: 'Modificato', removed: 'Rimosso' },
+    proposeNew: 'Proponi su GitHub (nuovo file)',
+    editOnGithub: 'Modifica su GitHub',
+    deleteOnGithub: 'Elimina su GitHub',
+    copyFile: 'Copia {file}',
+    copiedFile: 'YAML di {file} copiato negli appunti.',
+    editCopied:
+      'YAML di {file} copiato: nell’editor di GitHub seleziona tutto il contenuto del file e incolla.',
+    editCopyFailed:
+      'Appunti non disponibili: copia lo YAML di {file} dal pannello del file generato, poi incollalo nell’editor di GitHub.',
+    newOpened:
+      'GitHub apre {file} precompilato: scegli "Create a new branch and start a pull request".',
+    newTooLong:
+      'Lo YAML di {file} è troppo lungo per un link precompilato: è stato copiato, incollalo nell’editor di GitHub.',
+    deleteOpened:
+      'GitHub apre l’eliminazione di {file}: committala su un nuovo branch e apri una pull request.',
+    fixFirst: 'Correggi i problemi di validazione di questo progetto prima di proporlo.',
+    discovery: 'Repository scoperti',
+    discoveryIntro:
+      'Proposte dall’ultima esecuzione del collector: {scanned} repository analizzati (owner: {owners}). Non viene aggiunto nulla finché non si salva un file di progetto.',
+    discoveryDisabled:
+      'La discovery è disattivata. Attivala in config/catalog.yaml (discovery.enabled: true e gli owner da analizzare) per ricevere proposte qui.',
+    noProposals: 'Nessuna proposta dall’ultima esecuzione.',
+    proposalKind: {
+      coordinator: 'Coordinator',
+      monorepo: 'Monorepo',
+      single: 'Repository singolo',
+    },
+    proposalGroup: {
+      coordinator: 'Coordinator',
+      monorepo: 'Monorepo',
+      single: 'Repository singoli',
+    },
+    proposalComponents: '{count} componente/i',
+    proposalNoComponents: 'Nessun componente',
+    alreadyInCatalog: 'Già nel catalogo: {name}',
+    inEditor: 'Aggiunto all’editor: {name}',
+    compareMerge: 'Confronta / unisci',
+    addAsProject: 'Aggiungi come progetto',
+    proposalImported:
+      'Progetto {id} aggiunto da {repository}: verificalo, poi proponilo su GitHub. Non è ancora salvato nulla.',
+    discoveryClaimed:
+      '{count} repository sono submodule di un coordinator scoperto e non vengono proposti separatamente.',
+    discoveryErrors: 'Repository che non è stato possibile analizzare',
+    mergeTitle: 'Confronto con {repository}',
+    mergeIntro:
+      'Componenti e workflow monitorati del repository scoperto che il progetto non ha ancora.',
+    mergeNothing:
+      'Niente da unire: il progetto ha già tutti i componenti e i workflow della proposta.',
+    mergeComponents: 'Componenti mancanti',
+    mergeWorkflows: 'Workflow mancanti',
+    mergeAdd: 'Aggiungi',
+    mergeAdded: '{id} aggiunto a {name}.',
+    mergeClose: 'Chiudi il confronto',
   },
   errorsPage: {
     title: 'Dati snapshot non disponibili',

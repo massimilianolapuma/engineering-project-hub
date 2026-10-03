@@ -6,6 +6,7 @@ import {
   ProjectSnapshotSchema,
   type Catalog,
   type CatalogSnapshot,
+  type DiscoveryResult,
   type CollectionError,
   type PortfolioIndex,
   type ProjectSnapshot,
@@ -32,6 +33,7 @@ export function buildCatalogSnapshot(
   catalog: Catalog,
   index: PortfolioIndex,
   projects: ProjectSnapshot[],
+  discovery: DiscoveryResult | null = null,
 ): CatalogSnapshot {
   return {
     schemaVersion: index.schemaVersion,
@@ -43,6 +45,7 @@ export function buildCatalogSnapshot(
         .filter((s) => s.association === 'unmapped')
         .map((s) => ({ path: s.path, repository: s.repository })),
     })),
+    discovery,
   };
 }
 
@@ -50,6 +53,7 @@ export function serialise(
   index: PortfolioIndex,
   projects: ProjectSnapshot[],
   catalog?: Catalog,
+  discovery: DiscoveryResult | null = null,
 ): Map<string, string> {
   const files = new Map<string, string>();
   const idx = PortfolioIndexSchema.safeParse(index);
@@ -70,7 +74,9 @@ export function serialise(
     files.set(`projects/${p.project.id}.json`, `${JSON.stringify(parsed.data, null, 2)}\n`);
   }
   if (catalog) {
-    const parsed = CatalogSnapshotSchema.safeParse(buildCatalogSnapshot(catalog, index, projects));
+    const parsed = CatalogSnapshotSchema.safeParse(
+      buildCatalogSnapshot(catalog, index, projects, discovery),
+    );
     if (!parsed.success) {
       throw new SnapshotValidationError(
         'catalog.json does not match the schema:',
@@ -161,8 +167,9 @@ export async function writeSnapshots(
   index: PortfolioIndex,
   projects: ProjectSnapshot[],
   catalog?: Catalog,
+  discovery: DiscoveryResult | null = null,
 ): Promise<CollectionReport> {
-  const files = serialise(index, projects, catalog);
+  const files = serialise(index, projects, catalog, discovery);
   const report = buildReport(index, projects);
   const reportJson = `${JSON.stringify(report, null, 2)}\n`;
   const reportMd = reportMarkdown(report);

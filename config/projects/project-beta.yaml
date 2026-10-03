@@ -1,0 +1,69 @@
+# yaml-language-server: $schema=../schema/project.schema.json
+#
+# Engineering Project Hub — project "project-beta" (SYNTHETIC demo data: "example-org" is fictional).
+# One file per project: the catalog editor (/catalog/) proposes changes as a pull request
+# on this file. Reference: docs/configuration.md (EN) · docs/it/configuration.md (IT)
+
+id: project-beta
+name: Project Beta
+description: Synthetic logistics platform with a failing pipeline and restricted security data.
+businessUnit: Logistics
+lifecycle: production
+
+coordinator:
+  repository: example-org/project-beta-coordinator
+  defaultBranch: main
+  notApplicableControls: [containerScanning]
+
+components:
+  - id: api
+    name: API service
+    repository: example-org/project-beta-api
+    type: service
+    defaultBranch: main
+    submodulePath: services/api
+  - id: web
+    name: Web console
+    repository: example-org/project-beta-web
+    type: webapp
+    defaultBranch: main
+    submodulePath: apps/web
+  - id: helm
+    name: Helm deployment
+    repository: example-org/project-beta-helm
+    type: deployment
+    defaultBranch: main
+    submodulePath: deploy/helm
+    notApplicableControls: [containerScanning]
+
+environments:
+  - { id: dev, name: DEV }
+  - { id: uat, name: UAT }
+  - { id: prod, name: PROD }
+
+trackedWorkflows:
+  - id: ci
+    name: Continuous Integration
+    file: ci-main.yml
+    critical: true
+    appliesTo: [api, web]
+  - id: release
+    name: Release
+    file: rel-release.yml
+    critical: true
+    appliesTo: [coordinator, api, web]
+  - id: deploy
+    name: Deployment
+    file: cd.yml
+    critical: true
+    appliesTo: [helm]
+
+securityControls:
+  codeScanning: { required: true }
+  secretScanning: { required: true }
+  dependabot: { required: true }
+  containerScanning: { required: true }
+  iacScanning: { required: false }
+  dast: { required: false }
+  sbom: { required: false }
+  artifactSignature: { required: false }

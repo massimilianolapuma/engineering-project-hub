@@ -3,9 +3,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { CONTROL_IDS } from '@model/index';
 import ErrorState from '../../components/ErrorState.astro';
-import ExtLink from '../../components/ExtLink.astro';
 import Base from '../../layouts/Base.astro';
-import { githubEditUrl, jsonForScript } from '../../lib/catalog-editor-core';
+import { githubRepoFromUrl, jsonForScript } from '../../lib/catalog-editor-core';
 import { loadCatalogSnapshot } from '../../lib/data';
 import { pageContext } from '../../lib/page';
 import { localeParams } from '../../lib/routes';
@@ -17,22 +16,32 @@ const { d } = i18n;
 const c = d.catalogEditor;
 const catalog = loadCatalogSnapshot();
 
-/** GitHub web editor of config/projects.yaml, derived from package.json (hidden if unknown). */
-function readEditUrl(): string | null {
+/**
+ * "owner/repo" of this portal's own repository, from package.json: the GitHub web editor links
+ * (new / edit / delete a project file) are built from it. Hidden when unknown.
+ */
+function readGithubRepo(): string | null {
   try {
     const pkg = JSON.parse(readFileSync(resolve('package.json'), 'utf8')) as {
       repository?: string | { url?: string };
     };
-    return githubEditUrl(typeof pkg.repository === 'string' ? pkg.repository : pkg.repository?.url);
+    return githubRepoFromUrl(
+      typeof pkg.repository === 'string' ? pkg.repository : pkg.repository?.url,
+    );
   } catch {
     return null;
   }
 }
-const editUrl = readEditUrl();
+const githubRepo = readGithubRepo();
 
 /* Data and strings for the client editor, as non-executable JSON (CSP: no inline code). */
 const editorData = catalog.ok
-  ? jsonForScript({ catalog: catalog.data.catalog, suggestions: catalog.data.suggestions })
+  ? jsonForScript({
+      catalog: catalog.data.catalog,
+      suggestions: catalog.data.suggestions,
+      discovery: catalog.data.discovery,
+      githubRepo,
+    })
   : '';
 const editorStrings = jsonForScript({
   ...c,
@@ -40,6 +49,8 @@ const editorStrings = jsonForScript({
   componentType: d.componentType,
   control: d.control,
   controlIds: CONTROL_IDS,
+  errorClass: d.errorClass,
+  opensNewTab: d.common.opensNewTab,
 });
 ---
 
@@ -73,6 +84,12 @@ const editorStrings = jsonForScript({
               </button>
             </div>
           </section>
+          <section class="card ce-panel" aria-labelledby="ce-h-discovery">
+            <h2 id="ce-h-discovery" class="h3">
+              {c.discovery}
+            </h2>
+            <div data-ce-discovery></div>
+          </section>
           <section class="card ce-panel" aria-labelledby="ce-h-suggestions">
             <h2 id="ce-h-suggestions" class="h3">
               {c.suggestions}
@@ -87,6 +104,8 @@ const editorStrings = jsonForScript({
           <h2 id="ce-h-form" class="ce__title" data-ce-form-title>
             {c.title}
           </h2>
+          <p class="ce-kind" data-ce-kind></p>
+          <div data-ce-merge></div>
           <div data-ce-form-body></div>
         </form>
 
@@ -97,12 +116,21 @@ const editorStrings = jsonForScript({
             </h2>
             <div class="ce-validation" aria-live="polite" data-ce-validation></div>
           </section>
+          <section class="card ce-panel" aria-labelledby="ce-h-pending">
+            <h2 id="ce-h-pending" class="h3">
+              {c.pending}
+            </h2>
+            <p class="ce-flow">{c.flowNote}</p>
+            <p class="note">{c.pendingIntro}</p>
+            <div data-ce-pending></div>
+            <p class="ce-status" role="status" data-ce-pending-status></p>
+          </section>
           <section class="card ce-panel" aria-labelledby="ce-h-output">
             <h2 id="ce-h-output" class="h3">
               <label for="ce-yaml">{c.output}</label>
             </h2>
             <p class="note" id="ce-yaml-help">
-              {c.outputHelp}
+              {c.outputHelp} <code data-ce-file></code>
             </p>
             <textarea
               id="ce-yaml"
@@ -119,23 +147,28 @@ const editorStrings = jsonForScript({
                 {c.copy}
               </button>
               <button type="button" class="btn" data-ce-download>
-                {c.download}
+                {c.download.replace('{file}', 'project.yaml')}
               </button>
             </div>
             <p class="ce-status" role="status" data-ce-status></p>
+            <div class="ce-legacy">
+              <button
+                type="button"
+                class="btn btn--ghost"
+                data-ce-download-all
+                aria-describedby="ce-legacy-help"
+              >
+                {c.downloadAll}
+              </button>
+              <p class="note" id="ce-legacy-help">
+                {c.downloadAllHelp}
+              </p>
+            </div>
             <h3 class="h3">{c.howTo}</h3>
             <ol class="ce-steps">
               <li>{c.step1}</li>
-              <li>
-                {c.step2}
-                {editUrl && (
-                  <>
-                    {' '}
-                    <ExtLink href={editUrl} i18n={i18n} label={c.openEditor} class="ce-editlink" />
-                  </>
-                )}
-              </li>
-              <li>{c.step3}</li>
+              <li>{githubRepo ? c.step2 : c.step2Manual}</li>
+              {githubRepo && <li>{c.step3}</li>}
               <li>{c.step4}</li>
             </ol>
           </section>

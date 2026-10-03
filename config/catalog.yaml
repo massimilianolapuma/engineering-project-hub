@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=./schema/catalog-settings.schema.json
+#
+# Engineering Project Hub — catalog settings.
+# Projects live in config/projects/<id>.yaml (one file each).
+# Discovery scans the owners below and publishes *proposals* (coordinators, monorepos,
+# single repositories) to the catalog editor; nothing is added until a project file is saved.
+# Reference: docs/configuration.md (EN) · docs/it/configuration.md (IT)
+
+discovery:
+  enabled: true
+  owners: [example-org] # SYNTHETIC demo owner (mock data)
+  includePrivate: false # forced to false while publication.audience is "public"
+  includeForks: false
+  includeArchived: false
+  maxRepositories: 200

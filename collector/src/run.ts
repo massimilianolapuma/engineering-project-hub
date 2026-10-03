@@ -6,12 +6,14 @@ import {
   type Capability,
   type Catalog,
   type CollectionError,
+  type DiscoveryResult,
   type Policies,
   type PortfolioIndex,
   type ProjectSnapshot,
   type RunMetadata,
 } from '@model/index';
 import { buildProjectSnapshot, toProjectSummary } from './build-snapshot';
+import { discover } from './discovery/discover';
 import { collectProject, type CollectContext, type RawProjectData } from './collectors/collect';
 import type { ProviderResult, SourceProvider } from './providers/types';
 import { createLimiter } from './util/concurrency';
@@ -40,6 +42,8 @@ export interface RunOptions {
 export interface RunResult {
   index: PortfolioIndex;
   projects: ProjectSnapshot[];
+  /** Discovery proposals (null when discovery is disabled). */
+  discovery: DiscoveryResult | null;
 }
 
 /** Aggregates per-call outcomes into one availability value per capability. */
@@ -90,6 +94,7 @@ export async function runCollection(opts: RunOptions): Promise<RunResult> {
 
   // One project failing unexpectedly must not stop the others.
   const raws = await Promise.all(catalog.projects.map((p) => collectProject(ctx, p)));
+  const discovery = await discover(ctx, catalog, policies);
   const now = clock();
   const projects = raws.map((raw) => buildProjectSnapshot(raw, policies, now));
   const finishedAt = clock();
@@ -148,5 +153,5 @@ export async function runCollection(opts: RunOptions): Promise<RunResult> {
     run,
     projects: projects.map(toProjectSummary),
   };
-  return { index, projects };
+  return { index, projects, discovery };
 }

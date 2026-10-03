@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test('portfolio lists projects with separate health dimensions and a legend', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1, name: 'Portfolio' })).toBeVisible();
-  await expect(page.locator('tr[data-project]')).toHaveCount(3);
+  await expect(page.locator('tr[data-project]')).toHaveCount(4);
   await expect(page.getByRole('heading', { name: 'Legend' })).toBeVisible();
 });
 
@@ -15,7 +15,7 @@ test('filters are keyboard accessible and narrow the list', async ({ page }) => 
   await page.getByLabel('Search projects').fill('');
   await page.getByLabel('Overall health').selectOption('grey');
   await expect(page.locator('tr[data-project]:not([hidden])')).toHaveCount(1);
-  await expect(page.getByText('1 of 3 projects')).toBeVisible();
+  await expect(page.getByText('1 of 4 projects')).toBeVisible();
 });
 
 test('navigates the main views in both languages', async ({ page }) => {

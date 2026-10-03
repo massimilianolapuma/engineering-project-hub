@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.1",
+  "schemaVersion": "1.2",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-alpha",
@@ -104,6 +104,7 @@
           "committedAt": "2026-01-15T10:00:00.000Z"
         }
       },
+      "path": null,
       "versionSource": "auto",
       "declaredVersion": "1.4.0",
       "latestRelease": {
@@ -160,6 +161,7 @@
           "committedAt": "2026-01-15T07:00:00.000Z"
         }
       },
+      "path": null,
       "versionSource": "auto",
       "declaredVersion": "2.1.0",
       "latestRelease": {
@@ -216,6 +218,7 @@
           "committedAt": "2026-01-14T12:00:00.000Z"
         }
       },
+      "path": null,
       "versionSource": "auto",
       "declaredVersion": "1.2.0",
       "latestRelease": {
@@ -272,6 +275,7 @@
           "committedAt": "2026-01-14T12:00:00.000Z"
         }
       },
+      "path": null,
       "versionSource": "release",
       "declaredVersion": "0.9.0",
       "latestRelease": {

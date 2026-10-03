@@ -116,7 +116,16 @@ describe('static site', () => {
       ).toContain('tools/legacy-scripts');
       expect(html).toContain('id="catalog-i18n"');
       expect(html).toContain('data-catalog-editor');
-      expect(html).toContain('/edit/main/config/projects.yaml');
+      // GitHub web-editor links (new / edit / delete config/projects/<id>.yaml) are built in
+      // the browser from the repository slug of package.json; discovery proposals are embedded.
+      const extra = data as unknown as {
+        githubRepo: string | null;
+        discovery: { proposals: { repository: string }[] } | null;
+      };
+      expect(extra.githubRepo).toMatch(/^[\w.-]+\/[\w.-]+$/);
+      expect(extra.discovery?.proposals.map((p) => p.repository)).toContain(
+        'example-org/docs-site',
+      );
       // JSON blocks are data, not code: no other inline <script> may exist (CSP script-src 'self').
       expect(html).not.toMatch(/<script(?![^>]*\bsrc=)(?![^>]*type="application\/json")[^>]*>/);
       expect(html).toMatch(/<script type="module" src="[^"]*catalog[^"]*\.js"/);
@@ -132,7 +141,7 @@ describe('static site', () => {
     const idx = join(data, 'index.json');
     await writeFile(
       idx,
-      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.1"', '"schemaVersion": "9.0"'),
+      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.2"', '"schemaVersion": "9.0"'),
     );
     const out = join(work, 'dist-bad');
     await buildSite(data, out);

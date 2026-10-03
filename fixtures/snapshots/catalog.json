@@ -1,12 +1,122 @@
 {
-  "schemaVersion": "1.1",
+  "schemaVersion": "1.2",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "catalog": {
     "discovery": {
+      "enabled": true,
+      "owners": [
+        "example-org"
+      ],
+      "includePrivate": false,
+      "includeForks": false,
+      "includeArchived": false,
+      "maxRepositories": 200,
       "topics": false,
       "customProperties": false
     },
     "projects": [
+      {
+        "id": "platform",
+        "name": "Platform (monorepo)",
+        "description": "Synthetic monorepo with a web app, an API and a worker in one repository.",
+        "businessUnit": "Platform",
+        "lifecycle": "production",
+        "coordinator": {
+          "repository": "example-org/platform-mono",
+          "defaultBranch": "main",
+          "manifestPath": "release-manifest.yaml",
+          "notApplicableControls": []
+        },
+        "components": [
+          {
+            "id": "web",
+            "name": "Web app",
+            "repository": "example-org/platform-mono",
+            "path": "apps/web",
+            "type": "webapp",
+            "releaseTagPrefix": "web-v",
+            "notApplicableControls": [],
+            "versionSource": "release"
+          },
+          {
+            "id": "api",
+            "name": "API",
+            "repository": "example-org/platform-mono",
+            "path": "services/api",
+            "type": "service",
+            "releaseTagPrefix": "api-v",
+            "notApplicableControls": [],
+            "versionSource": "manifest"
+          },
+          {
+            "id": "worker",
+            "name": "Worker",
+            "repository": "example-org/platform-mono",
+            "path": "services/worker",
+            "type": "worker",
+            "releaseTagPrefix": "worker-v",
+            "notApplicableControls": [],
+            "versionSource": "release"
+          }
+        ],
+        "environments": [
+          {
+            "id": "dev",
+            "name": "DEV"
+          },
+          {
+            "id": "prod",
+            "name": "PROD"
+          }
+        ],
+        "trackedWorkflows": [
+          {
+            "id": "ci",
+            "name": "Continuous Integration",
+            "file": "ci.yml",
+            "critical": true,
+            "appliesTo": [
+              "coordinator"
+            ]
+          },
+          {
+            "id": "release",
+            "name": "Release",
+            "file": "release.yml",
+            "critical": true,
+            "appliesTo": [
+              "coordinator"
+            ]
+          }
+        ],
+        "securityControls": {
+          "codeScanning": {
+            "required": true
+          },
+          "secretScanning": {
+            "required": true
+          },
+          "dependabot": {
+            "required": true
+          },
+          "containerScanning": {
+            "required": false
+          },
+          "iacScanning": {
+            "required": false
+          },
+          "dast": {
+            "required": false
+          },
+          "sbom": {
+            "required": false
+          },
+          "artifactSignature": {
+            "required": false
+          }
+        },
+        "securityStatusPath": ".security/project-security-status.json"
+      },
       {
         "id": "project-alpha",
         "name": "Project Alpha",
@@ -334,6 +444,10 @@
   },
   "suggestions": [
     {
+      "projectId": "platform",
+      "unmappedSubmodules": []
+    },
+    {
       "projectId": "project-alpha",
       "unmappedSubmodules": []
     },
@@ -350,5 +464,375 @@
       "projectId": "project-gamma",
       "unmappedSubmodules": []
     }
-  ]
+  ],
+  "discovery": {
+    "owners": [
+      "example-org"
+    ],
+    "scanned": 10,
+    "proposals": [
+      {
+        "kind": "coordinator",
+        "repository": "example-org/project-alpha-coordinator",
+        "url": "https://github.com/example-org/project-alpha-coordinator",
+        "projectId": "project-alpha",
+        "evidence": [
+          ".gitmodules: 4 submodule(s)"
+        ],
+        "project": {
+          "id": "project-alpha-coordinator",
+          "name": "Project Alpha Coordinator",
+          "description": "Discovered coordinator repository (Git submodules).",
+          "businessUnit": "example-org",
+          "lifecycle": "development",
+          "coordinator": {
+            "repository": "example-org/project-alpha-coordinator",
+            "defaultBranch": "main",
+            "manifestPath": "release-manifest.yaml",
+            "notApplicableControls": []
+          },
+          "components": [
+            {
+              "id": "backend",
+              "name": "Backend",
+              "repository": "example-org/project-alpha-backend",
+              "type": "service",
+              "submodulePath": "services/backend",
+              "notApplicableControls": [],
+              "versionSource": "auto"
+            },
+            {
+              "id": "frontend",
+              "name": "Frontend",
+              "repository": "example-org/project-alpha-frontend",
+              "type": "webapp",
+              "submodulePath": "apps/frontend",
+              "notApplicableControls": [],
+              "versionSource": "auto"
+            },
+            {
+              "id": "worker",
+              "name": "Worker",
+              "repository": "example-org/project-alpha-worker",
+              "type": "worker",
+              "submodulePath": "services/worker",
+              "notApplicableControls": [],
+              "versionSource": "auto"
+            },
+            {
+              "id": "helm",
+              "name": "Helm",
+              "repository": "example-org/project-alpha-helm",
+              "type": "infrastructure",
+              "submodulePath": "deploy/helm",
+              "notApplicableControls": [],
+              "versionSource": "auto"
+            }
+          ],
+          "environments": [],
+          "trackedWorkflows": [],
+          "securityControls": {
+            "codeScanning": {
+              "required": true
+            },
+            "secretScanning": {
+              "required": true
+            },
+            "dependabot": {
+              "required": true
+            },
+            "containerScanning": {
+              "required": false
+            },
+            "iacScanning": {
+              "required": false
+            },
+            "dast": {
+              "required": false
+            },
+            "sbom": {
+              "required": false
+            },
+            "artifactSignature": {
+              "required": false
+            }
+          },
+          "securityStatusPath": ".security/project-security-status.json"
+        }
+      },
+      {
+        "kind": "coordinator",
+        "repository": "example-org/project-beta-coordinator",
+        "url": "https://github.com/example-org/project-beta-coordinator",
+        "projectId": "project-beta",
+        "evidence": [
+          ".gitmodules: 4 submodule(s)"
+        ],
+        "project": {
+          "id": "project-beta-coordinator",
+          "name": "Project Beta Coordinator",
+          "description": "Discovered coordinator repository (Git submodules).",
+          "businessUnit": "example-org",
+          "lifecycle": "development",
+          "coordinator": {
+            "repository": "example-org/project-beta-coordinator",
+            "defaultBranch": "main",
+            "manifestPath": "release-manifest.yaml",
+            "notApplicableControls": []
+          },
+          "components": [
+            {
+              "id": "web",
+              "name": "Web",
+              "repository": "example-org/project-beta-web",
+              "type": "webapp",
+              "submodulePath": "apps/web",
+              "notApplicableControls": [],
+              "versionSource": "auto"
+            },
+            {
+              "id": "helm",
+              "name": "Helm",
+              "repository": "example-org/project-beta-helm",
+              "type": "infrastructure",
+              "submodulePath": "deploy/helm",
+              "notApplicableControls": [],
+              "versionSource": "auto"
+            }
+          ],
+          "environments": [],
+          "trackedWorkflows": [],
+          "securityControls": {
+            "codeScanning": {
+              "required": true
+            },
+            "secretScanning": {
+              "required": true
+            },
+            "dependabot": {
+              "required": true
+            },
+            "containerScanning": {
+              "required": false
+            },
+            "iacScanning": {
+              "required": false
+            },
+            "dast": {
+              "required": false
+            },
+            "sbom": {
+              "required": false
+            },
+            "artifactSignature": {
+              "required": false
+            }
+          },
+          "securityStatusPath": ".security/project-security-status.json"
+        }
+      },
+      {
+        "kind": "monorepo",
+        "repository": "example-org/platform-mono",
+        "url": "https://github.com/example-org/platform-mono",
+        "projectId": "platform",
+        "evidence": [
+          "package.json workspaces: apps/*, services/*",
+          "3 workflow(s)"
+        ],
+        "project": {
+          "id": "platform-mono",
+          "name": "Platform Mono",
+          "description": "Discovered monorepo (workspace manifest).",
+          "businessUnit": "example-org",
+          "lifecycle": "development",
+          "coordinator": {
+            "repository": "example-org/platform-mono",
+            "defaultBranch": "main",
+            "manifestPath": "release-manifest.yaml",
+            "notApplicableControls": []
+          },
+          "components": [
+            {
+              "id": "web",
+              "name": "Web",
+              "repository": "example-org/platform-mono",
+              "path": "apps/web",
+              "type": "webapp",
+              "releaseTagPrefix": "web-v",
+              "notApplicableControls": [],
+              "versionSource": "release"
+            },
+            {
+              "id": "api",
+              "name": "Api",
+              "repository": "example-org/platform-mono",
+              "path": "services/api",
+              "type": "service",
+              "releaseTagPrefix": "api-v",
+              "notApplicableControls": [],
+              "versionSource": "release"
+            },
+            {
+              "id": "worker",
+              "name": "Worker",
+              "repository": "example-org/platform-mono",
+              "path": "services/worker",
+              "type": "worker",
+              "releaseTagPrefix": "worker-v",
+              "notApplicableControls": [],
+              "versionSource": "release"
+            }
+          ],
+          "environments": [],
+          "trackedWorkflows": [
+            {
+              "id": "ci",
+              "name": "CI",
+              "file": "ci.yml",
+              "critical": true,
+              "appliesTo": [
+                "coordinator"
+              ]
+            },
+            {
+              "id": "release",
+              "name": "Release",
+              "file": "release.yml",
+              "critical": true,
+              "appliesTo": [
+                "coordinator"
+              ]
+            },
+            {
+              "id": "docs",
+              "name": "Docs preview",
+              "file": "docs.yml",
+              "critical": false,
+              "appliesTo": [
+                "coordinator"
+              ]
+            }
+          ],
+          "securityControls": {
+            "codeScanning": {
+              "required": true
+            },
+            "secretScanning": {
+              "required": true
+            },
+            "dependabot": {
+              "required": true
+            },
+            "containerScanning": {
+              "required": false
+            },
+            "iacScanning": {
+              "required": false
+            },
+            "dast": {
+              "required": false
+            },
+            "sbom": {
+              "required": false
+            },
+            "artifactSignature": {
+              "required": false
+            }
+          },
+          "securityStatusPath": ".security/project-security-status.json"
+        }
+      },
+      {
+        "kind": "single",
+        "repository": "example-org/docs-site",
+        "url": "https://github.com/example-org/docs-site",
+        "projectId": null,
+        "evidence": [
+          "no submodules or workspace manifest",
+          "1 workflow(s)"
+        ],
+        "project": {
+          "id": "docs-site",
+          "name": "Docs Site",
+          "description": "Discovered single-repository project.",
+          "businessUnit": "example-org",
+          "lifecycle": "development",
+          "coordinator": {
+            "repository": "example-org/docs-site",
+            "defaultBranch": "main",
+            "manifestPath": "release-manifest.yaml",
+            "notApplicableControls": []
+          },
+          "components": [],
+          "environments": [],
+          "trackedWorkflows": [
+            {
+              "id": "pages",
+              "name": "Publish docs",
+              "file": "pages.yml",
+              "critical": false,
+              "appliesTo": [
+                "coordinator"
+              ]
+            }
+          ],
+          "securityControls": {
+            "codeScanning": {
+              "required": true
+            },
+            "secretScanning": {
+              "required": true
+            },
+            "dependabot": {
+              "required": true
+            },
+            "containerScanning": {
+              "required": false
+            },
+            "iacScanning": {
+              "required": false
+            },
+            "dast": {
+              "required": false
+            },
+            "sbom": {
+              "required": false
+            },
+            "artifactSignature": {
+              "required": false
+            }
+          },
+          "securityStatusPath": ".security/project-security-status.json"
+        }
+      }
+    ],
+    "claimed": [
+      {
+        "repository": "example-org/project-alpha-backend",
+        "by": "example-org/project-alpha-coordinator"
+      },
+      {
+        "repository": "example-org/project-alpha-frontend",
+        "by": "example-org/project-alpha-coordinator"
+      },
+      {
+        "repository": "example-org/project-alpha-worker",
+        "by": "example-org/project-alpha-coordinator"
+      },
+      {
+        "repository": "example-org/project-alpha-helm",
+        "by": "example-org/project-alpha-coordinator"
+      },
+      {
+        "repository": "example-org/project-beta-web",
+        "by": "example-org/project-beta-coordinator"
+      },
+      {
+        "repository": "example-org/project-beta-helm",
+        "by": "example-org/project-beta-coordinator"
+      }
+    ],
+    "errors": []
+  }
 }
