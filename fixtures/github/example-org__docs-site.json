@@ -1,0 +1,56 @@
+{
+  "repository": {
+    "owner": "example-org",
+    "name": "docs-site",
+    "fullName": "example-org/docs-site",
+    "htmlUrl": "https://github.com/example-org/docs-site",
+    "visibility": "public",
+    "defaultBranch": "main",
+    "archived": false,
+    "updatedAt": "@now-1d",
+    "topics": ["demo", "docs"]
+  },
+  "head": {
+    "sha": "c70d9a45428ecd146338de64dcd4fb162d2da86b",
+    "committedAt": "@now-5d"
+  },
+  "directories": {
+    "": [
+      {
+        "name": "docs",
+        "type": "dir"
+      },
+      {
+        "name": "mkdocs.yml",
+        "type": "file"
+      }
+    ]
+  },
+  "workflows": [
+    {
+      "file": "pages.yml",
+      "name": "Publish docs"
+    }
+  ],
+  "workflowRuns": {
+    "pages.yml": [
+      {
+        "id": 9503,
+        "runNumber": 40,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "headBranch": "main",
+        "event": "push",
+        "headSha": "9c9bb0014a269a0aa9f853844a7e0460b1c7b8b8",
+        "createdAt": "@now-5d",
+        "updatedAt": "@now-5d",
+        "htmlUrl": "https://github.com/example-org/docs-site/actions/runs/9503"
+      }
+    ]
+  },
+  "codeScanningAlerts": [],
+  "codeScanningAnalysis": null,
+  "dependabotAlerts": [],
+  "secretScanningAlerts": []
+}

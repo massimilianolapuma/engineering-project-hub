@@ -5,6 +5,11 @@
   "durationMs": 0,
   "projects": [
     {
+      "id": "platform",
+      "overall": "amber",
+      "errors": 0
+    },
+    {
       "id": "project-alpha",
       "overall": "amber",
       "errors": 0
@@ -21,8 +26,8 @@
     }
   ],
   "repositories": {
-    "total": 11,
-    "ok": 6,
+    "total": 12,
+    "ok": 7,
     "withErrors": 3,
     "unavailable": 2
   },

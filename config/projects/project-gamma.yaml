@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=../schema/project.schema.json
+#
+# Engineering Project Hub — project "project-gamma" (SYNTHETIC demo data: "example-org" is fictional).
+# One file per project: the catalog editor (/catalog/) proposes changes as a pull request
+# on this file. Reference: docs/configuration.md (EN) · docs/it/configuration.md (IT)
+
+id: project-gamma
+name: Project Gamma
+description: Synthetic internal tool whose repositories are not accessible to the collector.
+businessUnit: Internal tools
+lifecycle: development
+
+coordinator:
+  repository: example-org/project-gamma-coordinator
+
+components:
+  - id: service
+    name: Gamma service
+    repository: example-org/project-gamma-service
+    type: service
+
+environments:
+  - { id: dev, name: DEV }
+
+trackedWorkflows:
+  - id: ci
+    name: Continuous Integration
+    file: ci.yml
+    critical: true
+
+securityControls:
+  codeScanning: { required: true }
+  secretScanning: { required: true }
+  dependabot: { required: true }
+  containerScanning: { required: false }
+  iacScanning: { required: false }
+  dast: { required: false }
+  sbom: { required: false }
+  artifactSignature: { required: false }

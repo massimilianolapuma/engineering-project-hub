@@ -11,6 +11,8 @@ import {
   type CodeScanningAnalysisDTO,
   type CommitRefDTO,
   type CompareDTO,
+  type DirectoryEntryDTO,
+  type WorkflowDTO,
   type DependabotAlertDTO,
   type FileDTO,
   type ProviderResult,
@@ -128,6 +130,67 @@ export class GitHubProvider implements SourceProvider {
         updatedAt: data.pushed_at ?? data.updated_at ?? null,
         topics: data.topics ?? [],
       };
+    });
+  }
+
+  listOwnerRepositories(
+    owner: string,
+    opts: { includePrivate: boolean; max: number },
+  ): Promise<ProviderResult<RepositoryDTO[]>> {
+    type Repo = Awaited<ReturnType<Client['rest']['repos']['listForUser']>>['data'][number];
+    const map = (r: Repo): RepositoryDTO => ({
+      owner: r.owner.login,
+      name: r.name,
+      fullName: r.full_name,
+      htmlUrl: r.html_url,
+      visibility: r.visibility === 'internal' ? 'internal' : r.private ? 'private' : 'public',
+      defaultBranch: r.default_branch ?? 'main',
+      archived: r.archived ?? false,
+      updatedAt: r.pushed_at ?? r.updated_at ?? null,
+      topics: r.topics ?? [],
+      fork: r.fork,
+    });
+    return guard(async () => {
+      const out: RepositoryDTO[] = [];
+      const iterator = this.client.paginate.iterator as (
+        m: unknown,
+        p: unknown,
+      ) => AsyncIterable<{ data: unknown }>;
+      // Private repositories need the organisation endpoint (and the right permissions).
+      const method = opts.includePrivate
+        ? this.client.rest.repos.listForOrg
+        : this.client.rest.repos.listForUser;
+      const params = opts.includePrivate
+        ? { org: owner, type: 'all', per_page: 100 }
+        : { username: owner, type: 'owner', per_page: 100 };
+      for await (const page of iterator(method, params)) {
+        for (const r of page.data as Repo[]) {
+          const dto = map(r);
+          if (opts.includePrivate || dto.visibility === 'public') out.push(dto);
+          if (out.length >= opts.max) return out;
+        }
+      }
+      return out;
+    });
+  }
+
+  listDirectory(repo: string, path: string): Promise<ProviderResult<DirectoryEntryDTO[]>> {
+    return guard(async () => {
+      const { data } = await this.client.rest.repos.getContent({ ...split(repo), path });
+      if (!Array.isArray(data)) throw new InvalidData('not a directory');
+      return data.map((e) => ({ name: e.name, type: e.type as DirectoryEntryDTO['type'] }));
+    });
+  }
+
+  listWorkflows(repo: string): Promise<ProviderResult<WorkflowDTO[]>> {
+    return guard(async () => {
+      const { data } = await this.client.rest.actions.listRepoWorkflows({
+        ...split(repo),
+        per_page: 100,
+      });
+      return data.workflows
+        .filter((w) => w.path.startsWith('.github/workflows/'))
+        .map((w) => ({ file: w.path.split('/').pop() ?? w.path, name: w.name }));
     });
   }
 
@@ -304,6 +367,7 @@ export class GitHubProvider implements SourceProvider {
           securitySeverityLevel: a.rule.security_severity_level ?? null,
           ruleDescription: a.rule.description ?? null,
           toolName: a.tool.name ?? null,
+          path: a.most_recent_instance?.location?.path ?? null,
           createdAt: a.created_at,
           updatedAt: a.updated_at ?? null,
           htmlUrl: a.html_url,
@@ -343,6 +407,7 @@ export class GitHubProvider implements SourceProvider {
           summary: a.security_advisory.summary ?? null,
           packageName: a.dependency.package?.name ?? null,
           firstPatchedVersion: a.security_vulnerability.first_patched_version?.identifier ?? null,
+          manifestPath: a.dependency.manifest_path ?? null,
           createdAt: a.created_at,
           updatedAt: a.updated_at,
           htmlUrl: a.html_url,

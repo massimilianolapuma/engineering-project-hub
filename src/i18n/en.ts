@@ -323,6 +323,10 @@ export const en = {
     blocking: 'Blocking component: {component}',
     noComponents: 'No components configured.',
     backToPortfolio: 'Back to portfolio',
+    kind: 'Structure',
+    kindMulti: 'Multi-repository',
+    kindMonorepo: 'Monorepo',
+    kindSingle: 'Single repository',
   },
   workflowsPage: {
     title: 'Workflows',
@@ -418,11 +422,11 @@ export const en = {
   catalogEditor: {
     title: 'Catalog editor',
     intro:
-      'Select projects and link their coordinator, components and submodules. The editor generates config/projects.yaml in your browser; you then commit the change on GitHub.',
+      'Select projects and link their coordinator, components, submodules or monorepo directories, or start from a discovered repository. The editor generates one file per project (config/projects/<id>.yaml) in your browser and you propose each change on GitHub as a pull request.',
     readOnly:
-      'Nothing is saved on this page and no GitHub API is called: GitHub applies your own permissions when you commit. Reload the page to discard your changes.',
+      'Nothing is saved on this page and no GitHub API is called: GitHub applies your own permissions when you propose a change. Reload the page to discard your changes.',
     noscript:
-      'The catalog editor needs JavaScript. You can still edit config/projects.yaml directly.',
+      'The catalog editor needs JavaScript. You can still edit config/projects/<id>.yaml directly.',
     projects: 'Projects',
     newProject: 'New project',
     reset: 'Discard changes',
@@ -436,13 +440,26 @@ export const en = {
     general: 'General',
     coordinator: 'Coordinator',
     coordinatorHelp:
-      'Repository that pins the components as Git submodules and may hold the release manifest.',
+      'Main repository of the project: it pins the components as Git submodules, contains them as directories (monorepo) or is the only repository. It may hold the release manifest.',
     components: 'Components',
     componentsHelp:
-      'Repositories that form the project. A component is linked to a submodule of the coordinator by its path.',
+      'Parts of the project: a submodule of the coordinator (submodule path) or a directory of the coordinator repository (path, monorepo). Leave empty for a single-repository project.',
     componentN: 'Component {n}',
     addComponent: 'Add component',
     removeComponent: 'Remove component {n}',
+    noComponents:
+      'No components: single-repository project (the coordinator is the only repository).',
+    projectType: 'Project type',
+    projectKind: {
+      multi: 'Multi-repository',
+      monorepo: 'Monorepo',
+      single: 'Single repository',
+    },
+    projectKindHelp: {
+      multi: 'Components live in their own repositories, usually submodules of the coordinator.',
+      monorepo: 'Every component is a directory of the coordinator repository.',
+      single: 'The coordinator is the only repository.',
+    },
     environments: 'Environments',
     environmentN: 'Environment {n}',
     addEnvironment: 'Add environment',
@@ -467,6 +484,7 @@ export const en = {
       securityStatusPath: 'Security status file',
       notApplicableControls: 'Not applicable controls',
       type: 'Type',
+      path: 'Path',
       submodulePath: 'Submodule path',
       releaseTagPrefix: 'Release tag prefix',
       versionSource: 'Version source',
@@ -481,6 +499,7 @@ export const en = {
       manifestPath: 'Empty = release-manifest.yaml',
       securityStatusPath: 'Empty = .security/project-security-status.json',
       submodulePath: 'Path of the submodule in the coordinator: links the two.',
+      path: 'Directory inside the repository (monorepo). Required when the repository is the coordinator.',
       releaseTagPrefix: 'Stripped from tags before comparison (e.g. backend-v).',
       file: 'File name in .github/workflows, e.g. ci.yml',
       appliesTo: 'None selected = every component.',
@@ -511,20 +530,86 @@ export const en = {
     validation: 'Validation',
     valid: 'The catalog is valid.',
     invalid: '{count} problem(s) to fix: CI rejects an invalid catalog.',
-    output: 'Generated config/projects.yaml',
-    outputHelp: 'The whole catalog (every project). Default and empty values are omitted.',
+    output: 'Generated project file',
+    outputHelp:
+      'Content of the selected project file (one file per project). Default and empty values are omitted.',
     copy: 'Copy YAML',
     copied: 'YAML copied to the clipboard.',
     copyFallback: 'Clipboard not available: the YAML is selected, press Ctrl+C (⌘C on macOS).',
-    download: 'Download projects.yaml',
-    downloaded: 'projects.yaml downloaded.',
-    openEditor: 'Open config/projects.yaml in the GitHub editor',
+    download: 'Download {file}',
+    downloaded: '{file} downloaded.',
+    downloadAll: 'Download all (legacy projects.yaml)',
+    downloadAllHelp:
+      'Fallback: every project in a single legacy config/projects.yaml, still accepted by the collector. Use it instead of the files in config/projects/, never together with them (the same id twice is an error).',
     howTo: 'Apply the change',
-    step1: 'Copy the YAML or download projects.yaml.',
-    step2: 'Open config/projects.yaml in the GitHub editor and replace its content.',
-    step3: 'Commit to a new branch and open a pull request.',
+    flowNote:
+      'The portal is read-only: changes are proposed as pull requests and applied by CI after merge; the saved configuration is always restored on the next run.',
+    step1: 'Fix every validation problem: CI rejects an invalid project file.',
+    step2:
+      'In Pending changes, use the GitHub action of each project: a new file opens prefilled, for an existing file the YAML is copied (select the file content and paste), a removed project opens the delete page.',
+    step2Manual:
+      'Copy or download each changed file and commit it in config/projects/ (delete the files of removed projects).',
+    step3: 'Choose "Create a new branch and start a pull request" and open the pull request.',
     step4:
-      'CI validates the catalog (npm run validate:config); after the merge the next collector run uses it.',
+      'CI validates the configuration (npm run validate:config); after the merge the next collector run uses it.',
+    pending: 'Pending changes',
+    pendingIntro:
+      'Project files that differ from the published catalog. Each file is proposed as its own change.',
+    noPending: 'No changes: the editor matches the published catalog.',
+    changeKind: { new: 'New', modified: 'Modified', removed: 'Removed' },
+    proposeNew: 'Propose on GitHub (new file)',
+    editOnGithub: 'Edit on GitHub',
+    deleteOnGithub: 'Delete on GitHub',
+    copyFile: 'Copy {file}',
+    copiedFile: 'YAML of {file} copied to the clipboard.',
+    editCopied:
+      'YAML of {file} copied: in the GitHub editor select the whole file content and paste.',
+    editCopyFailed:
+      'Clipboard not available: copy the YAML of {file} from the generated file panel, then paste it in the GitHub editor.',
+    newOpened:
+      'GitHub opens {file} prefilled: choose "Create a new branch and start a pull request".',
+    newTooLong:
+      'The YAML of {file} is too long for a prefilled link: it has been copied, paste it in the GitHub editor.',
+    deleteOpened:
+      'GitHub opens the deletion of {file}: commit it to a new branch and open a pull request.',
+    fixFirst: 'Fix the validation problems of this project before proposing it.',
+    discovery: 'Discovered repositories',
+    discoveryIntro:
+      'Proposals from the last collector run: {scanned} repositories scanned (owners: {owners}). Nothing is added until a project file is saved.',
+    discoveryDisabled:
+      'Discovery is disabled. Enable it in config/catalog.yaml (discovery.enabled: true and the owners to scan) to get proposals here.',
+    noProposals: 'No proposals from the last run.',
+    proposalKind: {
+      coordinator: 'Coordinator',
+      monorepo: 'Monorepo',
+      single: 'Single repository',
+    },
+    proposalGroup: {
+      coordinator: 'Coordinators',
+      monorepo: 'Monorepos',
+      single: 'Single repositories',
+    },
+    proposalComponents: '{count} component(s)',
+    proposalNoComponents: 'No components',
+    alreadyInCatalog: 'Already in catalog: {name}',
+    inEditor: 'Added to the editor: {name}',
+    compareMerge: 'Compare / merge',
+    addAsProject: 'Add as project',
+    proposalImported:
+      'Project {id} added from {repository}: review it, then propose it on GitHub. Nothing is saved yet.',
+    discoveryClaimed:
+      '{count} repositories are submodules of a discovered coordinator and are not proposed separately.',
+    discoveryErrors: 'Repositories that could not be scanned',
+    mergeTitle: 'Compare with {repository}',
+    mergeIntro:
+      'Components and tracked workflows of the discovered repository that this project does not have yet.',
+    mergeNothing:
+      'Nothing to merge: the project already has every component and workflow of the proposal.',
+    mergeComponents: 'Missing components',
+    mergeWorkflows: 'Missing workflows',
+    mergeAdd: 'Add',
+    mergeAdded: '{id} added to {name}.',
+    mergeClose: 'Close comparison',
   },
   errorsPage: {
     title: 'Snapshot data unavailable',

@@ -5,7 +5,7 @@
     "schemaVersion": {
       "type": "string",
       "enum": [
-        "1.1"
+        "1.2"
       ]
     },
     "generatedAt": {
@@ -589,6 +589,17 @@
             ],
             "additionalProperties": false
           },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "versionSource": {
             "type": "string",
             "enum": [
@@ -883,6 +894,7 @@
           "name",
           "type",
           "repository",
+          "path",
           "versionSource",
           "declaredVersion",
           "latestRelease",

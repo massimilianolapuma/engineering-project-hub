@@ -1,0 +1,180 @@
+{
+  "repository": {
+    "owner": "example-org",
+    "name": "platform-mono",
+    "fullName": "example-org/platform-mono",
+    "htmlUrl": "https://github.com/example-org/platform-mono",
+    "visibility": "public",
+    "defaultBranch": "main",
+    "archived": false,
+    "updatedAt": "@now-1d",
+    "topics": ["demo", "monorepo"]
+  },
+  "head": {
+    "sha": "b85777552b25839b2cea3e76e5c15827386f60ac",
+    "committedAt": "@now-3h"
+  },
+  "latestRelease": {
+    "tagName": "web-v2.0.1",
+    "name": "web-v2.0.1",
+    "publishedAt": "@now-2d",
+    "prerelease": false,
+    "htmlUrl": "https://github.com/example-org/platform-mono/releases/tag/web-v2.0.1"
+  },
+  "tags": [
+    {
+      "name": "web-v2.0.1",
+      "sha": "195633ff42b0116fb595ae7279996d4132a408d9"
+    },
+    {
+      "name": "api-v1.8.0",
+      "sha": "6482a6fb544571aae23deca4cdbb9f94bdbfc0ae"
+    },
+    {
+      "name": "api-v1.7.2",
+      "sha": "5821dad3ad1da5c0b5fe522fba7c41966bf3503c"
+    },
+    {
+      "name": "worker-v0.4.0",
+      "sha": "5119be45de36e4933dc7bf8693c0ccd317001a52"
+    }
+  ],
+  "files": {
+    "package.json": "{\n  \"name\": \"platform\",\n  \"private\": true,\n  \"workspaces\": [\n    \"apps/*\",\n    \"services/*\"\n  ]\n}",
+    "release-manifest.yaml": "schemaVersion: '1.0'\nversion: 2026.10.1\ncomponents:\n  api:\n    version: 1.8.0\n  web:\n    version: 2.0.1\n  worker:\n    version: 0.4.0\nenvironments:\n  dev:\n    version: 2026.10.1\n  prod:\n    version: 2026.10.1\n"
+  },
+  "directories": {
+    "": [
+      {
+        "name": "apps",
+        "type": "dir"
+      },
+      {
+        "name": "services",
+        "type": "dir"
+      },
+      {
+        "name": "package.json",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ],
+    "apps": [
+      {
+        "name": "web",
+        "type": "dir"
+      }
+    ],
+    "services": [
+      {
+        "name": "api",
+        "type": "dir"
+      },
+      {
+        "name": "worker",
+        "type": "dir"
+      }
+    ]
+  },
+  "workflows": [
+    {
+      "file": "ci.yml",
+      "name": "CI"
+    },
+    {
+      "file": "release.yml",
+      "name": "Release"
+    },
+    {
+      "file": "docs.yml",
+      "name": "Docs preview"
+    }
+  ],
+  "workflowRuns": {
+    "ci.yml": [
+      {
+        "id": 9501,
+        "runNumber": 512,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "headBranch": "main",
+        "event": "push",
+        "headSha": "af004c1c87a0b9aa091ea08e56fa209f93f7418e",
+        "createdAt": "@now-3h",
+        "updatedAt": "@now-3h",
+        "htmlUrl": "https://github.com/example-org/platform-mono/actions/runs/9501"
+      }
+    ],
+    "release.yml": [
+      {
+        "id": 9502,
+        "runNumber": 88,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "headBranch": "main",
+        "event": "workflow_dispatch",
+        "headSha": "851462ec068076b54731e045e65ec56df4f293fc",
+        "createdAt": "@now-2d",
+        "updatedAt": "@now-2d",
+        "htmlUrl": "https://github.com/example-org/platform-mono/actions/runs/9502"
+      }
+    ]
+  },
+  "codeScanningAlerts": [
+    {
+      "number": 4,
+      "state": "open",
+      "dismissedReason": null,
+      "ruleId": "js/xss",
+      "ruleSeverity": "error",
+      "securitySeverityLevel": "high",
+      "ruleDescription": "Cross-site scripting",
+      "toolName": "CodeQL",
+      "createdAt": "@now-6d",
+      "updatedAt": "@now-6d",
+      "htmlUrl": "https://github.com/example-org/platform-mono/security/code-scanning/4",
+      "path": "apps/web/src/render.ts"
+    },
+    {
+      "number": 5,
+      "state": "open",
+      "dismissedReason": null,
+      "ruleId": "js/path-injection",
+      "ruleSeverity": "warning",
+      "securitySeverityLevel": "medium",
+      "ruleDescription": "Uncontrolled data used in path expression",
+      "toolName": "CodeQL",
+      "createdAt": "@now-4d",
+      "updatedAt": "@now-4d",
+      "htmlUrl": "https://github.com/example-org/platform-mono/security/code-scanning/5",
+      "path": "services/api/src/files.ts"
+    }
+  ],
+  "codeScanningAnalysis": {
+    "createdAt": "@now-3h",
+    "toolName": "CodeQL"
+  },
+  "dependabotAlerts": [
+    {
+      "number": 9,
+      "state": "open",
+      "dismissedReason": null,
+      "ghsaId": "GHSA-demo-0004-mono",
+      "cveId": null,
+      "severity": "low",
+      "summary": "Prototype pollution in example-merge (synthetic advisory)",
+      "packageName": "example-merge",
+      "firstPatchedVersion": "3.1.0",
+      "createdAt": "@now-8d",
+      "updatedAt": "@now-8d",
+      "htmlUrl": "https://github.com/example-org/platform-mono/security/dependabot/9",
+      "manifestPath": "services/worker/package.json"
+    }
+  ],
+  "secretScanningAlerts": []
+}

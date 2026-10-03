@@ -67,7 +67,7 @@ validate:snapshots`.
 | Class            | Typical cause                                                                    | Action                                                           |
 | ---------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | `not-authorised` | App not installed on the repository, missing permission, PAT scope               | Install the App or grant the read permission. Never grant write. |
-| `not-found`      | Repository renamed or deleted, typo in the catalog                               | Fix `projects.yaml`.                                             |
+| `not-found`      | Repository renamed or deleted, typo in the catalog                               | Fix `config/projects/<id>.yaml`.                                 |
 | `not-configured` | Feature disabled (Dependabot alerts, secret scanning, no code scanning analysis) | Enable it in the repository, or mark it as not required.         |
 | `rate-limited`   | Too many calls                                                                   | See "Rate limits".                                               |
 | `invalid-data`   | Malformed manifest or status file, or one naming another repository              | Fix the file in the monitored repository.                        |

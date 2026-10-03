@@ -8,66 +8,124 @@ editor con il YAML language server ottengono l'autocompletamento dagli JSON Sche
 in `config/schema/` (`npm run schema:generate`). Le chiavi sconosciute vengono
 **rifiutate**, quindi un refuso non può essere ignorato silenziosamente.
 
-## `config/projects.yaml`: catalogo
+## Catalogo: `config/catalog.yaml` + `config/projects/<id>.yaml`
+
+Il catalogo è salvato **in un file per progetto**: così l'editor del catalogo può proporre
+una modifica come pull request su un singolo file, e Git ne conserva lo storico (vedi
+[ADR 0004](architecture/adr/0004-configuration-store-and-discovery.md)):
+
+```text
+config/
+  catalog.yaml            # opzionale: impostazioni di scoperta
+  projects/
+    project-alpha.yaml    # un ProjectConfig; il nome del file deve coincidere con l'id
+    platform.yaml
+  policies.yaml
+  projects.yaml           # vecchio catalogo in un unico file: ancora letto e unito
+```
+
+Ogni esecuzione del collector carica questa configurazione: un riavvio riparte sempre
+dall'ultimo stato salvato. Il catalogo può essere vuoto quando la scoperta è attiva
+(avvio da zero).
+
+### `config/catalog.yaml`: scoperta
 
 ```yaml
 discovery:
-  topics: false # reserved (roadmap): repository topics discovery
-  customProperties: false # reserved (roadmap): GitHub custom properties
-
-projects:
-  - id: project-alpha # lowercase slug, unique
-    name: Project Alpha
-    description: Free text (≤ 500 chars)
-    businessUnit: Payments
-    lifecycle: production # experimental | development | production | maintenance | deprecated
-
-    coordinator:
-      repository: example-org/project-alpha-coordinator # owner/name
-      defaultBranch: main # optional: otherwise the repository default; mismatch = governance amber
-      manifestPath: release-manifest.yaml # optional (default shown)
-      notApplicableControls: [containerScanning] # optional
-
-    components: # at least one
-      - id: backend # slug, unique, "coordinator" is reserved
-        name: Backend API
-        repository: example-org/project-alpha-backend
-        type: service # service | webapp | worker | deployment | infrastructure | library | other
-        defaultBranch: main # optional
-        submodulePath: services/backend # optional: path of the submodule in the coordinator
-        versionSource: auto # optional: auto | submodule | manifest | release (see below)
-        releaseTagPrefix: backend- # optional: stripped before version comparison
-        notApplicableControls: [] # optional: controls that do not apply (e.g. containerScanning on Helm)
-
-    environments: # optional, display order
-      - { id: dev, name: DEV }
-      - { id: prod, name: PROD }
-
-    trackedWorkflows: # optional
-      - id: ci # slug, unique
-        name: Continuous Integration
-        file: ci-main.yml # workflow file name in .github/workflows
-        critical: true # critical workflows drive Delivery health
-        appliesTo: [backend, frontend] # optional: component ids or "coordinator"; default = all components
-
-    securityControls: # all eight are mandatory
-      codeScanning: { required: true }
-      secretScanning: { required: true }
-      dependabot: { required: true }
-      containerScanning: { required: false }
-      iacScanning: { required: false }
-      dast: { required: false }
-      sbom: { required: false }
-      artifactSignature: { required: false }
-
-    securityStatusPath: .security/project-security-status.json # optional (default shown)
+  enabled: true
+  owners: [example-org] # organizzazioni o utenti da analizzare
+  includePrivate: false # forzato a false finché publication.audience è "public"
+  includeForks: false
+  includeArchived: false
+  maxRepositories: 200 # budget API per esecuzione
 ```
+
+La scoperta è **in sola lettura e produce solo proposte**. I risultati vengono pubblicati
+in `catalog.json` e mostrati nell'editor del catalogo (`/it/catalog/`):
+
+| Proposta      | Rilevata quando                                                                                                                                  | Componenti                                                          |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| `coordinator` | il repository ha un `.gitmodules` con submodule che puntano a repository analizzati                                                              | uno per submodule (`submodulePath`)                                 |
+| `monorepo`    | c'è un manifest di workspace: `workspaces` npm/yarn, `pnpm-workspace.yaml`, `lerna.json`, `go.work`, `[workspace]` Cargo, `turbo.json`/`nx.json` | uno per cartella del workspace (`path`, `releaseTagPrefix: <id>-v`) |
+| `single`      | in tutti gli altri casi                                                                                                                          | nessuno (il repository è il progetto)                               |
+
+- I repository che sono submodule di un coordinator scoperto non vengono proposti da soli.
+- Le proposte il cui repository è già coordinator di un progetto del catalogo sono
+  segnalate come tali, così da poterle confrontare e unire.
+- I workflow trovati in ogni repository vengono proposti come workflow monitorati. Sono
+  marcati critici i file che iniziano con `ci`, `build`, `test`, `release`, `rel-`, `cd` o
+  `deploy`.
+- Chiamate usate: elenco dei repository dell'owner, `.gitmodules`, elenco della root e
+  delle cartelle di workspace, manifest di workspace ed elenco dei workflow. Non serve
+  nessun nuovo permesso della GitHub App (Metadata, Contents, Actions).
+
+### `config/projects/<id>.yaml`: un progetto
+
+```yaml
+id: project-alpha # slug minuscolo, univoco; deve coincidere con il nome del file
+name: Project Alpha
+description: Free text (≤ 500 chars)
+businessUnit: Payments
+lifecycle: production # experimental | development | production | maintenance | deprecated
+
+coordinator:
+  repository: example-org/project-alpha-coordinator # owner/name
+  defaultBranch: main # opzionale
+  manifestPath: release-manifest.yaml # opzionale (default mostrato)
+  notApplicableControls: [containerScanning] # opzionale
+
+components: # opzionale: vuoto per i progetti con un solo repository
+  - id: backend
+    name: Backend API
+    repository: example-org/project-alpha-backend
+    type: service
+    submodulePath: services/backend # opzionale: path del submodule nel coordinator
+    # path: services/backend          # monorepo: cartella nel repository (vedi sotto)
+    versionSource: auto # opzionale: auto | submodule | manifest | release
+    releaseTagPrefix: backend- # opzionale: tag di questo componente ("backend-1.2.0")
+
+environments:
+  - { id: dev, name: DEV }
+  - { id: prod, name: PROD }
+
+trackedWorkflows:
+  - id: ci
+    name: Continuous Integration
+    file: ci-main.yml
+    critical: true
+    appliesTo: [backend, frontend] # componenti o "coordinator"; default = tutti i componenti
+
+securityControls: # tutti e otto obbligatori
+  codeScanning: { required: true }
+  secretScanning: { required: true }
+  dependabot: { required: true }
+  containerScanning: { required: false }
+  iacScanning: { required: false }
+  dast: { required: false }
+  sbom: { required: false }
+  artifactSignature: { required: false }
+```
+
+### Monorepo e progetti con un solo repository
+
+- **Monorepo**: ogni componente usa il `repository` del coordinator più un `path`. In
+  questo caso il `path` è obbligatorio ed esclude `submodulePath`.
+  - Versioni: con `releaseTagPrefix` (es. `api-v`) l'ultima versione è il tag semver più
+    alto con quel prefisso, non la release dell'intero repository. Usa
+    `versionSource: release`, oppure `manifest` con un release manifest.
+  - Alert, controlli, governance ed errori sono valutati **una sola volta per
+    repository**. Gli alert di code scanning e Dependabot vanno al componente il cui `path`
+    contiene il file o il manifest dell'alert; tutto il resto va al coordinator.
+  - I workflow valgono per l'intero repository: monitorali con `appliesTo: [coordinator]`.
+- **Repository singolo**: `components: []`, workflow con `appliesTo: [coordinator]`.
 
 Le regole di validazione sono:
 
 - formato `owner/name`
 - id univoci per progetti, componenti, ambienti e workflow
-- `submodulePath` univoco
+- `submodulePath` univoco e posizione del componente univoca (`repository` + `path`)
+- `path` obbligatorio per i componenti nel repository del coordinator, mai insieme a
+  `submodulePath`
 - `appliesTo` può fare riferimento solo a componenti noti
 - path relativi senza `..`
 - nomi di file di workflow validi
@@ -152,7 +210,10 @@ vecchia di `freshness.workflowRunStaleDays`.
 
 ### Aggiungere un progetto (senza modifiche al codice)
 
-1. Aggiungi una voce sotto `projects:` in `config/projects.yaml`.
+Metodo consigliato: apri `/it/catalog/`, aggiungi una proposta scoperta (o crea un
+progetto), poi **Proponi su GitHub**. A mano:
+
+1. Crea `config/projects/<id>.yaml`.
 2. `npm run validate:config`
 3. `npm run collect:github` (oppure attendi l'esecuzione pianificata). Assicurati che la
    GitHub App sia installata sui nuovi repository, o che il PAT li copra.
@@ -165,19 +226,55 @@ vecchia di `freshness.workflowRunStaleDays`.
 La pagina **Catalogo** del portale (`/catalog/`, `/it/catalog/`) modifica il catalogo senza
 scrivere YAML a mano: scegli un progetto (o creane uno), collega coordinator, componenti,
 ambienti, workflow monitorati e controlli obbligatori, e scegli il `versionSource` di ogni
-componente. Il pannello **Suggerimenti** elenca i submodule del coordinator non collegati
-ad alcun componente (dall'ultima esecuzione del collector); _Aggiungi come componente_ crea
-un componente collegato tramite il suo `submodulePath` configurato, con il repository
-precompilato quando noto.
+componente. Un componente è un submodule del coordinator (_Percorso del submodule_) oppure
+una cartella del repository coordinator (_Percorso_, monorepo; obbligatorio se il
+repository del componente è quello del coordinator). Un progetto può non avere componenti
+(repository singolo). Il form mostra il **tipo di progetto** ricavato dai componenti:
+_Multi-repository_, _Monorepo_ o _Repository singolo_.
+
+Due pannelli partono dall'ultima esecuzione del collector:
+
+- **Repository scoperti** elenca le proposte della discovery (`discovery` in
+  `catalog.json`) raggruppate per tipo (_Coordinator_, _Monorepo_, _Repository singolo_) con
+  il link al repository, gli indizi e il numero di componenti, oltre al numero di repository
+  analizzati e a quelli non analizzabili (solo la classificazione). Una proposta non presente
+  nel catalogo ha _Aggiungi come progetto_: importa la configurazione proposta nell'editor
+  (all'id si aggiunge `-2`, `-3`… se già usato) e la seleziona. Una proposta già nel catalogo
+  (stesso repository coordinator) ha _Confronta / unisci_: apre quel progetto ed elenca i
+  componenti e i workflow monitorati della proposta che mancano al progetto, ciascuno con un
+  pulsante _Aggiungi_. Le proposte restano proposte: nulla viene salvato automaticamente. Se
+  la discovery è disattivata, il pannello spiega come attivarla in `config/catalog.yaml`
+  (`discovery.enabled`, `owners`).
+- **Suggerimenti** elenca i submodule del coordinator non collegati ad alcun componente;
+  _Aggiungi come componente_ crea un componente collegato tramite il suo `submodulePath`
+  configurato, con il repository precompilato quando noto.
 
 La pagina resta statica e in sola lettura: è generata da `public/data/catalog.json` (scritto
-dal collector, non legge mai direttamente `config/`), valida in tempo reale nel browser con
-lo stesso schema Zod di `npm run validate:config` e genera l'**intero**
-`config/projects.yaml` (valori vuoti e predefiniti omessi). Non chiama mai le API di GitHub
-e non contiene token: copia o scarica lo YAML, apri `config/projects.yaml` nell'editor di
-GitHub (link derivato da `repository.url` in `package.json`), committa su un nuovo branch e
-apri una PR. Si applicano i tuoi permessi GitHub e la CI valida il risultato. I commenti del
-file scritto a mano non vengono conservati: rivedi il diff prima del commit.
+dal collector, non legge mai direttamente `config/`) e valida in tempo reale nel browser con
+lo stesso schema Zod di `npm run validate:config`. Genera **un file per progetto**,
+`config/projects/<id>.yaml` (un solo documento di progetto, valori vuoti e predefiniti
+omessi), ed elenca le **Modifiche in sospeso** rispetto al catalogo pubblicato. Ogni modifica
+si propone tramite l'editor web di GitHub e diventa quindi una pull request; l'editor non
+chiama mai le API di GitHub e non contiene token, e si applicano i tuoi permessi GitHub:
+
+| Modifica   | Azione                         | Cosa succede                                                                                                                                                              |
+| ---------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Nuovo      | Proponi su GitHub (nuovo file) | Apre `github.com/<owner>/<repo>/new/main?filename=config/projects/<id>.yaml&value=…` precompilato. Oltre ~7000 caratteri lo YAML viene copiato e la pagina si apre vuota. |
+| Modificato | Modifica su GitHub             | Copia lo YAML negli appunti e apre `…/edit/main/config/projects/<id>.yaml`: sostituisci il contenuto incollando.                                                          |
+| Rimosso    | Elimina su GitHub              | Apre `…/delete/main/config/projects/<id>.yaml`.                                                                                                                           |
+
+Poi scegli _Create a new branch and start a pull request_; la CI valida il file e la prima
+esecuzione del collector dopo il merge lo usa. Un progetto rinominato è un nuovo file più
+uno rimosso. Ogni modifica in sospeso si può anche copiare o scaricare come `<id>.yaml`. Il
+repository è ricavato da `repository.url` in `package.json`; senza, le azioni GitHub sono
+nascoste. In alternativa, _Scarica tutto (projects.yaml legacy)_ scarica tutti i progetti in
+un unico `config/projects.yaml` legacy, ancora accettato dal loader: usalo **al posto dei**
+file in `config/projects/`, mai insieme (lo stesso id due volte è un errore).
+
+Il portale è in sola lettura: le modifiche si propongono come pull request e la CI le applica
+dopo il merge; alla successiva esecuzione viene sempre ripristinata la configurazione
+salvata. I commenti dei file scritti a mano non vengono conservati: rivedi il diff prima del
+commit.
 
 ## `config/policies.yaml`: policy di salute
 

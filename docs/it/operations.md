@@ -71,7 +71,7 @@ validate:snapshots`.
 | Classe           | Causa tipica                                                                                    | Azione                                                                            |
 | ---------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | `not-authorised` | App non installata sul repository, permesso mancante, ambito del PAT                            | Installa la App o concedi il permesso di lettura. Non concedere mai la scrittura. |
-| `not-found`      | Repository rinominato o eliminato, refuso nel catalogo                                          | Correggi `projects.yaml`.                                                         |
+| `not-found`      | Repository rinominato o eliminato, refuso nel catalogo                                          | Correggi `config/projects/<id>.yaml`.                                             |
 | `not-configured` | Funzionalità disabilitata (alert Dependabot, secret scanning, nessuna analisi di code scanning) | Abilitala nel repository, oppure contrassegnala come non obbligatoria.            |
 | `rate-limited`   | Troppe chiamate                                                                                 | Vedi "Rate limit".                                                                |
 | `invalid-data`   | Manifest o file di stato malformato, oppure che fa riferimento a un altro repository            | Correggi il file nel repository monitorato.                                       |

@@ -61,8 +61,23 @@ export function buildProjectSnapshot(
   const generatedAt = now.toISOString();
   const ctx: BuildContext = { projectId: config.id, policies, now, errors: [] };
 
+  // Monorepos list the same repository for the coordinator and each component: repository-
+  // level data (errors, alerts, controls, governance) is evaluated once per repository.
+  const uniqueRepos = raw.repos.filter(
+    (r, i, all) =>
+      all.findIndex((x) => x.repository.toLowerCase() === r.repository.toLowerCase()) === i,
+  );
+  const componentOf = (repository: string, fallback: string) => {
+    const owners = config.components
+      .filter((c) => c.path && c.repository.toLowerCase() === repository.toLowerCase())
+      .sort((a, b) => b.path!.length - a.path!.length);
+    return (path: string | null | undefined) =>
+      (path && owners.find((c) => path === c.path || path.startsWith(`${c.path}/`))?.id) ||
+      fallback;
+  };
+
   // Repository-level errors first (one per unavailable repository).
-  for (const r of raw.repos) {
+  for (const r of uniqueRepos) {
     recordError(ctx, r.repository, r.componentId, 'repository', r.repo);
     if (r.repo.ok) {
       recordError(ctx, r.repository, r.componentId, 'branch', r.head);
@@ -103,9 +118,9 @@ export function buildProjectSnapshot(
   const findings: SecurityFinding[] = [];
   let detailsWithheld = false;
   const statusFiles = new Map<string, ParsedStatusFile>();
-  const securityControls = raw.repos.map((r) => {
+  const securityControls = uniqueRepos.map((r) => {
     recordSecurityErrors(ctx, r);
-    const f = toFindings(ctx, r);
+    const f = toFindings(ctx, r, componentOf(r.repository, r.componentId));
     detailsWithheld ||= f.withheld;
     findings.push(...f.findings);
     const statusFile = parseStatusFile(ctx, r);
@@ -197,7 +212,7 @@ export function buildProjectSnapshot(
         (c) => c.required && !NATIVE_CONTROLS.includes(c.control) && c.state !== 'not-applicable',
       );
   const coordinatorInfo = toRepositoryInfo(ctx, coordinatorData);
-  const governanceRepos: GovernanceRepo[] = raw.repos.map((r) => ({
+  const governanceRepos: GovernanceRepo[] = uniqueRepos.map((r) => ({
     componentId: r.componentId,
     repository:
       r.componentId === 'coordinator'

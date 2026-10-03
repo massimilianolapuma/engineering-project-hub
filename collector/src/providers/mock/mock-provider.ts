@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { resolveRelativeTime, type Clock } from '../../util/clock';
 import {
@@ -8,6 +8,8 @@ import {
   type CodeScanningAnalysisDTO,
   type CommitRefDTO,
   type CompareDTO,
+  type DirectoryEntryDTO,
+  type WorkflowDTO,
   type DependabotAlertDTO,
   type FileDTO,
   type ProviderError,
@@ -37,6 +39,9 @@ export interface RepoFixture {
   tags?: TagDTO[] | ErrorFixture;
   /** Keyed by "base...head". */
   comparisons?: Record<string, CompareDTO | ErrorFixture>;
+  /** Directory listings keyed by path ("" = root). */
+  directories?: Record<string, DirectoryEntryDTO[]>;
+  workflows?: WorkflowDTO[];
   files?: Record<string, string | ErrorFixture>;
   submodules?: Record<string, string | ErrorFixture>;
   workflowRuns?: Record<string, WorkflowRunDTO[] | ErrorFixture>;
@@ -112,6 +117,35 @@ export class MockProvider implements SourceProvider {
     const f = await this.fixture(repo);
     if (!f) return fail(NOT_FOUND);
     return isError(f.repository) ? fail(f.repository.$error) : ok(f.repository);
+  }
+
+  /** Owner listing = every fixture file of that owner whose repository is readable. */
+  async listOwnerRepositories(
+    owner: string,
+    opts: { includePrivate: boolean; max: number },
+  ): Promise<ProviderResult<RepositoryDTO[]>> {
+    let files: string[];
+    try {
+      files = (await readdir(this.fixturesDir)).filter((f) => f.startsWith(`${owner}__`)).sort();
+    } catch {
+      return fail(NOT_FOUND);
+    }
+    if (!files.length) return fail(NOT_FOUND);
+    const out: RepositoryDTO[] = [];
+    for (const f of files) {
+      const r = await this.getRepository(f.replace('__', '/').replace(/\.json$/, ''));
+      if (r.ok && (opts.includePrivate || r.data.visibility === 'public')) out.push(r.data);
+      if (out.length >= opts.max) break;
+    }
+    return ok(out);
+  }
+
+  listDirectory(repo: string, path: string) {
+    return this.pick<DirectoryEntryDTO[]>(repo, (f) => f.directories?.[path]);
+  }
+
+  listWorkflows(repo: string) {
+    return this.pick<WorkflowDTO[]>(repo, (f) => f.workflows, ok([]));
   }
 
   async getBranchHead(repo: string): Promise<ProviderResult<CommitRefDTO>> {

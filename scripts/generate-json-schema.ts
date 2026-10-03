@@ -6,6 +6,8 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { z } from 'zod';
 import {
   CatalogSchema,
+  CatalogSettingsSchema,
+  ProjectConfigSchema,
   PoliciesSchema,
   PortfolioIndexSchema,
   ProjectSnapshotSchema,
@@ -15,6 +17,8 @@ import {
 
 const targets: [string, z.ZodType][] = [
   ['projects.schema.json', CatalogSchema],
+  ['project.schema.json', ProjectConfigSchema],
+  ['catalog-settings.schema.json', CatalogSettingsSchema],
   ['policies.schema.json', PoliciesSchema],
   ['security-status.schema.json', SecurityStatusFileSchema],
   ['release-manifest.schema.json', ReleaseManifestSchema],

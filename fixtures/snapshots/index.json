@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.1",
+  "schemaVersion": "1.2",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "run": {
     "dataSource": "mock",
@@ -44,8 +44,8 @@
       }
     ],
     "repositories": {
-      "total": 11,
-      "ok": 6,
+      "total": 12,
+      "ok": 7,
       "withErrors": 3,
       "unavailable": 2
     },
@@ -56,6 +56,39 @@
     }
   },
   "projects": [
+    {
+      "id": "platform",
+      "name": "Platform (monorepo)",
+      "businessUnit": "Platform",
+      "lifecycle": "production",
+      "overall": "amber",
+      "delivery": "green",
+      "version": "green",
+      "security": "amber",
+      "coverage": {
+        "status": "green",
+        "percentage": 100,
+        "required": 3,
+        "available": 3
+      },
+      "governance": "green",
+      "freshness": "green",
+      "openCounts": {
+        "critical": 0,
+        "high": 1,
+        "medium": 1,
+        "low": 1,
+        "informational": 0,
+        "unknown": 0
+      },
+      "countsComplete": true,
+      "openSecretAlerts": 0,
+      "secretScanning": "enabled",
+      "failedCriticalWorkflows": 0,
+      "collectedAt": "2026-01-15T12:00:00.000Z",
+      "collectionErrorCount": 0,
+      "unresolvedSubmodules": 0
+    },
     {
       "id": "project-alpha",
       "name": "Project Alpha",

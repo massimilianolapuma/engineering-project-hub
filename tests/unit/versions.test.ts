@@ -76,6 +76,7 @@ function raw(
       submodules: [],
       submoduleRefs: new Map(),
       pins,
+      componentTags: new Map(),
       workflows: [],
     },
     ctx: { projectId: 'p', policies: policies(), now: NOW, errors: [] },

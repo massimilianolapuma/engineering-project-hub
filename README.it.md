@@ -99,7 +99,7 @@ flowchart LR
 ```
 
 ```text
-config/            catalog (projects.yaml), policies (policies.yaml), generated JSON Schemas
+config/            catalogo (catalog.yaml + projects/<id>.yaml), policies.yaml, JSON Schema generati
 shared/model/      Zod schemas + types: the single contract (catalog, policies, snapshot, contracts)
 shared/security/   credential patterns used by the sanitiser and the output scanner
 collector/src/     providers (GitHub, mock) → normalizers → evaluators → sanitizers → writers
@@ -173,14 +173,15 @@ Vengono registrati come errori di raccolta classificati e mostrati come Unknown
 (Sconosciuto) o Not authorised (Non autorizzato). Non vengono mai trattati come "nessun
 problema".
 
-> ℹ️ Il `config/projects.yaml` versionato descrive i progetti **sintetici** di
+> ℹ️ I `config/projects/*.yaml` versionati descrivono i progetti **sintetici** di
 > `example-org`. In modalità GitHub ogni repository risulta quindi `not-found` (404) e tutti i
 > progetti sono Sconosciuti. Per raccogliere i **tuoi** repository usa un catalogo locale non
 > versionato (questo repository è pubblico):
 >
 > ```bash
 > mkdir -p config.local && cp config/policies.yaml config.local/   # config.local/ è in .gitignore
-> # scrivi config.local/projects.yaml con i tuoi progetti (o generalo con /it/catalog/)
+> # aggiungi i file config.local/projects/<id>.yaml (o generali con /it/catalog/), oppure
+> # attiva la scoperta in config.local/catalog.yaml per avere proposte sui tuoi owner
 > npm run validate:config -- config.local
 > npm run collect:github -- --config config.local
 > npm run build:site && npm run preview      # solo anteprima locale — non pubblicare dati reali
@@ -191,16 +192,23 @@ problema".
 
 ## Configurazione
 
-- `config/projects.yaml` è il **catalogo**: progetti, coordinator, componenti, path dei
-  submodule, ambienti, workflow monitorati (critici o meno, `appliesTo`) e controlli di
-  sicurezza obbligatori od opzionali. Le associazioni sono esplicite e non vengono mai
-  dedotte dai nomi dei repository.
+- Il **catalogo** è un file per progetto, `config/projects/<id>.yaml`: coordinator,
+  componenti (repository separati, submodule o cartelle di un monorepo), ambienti, workflow
+  monitorati (critici o meno, `appliesTo`) e controlli di sicurezza obbligatori od
+  opzionali. Le associazioni sono esplicite e non vengono mai dedotte dai nomi dei
+  repository.
+- `config/catalog.yaml` attiva la **scoperta**: il collector analizza gli owner configurati e
+  propone coordinator, monorepo e repository singoli nell'editor del catalogo
+  (`/it/catalog/`). Le proposte non vengono mai applicate in automatico.
 - `config/policies.yaml` contiene le **policy di salute**: soglie, criteri di dato non
   aggiornato, quali severità rendono la sicurezza rossa o ambra, dimensioni critiche e
   obbligatorie, e il pubblico di pubblicazione.
 
-Per aggiungere un progetto, aggiungi una voce a `projects.yaml`, poi esegui
-`npm run validate:config`. Non serve modificare codice. Anche le policy si modificano senza
+Per aggiungere un progetto apri `/it/catalog/`, aggiungi una proposta scoperta o crea un
+progetto e scegli **Proponi su GitHub**: GitHub apre il nuovo file già compilato e tu crei la
+pull request. La CI la valida e, dopo il merge, ogni esecuzione la usa: la configurazione
+salvata viene ripristinata a ogni riavvio. Non serve modificare codice e nel browser non
+viene mai usato alcun token ([ADR 0004](docs/it/architecture/adr/0004-configuration-store-and-discovery.md)). Anche le policy si modificano senza
 toccare il codice o il frontend. Vedi [docs/it/configuration.md](docs/it/configuration.md).
 
 Contratti opzionali letti dai repository monitorati:
@@ -312,7 +320,7 @@ Comandi locali:
 
 | Sintomo                                                                        | Causa / soluzione                                                                                                                                          |
 | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Invalid configuration in config/projects.yaml: …`                             | Validazione Zod. Il messaggio indica il path esatto, ad esempio `projects[0].components[1].repository`.                                                    |
+| `Invalid configuration in config/projects/<id>.yaml: …`                        | Validazione Zod. Il messaggio indica il path esatto, ad esempio `projects[0].components[1].repository`.                                                    |
 | `DATA_SOURCE=github but no credentials found`                                  | Imposta i secret della GitHub App o `GH_READ_TOKEN`, oppure usa `DATA_SOURCE=mock`.                                                                        |
 | `GitHub App credentials are incomplete`                                        | Sono richieste tutte e tre le variabili `GH_APP_*`. Per scelta progettuale non c'è fallback.                                                               |
 | La pagina mostra **Snapshot data unavailable** (Dati snapshot non disponibili) | Snapshot assente o non valido, oppure `schemaVersion` non supportato. Esegui `npm run collect:mock` o `validate:snapshots`.                                |
