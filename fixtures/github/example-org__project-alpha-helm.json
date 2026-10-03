@@ -1,0 +1,48 @@
+{
+  "repository": {
+    "owner": "example-org",
+    "name": "project-alpha-helm",
+    "fullName": "example-org/project-alpha-helm",
+    "htmlUrl": "https://github.com/example-org/project-alpha-helm",
+    "visibility": "public",
+    "defaultBranch": "main",
+    "archived": false,
+    "updatedAt": "@now-1d",
+    "topics": ["demo", "helm"]
+  },
+  "head": {
+    "sha": "8c7b83b9c5d18e246a8c311cb60737601fc95807",
+    "committedAt": "@now-1d"
+  },
+  "latestRelease": {
+    "tagName": "v0.9.0",
+    "name": "v0.9.0",
+    "publishedAt": "@now-3d",
+    "prerelease": false,
+    "htmlUrl": "https://github.com/example-org/project-alpha-helm/releases/tag/v0.9.0"
+  },
+  "workflowRuns": {
+    "cd.yml": [
+      {
+        "id": 9010,
+        "runNumber": 143,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "headBranch": "main",
+        "event": "workflow_dispatch",
+        "headSha": "45630c258e3e8edde1a83b65072bda910abad92c",
+        "createdAt": "@now-1d",
+        "updatedAt": "@now-1d",
+        "htmlUrl": "https://github.com/example-org/project-alpha-helm/actions/runs/9010"
+      }
+    ]
+  },
+  "codeScanningAlerts": [],
+  "codeScanningAnalysis": {
+    "createdAt": "@now-1d",
+    "toolName": "CodeQL"
+  },
+  "dependabotAlerts": [],
+  "secretScanningAlerts": []
+}

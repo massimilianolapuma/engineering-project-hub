@@ -1,0 +1,23 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "paths": {
+      "@model/*": ["./shared/model/*"]
+    },
+    "types": ["node"],
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": [
+    ".astro/types.d.ts",
+    "src",
+    "shared",
+    "collector",
+    "scripts",
+    "tests",
+    "*.config.ts",
+    "*.config.mjs"
+  ],
+  "exclude": ["dist", "node_modules", "coverage", "public"]
+}

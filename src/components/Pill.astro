@@ -1,0 +1,16 @@
+---
+/** Generic state pill for control / workflow / version states. Shape icon + text, never colour only. */
+import type { Tone } from '../lib/tones';
+import StatusIcon from './StatusIcon.astro';
+interface Props {
+  tone: Tone;
+  label: string;
+  title?: string;
+}
+const { tone, label, title } = Astro.props;
+---
+
+<span class={`pill pill--${tone}`} title={title ?? label}>
+  <StatusIcon tone={tone} />
+  <span>{label}</span>
+</span>

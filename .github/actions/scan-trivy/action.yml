@@ -1,0 +1,96 @@
+# Composite action — part of this repository's CI building blocks.
+name: 'Scan — Trivy Security Scan + SARIF Upload'
+description: 'Wraps aquasecurity/trivy-action and uploads the SARIF report to GitHub Code Scanning'
+
+inputs:
+  scan-type:
+    description: 'Scan type: "fs" or "image"'
+    required: true
+  scan-ref:
+    description: 'Filesystem path to scan (scan-type fs/repo)'
+    required: false
+    default: '.'
+  image-ref:
+    description: 'Image reference for scan-type image (e.g. ghcr.io/owner/app:tag)'
+    required: false
+    default: ''
+  scanners:
+    description: 'Comma-separated scanners: vuln,misconfig,secret,license'
+    required: false
+    default: 'vuln,misconfig'
+  severity:
+    description: 'Comma-separated severities to report: CRITICAL,HIGH,MEDIUM,LOW'
+    required: false
+    default: 'CRITICAL,HIGH'
+  exit-code:
+    description: 'Exit code when findings are reported (0 = advisory, 1 = fail)'
+    required: false
+    default: '0'
+  sarif-output:
+    description: 'SARIF output file name'
+    required: false
+    default: 'trivy-results.sarif'
+  sarif-category:
+    description: 'GitHub Code Scanning category (e.g. trivy-fs, trivy-container)'
+    required: false
+    default: 'trivy'
+  db-already-cached:
+    description: >
+      Set to "true" when an earlier trivy-action invocation in the same job already
+      downloaded the vulnerability DB into the default cache dir
+      (github.workspace/.cache/trivy). Skips the cache restore for the table scan too.
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Create Trivy temp dir
+      shell: bash
+      run: mkdir -p "$GITHUB_WORKSPACE/.trivy-tmp"
+
+    - name: Trivy scan — table (log)
+      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+      env:
+        TMPDIR: ${{ github.workspace }}/.trivy-tmp
+      with:
+        scan-type: ${{ inputs.scan-type }}
+        scan-ref: ${{ inputs.scan-ref }}
+        image-ref: ${{ inputs.image-ref }}
+        scanners: ${{ inputs.scanners }}
+        format: table
+        severity: ${{ inputs.severity }}
+        exit-code: '0'
+        ignore-unfixed: true
+        # Restoring the DB from the remote cache is pointless when it was already
+        # downloaded in this job (see the SARIF scan below).
+        cache: ${{ inputs['db-already-cached'] == 'true' && 'false' || 'true' }}
+
+    - name: Trivy scan — SARIF (gate + Code Scanning)
+      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+      env:
+        # Keep Trivy's OCI download temp dir off /tmp, which can be a small tmpfs: the Java
+        # DB download writes ~300 MB to $TMPDIR before moving it to the cache dir.
+        TMPDIR: ${{ github.workspace }}/.trivy-tmp
+      with:
+        scan-type: ${{ inputs.scan-type }}
+        scan-ref: ${{ inputs.scan-ref }}
+        image-ref: ${{ inputs.image-ref }}
+        scanners: ${{ inputs.scanners }}
+        format: sarif
+        output: ${{ inputs.sarif-output }}
+        severity: ${{ inputs.severity }}
+        exit-code: ${{ inputs.exit-code }}
+        ignore-unfixed: true
+        # The DB is shared through the default cache dir with the table scan above, so a
+        # second restore (which would download the whole DB again) is skipped.
+        cache: 'false'
+
+    # always(): upload the SARIF report even when Trivy exits non-zero.
+    # !env.ACT: Code Scanning upload is not available under nektos/act.
+    - name: Upload SARIF to GitHub Code Scanning
+      if: ${{ always() && !env.ACT }}
+      uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4
+      with:
+        sarif_file: ${{ inputs.sarif-output }}
+        category: ${{ inputs.sarif-category }}

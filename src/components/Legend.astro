@@ -1,0 +1,52 @@
+---
+/**
+ * Legend, always visible: a compact strip under the header on every page, with an
+ * expandable explanation of every state and special label.
+ */
+import type { I18n } from '../i18n';
+import StatusBadge from './StatusBadge.astro';
+import StatusIcon from './StatusIcon.astro';
+interface Props {
+  i18n: I18n;
+}
+const { i18n } = Astro.props;
+const l = i18n.d.legend;
+const labels = [
+  { tone: 'grey', text: l.unknownLabel },
+  { tone: 'amber', text: l.notConfiguredLabel },
+  { tone: 'grey', text: l.notAuthorisedLabel },
+  { tone: 'green', text: l.noOpenAlertsLabel },
+  { tone: 'red', text: l.collectionFailedLabel },
+] as const;
+---
+
+<aside class="legend" aria-labelledby="legend-title">
+  <div class="legend__inner">
+    <h2 id="legend-title" class="legend__title">
+      {l.title}
+    </h2>
+    <ul class="legend__list">
+      {(['green', 'amber', 'red', 'grey'] as const).map((s) => (
+        <li>
+          <StatusBadge status={s} i18n={i18n} size="sm" />
+        </li>
+      ))}
+    </ul>
+    <details class="legend__details">
+      <summary>{l.more}</summary>
+      <ul class="legend__defs">
+        {(['red', 'amber', 'green', 'grey'] as const).map((s) => (
+          <li>
+            <StatusIcon tone={s} /> {i18n.statusDesc(s)}
+          </li>
+        ))}
+        {labels.map((x) => (
+          <li>
+            <StatusIcon tone={x.tone} /> {x.text}
+          </li>
+        ))}
+      </ul>
+      <p class="legend__note">{l.note}</p>
+    </details>
+  </div>
+</aside>

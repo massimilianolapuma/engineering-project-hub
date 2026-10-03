@@ -1,0 +1,267 @@
+---
+import type { HealthStatus } from '@model/index';
+import Count from '../../components/Count.astro';
+import Pill from '../../components/Pill.astro';
+import ErrorState from '../../components/ErrorState.astro';
+import RelTime from '../../components/RelTime.astro';
+import StatusBadge from '../../components/StatusBadge.astro';
+import Base from '../../layouts/Base.astro';
+import { healthRank } from '../../lib/format';
+import { pageContext } from '../../lib/page';
+import { href, localeParams } from '../../lib/routes';
+import { controlTone } from '../../lib/tones';
+
+export const getStaticPaths = localeParams;
+const { locale } = Astro.props;
+const { i18n, data, index, alternates } = pageContext(locale, 'portfolio');
+const { d } = i18n;
+const projects = data.ok ? data.data.index.projects : [];
+const staleHours = index?.run.policy.snapshotStaleHours ?? 24;
+const units = [...new Set(projects.map((p) => p.businessUnit))].sort();
+const lifecycles = [...new Set(projects.map((p) => p.lifecycle))];
+const tally = (s: HealthStatus) => projects.filter((p) => p.overall === s).length;
+const sorted = [...projects].sort(
+  (a, b) => healthRank(a.overall) - healthRank(b.overall) || a.name.localeCompare(b.name),
+);
+const dims = ['delivery', 'version', 'security'] as const;
+---
+
+<Base i18n={i18n} title={d.portfolio.title} page="portfolio" alternates={alternates} index={index}>
+  {!data.ok ? (
+    <ErrorState error={data.error} i18n={i18n} />
+  ) : (
+    <>
+      <header class="page-head">
+        <h1>{d.portfolio.title}</h1>
+        <p class="lead">{d.portfolio.intro}</p>
+      </header>
+
+      <ul class="kpis" aria-label={d.portfolio.summaryProjects}>
+        <li class="kpi">
+          <span class="kpi__value">{projects.length}</span>
+          <span class="kpi__label">{d.portfolio.summaryProjects}</span>
+        </li>
+        <li class="kpi kpi--red">
+          <span class="kpi__value">{tally('red')}</span>
+          <span class="kpi__label">
+            <StatusBadge status="red" i18n={i18n} size="sm" />
+          </span>
+        </li>
+        <li class="kpi kpi--amber">
+          <span class="kpi__value">{tally('amber')}</span>
+          <span class="kpi__label">
+            <StatusBadge status="amber" i18n={i18n} size="sm" />
+          </span>
+        </li>
+        <li class="kpi kpi--green">
+          <span class="kpi__value">{tally('green')}</span>
+          <span class="kpi__label">
+            <StatusBadge status="green" i18n={i18n} size="sm" />
+          </span>
+        </li>
+        <li class="kpi kpi--grey">
+          <span class="kpi__value">{tally('grey')}</span>
+          <span class="kpi__label">
+            <StatusBadge status="grey" i18n={i18n} size="sm" />
+          </span>
+        </li>
+      </ul>
+
+      <form class="filters" data-portfolio-filters role="search">
+        <div class="field field--grow">
+          <label for="f-q">{d.portfolio.search}</label>
+          <input
+            id="f-q"
+            name="q"
+            type="search"
+            placeholder={d.portfolio.searchPlaceholder}
+            autocomplete="off"
+          />
+        </div>
+        <div class="field">
+          <label for="f-health">{d.portfolio.filterHealth}</label>
+          <select id="f-health" name="health">
+            <option value="">{d.portfolio.all}</option>
+            {(['red', 'amber', 'green', 'grey'] as const).map((s) => (
+              <option value={s}>{i18n.status(s)}</option>
+            ))}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-bu">{d.portfolio.filterBu}</label>
+          <select id="f-bu" name="bu">
+            <option value="">{d.portfolio.all}</option>
+            {units.map((u) => (
+              <option value={u}>{u}</option>
+            ))}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-lc">{d.portfolio.filterLifecycle}</label>
+          <select id="f-lc" name="lifecycle">
+            <option value="">{d.portfolio.all}</option>
+            {lifecycles.map((l) => (
+              <option value={l}>{d.lifecycle[l]}</option>
+            ))}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-sev">{d.portfolio.filterSeverity}</label>
+          <select id="f-sev" name="severity">
+            <option value="">{d.portfolio.all}</option>
+            <option value="critical">{d.portfolio.filterSeverityCritical}</option>
+            <option value="high">{d.portfolio.filterSeverityHigh}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-sort">{d.portfolio.sort}</label>
+          <select id="f-sort" name="sort">
+            <option value="health">{d.portfolio.sortHealth}</option>
+            <option value="name">{d.portfolio.sortName}</option>
+            <option value="updated">{d.portfolio.sortUpdated}</option>
+            <option value="critical">{d.portfolio.sortCritical}</option>
+          </select>
+        </div>
+      </form>
+      <p class="results" aria-live="polite" data-results data-template={d.portfolio.results}>
+        {i18n.f(d.portfolio.results, { shown: projects.length, total: projects.length })}
+      </p>
+
+      <div class="table-wrap">
+        <table class="table table--portfolio" data-portfolio-table>
+          <caption class="visually-hidden">{d.portfolio.tableCaption}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{d.portfolio.colProject}</th>
+              <th scope="col">{d.dimensions.overall}</th>
+              {dims.map((k) => (
+                <th scope="col">{d.dimensions[k]}</th>
+              ))}
+              <th scope="col">{d.dimensions.coverage}</th>
+              <th scope="col" class="num">
+                {d.portfolio.colCritical}
+              </th>
+              <th scope="col" class="num">
+                {d.portfolio.colHigh}
+              </th>
+              <th scope="col" class="num">
+                {d.portfolio.colSecrets}
+              </th>
+              <th scope="col" class="num">
+                {d.portfolio.colFailed}
+              </th>
+              <th scope="col">{d.portfolio.colUpdated}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((p) => (
+              <tr
+                data-project
+                data-name={p.name.toLowerCase()}
+                data-health={p.overall}
+                data-rank={healthRank(p.overall)}
+                data-bu={p.businessUnit}
+                data-lifecycle={p.lifecycle}
+                data-critical={p.openCounts.critical ?? -1}
+                data-high={p.openCounts.high ?? -1}
+                data-updated={p.collectedAt}
+              >
+                <th scope="row" data-label={d.portfolio.colProject}>
+                  <a class="project-link" href={href(locale, `projects/${p.id}`)}>
+                    {p.name}
+                  </a>
+                  <span class="sub">
+                    {p.businessUnit} · {d.lifecycle[p.lifecycle]}
+                  </span>
+                </th>
+                <td data-label={d.dimensions.overall}>
+                  <StatusBadge status={p.overall} i18n={i18n} context={d.dimensions.overall} />
+                </td>
+                {dims.map((k) => (
+                  <td data-label={d.dimensions[k]}>
+                    <StatusBadge status={p[k]} i18n={i18n} context={d.dimensions[k]} size="sm" />
+                  </td>
+                ))}
+                <td data-label={d.dimensions.coverage}>
+                  <StatusBadge
+                    status={p.coverage.status}
+                    i18n={i18n}
+                    context={d.dimensions.coverage}
+                    size="sm"
+                  />
+                  <span class="sub">
+                    {p.coverage.percentage === null
+                      ? d.common.unknown
+                      : `${p.coverage.percentage}%`}{' '}
+                    ·{' '}
+                    <span
+                      title={i18n.f(d.securityPage.requiredCount, {
+                        available: p.coverage.available,
+                        required: p.coverage.required,
+                      })}
+                    >
+                      {p.coverage.available}/{p.coverage.required}
+                    </span>
+                  </span>
+                </td>
+                <td class="num" data-label={d.portfolio.colCritical}>
+                  <Count
+                    value={p.openCounts.critical}
+                    partial={!p.countsComplete}
+                    i18n={i18n}
+                    emphasis="red"
+                  />
+                </td>
+                <td class="num" data-label={d.portfolio.colHigh}>
+                  <Count
+                    value={p.openCounts.high}
+                    partial={!p.countsComplete}
+                    i18n={i18n}
+                    emphasis="amber"
+                  />
+                </td>
+                <td class="num" data-label={d.portfolio.colSecrets}>
+                  {p.secretScanning !== 'enabled' &&
+                  p.secretScanning !== 'stale' &&
+                  !p.openSecretAlerts ? (
+                    <Pill
+                      tone={controlTone(p.secretScanning)}
+                      label={d.controlState[p.secretScanning]}
+                    />
+                  ) : (
+                    <Count
+                      value={p.openSecretAlerts}
+                      partial={!p.countsComplete}
+                      i18n={i18n}
+                      emphasis="red"
+                    />
+                  )}
+                </td>
+                <td class="num" data-label={d.portfolio.colFailed}>
+                  <Count value={p.failedCriticalWorkflows} i18n={i18n} emphasis="red" />
+                </td>
+                <td data-label={d.portfolio.colUpdated}>
+                  <RelTime iso={p.collectedAt} i18n={i18n} staleHours={staleHours} />
+                  {p.collectionErrorCount > 0 ? (
+                    <a href={`${href(locale, 'dataQuality')}#${p.id}`} class="errors-link">
+                      {i18n.f(d.common.errors, { count: p.collectionErrorCount })}
+                    </a>
+                  ) : (
+                    <span class="sub">{d.common.noErrors}</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="empty" hidden data-empty>
+        {d.portfolio.noResults}
+      </p>
+    </>
+  )}
+</Base>
+
+<script>
+  import '../../scripts/portfolio-filters';
+</script>

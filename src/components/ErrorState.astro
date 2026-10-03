@@ -1,0 +1,18 @@
+---
+import type { DataError } from '../lib/validate';
+import type { I18n } from '../i18n';
+import StatusBadge from './StatusBadge.astro';
+interface Props {
+  error: DataError;
+  i18n: I18n;
+}
+const { error, i18n } = Astro.props;
+const message = i18n.f(i18n.d.errorsPage[error.kind], { version: error.schemaVersion ?? '' });
+---
+
+<section class="card error-state" role="alert" data-error-kind={error.kind}>
+  <h1>
+    <StatusBadge status="grey" i18n={i18n} /> {i18n.d.errorsPage.title}
+  </h1>
+  <p>{message}</p>
+</section>

@@ -1,0 +1,9 @@
+{
+  "repository": {
+    "$error": {
+      "classification": "not-found",
+      "httpStatus": 404,
+      "message": "Not Found"
+    }
+  }
+}

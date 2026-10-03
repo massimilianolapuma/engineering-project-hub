@@ -1,0 +1,124 @@
+# ==============================================================================
+# CI — Engineering Project Hub
+# ==============================================================================
+#
+# Purpose:  Quality gate on pull requests and pushes to main. Every job calls one
+#           of this repository's reusable workflows (.github/workflows/rw-*.yml;
+#           see docs/ci/workflows.md and ADR 0003).
+#
+# Jobs (parallel):
+#   pr-title-lint   — PR title follows Conventional Commits (pull_request only)
+#   node-quality    — eslint, tsc + astro check, prettier --check
+#   build-test      — npm run ci:build (validate config + collect mock +
+#                     validate snapshots + astro build + scan output) and
+#                     npm run ci:test (Vitest + coverage in coverage/)
+#   e2e             — Playwright smoke tests (Chromium) against the built site
+#   actionlint      — GitHub Actions workflow lint
+#   zizmor          — workflow security audit (SARIF → Code Scanning)
+#   trivy-fs        — vuln + misconfig + license filesystem scan (advisory,
+#                     SARIF → Code Scanning)
+#
+# Code scanning is free for public repositories, so zizmor and trivy-fs always
+# run. Only those two jobs get security-events: write.
+#
+# No secrets: CI uses mock data only.
+#
+# Local test (nektos/act with podman as the container engine):
+#   act pull_request --workflows .github/workflows/ci.yml
+#   act pull_request -j node-quality --workflows .github/workflows/ci.yml
+#
+# Syntax check:
+#   actionlint .github/workflows/*.yml
+# ==============================================================================
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # --------------------------------------------------------------------------
+  pr-title-lint:
+    name: PR title lint
+    if: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      contents: read
+      pull-requests: write # amannn/action-semantic-pull-request (wip: true)
+      statuses: write # amannn/action-semantic-pull-request — commit status
+    uses: ./.github/workflows/rw-pr-title-lint.yml
+
+  # --------------------------------------------------------------------------
+  node-quality:
+    name: Node quality
+    permissions:
+      contents: read
+    uses: ./.github/workflows/rw-node-quality-host.yml
+    with:
+      node-version: '24'
+      lint-command: npm run lint
+      typecheck-command: npm run typecheck
+      format-check-command: npm run format:check
+
+  # --------------------------------------------------------------------------
+  build-test:
+    name: Build & test
+    permissions:
+      contents: read
+    uses: ./.github/workflows/rw-npm-build-test-host.yml
+    with:
+      node-version: '24'
+      build-command: npm run ci:build
+      coverage-report-dir: coverage
+
+  # --------------------------------------------------------------------------
+  # ci:build forces mock data (collect:mock), so the site is deterministic.
+  e2e:
+    name: E2E
+    permissions:
+      contents: read
+    uses: ./.github/workflows/rw-playwright-e2e-host.yml
+    with:
+      node-version: '24'
+      browsers: chromium
+      build-command: npm run ci:build
+      test-command: npm run test:e2e
+
+  # --------------------------------------------------------------------------
+  actionlint:
+    name: actionlint
+    permissions:
+      contents: read
+    uses: ./.github/workflows/rw-actionlint.yml
+    with:
+      config-file: .github/actionlint.yaml
+
+  # --------------------------------------------------------------------------
+  zizmor:
+    name: zizmor
+    permissions:
+      contents: read
+      security-events: write # SARIF upload to Code Scanning (zizmor-action advanced-security)
+    uses: ./.github/workflows/rw-zizmor.yml
+
+  # --------------------------------------------------------------------------
+  trivy-fs:
+    name: Trivy FS
+    permissions:
+      contents: read
+      security-events: write # SARIF upload to Code Scanning
+    uses: ./.github/workflows/rw-trivy-fs.yml
+    with:
+      scan-path: '.'
+      severity: 'CRITICAL,HIGH'
+      exit-code: '0'

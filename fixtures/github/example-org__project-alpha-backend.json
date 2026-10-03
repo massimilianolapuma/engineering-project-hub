@@ -1,0 +1,119 @@
+{
+  "repository": {
+    "owner": "example-org",
+    "name": "project-alpha-backend",
+    "fullName": "example-org/project-alpha-backend",
+    "htmlUrl": "https://github.com/example-org/project-alpha-backend",
+    "visibility": "public",
+    "defaultBranch": "main",
+    "archived": false,
+    "updatedAt": "@now-1d",
+    "topics": ["demo", "java"]
+  },
+  "head": {
+    "sha": "95c7fbdc2c7d81daf6bf050dab7bdd4c1e160a82",
+    "committedAt": "@now-2h"
+  },
+  "latestRelease": {
+    "tagName": "v1.4.0",
+    "name": "v1.4.0",
+    "publishedAt": "@now-3d",
+    "prerelease": false,
+    "htmlUrl": "https://github.com/example-org/project-alpha-backend/releases/tag/v1.4.0"
+  },
+  "files": {
+    ".security/project-security-status.json": "{\n  \"schemaVersion\": \"1.0\",\n  \"generatedAt\": \"@now-6h\",\n  \"repository\": \"example-org/project-alpha-backend\",\n  \"version\": \"synthetic\",\n  \"commitSha\": \"95c7fbdc2c7d81daf6bf050dab7bdd4c1e160a82\",\n  \"controls\": {\n    \"containerScanning\": {\n      \"status\": \"completed\",\n      \"tool\": \"trivy\",\n      \"critical\": 0,\n      \"high\": 0,\n      \"medium\": 1,\n      \"low\": 3,\n      \"completedAt\": \"@now-6h\",\n      \"reportUrl\": \"https://github.com/example-org/project-alpha-backend/actions/runs/9100\"\n    },\n    \"iacScanning\": {\n      \"status\": \"not-configured\"\n    },\n    \"dast\": {\n      \"status\": \"not-configured\"\n    },\n    \"sbom\": {\n      \"status\": \"available\",\n      \"format\": \"cyclonedx\"\n    },\n    \"artifactSignature\": {\n      \"status\": \"verified\",\n      \"tool\": \"cosign\"\n    }\n  }\n}"
+  },
+  "workflowRuns": {
+    "ci-main.yml": [
+      {
+        "id": 9002,
+        "runNumber": 812,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "headBranch": "main",
+        "event": "push",
+        "headSha": "870fc1e057ad1bb87e11eadbd7d2f1f7929aa79a",
+        "createdAt": "@now-2h",
+        "updatedAt": "@now-2h",
+        "htmlUrl": "https://github.com/example-org/project-alpha-backend/actions/runs/9002"
+      },
+      {
+        "id": 9003,
+        "runNumber": 811,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "headBranch": "main",
+        "event": "push",
+        "headSha": "5e6bb2ba9d0937ec7526038e5bcb906562e34668",
+        "createdAt": "@now-1d",
+        "updatedAt": "@now-1d",
+        "htmlUrl": "https://github.com/example-org/project-alpha-backend/actions/runs/9003"
+      }
+    ],
+    "rel-release.yml": [
+      {
+        "id": 9004,
+        "runNumber": 64,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "headBranch": "main",
+        "event": "workflow_dispatch",
+        "headSha": "c28808f90ac7ea38a7ca7e51d40317774804ca09",
+        "createdAt": "@now-3d",
+        "updatedAt": "@now-3d",
+        "htmlUrl": "https://github.com/example-org/project-alpha-backend/actions/runs/9004"
+      }
+    ]
+  },
+  "codeScanningAlerts": [
+    {
+      "number": 14,
+      "state": "open",
+      "dismissedReason": null,
+      "ruleId": "java/missing-rate-limiting",
+      "ruleSeverity": "warning",
+      "securitySeverityLevel": "medium",
+      "ruleDescription": "Missing rate limiting on public endpoint",
+      "toolName": "CodeQL",
+      "createdAt": "@now-5d",
+      "updatedAt": "@now-5d",
+      "htmlUrl": "https://github.com/example-org/project-alpha-backend/security/code-scanning/14"
+    },
+    {
+      "number": 12,
+      "state": "open",
+      "dismissedReason": null,
+      "ruleId": "java/log-injection",
+      "ruleSeverity": "warning",
+      "securitySeverityLevel": "medium",
+      "ruleDescription": "Log entries created from user input",
+      "toolName": "CodeQL",
+      "createdAt": "@now-12d",
+      "updatedAt": "@now-12d",
+      "htmlUrl": "https://github.com/example-org/project-alpha-backend/security/code-scanning/12"
+    },
+    {
+      "number": 9,
+      "state": "fixed",
+      "dismissedReason": null,
+      "ruleId": "java/weak-cryptographic-algorithm",
+      "ruleSeverity": "warning",
+      "securitySeverityLevel": "high",
+      "ruleDescription": "Use of a weak cryptographic algorithm",
+      "toolName": "CodeQL",
+      "createdAt": "@now-30d",
+      "updatedAt": "@now-30d",
+      "htmlUrl": "https://github.com/example-org/project-alpha-backend/security/code-scanning/9"
+    }
+  ],
+  "codeScanningAnalysis": {
+    "createdAt": "@now-2h",
+    "toolName": "CodeQL"
+  },
+  "dependabotAlerts": [],
+  "secretScanningAlerts": []
+}

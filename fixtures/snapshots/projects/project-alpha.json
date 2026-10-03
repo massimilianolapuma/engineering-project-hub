@@ -1,0 +1,1434 @@
+{
+  "schemaVersion": "1.0",
+  "generatedAt": "2026-01-15T12:00:00.000Z",
+  "project": {
+    "id": "project-alpha",
+    "name": "Project Alpha",
+    "description": "Synthetic multi-repository payments platform used for the demo.",
+    "businessUnit": "Payments",
+    "lifecycle": "production"
+  },
+  "coordinator": {
+    "repository": {
+      "fullName": "example-org/project-alpha-coordinator",
+      "owner": "example-org",
+      "name": "project-alpha-coordinator",
+      "url": "https://github.com/example-org/project-alpha-coordinator",
+      "status": "ok",
+      "visibility": "public",
+      "defaultBranch": "main",
+      "configuredDefaultBranch": "main",
+      "archived": false,
+      "updatedAt": "2026-01-14T12:00:00.000Z",
+      "topics": [
+        "demo"
+      ],
+      "latestCommit": {
+        "sha": "4e8100969f2ec6777df476c40eeedec80aca4380",
+        "url": "https://github.com/example-org/project-alpha-coordinator/commit/4e8100969f2ec6777df476c40eeedec80aca4380",
+        "committedAt": "2026-01-14T12:00:00.000Z"
+      }
+    },
+    "version": "1.4.0",
+    "versionSource": "manifest",
+    "latestRelease": {
+      "tag": "v1.4.0",
+      "name": "v1.4.0",
+      "publishedAt": "2026-01-12T12:00:00.000Z",
+      "prerelease": false,
+      "url": "https://github.com/example-org/project-alpha-coordinator/releases/tag/v1.4.0",
+      "kind": "release"
+    },
+    "manifest": {
+      "path": "release-manifest.yaml",
+      "status": "ok"
+    },
+    "submodules": [
+      {
+        "path": "services/backend",
+        "repository": "example-org/project-alpha-backend",
+        "sha": "a854f48ad1aa650b2594455e44d9016866a5d5b3",
+        "componentId": "backend",
+        "association": "configured-path",
+        "status": "resolved"
+      },
+      {
+        "path": "apps/frontend",
+        "repository": "example-org/project-alpha-frontend",
+        "sha": "7482a4cab7d0cbbb5b9bde9cb303ab22b02ef963",
+        "componentId": "frontend",
+        "association": "configured-path",
+        "status": "resolved"
+      },
+      {
+        "path": "services/worker",
+        "repository": "example-org/project-alpha-worker",
+        "sha": "ae589794b1f6f51ea57eb1e77bdb88b5dda79046",
+        "componentId": "worker",
+        "association": "configured-path",
+        "status": "resolved"
+      },
+      {
+        "path": "deploy/helm",
+        "repository": "example-org/project-alpha-helm",
+        "sha": "d304f3fee80499f3c014fbbb7baea89240a9c334",
+        "componentId": "helm",
+        "association": "configured-path",
+        "status": "resolved"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "backend",
+      "name": "Backend API",
+      "type": "service",
+      "repository": {
+        "fullName": "example-org/project-alpha-backend",
+        "owner": "example-org",
+        "name": "project-alpha-backend",
+        "url": "https://github.com/example-org/project-alpha-backend",
+        "status": "ok",
+        "visibility": "public",
+        "defaultBranch": "main",
+        "configuredDefaultBranch": "main",
+        "archived": false,
+        "updatedAt": "2026-01-14T12:00:00.000Z",
+        "topics": [
+          "demo",
+          "java"
+        ],
+        "latestCommit": {
+          "sha": "95c7fbdc2c7d81daf6bf050dab7bdd4c1e160a82",
+          "url": "https://github.com/example-org/project-alpha-backend/commit/95c7fbdc2c7d81daf6bf050dab7bdd4c1e160a82",
+          "committedAt": "2026-01-15T10:00:00.000Z"
+        }
+      },
+      "declaredVersion": "1.4.0",
+      "latestRelease": {
+        "tag": "v1.4.0",
+        "name": "v1.4.0",
+        "publishedAt": "2026-01-12T12:00:00.000Z",
+        "prerelease": false,
+        "url": "https://github.com/example-org/project-alpha-backend/releases/tag/v1.4.0",
+        "kind": "release"
+      },
+      "submodule": {
+        "path": "services/backend",
+        "repository": "example-org/project-alpha-backend",
+        "sha": "a854f48ad1aa650b2594455e44d9016866a5d5b3",
+        "componentId": "backend",
+        "association": "configured-path",
+        "status": "resolved"
+      },
+      "drift": "aligned"
+    },
+    {
+      "id": "frontend",
+      "name": "Frontend",
+      "type": "webapp",
+      "repository": {
+        "fullName": "example-org/project-alpha-frontend",
+        "owner": "example-org",
+        "name": "project-alpha-frontend",
+        "url": "https://github.com/example-org/project-alpha-frontend",
+        "status": "ok",
+        "visibility": "public",
+        "defaultBranch": "main",
+        "configuredDefaultBranch": "main",
+        "archived": false,
+        "updatedAt": "2026-01-14T12:00:00.000Z",
+        "topics": [
+          "demo",
+          "typescript"
+        ],
+        "latestCommit": {
+          "sha": "ae4b58f791cf66bf510c92ca102cc34470fbdf7d",
+          "url": "https://github.com/example-org/project-alpha-frontend/commit/ae4b58f791cf66bf510c92ca102cc34470fbdf7d",
+          "committedAt": "2026-01-15T07:00:00.000Z"
+        }
+      },
+      "declaredVersion": "2.1.0",
+      "latestRelease": {
+        "tag": "v2.2.0",
+        "name": "v2.2.0",
+        "publishedAt": "2026-01-13T12:00:00.000Z",
+        "prerelease": false,
+        "url": "https://github.com/example-org/project-alpha-frontend/releases/tag/v2.2.0",
+        "kind": "release"
+      },
+      "submodule": {
+        "path": "apps/frontend",
+        "repository": "example-org/project-alpha-frontend",
+        "sha": "7482a4cab7d0cbbb5b9bde9cb303ab22b02ef963",
+        "componentId": "frontend",
+        "association": "configured-path",
+        "status": "resolved"
+      },
+      "drift": "drift"
+    },
+    {
+      "id": "worker",
+      "name": "Settlement worker",
+      "type": "worker",
+      "repository": {
+        "fullName": "example-org/project-alpha-worker",
+        "owner": "example-org",
+        "name": "project-alpha-worker",
+        "url": "https://github.com/example-org/project-alpha-worker",
+        "status": "ok",
+        "visibility": "public",
+        "defaultBranch": "main",
+        "configuredDefaultBranch": "main",
+        "archived": false,
+        "updatedAt": "2026-01-14T12:00:00.000Z",
+        "topics": [
+          "demo",
+          "go"
+        ],
+        "latestCommit": {
+          "sha": "d3a5814a6e7959fc09128637bc5469d3e725aea9",
+          "url": "https://github.com/example-org/project-alpha-worker/commit/d3a5814a6e7959fc09128637bc5469d3e725aea9",
+          "committedAt": "2026-01-14T12:00:00.000Z"
+        }
+      },
+      "declaredVersion": "1.2.0",
+      "latestRelease": {
+        "tag": "v1.2.0",
+        "name": "v1.2.0",
+        "publishedAt": "2026-01-06T12:00:00.000Z",
+        "prerelease": false,
+        "url": "https://github.com/example-org/project-alpha-worker/releases/tag/v1.2.0",
+        "kind": "release"
+      },
+      "submodule": {
+        "path": "services/worker",
+        "repository": "example-org/project-alpha-worker",
+        "sha": "ae589794b1f6f51ea57eb1e77bdb88b5dda79046",
+        "componentId": "worker",
+        "association": "configured-path",
+        "status": "resolved"
+      },
+      "drift": "aligned"
+    },
+    {
+      "id": "helm",
+      "name": "Helm deployment",
+      "type": "deployment",
+      "repository": {
+        "fullName": "example-org/project-alpha-helm",
+        "owner": "example-org",
+        "name": "project-alpha-helm",
+        "url": "https://github.com/example-org/project-alpha-helm",
+        "status": "ok",
+        "visibility": "public",
+        "defaultBranch": "main",
+        "configuredDefaultBranch": "main",
+        "archived": false,
+        "updatedAt": "2026-01-14T12:00:00.000Z",
+        "topics": [
+          "demo",
+          "helm"
+        ],
+        "latestCommit": {
+          "sha": "8c7b83b9c5d18e246a8c311cb60737601fc95807",
+          "url": "https://github.com/example-org/project-alpha-helm/commit/8c7b83b9c5d18e246a8c311cb60737601fc95807",
+          "committedAt": "2026-01-14T12:00:00.000Z"
+        }
+      },
+      "declaredVersion": "0.9.0",
+      "latestRelease": {
+        "tag": "v0.9.0",
+        "name": "v0.9.0",
+        "publishedAt": "2026-01-12T12:00:00.000Z",
+        "prerelease": false,
+        "url": "https://github.com/example-org/project-alpha-helm/releases/tag/v0.9.0",
+        "kind": "release"
+      },
+      "submodule": {
+        "path": "deploy/helm",
+        "repository": "example-org/project-alpha-helm",
+        "sha": "d304f3fee80499f3c014fbbb7baea89240a9c334",
+        "componentId": "helm",
+        "association": "configured-path",
+        "status": "resolved"
+      },
+      "drift": "aligned"
+    }
+  ],
+  "environments": [
+    {
+      "id": "dev",
+      "name": "DEV",
+      "version": "1.4.0",
+      "source": "manifest",
+      "status": "aligned"
+    },
+    {
+      "id": "test",
+      "name": "TEST",
+      "version": "1.4.0",
+      "source": "manifest",
+      "status": "aligned"
+    },
+    {
+      "id": "uat",
+      "name": "UAT",
+      "version": "1.4.0",
+      "source": "manifest",
+      "status": "aligned"
+    },
+    {
+      "id": "prod",
+      "name": "PROD",
+      "version": "1.3.0",
+      "source": "manifest",
+      "status": "behind"
+    }
+  ],
+  "workflows": [
+    {
+      "workflowId": "ci",
+      "name": "Continuous Integration",
+      "file": "ci-main.yml",
+      "critical": true,
+      "componentId": "backend",
+      "repository": "example-org/project-alpha-backend",
+      "branch": "main",
+      "state": "success",
+      "stale": false,
+      "latestRun": {
+        "id": 9002,
+        "runNumber": 812,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "branch": "main",
+        "event": "push",
+        "sha": "870fc1e057ad1bb87e11eadbd7d2f1f7929aa79a",
+        "createdAt": "2026-01-15T10:00:00.000Z",
+        "updatedAt": "2026-01-15T10:00:00.000Z",
+        "url": "https://github.com/example-org/project-alpha-backend/actions/runs/9002"
+      },
+      "lastCompletedRun": {
+        "id": 9002,
+        "runNumber": 812,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "branch": "main",
+        "event": "push",
+        "sha": "870fc1e057ad1bb87e11eadbd7d2f1f7929aa79a",
+        "createdAt": "2026-01-15T10:00:00.000Z",
+        "updatedAt": "2026-01-15T10:00:00.000Z",
+        "url": "https://github.com/example-org/project-alpha-backend/actions/runs/9002"
+      },
+      "lastFailedRun": null,
+      "activeRun": null,
+      "lastError": null
+    },
+    {
+      "workflowId": "ci",
+      "name": "Continuous Integration",
+      "file": "ci-main.yml",
+      "critical": true,
+      "componentId": "frontend",
+      "repository": "example-org/project-alpha-frontend",
+      "branch": "main",
+      "state": "success",
+      "stale": false,
+      "latestRun": {
+        "id": 9005,
+        "runNumber": 430,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "branch": "main",
+        "event": "push",
+        "sha": "9b9ce3aecd369d0215a7314d63cc294339417cd6",
+        "createdAt": "2026-01-15T07:00:00.000Z",
+        "updatedAt": "2026-01-15T07:00:00.000Z",
+        "url": "https://github.com/example-org/project-alpha-frontend/actions/runs/9005"
+      },
+      "lastCompletedRun": {
+        "id": 9005,
+        "runNumber": 430,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "branch": "main",
+        "event": "push",
+        "sha": "9b9ce3aecd369d0215a7314d63cc294339417cd6",
+        "createdAt": "2026-01-15T07:00:00.000Z",
+        "updatedAt": "2026-01-15T07:00:00.000Z",
+        "url": "https://github.com/example-org/project-alpha-frontend/actions/runs/9005"
+      },
+      "lastFailedRun": {
+        "id": 9006,
+        "runNumber": 429,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "failure",
+        "branch": "main",
+        "event": "push",
+        "sha": "7420c79fbd166f9d3aca2e754e908b64e47b5af0",
+        "createdAt": "2026-01-14T12:00:00.000Z",
+        "updatedAt": "2026-01-14T12:00:00.000Z",
+        "url": "https://github.com/example-org/project-alpha-frontend/actions/runs/9006"
+      },
+      "activeRun": null,
+      "lastError": null
+    },
+    {
+      "workflowId": "ci",
+      "name": "Continuous Integration",
+      "file": "ci-main.yml",
+      "critical": true,
+      "componentId": "worker",
+      "repository": "example-org/project-alpha-worker",
+      "branch": "main",
+      "state": "success",
+      "stale": false,
+      "latestRun": {
+        "id": 9008,
+        "runNumber": 205,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "branch": "main",
+        "event": "push",
+        "sha": "6ef4f27b776f6198f811276afd803c9a45a943ca",
+        "createdAt": "2026-01-14T12:00:00.000Z",
+        "updatedAt": "2026-01-14T12:00:00.000Z",
+        "url": "https://github.com/example-org/project-alpha-worker/actions/runs/9008"
+      },
+      "lastCompletedRun": {
+        "id": 9008,
+        "runNumber": 205,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "branch": "main",
+        "event": "push",
+        "sha": "6ef4f27b776f6198f811276afd803c9a45a943ca",
+        "createdAt": "2026-01-14T12:00:00.000Z",
+        "updatedAt": "2026-01-14T12:00:00.000Z",
+        "url": "https://github.com/example-org/project-alpha-worker/actions/runs/9008"
+      },
+      "lastFailedRun": null,
+      "activeRun": null,
+      "lastError": null
+    },
+    {
+      "workflowId": "release",
+      "name": "Release",
+      "file": "rel-release.yml",
+      "critical": true,
+      "componentId": "coordinator",
+      "repository": "example-org/project-alpha-coordinator",
+      "branch": "main",
+      "state": "success",
+      "stale": false,
+      "latestRun": {
+        "id": 9001,
+        "runNumber": 57,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "branch": "main",
+        "event": "workflow_dispatch",
+        "sha": "0afa9796ac75b2347dde3f8a27f6d9299494aa10",
+        "createdAt": "2026-01-12T12:00:00.000Z",
+        "updatedAt": "2026-01-12T12:00:00.000Z",
+        "url": "https://github.com/example-org/project-alpha-coordinator/actions/runs/9001"
+      },
+      "lastCompletedRun": {
+        "id": 9001,
+        "runNumber": 57,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "branch": "main",
+        "event": "workflow_dispatch",
+        "sha": "0afa9796ac75b2347dde3f8a27f6d9299494aa10",
+        "createdAt": "2026-01-12T12:00:00.000Z",
+        "updatedAt": "2026-01-12T12:00:00.000Z",
+        "url": "https://github.com/example-org/project-alpha-coordinator/actions/runs/9001"
+      },
+      "lastFailedRun": null,
+      "activeRun": null,
+      "lastError": null
+    },
+    {
+      "workflowId": "release",
+      "name": "Release",
+      "file": "rel-release.yml",
+      "critical": true,
+      "componentId": "backend",
+      "repository": "example-org/project-alpha-backend",
+      "branch": "main",
+      "state": "success",
+      "stale": false,
+      "latestRun": {
+        "id": 9004,
+        "runNumber": 64,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "branch": "main",
+        "event": "workflow_dispatch",
+        "sha": "c28808f90ac7ea38a7ca7e51d40317774804ca09",
+        "createdAt": "2026-01-12T12:00:00.000Z",
+        "updatedAt": "2026-01-12T12:00:00.000Z",
+        "url": "https://github.com/example-org/project-alpha-backend/actions/runs/9004"
+      },
+      "lastCompletedRun": {
+        "id": 9004,
+        "runNumber": 64,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "branch": "main",
+        "event": "workflow_dispatch",
+        "sha": "c28808f90ac7ea38a7ca7e51d40317774804ca09",
+        "createdAt": "2026-01-12T12:00:00.000Z",
+        "updatedAt": "2026-01-12T12:00:00.000Z",
+        "url": "https://github.com/example-org/project-alpha-backend/actions/runs/9004"
+      },
+      "lastFailedRun": null,
+      "activeRun": null,
+      "lastError": null
+    },
+    {
+      "workflowId": "release",
+      "name": "Release",
+      "file": "rel-release.yml",
+      "critical": true,
+      "componentId": "frontend",
+      "repository": "example-org/project-alpha-frontend",
+      "branch": "main",
+      "state": "success",
+      "stale": false,
+      "latestRun": {
+        "id": 9007,
+        "runNumber": 31,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "branch": "main",
+        "event": "workflow_dispatch",
+        "sha": "81af777bccdde5dfda3a757245fa18fbbdec15ed",
+        "createdAt": "2026-01-13T12:00:00.000Z",
+        "updatedAt": "2026-01-13T12:00:00.000Z",
+        "url": "https://github.com/example-org/project-alpha-frontend/actions/runs/9007"
+      },
+      "lastCompletedRun": {
+        "id": 9007,
+        "runNumber": 31,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "branch": "main",
+        "event": "workflow_dispatch",
+        "sha": "81af777bccdde5dfda3a757245fa18fbbdec15ed",
+        "createdAt": "2026-01-13T12:00:00.000Z",
+        "updatedAt": "2026-01-13T12:00:00.000Z",
+        "url": "https://github.com/example-org/project-alpha-frontend/actions/runs/9007"
+      },
+      "lastFailedRun": null,
+      "activeRun": null,
+      "lastError": null
+    },
+    {
+      "workflowId": "release",
+      "name": "Release",
+      "file": "rel-release.yml",
+      "critical": true,
+      "componentId": "worker",
+      "repository": "example-org/project-alpha-worker",
+      "branch": "main",
+      "state": "success",
+      "stale": false,
+      "latestRun": {
+        "id": 9009,
+        "runNumber": 18,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "branch": "main",
+        "event": "workflow_dispatch",
+        "sha": "9864747931afc2437a11287daf2aa7b0ec5b952f",
+        "createdAt": "2026-01-06T12:00:00.000Z",
+        "updatedAt": "2026-01-06T12:00:00.000Z",
+        "url": "https://github.com/example-org/project-alpha-worker/actions/runs/9009"
+      },
+      "lastCompletedRun": {
+        "id": 9009,
+        "runNumber": 18,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "branch": "main",
+        "event": "workflow_dispatch",
+        "sha": "9864747931afc2437a11287daf2aa7b0ec5b952f",
+        "createdAt": "2026-01-06T12:00:00.000Z",
+        "updatedAt": "2026-01-06T12:00:00.000Z",
+        "url": "https://github.com/example-org/project-alpha-worker/actions/runs/9009"
+      },
+      "lastFailedRun": null,
+      "activeRun": null,
+      "lastError": null
+    },
+    {
+      "workflowId": "deploy",
+      "name": "Deployment",
+      "file": "cd.yml",
+      "critical": true,
+      "componentId": "helm",
+      "repository": "example-org/project-alpha-helm",
+      "branch": "main",
+      "state": "success",
+      "stale": false,
+      "latestRun": {
+        "id": 9010,
+        "runNumber": 143,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "branch": "main",
+        "event": "workflow_dispatch",
+        "sha": "45630c258e3e8edde1a83b65072bda910abad92c",
+        "createdAt": "2026-01-14T12:00:00.000Z",
+        "updatedAt": "2026-01-14T12:00:00.000Z",
+        "url": "https://github.com/example-org/project-alpha-helm/actions/runs/9010"
+      },
+      "lastCompletedRun": {
+        "id": 9010,
+        "runNumber": 143,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "branch": "main",
+        "event": "workflow_dispatch",
+        "sha": "45630c258e3e8edde1a83b65072bda910abad92c",
+        "createdAt": "2026-01-14T12:00:00.000Z",
+        "updatedAt": "2026-01-14T12:00:00.000Z",
+        "url": "https://github.com/example-org/project-alpha-helm/actions/runs/9010"
+      },
+      "lastFailedRun": null,
+      "activeRun": null,
+      "lastError": null
+    }
+  ],
+  "securityFindings": [
+    {
+      "id": "example-org/project-alpha-backend#code-scanning#14",
+      "projectId": "project-alpha",
+      "componentId": "backend",
+      "repository": "example-org/project-alpha-backend",
+      "source": "github-code-scanning",
+      "category": "code",
+      "severity": "medium",
+      "originalSeverity": "medium",
+      "status": "open",
+      "originalStatus": "open",
+      "ruleId": "java/missing-rate-limiting",
+      "title": "Missing rate limiting on public endpoint",
+      "detectedAt": "2026-01-10T12:00:00.000Z",
+      "updatedAt": "2026-01-10T12:00:00.000Z",
+      "fixAvailable": null,
+      "htmlUrl": "https://github.com/example-org/project-alpha-backend/security/code-scanning/14",
+      "tool": "CodeQL",
+      "repositoryPrivate": false,
+      "dataClassification": "public"
+    },
+    {
+      "id": "example-org/project-alpha-backend#code-scanning#12",
+      "projectId": "project-alpha",
+      "componentId": "backend",
+      "repository": "example-org/project-alpha-backend",
+      "source": "github-code-scanning",
+      "category": "code",
+      "severity": "medium",
+      "originalSeverity": "medium",
+      "status": "open",
+      "originalStatus": "open",
+      "ruleId": "java/log-injection",
+      "title": "Log entries created from user input",
+      "detectedAt": "2026-01-03T12:00:00.000Z",
+      "updatedAt": "2026-01-03T12:00:00.000Z",
+      "fixAvailable": null,
+      "htmlUrl": "https://github.com/example-org/project-alpha-backend/security/code-scanning/12",
+      "tool": "CodeQL",
+      "repositoryPrivate": false,
+      "dataClassification": "public"
+    },
+    {
+      "id": "example-org/project-alpha-backend#code-scanning#9",
+      "projectId": "project-alpha",
+      "componentId": "backend",
+      "repository": "example-org/project-alpha-backend",
+      "source": "github-code-scanning",
+      "category": "code",
+      "severity": "high",
+      "originalSeverity": "high",
+      "status": "fixed",
+      "originalStatus": "fixed",
+      "ruleId": "java/weak-cryptographic-algorithm",
+      "title": "Use of a weak cryptographic algorithm",
+      "detectedAt": "2025-12-16T12:00:00.000Z",
+      "updatedAt": "2025-12-16T12:00:00.000Z",
+      "fixAvailable": null,
+      "htmlUrl": "https://github.com/example-org/project-alpha-backend/security/code-scanning/9",
+      "tool": "CodeQL",
+      "repositoryPrivate": false,
+      "dataClassification": "public"
+    },
+    {
+      "id": "example-org/project-alpha-frontend#dependabot#7",
+      "projectId": "project-alpha",
+      "componentId": "frontend",
+      "repository": "example-org/project-alpha-frontend",
+      "source": "github-dependabot",
+      "category": "dependency",
+      "severity": "high",
+      "originalSeverity": "high",
+      "status": "open",
+      "originalStatus": "open",
+      "ruleId": "GHSA-demo-0001-alph",
+      "title": "example-lib: Prototype pollution in example-lib (synthetic advisory)",
+      "detectedAt": "2026-01-11T12:00:00.000Z",
+      "updatedAt": "2026-01-11T12:00:00.000Z",
+      "fixAvailable": true,
+      "htmlUrl": "https://github.com/example-org/project-alpha-frontend/security/dependabot/7",
+      "tool": "dependabot",
+      "repositoryPrivate": false,
+      "dataClassification": "public"
+    },
+    {
+      "id": "example-org/project-alpha-frontend#dependabot#5",
+      "projectId": "project-alpha",
+      "componentId": "frontend",
+      "repository": "example-org/project-alpha-frontend",
+      "source": "github-dependabot",
+      "category": "dependency",
+      "severity": "medium",
+      "originalSeverity": "moderate",
+      "status": "fixed",
+      "originalStatus": "fixed",
+      "ruleId": "GHSA-demo-0002-alph",
+      "title": "example-parser: Regular expression denial of service (synthetic advisory)",
+      "detectedAt": "2025-12-06T12:00:00.000Z",
+      "updatedAt": "2025-12-06T12:00:00.000Z",
+      "fixAvailable": true,
+      "htmlUrl": "https://github.com/example-org/project-alpha-frontend/security/dependabot/5",
+      "tool": "dependabot",
+      "repositoryPrivate": false,
+      "dataClassification": "public"
+    }
+  ],
+  "securityControls": [
+    {
+      "componentId": "coordinator",
+      "repository": "example-org/project-alpha-coordinator",
+      "controls": [
+        {
+          "control": "codeScanning",
+          "required": true,
+          "state": "enabled",
+          "tool": null,
+          "lastScanAt": "2026-01-14T12:00:00.000Z",
+          "counts": {
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": null
+        },
+        {
+          "control": "secretScanning",
+          "required": true,
+          "state": "enabled",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": {
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": null
+        },
+        {
+          "control": "dependabot",
+          "required": true,
+          "state": "enabled",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": {
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": null
+        },
+        {
+          "control": "containerScanning",
+          "required": false,
+          "state": "not-applicable",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "iacScanning",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "dast",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "sbom",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "artifactSignature",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        }
+      ]
+    },
+    {
+      "componentId": "backend",
+      "repository": "example-org/project-alpha-backend",
+      "controls": [
+        {
+          "control": "codeScanning",
+          "required": true,
+          "state": "enabled",
+          "tool": null,
+          "lastScanAt": "2026-01-15T10:00:00.000Z",
+          "counts": {
+            "critical": 0,
+            "high": 0,
+            "medium": 2,
+            "low": 0,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": null
+        },
+        {
+          "control": "secretScanning",
+          "required": true,
+          "state": "enabled",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": {
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": null
+        },
+        {
+          "control": "dependabot",
+          "required": true,
+          "state": "enabled",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": {
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": null
+        },
+        {
+          "control": "containerScanning",
+          "required": true,
+          "state": "enabled",
+          "tool": "trivy",
+          "lastScanAt": "2026-01-15T06:00:00.000Z",
+          "counts": {
+            "critical": 0,
+            "high": 0,
+            "medium": 1,
+            "low": 3,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": "https://github.com/example-org/project-alpha-backend/actions/runs/9100"
+        },
+        {
+          "control": "iacScanning",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": "2026-01-15T06:00:00.000Z",
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "dast",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": "2026-01-15T06:00:00.000Z",
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "sbom",
+          "required": false,
+          "state": "enabled",
+          "tool": null,
+          "lastScanAt": "2026-01-15T06:00:00.000Z",
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "artifactSignature",
+          "required": false,
+          "state": "enabled",
+          "tool": "cosign",
+          "lastScanAt": "2026-01-15T06:00:00.000Z",
+          "counts": null,
+          "reportUrl": null
+        }
+      ]
+    },
+    {
+      "componentId": "frontend",
+      "repository": "example-org/project-alpha-frontend",
+      "controls": [
+        {
+          "control": "codeScanning",
+          "required": true,
+          "state": "enabled",
+          "tool": null,
+          "lastScanAt": "2026-01-15T07:00:00.000Z",
+          "counts": {
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": null
+        },
+        {
+          "control": "secretScanning",
+          "required": true,
+          "state": "enabled",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": {
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": null
+        },
+        {
+          "control": "dependabot",
+          "required": true,
+          "state": "enabled",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": {
+            "critical": 0,
+            "high": 1,
+            "medium": 0,
+            "low": 0,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": null
+        },
+        {
+          "control": "containerScanning",
+          "required": true,
+          "state": "enabled",
+          "tool": "trivy",
+          "lastScanAt": "2026-01-15T07:00:00.000Z",
+          "counts": {
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": null
+        },
+        {
+          "control": "iacScanning",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "dast",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "sbom",
+          "required": false,
+          "state": "enabled",
+          "tool": null,
+          "lastScanAt": "2026-01-15T07:00:00.000Z",
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "artifactSignature",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        }
+      ]
+    },
+    {
+      "componentId": "worker",
+      "repository": "example-org/project-alpha-worker",
+      "controls": [
+        {
+          "control": "codeScanning",
+          "required": true,
+          "state": "enabled",
+          "tool": null,
+          "lastScanAt": "2026-01-14T12:00:00.000Z",
+          "counts": {
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": null
+        },
+        {
+          "control": "secretScanning",
+          "required": true,
+          "state": "enabled",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": {
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": null
+        },
+        {
+          "control": "dependabot",
+          "required": true,
+          "state": "enabled",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": {
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": null
+        },
+        {
+          "control": "containerScanning",
+          "required": true,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": "2026-01-14T12:00:00.000Z",
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "iacScanning",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "dast",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "sbom",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": "2026-01-14T12:00:00.000Z",
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "artifactSignature",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        }
+      ]
+    },
+    {
+      "componentId": "helm",
+      "repository": "example-org/project-alpha-helm",
+      "controls": [
+        {
+          "control": "codeScanning",
+          "required": true,
+          "state": "enabled",
+          "tool": null,
+          "lastScanAt": "2026-01-14T12:00:00.000Z",
+          "counts": {
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": null
+        },
+        {
+          "control": "secretScanning",
+          "required": true,
+          "state": "enabled",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": {
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": null
+        },
+        {
+          "control": "dependabot",
+          "required": true,
+          "state": "enabled",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": {
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": null
+        },
+        {
+          "control": "containerScanning",
+          "required": false,
+          "state": "not-applicable",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "iacScanning",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "dast",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "sbom",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "artifactSignature",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        }
+      ]
+    }
+  ],
+  "deliveryHealth": {
+    "status": "green",
+    "reasons": [
+      {
+        "code": "critical-workflows-succeeded",
+        "level": "info",
+        "params": {
+          "count": 8
+        }
+      }
+    ]
+  },
+  "versionHealth": {
+    "status": "amber",
+    "reasons": [
+      {
+        "code": "component-version-drift",
+        "level": "amber",
+        "params": {
+          "component": "Frontend",
+          "declared": "2.1.0",
+          "latest": "v2.2.0"
+        }
+      },
+      {
+        "code": "environment-behind",
+        "level": "amber",
+        "params": {
+          "environment": "PROD",
+          "version": "1.3.0",
+          "expected": "1.4.0"
+        }
+      }
+    ]
+  },
+  "securityHealth": {
+    "status": "amber",
+    "reasons": [
+      {
+        "code": "open-high-alerts",
+        "level": "amber",
+        "params": {
+          "count": 1
+        }
+      },
+      {
+        "code": "open-medium-low-alerts",
+        "level": "amber",
+        "params": {
+          "count": 6
+        }
+      },
+      {
+        "code": "coverage-incomplete",
+        "level": "amber",
+        "params": {
+          "percentage": 75
+        }
+      }
+    ],
+    "openCounts": {
+      "critical": 0,
+      "high": 1,
+      "medium": 3,
+      "low": 3,
+      "informational": 0,
+      "unknown": 0
+    },
+    "countsComplete": true,
+    "openSecretAlerts": 0,
+    "byCategory": {
+      "code": 2,
+      "dependency": 1,
+      "secret": 0,
+      "container": 4,
+      "iac": 0,
+      "dast": 0,
+      "supply-chain": 0,
+      "configuration": 0
+    },
+    "bySource": {
+      "github-code-scanning": 2,
+      "github-dependabot": 1,
+      "github-secret-scanning": 0,
+      "security-status-file": 4
+    }
+  },
+  "securityCoverage": {
+    "status": "amber",
+    "reasons": [
+      {
+        "code": "required-control-not-configured",
+        "level": "amber",
+        "params": {
+          "control": "containerScanning"
+        }
+      }
+    ],
+    "percentage": 75,
+    "required": 4,
+    "available": 3,
+    "notConfigured": 1,
+    "notAuthorised": 0,
+    "unknown": 0,
+    "failed": 0,
+    "stale": 0,
+    "collectedAt": "2026-01-15T12:00:00.000Z",
+    "perControl": [
+      {
+        "control": "codeScanning",
+        "required": true,
+        "state": "enabled"
+      },
+      {
+        "control": "secretScanning",
+        "required": true,
+        "state": "enabled"
+      },
+      {
+        "control": "dependabot",
+        "required": true,
+        "state": "enabled"
+      },
+      {
+        "control": "containerScanning",
+        "required": true,
+        "state": "not-configured"
+      },
+      {
+        "control": "iacScanning",
+        "required": false,
+        "state": "not-configured"
+      },
+      {
+        "control": "dast",
+        "required": false,
+        "state": "not-configured"
+      },
+      {
+        "control": "sbom",
+        "required": false,
+        "state": "not-configured"
+      },
+      {
+        "control": "artifactSignature",
+        "required": false,
+        "state": "not-configured"
+      }
+    ]
+  },
+  "governanceHealth": {
+    "status": "green",
+    "reasons": [
+      {
+        "code": "governance-compliant",
+        "level": "info",
+        "params": {}
+      }
+    ]
+  },
+  "overallHealth": {
+    "status": "amber",
+    "reasons": [
+      {
+        "code": "dimension-amber",
+        "level": "amber",
+        "params": {
+          "dimension": "version"
+        }
+      },
+      {
+        "code": "dimension-amber",
+        "level": "amber",
+        "params": {
+          "dimension": "security"
+        }
+      },
+      {
+        "code": "dimension-amber",
+        "level": "amber",
+        "params": {
+          "dimension": "coverage"
+        }
+      }
+    ]
+  },
+  "dataFreshness": {
+    "status": "green",
+    "collectedAt": "2026-01-15T12:00:00.000Z",
+    "oldestSourceAt": null,
+    "staleSources": []
+  },
+  "collectionErrors": []
+}

@@ -1,0 +1,170 @@
+# ==============================================================================
+# Collect — Data snapshots
+# ==============================================================================
+#
+# Purpose:  Runs the collector (npm run collect) and publishes the sanitized
+#           snapshots (public/data/**) as the "snapshots" artifact.
+#           This is the ONLY job of the project that receives GitHub credentials:
+#           build and deploy (deploy-pages.yml) never see a secret (ADR 0003).
+#
+# Triggers:
+#   - workflow_call        — called by deploy-pages.yml (explicit secrets)
+#   - workflow_dispatch    — manual run (data-source: mock | github)
+#   - repository_dispatch  — types: [collect-data] (external trigger via the API)
+#
+# Data source: inputs.data-source → vars.DATA_SOURCE → "mock".
+#   Allowed values: mock | github (validated before use).
+#
+# Credentials (all optional; order of preference used by the collector):
+#   1. GitHub App — GH_APP_ID, GH_APP_PRIVATE_KEY, GH_APP_INSTALLATION_ID
+#   2. Fine-grained read-only PAT — GH_READ_TOKEN
+#   3. The workflow GITHUB_TOKEN (contents: read on this repository only)
+#   Secrets are passed via env ONLY to the "Collect" step and never printed.
+#
+# Permissions: contents: read (the only GITHUB_TOKEN scope in this workflow).
+#
+# Local test (nektos/act with podman as the container engine):
+#   act workflow_dispatch --workflows .github/workflows/collect-data.yml \
+#     --input data-source=mock
+#
+# Syntax check:
+#   actionlint .github/workflows/collect-data.yml
+# ==============================================================================
+
+name: Collect — Data snapshots
+
+on:
+  workflow_call:
+    inputs:
+      data-source:
+        description: "Data source: mock | github. Empty → vars.DATA_SOURCE || 'mock'"
+        required: false
+        type: string
+        default: ''
+    secrets:
+      GH_APP_ID:
+        description: 'GitHub App ID (preferred auth)'
+        required: false
+      GH_APP_PRIVATE_KEY:
+        description: 'GitHub App private key (PEM)'
+        required: false
+      GH_APP_INSTALLATION_ID:
+        description: 'GitHub App installation ID'
+        required: false
+      GH_READ_TOKEN:
+        description: 'Fallback fine-grained PAT (read-only)'
+        required: false
+    outputs:
+      artifact-name:
+        description: 'Name of the snapshots artifact (contents of public/data)'
+        value: ${{ jobs.collect.outputs.artifact-name }}
+      data-source:
+        description: 'Data source actually used (mock | github)'
+        value: ${{ jobs.collect.outputs.data-source }}
+  workflow_dispatch:
+    inputs:
+      data-source:
+        description: 'Data source'
+        required: true
+        type: choice
+        options:
+          - mock
+          - github
+        default: mock
+  repository_dispatch:
+    types: [collect-data]
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    name: Collect snapshots
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    outputs:
+      artifact-name: ${{ steps.artifact.outputs.name }}
+      data-source: ${{ steps.source.outputs.data-source }}
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # ------------------------------------------------------------------
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # ------------------------------------------------------------------
+      - name: Setup Node.js environment
+        uses: ./.github/actions/setup-node-env
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ------------------------------------------------------------------
+      # Resolves and validates the data source (input → repository variable → mock).
+      - name: Resolve data source
+        id: source
+        env:
+          # [template-injection] inputs/vars mapped to env vars — never inline in run:
+          INPUT_DATA_SOURCE: ${{ inputs.data-source }}
+          VARS_DATA_SOURCE: ${{ vars.DATA_SOURCE }}
+        run: |
+          set -euo pipefail
+          DATA_SOURCE="${INPUT_DATA_SOURCE:-${VARS_DATA_SOURCE:-mock}}"
+          case "$DATA_SOURCE" in
+            mock|github) ;;
+            *) echo "::error title=Invalid data source::DATA_SOURCE must be 'mock' or 'github' (got '$DATA_SOURCE')"; exit 1 ;;
+          esac
+          echo "data-source=$DATA_SOURCE" >> "$GITHUB_OUTPUT"
+          echo "✓ DATA_SOURCE=$DATA_SOURCE"
+
+      - name: Validate configuration
+        run: npm run validate:config
+
+      # ------------------------------------------------------------------
+      # The only step with credentials. Values are never echoed or printed.
+      - name: Collect
+        env:
+          # [template-injection] step output mapped to env var — never inline in run:
+          DATA_SOURCE: ${{ steps.source.outputs.data-source }}
+          GH_APP_ID: ${{ secrets.GH_APP_ID }}
+          GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          GH_APP_INSTALLATION_ID: ${{ secrets.GH_APP_INSTALLATION_ID }}
+          GH_READ_TOKEN: ${{ secrets.GH_READ_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: npm run collect
+
+      - name: Validate snapshots
+        run: npm run validate:snapshots
+
+      # ------------------------------------------------------------------
+      - name: Publish collection report to job summary
+        if: ${{ !cancelled() }}
+        run: |
+          REPORT="public/data/collection-report.md"
+          if [ -f "$REPORT" ]; then
+            cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning title=Collection report::$REPORT not found"
+          fi
+
+      # ------------------------------------------------------------------
+      - name: Set artifact name
+        id: artifact
+        run: echo "name=snapshots" >> "$GITHUB_OUTPUT"
+
+      - name: Upload snapshots artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ${{ steps.artifact.outputs.name }}
+          path: public/data
+          retention-days: 14
+          if-no-files-found: error

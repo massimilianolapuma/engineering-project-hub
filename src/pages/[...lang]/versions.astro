@@ -1,0 +1,174 @@
+---
+import ErrorState from '../../components/ErrorState.astro';
+import ExtLink from '../../components/ExtLink.astro';
+import Pill from '../../components/Pill.astro';
+import ReasonList from '../../components/ReasonList.astro';
+import StatusBadge from '../../components/StatusBadge.astro';
+import Base from '../../layouts/Base.astro';
+import { displayVersion, shortSha } from '../../lib/format';
+import { pageContext } from '../../lib/page';
+import { href, localeParams } from '../../lib/routes';
+import { driftTone } from '../../lib/tones';
+
+export const getStaticPaths = localeParams;
+const { locale } = Astro.props;
+const { i18n, data, index, alternates } = pageContext(locale, 'versions');
+const { d } = i18n;
+---
+
+<Base
+  i18n={i18n}
+  title={d.versionsPage.title}
+  page="versions"
+  alternates={alternates}
+  index={index}
+>
+  {!data.ok && <ErrorState error={data.error} i18n={i18n} />}
+  {data.ok && (
+    <>
+      <header class="page-head">
+        <h1>{d.versionsPage.title}</h1>
+        <p class="lead">{d.versionsPage.intro}</p>
+      </header>
+      {data.data.projects.map((s) => (
+        <section class="card" id={s.project.id} aria-labelledby={`v-${s.project.id}`}>
+          <h2 id={`v-${s.project.id}`}>
+            <a href={href(locale, `projects/${s.project.id}`)}>{s.project.name}</a>{' '}
+            <StatusBadge
+              status={s.versionHealth.status}
+              i18n={i18n}
+              context={d.dimensions.version}
+              size="sm"
+              labelled
+            />
+          </h2>
+          <p>
+            {d.project.coordinatorVersion}:{' '}
+            <strong>{displayVersion(s.coordinator.version) ?? d.common.unknown}</strong>{' '}
+            <span class="sub">
+              {i18n.f(d.project.versionFrom, {
+                source: d.versionSource[s.coordinator.versionSource],
+              })}
+            </span>
+          </p>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">{d.common.component}</th>
+                  <th scope="col">{d.project.declared}</th>
+                  <th scope="col">{d.project.latestRelease}</th>
+                  <th scope="col">{d.project.submodule}</th>
+                  <th scope="col">{d.project.drift}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {s.components.map((c) => (
+                  <tr>
+                    <th scope="row" data-label={d.common.component}>
+                      {c.name}
+                    </th>
+                    <td data-label={d.project.declared}>
+                      {displayVersion(c.declaredVersion) ?? (
+                        <span class="muted">{d.common.unknown}</span>
+                      )}
+                    </td>
+                    <td data-label={d.project.latestRelease}>
+                      {c.latestRelease ? (
+                        <ExtLink
+                          href={c.latestRelease.url}
+                          i18n={i18n}
+                          label={c.latestRelease.tag}
+                        />
+                      ) : (
+                        <span class="muted">{d.common.unknown}</span>
+                      )}
+                      {c.latestRelease?.prerelease && <span class="tag">pre-release</span>}
+                    </td>
+                    <td data-label={d.project.submodule}>
+                      {c.submodule?.sha ? (
+                        <code>{shortSha(c.submodule.sha)}</code>
+                      ) : (
+                        <span class="muted">
+                          {c.submodule
+                            ? d.submoduleStatus[c.submodule.status]
+                            : d.common.notApplicable}
+                        </span>
+                      )}
+                    </td>
+                    <td data-label={d.project.drift}>
+                      <Pill tone={driftTone(c.drift)} label={d.drift[c.drift]} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <h3>{d.project.environments}</h3>
+          <ol class="envs">
+            {s.environments.map((e) => (
+              <li class={`env env--${e.status}`}>
+                <span class="env__name">{e.name}</span>
+                <span class="env__version">{displayVersion(e.version) ?? d.common.unknown}</span>
+                <Pill tone={driftTone(e.status)} label={d.envStatus[e.status]} />
+              </li>
+            ))}
+          </ol>
+          {s.coordinator.submodules.length > 0 && (
+            <>
+              <h3>{d.versionsPage.submodules}</h3>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">{d.versionsPage.path}</th>
+                      <th scope="col">{d.common.repository}</th>
+                      <th scope="col">SHA</th>
+                      <th scope="col">{d.versionsPage.association}</th>
+                      <th scope="col">{d.common.status}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {s.coordinator.submodules.map((m) => (
+                      <tr>
+                        <th scope="row" data-label={d.versionsPage.path}>
+                          <code>{m.path}</code>
+                        </th>
+                        <td data-label={d.common.repository}>
+                          {m.repository ? <code>{m.repository}</code> : d.common.unknownValue}
+                        </td>
+                        <td data-label="SHA">
+                          {m.sha ? <code>{shortSha(m.sha)}</code> : d.common.unknownValue}
+                        </td>
+                        <td data-label={d.versionsPage.association}>
+                          <Pill
+                            tone={m.association === 'unmapped' ? 'amber' : 'green'}
+                            label={d.association[m.association]}
+                          />
+                        </td>
+                        <td data-label={d.common.status}>
+                          <Pill
+                            tone={
+                              m.status === 'resolved'
+                                ? 'green'
+                                : m.status === 'unresolvable'
+                                  ? 'red'
+                                  : 'grey'
+                            }
+                            label={d.submoduleStatus[m.status]}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+          <h3>{d.versionsPage.consistency}</h3>
+          <ReasonList reasons={s.versionHealth.reasons} i18n={i18n} />
+        </section>
+      ))}
+    </>
+  )}
+</Base>

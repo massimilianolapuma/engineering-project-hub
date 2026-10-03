@@ -1,0 +1,28 @@
+---
+/**
+ * Timestamp rendered as an absolute UTC date at build time; the client script adds the
+ * relative "x ago" label (computed in the viewer's browser, so it stays correct as the
+ * static page ages) and flags it when older than `staleHours`.
+ */
+import type { I18n } from '../i18n';
+interface Props {
+  iso: string | null | undefined;
+  i18n: I18n;
+  staleHours?: number;
+}
+const { iso, i18n, staleHours } = Astro.props;
+---
+
+{iso ? (
+  <time
+    class="reltime"
+    datetime={iso}
+    data-relative
+    data-stale-hours={staleHours}
+    title={i18n.date(iso)}
+  >
+    {i18n.date(iso)}
+  </time>
+) : (
+  <span class="muted">{i18n.d.common.unknown}</span>
+)}

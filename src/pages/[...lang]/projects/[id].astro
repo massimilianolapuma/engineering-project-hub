@@ -1,0 +1,412 @@
+---
+import ErrorsTable from '../../../components/ErrorsTable.astro';
+import ExtLink from '../../../components/ExtLink.astro';
+import HealthTile from '../../../components/HealthTile.astro';
+import Pill from '../../../components/Pill.astro';
+import RelTime from '../../../components/RelTime.astro';
+import SeverityKpis from '../../../components/SeverityKpis.astro';
+import StatusBadge from '../../../components/StatusBadge.astro';
+import Base from '../../../layouts/Base.astro';
+import { loadSiteData } from '../../../lib/data';
+import { coverageParams, displayVersion, shortSha } from '../../../lib/format';
+import { pageContext } from '../../../lib/page';
+import { href, localeParams } from '../../../lib/routes';
+import { controlTone, driftTone, workflowTone } from '../../../lib/tones';
+
+export function getStaticPaths() {
+  const data = loadSiteData();
+  if (!data.ok) return [];
+  return localeParams().flatMap((l) =>
+    data.data.projects.map((p) => ({
+      params: { lang: l.params.lang, id: p.project.id },
+      props: { locale: l.props.locale, id: p.project.id },
+    })),
+  );
+}
+const { locale, id } = Astro.props;
+const { i18n, data, index, alternates } = pageContext(locale, `projects/${id}`);
+const { d } = i18n;
+const s = data.ok ? data.data.projects.find((p) => p.project.id === id)! : null;
+const staleHours = index?.run.policy.snapshotStaleHours ?? 24;
+const nameOf = (componentId: string) =>
+  componentId === 'coordinator'
+    ? d.common.coordinator
+    : (s?.components.find((c) => c.id === componentId)?.name ?? componentId);
+const blocking = s
+  ? [
+      ...new Set(
+        s.workflows
+          .filter((w) => w.critical && (w.state === 'failure' || w.state === 'cancelled'))
+          .map((w) => nameOf(w.componentId)),
+      ),
+    ]
+  : [];
+const cov = s?.securityCoverage;
+---
+
+<Base i18n={i18n} title={s?.project.name ?? id} page={null} alternates={alternates} index={index}>
+  {s && cov && (
+    <>
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href={href(locale, 'portfolio')}>← {d.project.backToPortfolio}</a>
+      </nav>
+      <header class="page-head page-head--project">
+        <div>
+          <h1>{s.project.name}</h1>
+          <p class="lead">{s.project.description}</p>
+          <dl class="meta-inline">
+            <div>
+              <dt>{d.project.businessUnit}</dt>
+              <dd>{s.project.businessUnit}</dd>
+            </div>
+            <div>
+              <dt>{d.project.lifecycle}</dt>
+              <dd>{d.lifecycle[s.project.lifecycle]}</dd>
+            </div>
+            <div>
+              <dt>{d.common.updated}</dt>
+              <dd>
+                <RelTime iso={s.generatedAt} i18n={i18n} staleHours={staleHours} />
+              </dd>
+            </div>
+          </dl>
+        </div>
+        <StatusBadge
+          status={s.overallHealth.status}
+          i18n={i18n}
+          context={d.dimensions.overall}
+          size="lg"
+        />
+      </header>
+      {blocking.length > 0 && (
+        <p class="callout callout--red" role="note">
+          <StatusBadge status="red" i18n={i18n} size="sm" />{' '}
+          {i18n.f(d.project.blocking, { component: blocking.join(', ') })}
+        </p>
+      )}
+
+      <section aria-labelledby="h-health">
+        <h2 id="h-health">{d.project.health}</h2>
+        <div class="tiles">
+          <HealthTile
+            title={d.dimensions.overall}
+            status={s.overallHealth.status}
+            reasons={s.overallHealth.reasons}
+            i18n={i18n}
+            emphasis
+          />
+          <HealthTile
+            title={d.dimensions.delivery}
+            status={s.deliveryHealth.status}
+            reasons={s.deliveryHealth.reasons}
+            i18n={i18n}
+          />
+          <HealthTile
+            title={d.dimensions.version}
+            status={s.versionHealth.status}
+            reasons={s.versionHealth.reasons}
+            i18n={i18n}
+          />
+          <HealthTile
+            title={d.dimensions.security}
+            status={s.securityHealth.status}
+            reasons={s.securityHealth.reasons}
+            i18n={i18n}
+          />
+          <HealthTile
+            title={d.dimensions.coverage}
+            status={cov.status}
+            reasons={cov.reasons}
+            i18n={i18n}
+          >
+            <p class="tile__metric">
+              {cov.percentage === null ? d.common.unknown : `${cov.percentage}%`}{' '}
+              <span class="sub">
+                {i18n.f(d.securityPage.requiredCount, {
+                  available: cov.available,
+                  required: cov.required,
+                })}
+              </span>
+            </p>
+          </HealthTile>
+          <HealthTile
+            title={d.dimensions.governance}
+            status={s.governanceHealth.status}
+            reasons={s.governanceHealth.reasons}
+            i18n={i18n}
+          />
+          <HealthTile
+            title={d.dimensions.freshness}
+            status={s.dataFreshness.status}
+            reasons={[]}
+            i18n={i18n}
+          >
+            <ul class="freshness-list">
+              {s.dataFreshness.staleSources.map((x) => (
+                <li>
+                  <code>{x.repository}</code> · {d.errorSource[x.source]} ·{' '}
+                  <RelTime iso={x.lastUpdatedAt} i18n={i18n} />
+                </li>
+              ))}
+            </ul>
+          </HealthTile>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-coord" class="card">
+        <h2 id="h-coord">{d.common.coordinator}</h2>
+        <dl class="facts">
+          <div>
+            <dt>{d.common.repository}</dt>
+            <dd>
+              <ExtLink href={s.coordinator.repository.url} i18n={i18n}>
+                <code>{s.coordinator.repository.fullName}</code>
+              </ExtLink>
+            </dd>
+          </div>
+          <div>
+            <dt>{d.project.coordinatorVersion}</dt>
+            <dd>
+              <strong>{displayVersion(s.coordinator.version) ?? d.common.unknown}</strong>{' '}
+              <span class="sub">
+                {i18n.f(d.project.versionFrom, {
+                  source: d.versionSource[s.coordinator.versionSource],
+                })}
+              </span>
+            </dd>
+          </div>
+          <div>
+            <dt>{d.project.latestRelease}</dt>
+            <dd>
+              {s.coordinator.latestRelease ? (
+                <ExtLink
+                  href={s.coordinator.latestRelease.url}
+                  i18n={i18n}
+                  label={s.coordinator.latestRelease.tag}
+                />
+              ) : (
+                d.common.unknown
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt>{d.project.latestCommit}</dt>
+            <dd>
+              {s.coordinator.repository.latestCommit ? (
+                <ExtLink href={s.coordinator.repository.latestCommit.url} i18n={i18n}>
+                  <code>{shortSha(s.coordinator.repository.latestCommit.sha)}</code>
+                </ExtLink>
+              ) : (
+                d.common.unknown
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt>{d.project.manifest}</dt>
+            <dd>
+              <code>{s.coordinator.manifest.path}</code> ·{' '}
+              {d.manifestStatus[s.coordinator.manifest.status]}
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <section aria-labelledby="h-components">
+        <h2 id="h-components">{d.project.components}</h2>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">{d.common.component}</th>
+                <th scope="col">{d.common.repository}</th>
+                <th scope="col">{d.project.declared}</th>
+                <th scope="col">{d.project.latestRelease}</th>
+                <th scope="col">{d.project.latestCommit}</th>
+                <th scope="col">{d.project.submodule}</th>
+                <th scope="col">{d.project.drift}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {s.components.map((c) => (
+                <tr>
+                  <th scope="row" data-label={d.common.component}>
+                    {c.name}
+                    <span class="sub">{d.componentType[c.type]}</span>
+                  </th>
+                  <td data-label={d.common.repository}>
+                    {c.repository.status === 'ok' ? (
+                      <ExtLink href={c.repository.url} i18n={i18n}>
+                        <code>{c.repository.fullName}</code>
+                      </ExtLink>
+                    ) : (
+                      <>
+                        <code>{c.repository.fullName}</code>{' '}
+                        <Pill
+                          tone="grey"
+                          label={
+                            c.repository.status === 'not-authorised'
+                              ? d.common.notAuthorised
+                              : d.common.collectionFailed
+                          }
+                        />
+                      </>
+                    )}
+                  </td>
+                  <td data-label={d.project.declared}>
+                    {displayVersion(c.declaredVersion) ?? (
+                      <span class="muted">{d.common.unknown}</span>
+                    )}
+                  </td>
+                  <td data-label={d.project.latestRelease}>
+                    {c.latestRelease ? (
+                      <ExtLink href={c.latestRelease.url} i18n={i18n} label={c.latestRelease.tag} />
+                    ) : (
+                      <span class="muted">{d.common.unknown}</span>
+                    )}
+                  </td>
+                  <td data-label={d.project.latestCommit}>
+                    {c.repository.latestCommit ? (
+                      <ExtLink href={c.repository.latestCommit.url} i18n={i18n}>
+                        <code>{shortSha(c.repository.latestCommit.sha)}</code>
+                      </ExtLink>
+                    ) : (
+                      <span class="muted">{d.common.unknown}</span>
+                    )}
+                  </td>
+                  <td data-label={d.project.submodule}>
+                    {c.submodule?.sha ? (
+                      <code>{shortSha(c.submodule.sha)}</code>
+                    ) : c.submodule ? (
+                      <Pill
+                        tone={c.submodule.status === 'unresolvable' ? 'red' : 'grey'}
+                        label={d.submoduleStatus[c.submodule.status]}
+                      />
+                    ) : (
+                      <span class="muted">{d.common.notApplicable}</span>
+                    )}
+                  </td>
+                  <td data-label={d.project.drift}>
+                    <Pill tone={driftTone(c.drift)} label={d.drift[c.drift]} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-wf">
+        <h2 id="h-wf">{d.project.workflows}</h2>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">{d.common.component}</th>
+                <th scope="col">Workflow</th>
+                <th scope="col">{d.common.status}</th>
+                <th scope="col">{d.common.branch}</th>
+                <th scope="col">{d.common.updated}</th>
+                <th scope="col">{d.workflowsPage.lastError}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {s.workflows.map((w) => (
+                <tr>
+                  <th scope="row" data-label={d.common.component}>
+                    {nameOf(w.componentId)}
+                  </th>
+                  <td data-label="Workflow">
+                    {w.name} <code class="sub">{w.file}</code>
+                    {w.critical && <span class="tag">{d.workflowsPage.critical}</span>}
+                  </td>
+                  <td data-label={d.common.status}>
+                    <Pill tone={workflowTone(w.state)} label={d.workflowState[w.state]} />
+                    {w.lastCompletedRun && (
+                      <ExtLink
+                        href={w.lastCompletedRun.url}
+                        i18n={i18n}
+                        label={i18n.f(d.common.run, { n: w.lastCompletedRun.runNumber })}
+                      />
+                    )}
+                  </td>
+                  <td data-label={d.common.branch}>
+                    {w.branch ? <code>{w.branch}</code> : d.common.unknownValue}
+                  </td>
+                  <td data-label={d.common.updated}>
+                    {w.lastCompletedRun ? (
+                      <RelTime iso={w.lastCompletedRun.updatedAt} i18n={i18n} />
+                    ) : (
+                      d.common.unknownValue
+                    )}
+                    {w.stale && <span class="stale-tag">{d.common.stale}</span>}
+                  </td>
+                  <td data-label={d.workflowsPage.lastError}>
+                    {w.lastError ?? d.common.unknownValue}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-env">
+        <h2 id="h-env">{d.project.environments}</h2>
+        <ol class="envs">
+          {s.environments.map((e) => (
+            <li class={`env env--${e.status}`}>
+              <span class="env__name">{e.name}</span>
+              <span class="env__version">{displayVersion(e.version) ?? d.common.unknown}</span>
+              <Pill tone={driftTone(e.status)} label={d.envStatus[e.status]} />
+            </li>
+          ))}
+        </ol>
+        <p class="note">{d.project.envBehindNote}</p>
+      </section>
+
+      <section aria-labelledby="h-sec" class="grid-2">
+        <div class="card">
+          <h2 id="h-sec">{d.project.security}</h2>
+          <SeverityKpis
+            counts={s.securityHealth.openCounts}
+            secrets={s.securityHealth.openSecretAlerts}
+            partial={!s.securityHealth.countsComplete}
+            i18n={i18n}
+          />
+          <p>
+            <a href={`${href(locale, 'security')}#${s.project.id}`}>{d.securityPage.findings} →</a>
+          </p>
+        </div>
+        <div class="card">
+          <h2>{d.project.coverage}</h2>
+          <p class="tile__metric">
+            {cov.percentage === null ? d.common.unknown : `${cov.percentage}%`}
+          </p>
+          <p class="sub">
+            {i18n.f(d.securityPage.coverageCounts, coverageParams(cov))} ·{' '}
+            <RelTime iso={cov.collectedAt} i18n={i18n} />
+          </p>
+          <ul class="controls">
+            {cov.perControl.map((c) => (
+              <li>
+                <span>
+                  {d.control[c.control]}{' '}
+                  <span class="sub">
+                    {c.required ? d.securityPage.required : d.securityPage.optional}
+                  </span>
+                </span>
+                <Pill tone={controlTone(c.state)} label={d.controlState[c.state]} />
+              </li>
+            ))}
+          </ul>
+          <p class="note">{d.securityPage.coverageNote}</p>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-err">
+        <h2 id="h-err">{d.project.errors}</h2>
+        <ErrorsTable errors={s.collectionErrors} i18n={i18n} caption={d.project.errors} />
+      </section>
+    </>
+  )}
+</Base>

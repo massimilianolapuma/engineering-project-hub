@@ -1,0 +1,27 @@
+# Composite action — part of this repository's CI building blocks.
+name: 'Setup — Node.js Environment (Host)'
+description: >
+  Installs Node.js on the runner (tool cache, no job container) and enables the npm cache
+  keyed on the package-lock.json of the given working directory.
+
+inputs:
+  node-version:
+    description: "Node.js version to install (e.g. '22', '24', '24.x')"
+    required: false
+    default: '24'
+  working-directory:
+    description: 'npm project root relative to the repository root (used for cache-dependency-path)'
+    required: false
+    default: '.'
+
+runs:
+  using: 'composite'
+  steps:
+    # Node.js goes into the runner tool cache. The npm cache is invalidated whenever
+    # package-lock.json changes.
+    - name: Setup Node.js
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+        cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json

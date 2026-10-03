@@ -1,0 +1,64 @@
+{
+  "repository": {
+    "owner": "example-org",
+    "name": "project-beta-coordinator",
+    "fullName": "example-org/project-beta-coordinator",
+    "htmlUrl": "https://github.com/example-org/project-beta-coordinator",
+    "visibility": "public",
+    "defaultBranch": "main",
+    "archived": false,
+    "updatedAt": "@now-1d",
+    "topics": ["demo"]
+  },
+  "head": {
+    "sha": "971a7f034dadeeaea0d6daacfc265dd40cde39e8",
+    "committedAt": "@now-2d"
+  },
+  "latestRelease": {
+    "tagName": "v3.2.0",
+    "name": "v3.2.0",
+    "publishedAt": "@now-5d",
+    "prerelease": false,
+    "htmlUrl": "https://github.com/example-org/project-beta-coordinator/releases/tag/v3.2.0"
+  },
+  "files": {
+    "release-manifest.yaml": "schemaVersion: '1.0'\nversion: 3.2.0\ncomponents:\n  api:\n    version: 3.2.0\n  web:\n    version: 3.1.0\n  helm:\n    version: 1.0.0\nenvironments:\n  dev:\n    version: 3.2.0\n  uat:\n    version: 3.2.0\n  prod:\n    version: 3.1.0\n",
+    ".gitmodules": "[submodule \"api\"]\n\tpath = services/api\n\turl = https://github.com/example-org/project-beta-api.git\n[submodule \"web\"]\n\tpath = apps/web\n\turl = https://github.com/example-org/project-beta-web.git\n[submodule \"helm\"]\n\tpath = deploy/helm\n\turl = https://github.com/example-org/project-beta-helm.git\n[submodule \"legacy-scripts\"]\n\tpath = tools/legacy-scripts\n\turl = https://github.com/example-org/legacy-scripts.git\n"
+  },
+  "submodules": {
+    "services/api": "02e07b72cd5485660e38fef9882f564dcf097939",
+    "apps/web": "74d77c07925aea1b9d655d1455dcae68b2a0c3ce",
+    "deploy/helm": "1485c43fd9e24ef6e7d082c0d83c62d7becafbed",
+    "tools/legacy-scripts": "ace9071b798212a2b9186c91f62b5aed2f7b0e8b"
+  },
+  "workflowRuns": {
+    "rel-release.yml": [
+      {
+        "id": 9011,
+        "runNumber": 22,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "headBranch": "main",
+        "event": "workflow_dispatch",
+        "headSha": "1d7e05220c5d7d647e9c95b0e720683e27eb1629",
+        "createdAt": "@now-5d",
+        "updatedAt": "@now-5d",
+        "htmlUrl": "https://github.com/example-org/project-beta-coordinator/actions/runs/9011"
+      }
+    ]
+  },
+  "codeScanningAlerts": [],
+  "codeScanningAnalysis": {
+    "createdAt": "@now-2d",
+    "toolName": "CodeQL"
+  },
+  "dependabotAlerts": [],
+  "secretScanningAlerts": {
+    "$error": {
+      "classification": "not-authorised",
+      "httpStatus": 403,
+      "message": "Resource not accessible by integration"
+    }
+  }
+}

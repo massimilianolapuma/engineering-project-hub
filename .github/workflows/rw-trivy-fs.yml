@@ -1,0 +1,88 @@
+# Reusable workflow — part of this repository's CI building blocks (rw-*).
+# ==============================================================================
+# [Reusable] Trivy — filesystem scan
+# ==============================================================================
+#
+# Purpose:  Scans the repository filesystem for:
+#           - vulnerabilities in dependencies (npm lockfiles, go.sum, …)
+#           - IaC / Dockerfile misconfigurations (Kubernetes, Helm, Terraform, …)
+#           - licenses of dependencies
+#           Results are uploaded as SARIF to GitHub Code Scanning (category trivy-fs),
+#           which is free for public repositories.
+#
+# Scanners: vuln, misconfig, license — NOT secret.
+#   GitHub secret scanning + push protection already cover secrets natively;
+#   the Trivy secret scanner would only add duplicate findings.
+#
+# exit-code: "1" (default) fails the job on findings at the selected severities;
+#   "0" makes the scan advisory (findings still reach Code Scanning).
+#
+# Caller example:
+#   jobs:
+#     trivy-fs:
+#       permissions:
+#         contents: read
+#         security-events: write # SARIF upload to Code Scanning
+#       uses: ./.github/workflows/rw-trivy-fs.yml
+#       with:
+#         severity: 'CRITICAL,HIGH'
+#         exit-code: '0'
+#
+# Local test (nektos/act with podman as the container engine; the SARIF upload is
+# skipped under act):
+#   act pull_request -j trivy-fs --workflows .github/workflows/ci.yml
+# ==============================================================================
+
+name: Reusable — Trivy Filesystem Scan
+
+on:
+  workflow_call:
+    inputs:
+      scan-path:
+        description: 'Filesystem path to scan (default: repository root)'
+        type: string
+        default: '.'
+      severity:
+        description: 'Comma-separated severities to report'
+        type: string
+        default: 'CRITICAL,HIGH'
+      exit-code:
+        description: 'Exit code when findings are reported (1 = fail the job, 0 = advisory)'
+        type: string
+        default: '1'
+
+permissions:
+  contents: read
+
+jobs:
+  trivy-fs:
+    name: Trivy FS — vuln + misconfig + license
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # actions/checkout
+      security-events: write # github/codeql-action/upload-sarif — SARIF upload to Code Scanning
+    # [template-injection] inputs.* mapped to job-level env vars and expanded as
+    # ${{ env.VAR }} in the with: of uses: steps.
+    env:
+      TRIVY_SCAN_REF: ${{ inputs.scan-path }}
+      TRIVY_SEVERITY: ${{ inputs.severity }}
+      TRIVY_EXIT_CODE: ${{ inputs.exit-code }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Trivy filesystem scan + SARIF upload (composite action scan-trivy)
+      - name: Trivy — Filesystem scan + SARIF
+        uses: ./.github/actions/scan-trivy
+        with:
+          scan-type: fs
+          scan-ref: ${{ env.TRIVY_SCAN_REF }}
+          scanners: 'vuln,misconfig,license'
+          severity: ${{ env.TRIVY_SEVERITY }}
+          exit-code: ${{ env.TRIVY_EXIT_CODE }}
+          sarif-output: 'trivy-results.sarif'
+          sarif-category: 'trivy-fs'

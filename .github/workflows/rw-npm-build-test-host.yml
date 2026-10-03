@@ -1,0 +1,130 @@
+# Reusable workflow — part of this repository's CI building blocks (rw-*).
+# ==============================================================================
+# [Reusable] npm — build & test (Vitest with coverage)
+# ==============================================================================
+#
+# Purpose:  Builds an npm project and runs its Vitest suite with coverage, then
+#           uploads the coverage directory as an artifact.
+#
+# Host mode: Node.js is installed on the runner by the composite action
+#   setup-node-env (actions/setup-node, runner tool cache). No job container.
+#
+# Steps:
+#   1. Checkout (persist-credentials: false)
+#   2. Setup Node.js + npm cache (composite action setup-node-env)
+#   3. Install dependencies (npm ci)
+#   4. Build (input build-command, default: npm run build --if-present)
+#   5. Test: composite action test-vitest → `npm run ci:test` (Vitest + coverage)
+#   6. Upload <working-directory>/<coverage-report-dir> as artifact
+#      coverage-<run_id> (also when tests fail; skipped under nektos/act)
+#
+# Project contract:
+#   - npm script "ci:test" runs Vitest with coverage (e.g. `vitest run --coverage`)
+#   - coverage-report-dir matches coverage.reportsDirectory in the Vitest config
+#
+# Security:
+#   - build-command is passed via env: (never interpolated into run:) and executed
+#     with `bash -euo pipefail -c`.
+#   - contents: read only. No secrets.
+#
+# Caller example:
+#   jobs:
+#     build-test:
+#       permissions:
+#         contents: read
+#       uses: ./.github/workflows/rw-npm-build-test-host.yml
+#       with:
+#         node-version: '24'
+#         build-command: npm run ci:build
+#         coverage-report-dir: coverage
+#
+# Local test (nektos/act with podman as the container engine):
+#   act pull_request -j build-test --workflows .github/workflows/ci.yml
+#
+# Syntax check:
+#   actionlint .github/workflows/rw-npm-build-test-host.yml
+# ==============================================================================
+
+name: Reusable — npm Build & Test (Vitest)
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Node.js version (e.g. '22', '24')"
+        required: false
+        type: string
+        default: '24'
+      working-directory:
+        description: 'npm project root relative to the repository root'
+        required: false
+        type: string
+        default: '.'
+      build-command:
+        description: 'Build command (default: npm run build --if-present)'
+        required: false
+        type: string
+        default: 'npm run build --if-present'
+      coverage-report-dir:
+        description: 'Coverage output directory relative to working-directory (must match
+          coverage.reportsDirectory in the Vitest config)'
+        required: false
+        type: string
+        default: 'coverage'
+
+permissions:
+  contents: read
+
+jobs:
+  npm-build-test:
+    name: npm Build & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read # actions/checkout
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+
+    steps:
+      # -----------------------------------------------------------------------
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # -----------------------------------------------------------------------
+      - name: Setup Node.js environment
+        uses: ./.github/actions/setup-node-env
+        with:
+          node-version: ${{ inputs.node-version }}
+          working-directory: ${{ inputs.working-directory }}
+
+      # -----------------------------------------------------------------------
+      - name: Install dependencies
+        run: npm ci
+
+      # -----------------------------------------------------------------------
+      - name: Build
+        env:
+          # [template-injection] inputs.build-command mapped to env var — never inline in run:
+          BUILD_COMMAND: ${{ inputs.build-command }}
+        run: bash -euo pipefail -c "$BUILD_COMMAND"
+
+      # -----------------------------------------------------------------------
+      - name: Test — Vitest with coverage
+        uses: ./.github/actions/test-vitest
+        with:
+          working-directory: ${{ inputs.working-directory }}
+
+      # -----------------------------------------------------------------------
+      # !env.ACT: the nektos/act artifact server does not support upload-artifact v7.
+      - name: Upload coverage artifact
+        if: ${{ always() && !env.ACT }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coverage-${{ github.run_id }}
+          path: ${{ inputs.working-directory }}/${{ inputs.coverage-report-dir }}
+          retention-days: 7

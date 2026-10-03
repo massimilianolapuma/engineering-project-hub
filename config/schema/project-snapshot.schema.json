@@ -1,0 +1,2816 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "enum": [
+        "1.0"
+      ]
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+    },
+    "project": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "businessUnit": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "lifecycle": {
+          "type": "string",
+          "enum": [
+            "experimental",
+            "development",
+            "production",
+            "maintenance",
+            "deprecated"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "businessUnit",
+        "lifecycle"
+      ],
+      "additionalProperties": false
+    },
+    "coordinator": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "object",
+          "properties": {
+            "fullName": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "owner": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "name": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "url": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 500,
+                  "format": "uri"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "ok",
+                "not-found",
+                "not-authorised",
+                "rate-limited",
+                "error"
+              ]
+            },
+            "visibility": {
+              "type": "string",
+              "enum": [
+                "public",
+                "private",
+                "internal",
+                "unknown"
+              ]
+            },
+            "defaultBranch": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "configuredDefaultBranch": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "archived": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "updatedAt": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "topics": {
+              "maxItems": 30,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 50
+              }
+            },
+            "latestCommit": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "sha": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{40}$"
+                    },
+                    "url": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 500,
+                          "format": "uri"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "committedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "sha",
+                    "url",
+                    "committedAt"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "fullName",
+            "owner",
+            "name",
+            "url",
+            "status",
+            "visibility",
+            "defaultBranch",
+            "configuredDefaultBranch",
+            "archived",
+            "updatedAt",
+            "topics",
+            "latestCommit"
+          ],
+          "additionalProperties": false
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "versionSource": {
+          "type": "string",
+          "enum": [
+            "manifest",
+            "release",
+            "tag",
+            "unknown"
+          ]
+        },
+        "latestRelease": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "tag": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "name": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 200
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "publishedAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "prerelease": {
+                  "type": "boolean"
+                },
+                "url": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 500,
+                      "format": "uri"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "release",
+                    "tag"
+                  ]
+                }
+              },
+              "required": [
+                "tag",
+                "name",
+                "publishedAt",
+                "prerelease",
+                "url",
+                "kind"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "manifest": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "ok",
+                "missing",
+                "invalid",
+                "not-authorised",
+                "unknown"
+              ]
+            }
+          },
+          "required": [
+            "path",
+            "status"
+          ],
+          "additionalProperties": false
+        },
+        "submodules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "maxLength": 255
+              },
+              "repository": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "sha": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{40}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "componentId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "association": {
+                "type": "string",
+                "enum": [
+                  "configured-path",
+                  "repository-url",
+                  "unmapped"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "resolved",
+                  "unresolvable",
+                  "unknown"
+                ]
+              }
+            },
+            "required": [
+              "path",
+              "repository",
+              "sha",
+              "componentId",
+              "association",
+              "status"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "repository",
+        "version",
+        "versionSource",
+        "latestRelease",
+        "manifest",
+        "submodules"
+      ],
+      "additionalProperties": false
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "service",
+              "webapp",
+              "worker",
+              "deployment",
+              "infrastructure",
+              "library",
+              "other"
+            ]
+          },
+          "repository": {
+            "type": "object",
+            "properties": {
+              "fullName": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "owner": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "name": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 500,
+                    "format": "uri"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "ok",
+                  "not-found",
+                  "not-authorised",
+                  "rate-limited",
+                  "error"
+                ]
+              },
+              "visibility": {
+                "type": "string",
+                "enum": [
+                  "public",
+                  "private",
+                  "internal",
+                  "unknown"
+                ]
+              },
+              "defaultBranch": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "configuredDefaultBranch": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "archived": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "updatedAt": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "topics": {
+                "maxItems": 30,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 50
+                }
+              },
+              "latestCommit": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "sha": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{40}$"
+                      },
+                      "url": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 500,
+                            "format": "uri"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "committedAt": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "sha",
+                      "url",
+                      "committedAt"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "fullName",
+              "owner",
+              "name",
+              "url",
+              "status",
+              "visibility",
+              "defaultBranch",
+              "configuredDefaultBranch",
+              "archived",
+              "updatedAt",
+              "topics",
+              "latestCommit"
+            ],
+            "additionalProperties": false
+          },
+          "declaredVersion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "latestRelease": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "name": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "publishedAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "prerelease": {
+                    "type": "boolean"
+                  },
+                  "url": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 500,
+                        "format": "uri"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "release",
+                      "tag"
+                    ]
+                  }
+                },
+                "required": [
+                  "tag",
+                  "name",
+                  "publishedAt",
+                  "prerelease",
+                  "url",
+                  "kind"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "submodule": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "repository": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "sha": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{40}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "componentId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 64
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "association": {
+                    "type": "string",
+                    "enum": [
+                      "configured-path",
+                      "repository-url",
+                      "unmapped"
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "resolved",
+                      "unresolvable",
+                      "unknown"
+                    ]
+                  }
+                },
+                "required": [
+                  "path",
+                  "repository",
+                  "sha",
+                  "componentId",
+                  "association",
+                  "status"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "drift": {
+            "type": "string",
+            "enum": [
+              "aligned",
+              "drift",
+              "unknown"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "repository",
+          "declaredVersion",
+          "latestRelease",
+          "submodule",
+          "drift"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "environments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "manifest",
+              "unknown"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "aligned",
+              "behind",
+              "mismatch",
+              "unknown"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "version",
+          "source",
+          "status"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "workflows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "workflowId": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "file": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "critical": {
+            "type": "boolean"
+          },
+          "componentId": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "repository": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "branch": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "success",
+              "failure",
+              "cancelled",
+              "in-progress",
+              "queued",
+              "never-run",
+              "missing",
+              "not-authorised",
+              "unknown"
+            ]
+          },
+          "stale": {
+            "type": "boolean"
+          },
+          "latestRun": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "runNumber": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "runAttempt": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "status": {
+                    "type": "string",
+                    "maxLength": 30
+                  },
+                  "conclusion": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 30
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "branch": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 255
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "event": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "sha": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{40}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "url": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 500,
+                        "format": "uri"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "runNumber",
+                  "runAttempt",
+                  "status",
+                  "conclusion",
+                  "branch",
+                  "event",
+                  "sha",
+                  "createdAt",
+                  "updatedAt",
+                  "url"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastCompletedRun": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "runNumber": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "runAttempt": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "status": {
+                    "type": "string",
+                    "maxLength": 30
+                  },
+                  "conclusion": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 30
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "branch": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 255
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "event": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "sha": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{40}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "url": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 500,
+                        "format": "uri"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "runNumber",
+                  "runAttempt",
+                  "status",
+                  "conclusion",
+                  "branch",
+                  "event",
+                  "sha",
+                  "createdAt",
+                  "updatedAt",
+                  "url"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastFailedRun": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "runNumber": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "runAttempt": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "status": {
+                    "type": "string",
+                    "maxLength": 30
+                  },
+                  "conclusion": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 30
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "branch": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 255
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "event": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "sha": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{40}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "url": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 500,
+                        "format": "uri"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "runNumber",
+                  "runAttempt",
+                  "status",
+                  "conclusion",
+                  "branch",
+                  "event",
+                  "sha",
+                  "createdAt",
+                  "updatedAt",
+                  "url"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "activeRun": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "runNumber": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "runAttempt": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "status": {
+                    "type": "string",
+                    "maxLength": 30
+                  },
+                  "conclusion": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 30
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "branch": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 255
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "event": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "sha": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{40}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "url": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 500,
+                        "format": "uri"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "runNumber",
+                  "runAttempt",
+                  "status",
+                  "conclusion",
+                  "branch",
+                  "event",
+                  "sha",
+                  "createdAt",
+                  "updatedAt",
+                  "url"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastError": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "workflowId",
+          "name",
+          "file",
+          "critical",
+          "componentId",
+          "repository",
+          "branch",
+          "state",
+          "stale",
+          "latestRun",
+          "lastCompletedRun",
+          "lastFailedRun",
+          "activeRun",
+          "lastError"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "securityFindings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "projectId": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "componentId": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "repository": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "github-code-scanning",
+              "github-dependabot",
+              "github-secret-scanning",
+              "security-status-file"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "code",
+              "dependency",
+              "secret",
+              "container",
+              "iac",
+              "dast",
+              "supply-chain",
+              "configuration"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "high",
+              "medium",
+              "low",
+              "informational",
+              "unknown"
+            ]
+          },
+          "originalSeverity": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "fixed",
+              "dismissed",
+              "accepted-risk",
+              "false-positive",
+              "unknown"
+            ]
+          },
+          "originalStatus": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ruleId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "environment": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "version": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "commitSha": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "detectedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fixAvailable": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "htmlUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tool": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "repositoryPrivate": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "dataClassification": {
+            "type": "string",
+            "enum": [
+              "public",
+              "internal",
+              "restricted"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "componentId",
+          "repository",
+          "source",
+          "category",
+          "severity",
+          "originalSeverity",
+          "status",
+          "originalStatus",
+          "ruleId",
+          "title",
+          "detectedAt",
+          "updatedAt",
+          "fixAvailable",
+          "htmlUrl",
+          "tool",
+          "repositoryPrivate",
+          "dataClassification"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "securityControls": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "componentId": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "repository": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "controls": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "control": {
+                  "type": "string",
+                  "enum": [
+                    "codeScanning",
+                    "secretScanning",
+                    "dependabot",
+                    "containerScanning",
+                    "iacScanning",
+                    "dast",
+                    "sbom",
+                    "artifactSignature"
+                  ]
+                },
+                "required": {
+                  "type": "boolean"
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "enabled",
+                    "not-configured",
+                    "configured-not-run",
+                    "not-authorised",
+                    "failed",
+                    "stale",
+                    "unknown",
+                    "collection-failed",
+                    "not-applicable"
+                  ]
+                },
+                "tool": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 50
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "lastScanAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "counts": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "critical": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "high": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "medium": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "low": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "informational": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "unknown": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "critical",
+                        "high",
+                        "medium",
+                        "low",
+                        "informational",
+                        "unknown"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "reportUrl": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 500,
+                      "format": "uri"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "control",
+                "required",
+                "state",
+                "tool",
+                "lastScanAt",
+                "counts",
+                "reportUrl"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "componentId",
+          "repository",
+          "controls"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "deliveryHealth": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "green",
+            "amber",
+            "red",
+            "grey"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "workflow-failed",
+                  "workflow-cancelled",
+                  "critical-workflow-missing",
+                  "critical-workflow-never-run",
+                  "workflow-queued-too-long",
+                  "workflow-stale",
+                  "workflow-data-unavailable",
+                  "non-critical-workflow-failed",
+                  "no-critical-workflows",
+                  "critical-workflows-succeeded",
+                  "manifest-unknown-component",
+                  "submodule-unresolvable",
+                  "submodule-unmapped",
+                  "component-version-drift",
+                  "component-version-unknown",
+                  "environment-behind",
+                  "environment-mismatch",
+                  "environment-version-unknown",
+                  "coordinator-version-unknown",
+                  "manifest-missing",
+                  "manifest-invalid",
+                  "versions-aligned",
+                  "open-critical-alerts",
+                  "open-high-alerts",
+                  "open-medium-low-alerts",
+                  "open-secret-alerts",
+                  "required-control-failed",
+                  "required-control-stale",
+                  "coverage-incomplete",
+                  "security-data-unavailable",
+                  "private-details-withheld",
+                  "no-open-alerts",
+                  "required-control-not-configured",
+                  "required-control-not-authorised",
+                  "required-control-unknown",
+                  "no-required-controls",
+                  "all-required-controls-available",
+                  "standard-workflow-missing",
+                  "repository-archived",
+                  "security-status-file-missing",
+                  "security-status-file-invalid",
+                  "default-branch-mismatch",
+                  "repository-unavailable",
+                  "governance-compliant",
+                  "source-stale",
+                  "data-fresh",
+                  "no-data",
+                  "dimension-red",
+                  "dimension-amber",
+                  "dimension-grey",
+                  "all-dimensions-green"
+                ]
+              },
+              "level": {
+                "type": "string",
+                "enum": [
+                  "red",
+                  "amber",
+                  "grey",
+                  "info"
+                ]
+              },
+              "params": {
+                "default": {},
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "code",
+              "level"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "status",
+        "reasons"
+      ],
+      "additionalProperties": false
+    },
+    "versionHealth": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "green",
+            "amber",
+            "red",
+            "grey"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "workflow-failed",
+                  "workflow-cancelled",
+                  "critical-workflow-missing",
+                  "critical-workflow-never-run",
+                  "workflow-queued-too-long",
+                  "workflow-stale",
+                  "workflow-data-unavailable",
+                  "non-critical-workflow-failed",
+                  "no-critical-workflows",
+                  "critical-workflows-succeeded",
+                  "manifest-unknown-component",
+                  "submodule-unresolvable",
+                  "submodule-unmapped",
+                  "component-version-drift",
+                  "component-version-unknown",
+                  "environment-behind",
+                  "environment-mismatch",
+                  "environment-version-unknown",
+                  "coordinator-version-unknown",
+                  "manifest-missing",
+                  "manifest-invalid",
+                  "versions-aligned",
+                  "open-critical-alerts",
+                  "open-high-alerts",
+                  "open-medium-low-alerts",
+                  "open-secret-alerts",
+                  "required-control-failed",
+                  "required-control-stale",
+                  "coverage-incomplete",
+                  "security-data-unavailable",
+                  "private-details-withheld",
+                  "no-open-alerts",
+                  "required-control-not-configured",
+                  "required-control-not-authorised",
+                  "required-control-unknown",
+                  "no-required-controls",
+                  "all-required-controls-available",
+                  "standard-workflow-missing",
+                  "repository-archived",
+                  "security-status-file-missing",
+                  "security-status-file-invalid",
+                  "default-branch-mismatch",
+                  "repository-unavailable",
+                  "governance-compliant",
+                  "source-stale",
+                  "data-fresh",
+                  "no-data",
+                  "dimension-red",
+                  "dimension-amber",
+                  "dimension-grey",
+                  "all-dimensions-green"
+                ]
+              },
+              "level": {
+                "type": "string",
+                "enum": [
+                  "red",
+                  "amber",
+                  "grey",
+                  "info"
+                ]
+              },
+              "params": {
+                "default": {},
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "code",
+              "level"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "status",
+        "reasons"
+      ],
+      "additionalProperties": false
+    },
+    "securityHealth": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "green",
+            "amber",
+            "red",
+            "grey"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "workflow-failed",
+                  "workflow-cancelled",
+                  "critical-workflow-missing",
+                  "critical-workflow-never-run",
+                  "workflow-queued-too-long",
+                  "workflow-stale",
+                  "workflow-data-unavailable",
+                  "non-critical-workflow-failed",
+                  "no-critical-workflows",
+                  "critical-workflows-succeeded",
+                  "manifest-unknown-component",
+                  "submodule-unresolvable",
+                  "submodule-unmapped",
+                  "component-version-drift",
+                  "component-version-unknown",
+                  "environment-behind",
+                  "environment-mismatch",
+                  "environment-version-unknown",
+                  "coordinator-version-unknown",
+                  "manifest-missing",
+                  "manifest-invalid",
+                  "versions-aligned",
+                  "open-critical-alerts",
+                  "open-high-alerts",
+                  "open-medium-low-alerts",
+                  "open-secret-alerts",
+                  "required-control-failed",
+                  "required-control-stale",
+                  "coverage-incomplete",
+                  "security-data-unavailable",
+                  "private-details-withheld",
+                  "no-open-alerts",
+                  "required-control-not-configured",
+                  "required-control-not-authorised",
+                  "required-control-unknown",
+                  "no-required-controls",
+                  "all-required-controls-available",
+                  "standard-workflow-missing",
+                  "repository-archived",
+                  "security-status-file-missing",
+                  "security-status-file-invalid",
+                  "default-branch-mismatch",
+                  "repository-unavailable",
+                  "governance-compliant",
+                  "source-stale",
+                  "data-fresh",
+                  "no-data",
+                  "dimension-red",
+                  "dimension-amber",
+                  "dimension-grey",
+                  "all-dimensions-green"
+                ]
+              },
+              "level": {
+                "type": "string",
+                "enum": [
+                  "red",
+                  "amber",
+                  "grey",
+                  "info"
+                ]
+              },
+              "params": {
+                "default": {},
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "code",
+              "level"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "openCounts": {
+          "type": "object",
+          "properties": {
+            "critical": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "high": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "medium": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "low": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "informational": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "unknown": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "critical",
+            "high",
+            "medium",
+            "low",
+            "informational",
+            "unknown"
+          ],
+          "additionalProperties": false
+        },
+        "countsComplete": {
+          "type": "boolean"
+        },
+        "openSecretAlerts": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "byCategory": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "enum": [
+              "code",
+              "dependency",
+              "secret",
+              "container",
+              "iac",
+              "dast",
+              "supply-chain",
+              "configuration"
+            ]
+          },
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "required": [
+            "code",
+            "dependency",
+            "secret",
+            "container",
+            "iac",
+            "dast",
+            "supply-chain",
+            "configuration"
+          ]
+        },
+        "bySource": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "enum": [
+              "github-code-scanning",
+              "github-dependabot",
+              "github-secret-scanning",
+              "security-status-file"
+            ]
+          },
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "required": [
+            "github-code-scanning",
+            "github-dependabot",
+            "github-secret-scanning",
+            "security-status-file"
+          ]
+        }
+      },
+      "required": [
+        "status",
+        "reasons",
+        "openCounts",
+        "countsComplete",
+        "openSecretAlerts",
+        "byCategory",
+        "bySource"
+      ],
+      "additionalProperties": false
+    },
+    "securityCoverage": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "green",
+            "amber",
+            "red",
+            "grey"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "workflow-failed",
+                  "workflow-cancelled",
+                  "critical-workflow-missing",
+                  "critical-workflow-never-run",
+                  "workflow-queued-too-long",
+                  "workflow-stale",
+                  "workflow-data-unavailable",
+                  "non-critical-workflow-failed",
+                  "no-critical-workflows",
+                  "critical-workflows-succeeded",
+                  "manifest-unknown-component",
+                  "submodule-unresolvable",
+                  "submodule-unmapped",
+                  "component-version-drift",
+                  "component-version-unknown",
+                  "environment-behind",
+                  "environment-mismatch",
+                  "environment-version-unknown",
+                  "coordinator-version-unknown",
+                  "manifest-missing",
+                  "manifest-invalid",
+                  "versions-aligned",
+                  "open-critical-alerts",
+                  "open-high-alerts",
+                  "open-medium-low-alerts",
+                  "open-secret-alerts",
+                  "required-control-failed",
+                  "required-control-stale",
+                  "coverage-incomplete",
+                  "security-data-unavailable",
+                  "private-details-withheld",
+                  "no-open-alerts",
+                  "required-control-not-configured",
+                  "required-control-not-authorised",
+                  "required-control-unknown",
+                  "no-required-controls",
+                  "all-required-controls-available",
+                  "standard-workflow-missing",
+                  "repository-archived",
+                  "security-status-file-missing",
+                  "security-status-file-invalid",
+                  "default-branch-mismatch",
+                  "repository-unavailable",
+                  "governance-compliant",
+                  "source-stale",
+                  "data-fresh",
+                  "no-data",
+                  "dimension-red",
+                  "dimension-amber",
+                  "dimension-grey",
+                  "all-dimensions-green"
+                ]
+              },
+              "level": {
+                "type": "string",
+                "enum": [
+                  "red",
+                  "amber",
+                  "grey",
+                  "info"
+                ]
+              },
+              "params": {
+                "default": {},
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "code",
+              "level"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "percentage": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "required": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "available": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "notConfigured": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "notAuthorised": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "unknown": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "stale": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "collectedAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        "perControl": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "control": {
+                "type": "string",
+                "enum": [
+                  "codeScanning",
+                  "secretScanning",
+                  "dependabot",
+                  "containerScanning",
+                  "iacScanning",
+                  "dast",
+                  "sbom",
+                  "artifactSignature"
+                ]
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "enabled",
+                  "not-configured",
+                  "configured-not-run",
+                  "not-authorised",
+                  "failed",
+                  "stale",
+                  "unknown",
+                  "collection-failed",
+                  "not-applicable"
+                ]
+              }
+            },
+            "required": [
+              "control",
+              "required",
+              "state"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "status",
+        "reasons",
+        "percentage",
+        "required",
+        "available",
+        "notConfigured",
+        "notAuthorised",
+        "unknown",
+        "failed",
+        "stale",
+        "collectedAt",
+        "perControl"
+      ],
+      "additionalProperties": false
+    },
+    "governanceHealth": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "green",
+            "amber",
+            "red",
+            "grey"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "workflow-failed",
+                  "workflow-cancelled",
+                  "critical-workflow-missing",
+                  "critical-workflow-never-run",
+                  "workflow-queued-too-long",
+                  "workflow-stale",
+                  "workflow-data-unavailable",
+                  "non-critical-workflow-failed",
+                  "no-critical-workflows",
+                  "critical-workflows-succeeded",
+                  "manifest-unknown-component",
+                  "submodule-unresolvable",
+                  "submodule-unmapped",
+                  "component-version-drift",
+                  "component-version-unknown",
+                  "environment-behind",
+                  "environment-mismatch",
+                  "environment-version-unknown",
+                  "coordinator-version-unknown",
+                  "manifest-missing",
+                  "manifest-invalid",
+                  "versions-aligned",
+                  "open-critical-alerts",
+                  "open-high-alerts",
+                  "open-medium-low-alerts",
+                  "open-secret-alerts",
+                  "required-control-failed",
+                  "required-control-stale",
+                  "coverage-incomplete",
+                  "security-data-unavailable",
+                  "private-details-withheld",
+                  "no-open-alerts",
+                  "required-control-not-configured",
+                  "required-control-not-authorised",
+                  "required-control-unknown",
+                  "no-required-controls",
+                  "all-required-controls-available",
+                  "standard-workflow-missing",
+                  "repository-archived",
+                  "security-status-file-missing",
+                  "security-status-file-invalid",
+                  "default-branch-mismatch",
+                  "repository-unavailable",
+                  "governance-compliant",
+                  "source-stale",
+                  "data-fresh",
+                  "no-data",
+                  "dimension-red",
+                  "dimension-amber",
+                  "dimension-grey",
+                  "all-dimensions-green"
+                ]
+              },
+              "level": {
+                "type": "string",
+                "enum": [
+                  "red",
+                  "amber",
+                  "grey",
+                  "info"
+                ]
+              },
+              "params": {
+                "default": {},
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "code",
+              "level"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "status",
+        "reasons"
+      ],
+      "additionalProperties": false
+    },
+    "overallHealth": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "green",
+            "amber",
+            "red",
+            "grey"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "workflow-failed",
+                  "workflow-cancelled",
+                  "critical-workflow-missing",
+                  "critical-workflow-never-run",
+                  "workflow-queued-too-long",
+                  "workflow-stale",
+                  "workflow-data-unavailable",
+                  "non-critical-workflow-failed",
+                  "no-critical-workflows",
+                  "critical-workflows-succeeded",
+                  "manifest-unknown-component",
+                  "submodule-unresolvable",
+                  "submodule-unmapped",
+                  "component-version-drift",
+                  "component-version-unknown",
+                  "environment-behind",
+                  "environment-mismatch",
+                  "environment-version-unknown",
+                  "coordinator-version-unknown",
+                  "manifest-missing",
+                  "manifest-invalid",
+                  "versions-aligned",
+                  "open-critical-alerts",
+                  "open-high-alerts",
+                  "open-medium-low-alerts",
+                  "open-secret-alerts",
+                  "required-control-failed",
+                  "required-control-stale",
+                  "coverage-incomplete",
+                  "security-data-unavailable",
+                  "private-details-withheld",
+                  "no-open-alerts",
+                  "required-control-not-configured",
+                  "required-control-not-authorised",
+                  "required-control-unknown",
+                  "no-required-controls",
+                  "all-required-controls-available",
+                  "standard-workflow-missing",
+                  "repository-archived",
+                  "security-status-file-missing",
+                  "security-status-file-invalid",
+                  "default-branch-mismatch",
+                  "repository-unavailable",
+                  "governance-compliant",
+                  "source-stale",
+                  "data-fresh",
+                  "no-data",
+                  "dimension-red",
+                  "dimension-amber",
+                  "dimension-grey",
+                  "all-dimensions-green"
+                ]
+              },
+              "level": {
+                "type": "string",
+                "enum": [
+                  "red",
+                  "amber",
+                  "grey",
+                  "info"
+                ]
+              },
+              "params": {
+                "default": {},
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "code",
+              "level"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "status",
+        "reasons"
+      ],
+      "additionalProperties": false
+    },
+    "dataFreshness": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "green",
+            "amber",
+            "red",
+            "grey"
+          ]
+        },
+        "collectedAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        "oldestSourceAt": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "staleSources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "repository": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "source": {
+                "type": "string",
+                "enum": [
+                  "workflow-runs",
+                  "code-scanning",
+                  "security-status-file"
+                ]
+              },
+              "lastUpdatedAt": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "repository",
+              "source",
+              "lastUpdatedAt"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "status",
+        "collectedAt",
+        "oldestSourceAt",
+        "staleSources"
+      ],
+      "additionalProperties": false
+    },
+    "collectionErrors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "repository": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "componentId": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "repository",
+              "branch",
+              "release",
+              "tag",
+              "manifest",
+              "gitmodules",
+              "submodule",
+              "workflow-runs",
+              "code-scanning",
+              "dependabot",
+              "secret-scanning",
+              "security-status-file"
+            ]
+          },
+          "classification": {
+            "type": "string",
+            "enum": [
+              "not-found",
+              "not-authorised",
+              "not-configured",
+              "rate-limited",
+              "invalid-data",
+              "error"
+            ]
+          },
+          "httpStatus": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 599
+          },
+          "detail": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "repository",
+          "source",
+          "classification"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "project",
+    "coordinator",
+    "components",
+    "environments",
+    "workflows",
+    "securityFindings",
+    "securityControls",
+    "deliveryHealth",
+    "versionHealth",
+    "securityHealth",
+    "securityCoverage",
+    "governanceHealth",
+    "overallHealth",
+    "dataFreshness",
+    "collectionErrors"
+  ],
+  "additionalProperties": false
+}

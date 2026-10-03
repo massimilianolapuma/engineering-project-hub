@@ -1,0 +1,33 @@
+---
+/**
+ * Renders a count where null means "unknown" (never shown as 0). `partial` marks a lower
+ * bound when some sources could not be read.
+ */
+import type { I18n } from '../i18n';
+interface Props {
+  value: number | null | undefined;
+  i18n: I18n;
+  partial?: boolean;
+  emphasis?: 'red' | 'amber' | 'none';
+}
+const { value, i18n, partial = false, emphasis = 'none' } = Astro.props;
+// A partial zero is not a zero: some sources were unreadable, so the value is unknown.
+const known = typeof value === 'number' && !(partial && value === 0);
+const hot = known && value > 0 && emphasis !== 'none';
+---
+
+{known ? (
+  <span
+    class:list={['count', hot && `count--${emphasis}`, partial && 'count--partial']}
+    title={partial ? i18n.d.common.partial : undefined}
+  >
+    {partial && <span aria-hidden="true">≥</span>}
+    {i18n.number(value)}
+    {partial && <span class="visually-hidden">{i18n.d.common.partial}</span>}
+  </span>
+) : (
+  <span class="count count--unknown" title={i18n.d.common.unknown}>
+    <span aria-hidden="true">{i18n.d.common.unknownValue}</span>
+    <span class="visually-hidden">{i18n.d.common.unknown}</span>
+  </span>
+)}

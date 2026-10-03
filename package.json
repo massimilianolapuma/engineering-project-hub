@@ -1,0 +1,70 @@
+{
+  "name": "engineering-project-hub",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Static, GitHub-native portal giving a project-level view of multi-repository software projects.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/massimilianolapuma/engineering-project-hub.git"
+  },
+  "homepage": "https://massimilianolapuma.github.io/engineering-project-hub/",
+  "bugs": {
+    "url": "https://github.com/massimilianolapuma/engineering-project-hub/issues"
+  },
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "collect": "tsx collector/src/index.ts",
+    "collect:mock": "tsx collector/src/index.ts --source mock",
+    "collect:github": "tsx collector/src/index.ts --source github",
+    "validate:config": "tsx scripts/validate-config.ts",
+    "validate:snapshots": "tsx scripts/validate-snapshots.ts",
+    "build:site": "astro build",
+    "build": "npm run collect && npm run validate:snapshots && npm run build:site && npm run scan:output",
+    "ci:build": "npm run validate:config && npm run collect:mock && npm run validate:snapshots && npm run build:site && npm run scan:output",
+    "preview": "astro preview",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json && astro check",
+    "test": "vitest run",
+    "ci:test": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "scan:output": "tsx scripts/scan-output.ts",
+    "fixtures:update": "tsx scripts/update-golden-snapshots.ts",
+    "schema:generate": "tsx scripts/generate-json-schema.ts"
+  },
+  "dependencies": {
+    "@fontsource/geist-mono": "5.3.0",
+    "@fontsource/geist-sans": "5.3.0",
+    "@octokit/auth-app": "8.3.1",
+    "@octokit/plugin-retry": "8.1.1",
+    "@octokit/plugin-throttling": "11.0.5",
+    "@octokit/rest": "22.0.1",
+    "astro": "7.3.5",
+    "yaml": "2.9.1",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.63.0",
+    "@types/node": "24.19.1",
+    "@vitest/coverage-v8": "5.0.3",
+    "eslint": "10.12.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-astro": "3.2.1",
+    "globals": "17.13.0",
+    "prettier": "3.9.9",
+    "prettier-plugin-astro": "1.1.0",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.0",
+    "vitest": "5.0.3"
+  },
+  "author": "Massimiliano La Puma"
+}

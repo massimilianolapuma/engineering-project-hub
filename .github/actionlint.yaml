@@ -1,0 +1,9 @@
+# actionlint configuration
+# Docs: https://github.com/rhysd/actionlint/blob/main/docs/config.md
+#
+# All workflows run on GitHub-hosted runners (ubuntu-latest), so there are no
+# custom runner labels. If self-hosted runners are added later, list their custom
+# labels here.
+
+self-hosted-runner:
+  labels: []

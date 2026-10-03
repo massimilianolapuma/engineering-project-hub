@@ -1,0 +1,341 @@
+---
+import {
+  CONTROL_IDS,
+  FindingCategorySchema,
+  FindingSourceSchema,
+  FindingStatusSchema,
+  SEVERITIES,
+  type SecurityFinding,
+} from '@model/index';
+import ErrorState from '../../components/ErrorState.astro';
+import ErrorsTable from '../../components/ErrorsTable.astro';
+import ExtLink from '../../components/ExtLink.astro';
+import Pill from '../../components/Pill.astro';
+import RelTime from '../../components/RelTime.astro';
+import SeverityKpis from '../../components/SeverityKpis.astro';
+import StatusBadge from '../../components/StatusBadge.astro';
+import Base from '../../layouts/Base.astro';
+import { coverageParams } from '../../lib/format';
+import { pageContext } from '../../lib/page';
+import { href, localeParams } from '../../lib/routes';
+import { controlTone, severityTone } from '../../lib/tones';
+
+export const getStaticPaths = localeParams;
+const { locale } = Astro.props;
+const { i18n, data, index, alternates } = pageContext(locale, 'security');
+const { d } = i18n;
+const projects = data.ok ? data.data.projects : [];
+const findings: SecurityFinding[] = projects.flatMap((p) => p.securityFindings);
+const open = findings.filter((f) => f.status === 'open');
+const sum = (k: 'critical' | 'high' | 'medium' | 'low') => {
+  const vals = projects.map((p) => p.securityHealth.openCounts[k]);
+  return vals.every((v) => v === null) ? null : vals.reduce<number>((a, v) => a + (v ?? 0), 0);
+};
+const secretVals = projects.map((p) => p.securityHealth.openSecretAlerts);
+const secrets = secretVals.every((v) => v === null)
+  ? null
+  : secretVals.reduce<number>((a, v) => a + (v ?? 0), 0);
+const partial = projects.some((p) => !p.securityHealth.countsComplete);
+const countBy = <K extends string>(
+  keys: readonly K[],
+  pick: (f: SecurityFinding) => K,
+  list = open,
+) =>
+  keys.map((k) => [k, list.filter((f) => pick(f) === k).length] as const).filter(([, n]) => n > 0);
+const byRepo = [...new Set(open.map((f) => f.repository))].map(
+  (r) => [r, open.filter((f) => f.repository === r).length] as const,
+);
+const allErrors = projects.flatMap((p) =>
+  p.collectionErrors.filter((e) =>
+    ['code-scanning', 'dependabot', 'secret-scanning', 'security-status-file'].includes(e.source),
+  ),
+);
+const authErrors = allErrors.filter((e) => e.classification === 'not-authorised');
+const severityOrder = (f: SecurityFinding) => SEVERITIES.indexOf(f.severity);
+const statusOrder = (f: SecurityFinding) => (f.status === 'open' ? 0 : 1);
+const sortedFindings = [...findings].sort(
+  (a, b) => statusOrder(a) - statusOrder(b) || severityOrder(a) - severityOrder(b),
+);
+const componentName = (pid: string, cid: string) =>
+  cid === 'coordinator'
+    ? d.common.coordinator
+    : (projects.find((p) => p.project.id === pid)?.components.find((c) => c.id === cid)?.name ??
+      cid);
+---
+
+<Base
+  i18n={i18n}
+  title={d.securityPage.title}
+  page="security"
+  alternates={alternates}
+  index={index}
+>
+  {!data.ok && <ErrorState error={data.error} i18n={i18n} />}
+  {data.ok && (
+    <>
+      <header class="page-head">
+        <h1>{d.securityPage.title}</h1>
+        <p class="lead">{d.securityPage.intro}</p>
+      </header>
+
+      <section aria-label={d.securityPage.title}>
+        <SeverityKpis
+          counts={{
+            critical: sum('critical'),
+            high: sum('high'),
+            medium: sum('medium'),
+            low: sum('low'),
+            informational: null,
+            unknown: null,
+          }}
+          secrets={secrets}
+          partial={partial}
+          i18n={i18n}
+        />
+      </section>
+
+      <section class="grid-3" aria-label={d.securityPage.byCategory}>
+        {[
+          [
+            d.securityPage.byCategory,
+            countBy(FindingCategorySchema.options, (f) => f.category).map(
+              ([k, n]) => [d.category[k], n] as const,
+            ),
+          ],
+          [
+            d.securityPage.bySeverity,
+            countBy(SEVERITIES, (f) => f.severity).map(([k, n]) => [d.severity[k], n] as const),
+          ],
+          [
+            d.securityPage.bySource,
+            countBy(FindingSourceSchema.options, (f) => f.source).map(
+              ([k, n]) => [d.findingSource[k], n] as const,
+            ),
+          ],
+          [
+            d.securityPage.byStatus,
+            countBy(FindingStatusSchema.options, (f) => f.status, findings).map(
+              ([k, n]) => [d.findingStatus[k], n] as const,
+            ),
+          ],
+          [d.securityPage.byRepository, byRepo],
+        ].map(([title, rows]) => (
+          <div class="card card--compact">
+            <h2 class="h3">{title as string}</h2>
+            {(rows as (readonly [string, number])[]).length === 0 ? (
+              <p class="muted">{d.common.none}</p>
+            ) : (
+              <dl class="breakdown">
+                {(rows as (readonly [string, number])[]).map(([k, n]) => (
+                  <div>
+                    <dt>{k}</dt>
+                    <dd>{n}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </div>
+        ))}
+      </section>
+      <p class="note">{d.securityPage.externalNote}</p>
+
+      <section aria-labelledby="h-cov">
+        <h2 id="h-cov">{d.securityPage.coverageMatrix}</h2>
+        <p class="note">{d.securityPage.coverageNote}</p>
+        {projects.map((p) => (
+          <div class="card" id={p.project.id}>
+            <h3>
+              <a href={href(locale, `projects/${p.project.id}`)}>{p.project.name}</a>
+              <span class="sub-inline">{d.dimensions.security}</span>
+              <StatusBadge
+                status={p.securityHealth.status}
+                i18n={i18n}
+                context={d.dimensions.security}
+                size="sm"
+              />
+              <span class="sub-inline">{d.dimensions.coverage}</span>
+              <StatusBadge
+                status={p.securityCoverage.status}
+                i18n={i18n}
+                context={d.dimensions.coverage}
+                size="sm"
+              />
+            </h3>
+            <p class="sub">
+              {p.securityCoverage.percentage === null
+                ? d.common.unknown
+                : `${p.securityCoverage.percentage}%`}{' '}
+              · {i18n.f(d.securityPage.coverageCounts, coverageParams(p.securityCoverage))} ·{' '}
+              <RelTime iso={p.securityCoverage.collectedAt} i18n={i18n} />
+            </p>
+            <div class="table-wrap">
+              <table class="table table--matrix table--coverage">
+                <thead>
+                  <tr>
+                    <th scope="col">{d.common.repository}</th>
+                    {CONTROL_IDS.map((c) => {
+                      const req = p.securityCoverage.perControl.find(
+                        (x) => x.control === c,
+                      )?.required;
+                      return (
+                        <th scope="col">
+                          {d.control[c]}
+                          <span class="sub">
+                            {req ? d.securityPage.required : d.securityPage.optional}
+                          </span>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {p.securityControls.map((rc) => (
+                    <tr>
+                      <th scope="row">
+                        <code>{rc.repository}</code>
+                        <span class="sub">{componentName(p.project.id, rc.componentId)}</span>
+                      </th>
+                      {CONTROL_IDS.map((c) => {
+                        const x = rc.controls.find((y) => y.control === c);
+                        return (
+                          <td data-label={d.control[c]}>
+                            {x ? (
+                              <Pill tone={controlTone(x.state)} label={d.controlState[x.state]} />
+                            ) : (
+                              d.common.unknownValue
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <section class="grid-2" aria-label={d.securityPage.incomplete}>
+        <div class="card">
+          <h2 class="h3">{d.securityPage.incomplete}</h2>
+          <ul class="plain">
+            {projects.flatMap((p) =>
+              p.securityControls.flatMap((rc) =>
+                rc.controls
+                  .filter(
+                    (c) =>
+                      c.required &&
+                      [
+                        'not-configured',
+                        'configured-not-run',
+                        'failed',
+                        'unknown',
+                        'collection-failed',
+                        'not-authorised',
+                      ].includes(c.state),
+                  )
+                  .map((c) => (
+                    <li>
+                      <code>{rc.repository}</code> · {d.control[c.control]}{' '}
+                      <Pill tone={controlTone(c.state)} label={d.controlState[c.state]} />
+                    </li>
+                  )),
+              ),
+            )}
+          </ul>
+        </div>
+        <div class="card">
+          <h2 class="h3">{d.securityPage.staleScans}</h2>
+          <ul class="plain">
+            {projects.flatMap((p) =>
+              p.securityControls.flatMap((rc) =>
+                rc.controls
+                  .filter((c) => c.state === 'stale')
+                  .map((c) => (
+                    <li>
+                      <code>{rc.repository}</code> · {d.control[c.control]} ·{' '}
+                      <RelTime iso={c.lastScanAt} i18n={i18n} />
+                    </li>
+                  )),
+              ),
+            )}
+          </ul>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-auth">
+        <h2 id="h-auth">{d.securityPage.authErrors}</h2>
+        <ErrorsTable errors={authErrors} i18n={i18n} caption={d.securityPage.authErrors} />
+      </section>
+
+      <section aria-labelledby="h-findings">
+        <h2 id="h-findings">{d.securityPage.findings}</h2>
+        {sortedFindings.length === 0 ? (
+          <p class="muted">{d.securityPage.noFindings}</p>
+        ) : (
+          <div class="table-wrap">
+            <table class="table table--findings">
+              <caption class="visually-hidden">{d.securityPage.findingsCaption}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{d.securityPage.filterSeverity}</th>
+                  <th scope="col">{d.securityPage.filterStatus}</th>
+                  <th scope="col">{d.securityPage.category}</th>
+                  <th scope="col">{d.securityPage.findingTitle}</th>
+                  <th scope="col">{d.common.repository}</th>
+                  <th scope="col">{d.securityPage.detected}</th>
+                  <th scope="col">{d.securityPage.fix}</th>
+                  <th scope="col">
+                    <span class="visually-hidden">{d.common.openInGitHub}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedFindings.map((f) => (
+                  <tr class={f.status === 'open' ? '' : 'row--muted'}>
+                    <td data-label={d.securityPage.filterSeverity}>
+                      <Pill
+                        tone={severityTone(f.severity)}
+                        label={d.severity[f.severity]}
+                        title={f.originalSeverity ?? undefined}
+                      />
+                    </td>
+                    <td data-label={d.securityPage.filterStatus}>{d.findingStatus[f.status]}</td>
+                    <td data-label={d.securityPage.category}>
+                      {d.category[f.category]}
+                      <span class="sub">{d.findingSource[f.source]}</span>
+                    </td>
+                    <td data-label={d.securityPage.findingTitle}>
+                      {f.title ?? <span class="muted">{d.common.privateWithheld}</span>}
+                      {f.ruleId && <code class="sub">{f.ruleId}</code>}
+                    </td>
+                    <td data-label={d.common.repository}>
+                      <code>{f.repository}</code>
+                      <span class="sub">{componentName(f.projectId, f.componentId)}</span>
+                    </td>
+                    <td data-label={d.securityPage.detected}>
+                      <RelTime iso={f.detectedAt} i18n={i18n} />
+                    </td>
+                    <td data-label={d.securityPage.fix}>
+                      {f.fixAvailable === null ? (
+                        <span class="muted">{d.common.unknown}</span>
+                      ) : f.fixAvailable ? (
+                        d.common.yes
+                      ) : (
+                        d.common.no
+                      )}
+                    </td>
+                    <td>
+                      <ExtLink href={f.htmlUrl} i18n={i18n} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </>
+  )}
+</Base>

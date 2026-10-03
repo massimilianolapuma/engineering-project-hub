@@ -1,0 +1,34 @@
+---
+/**
+ * Health status badge: colour + shape icon + text + accessible description.
+ * `context` (e.g. "Delivery") is prefixed in the tooltip and screen-reader text.
+ */
+import type { HealthStatus } from '@model/index';
+import type { I18n } from '../i18n';
+import StatusIcon from './StatusIcon.astro';
+interface Props {
+  status: HealthStatus;
+  i18n: I18n;
+  context?: string;
+  size?: 'sm' | 'md' | 'lg';
+  /** Also show the context as visible text before the badge. */
+  labelled?: boolean;
+}
+const { status, i18n, context, size = 'md', labelled = false } = Astro.props;
+const label = i18n.status(status);
+const desc = i18n.statusDesc(status);
+const title = context ? `${context}: ${desc}` : desc;
+---
+
+{labelled && context && (
+  <span class="sub-inline" aria-hidden="true">
+    {context}
+  </span>
+)}
+<span class={`badge badge--${status} badge--${size}`} title={title} data-status={status}>
+  <StatusIcon tone={status} />
+  <span class="badge__text">{label}</span>
+  <span class="visually-hidden">
+    {context ? ` — ${context}` : ''}. {desc}
+  </span>
+</span>

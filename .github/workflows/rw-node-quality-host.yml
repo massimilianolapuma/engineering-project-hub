@@ -1,0 +1,132 @@
+# Reusable workflow — part of this repository's CI building blocks (rw-*).
+# ==============================================================================
+# [Reusable] Node.js — static quality gate (lint, typecheck, format)
+# ==============================================================================
+#
+# Purpose:  Static quality gate for Node.js / TypeScript projects, separate from
+#           build and test (rw-npm-build-test-host.yml): runs lint, typecheck and
+#           format check with the commands defined by the project. Gives fast PR
+#           feedback without waiting for the full build/test.
+#
+# Host mode: Node.js is installed on the runner by the composite action
+#   setup-node-env (actions/setup-node, runner tool cache). No job container.
+#
+# Steps:
+#   1. Checkout (persist-credentials: false)
+#   2. Setup Node.js + npm cache (composite action setup-node-env)
+#   3. Install dependencies (npm ci)
+#   4. Run lint-command, typecheck-command, format-check-command
+#      (each step is skipped when its command is empty; the defaults use
+#      `--if-present`, so scripts missing from package.json do not fail)
+#
+# Security:
+#   - Commands come from caller inputs and are passed ONLY via env: (never
+#     interpolated into run:), then executed with `bash -euo pipefail -c`.
+#   - No write scope: the workflow only needs contents: read. No secrets.
+#
+# Caller example:
+#   jobs:
+#     node-quality:
+#       permissions:
+#         contents: read
+#       uses: ./.github/workflows/rw-node-quality-host.yml
+#       with:
+#         node-version: '24'
+#         lint-command: npm run lint
+#         typecheck-command: ''          # empty → step skipped
+#         format-check-command: npm run format:check --if-present
+#
+# Local test (nektos/act with podman as the container engine):
+#   act pull_request -j node-quality --workflows .github/workflows/ci.yml
+#
+# Syntax check:
+#   actionlint .github/workflows/rw-node-quality-host.yml
+# ==============================================================================
+
+name: Reusable — Node.js Quality Gate (lint, typecheck, format)
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Node.js version (e.g. '22', '24', '22.x')"
+        required: false
+        type: string
+        default: '24'
+      working-directory:
+        description: 'npm project root relative to the repository root'
+        required: false
+        type: string
+        default: '.'
+      lint-command:
+        description: 'Lint command (empty string → step skipped)'
+        required: false
+        type: string
+        default: 'npm run lint --if-present'
+      typecheck-command:
+        description: 'Typecheck command (empty string → step skipped)'
+        required: false
+        type: string
+        default: 'npm run typecheck --if-present'
+      format-check-command:
+        description: 'Format check command (empty string → step skipped)'
+        required: false
+        type: string
+        default: 'npm run format:check --if-present'
+
+permissions:
+  contents: read
+
+jobs:
+  node-quality:
+    name: Node.js Quality — lint, typecheck, format
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read # actions/checkout
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+
+    steps:
+      # -----------------------------------------------------------------------
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # -----------------------------------------------------------------------
+      - name: Setup Node.js environment
+        uses: ./.github/actions/setup-node-env
+        with:
+          node-version: ${{ inputs.node-version }}
+          working-directory: ${{ inputs.working-directory }}
+
+      # -----------------------------------------------------------------------
+      - name: Install dependencies
+        run: npm ci
+
+      # -----------------------------------------------------------------------
+      # Each command: skipped when empty, passed via env (never inline in run:).
+      - name: Lint
+        if: ${{ inputs.lint-command != '' }}
+        env:
+          # [template-injection] inputs.lint-command mapped to env var — never inline in run:
+          QUALITY_COMMAND: ${{ inputs.lint-command }}
+        run: bash -euo pipefail -c "$QUALITY_COMMAND"
+
+      - name: Typecheck
+        if: ${{ inputs.typecheck-command != '' }}
+        env:
+          # [template-injection] inputs.typecheck-command mapped to env var — never inline in run:
+          QUALITY_COMMAND: ${{ inputs.typecheck-command }}
+        run: bash -euo pipefail -c "$QUALITY_COMMAND"
+
+      - name: Format check
+        if: ${{ inputs.format-check-command != '' }}
+        env:
+          # [template-injection] inputs.format-check-command mapped to env var — never inline in run:
+          QUALITY_COMMAND: ${{ inputs.format-check-command }}
+        run: bash -euo pipefail -c "$QUALITY_COMMAND"

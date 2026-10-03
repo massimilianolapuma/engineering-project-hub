@@ -1,0 +1,52 @@
+---
+import type { CollectionError } from '@model/index';
+import type { I18n } from '../i18n';
+import Pill from './Pill.astro';
+interface Props {
+  errors: CollectionError[];
+  i18n: I18n;
+  caption: string;
+}
+const { errors, i18n, caption } = Astro.props;
+const { d } = i18n;
+const tone = (c: CollectionError['classification']) =>
+  c === 'error' || c === 'rate-limited' ? 'red' : c === 'not-configured' ? 'amber' : 'grey';
+---
+
+{errors.length === 0 ? (
+  <p class="muted">{d.common.noErrors}</p>
+) : (
+  <div class="table-wrap">
+    <table class="table">
+      <caption class="visually-hidden">{caption}</caption>
+      <thead>
+        <tr>
+          <th scope="col">{d.common.repository}</th>
+          <th scope="col">{d.dataQualityPage.source}</th>
+          <th scope="col">{d.dataQualityPage.classification}</th>
+          <th scope="col" class="num">
+            {d.dataQualityPage.http}
+          </th>
+          <th scope="col">{d.dataQualityPage.detail}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {errors.map((e) => (
+          <tr>
+            <td data-label={d.common.repository}>
+              <code>{e.repository}</code>
+            </td>
+            <td data-label={d.dataQualityPage.source}>{d.errorSource[e.source]}</td>
+            <td data-label={d.dataQualityPage.classification}>
+              <Pill tone={tone(e.classification)} label={d.errorClass[e.classification]} />
+            </td>
+            <td class="num" data-label={d.dataQualityPage.http}>
+              {e.httpStatus ?? d.common.unknownValue}
+            </td>
+            <td data-label={d.dataQualityPage.detail}>{e.detail ?? d.common.unknownValue}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}

@@ -1,0 +1,105 @@
+{
+  "repository": {
+    "owner": "example-org",
+    "name": "project-beta-api",
+    "fullName": "example-org/project-beta-api",
+    "htmlUrl": "https://github.com/example-org/project-beta-api",
+    "visibility": "private",
+    "defaultBranch": "main",
+    "archived": false,
+    "updatedAt": "@now-1d",
+    "topics": ["demo", "python"]
+  },
+  "head": {
+    "sha": "3214cb086d9f6b265d49568ba63b3eb3afb5b505",
+    "committedAt": "@now-3d"
+  },
+  "latestRelease": {
+    "tagName": "v3.2.0",
+    "name": "v3.2.0",
+    "publishedAt": "@now-6d",
+    "prerelease": false,
+    "htmlUrl": "https://github.com/example-org/project-beta-api/releases/tag/v3.2.0"
+  },
+  "files": {
+    ".security/project-security-status.json": "{\n  \"schemaVersion\": \"1.0\",\n  \"generatedAt\": \"@now-2d\",\n  \"repository\": \"example-org/project-beta-api\",\n  \"version\": \"synthetic\",\n  \"commitSha\": \"3214cb086d9f6b265d49568ba63b3eb3afb5b505\",\n  \"controls\": {\n    \"containerScanning\": {\n      \"status\": \"completed\",\n      \"tool\": \"trivy\",\n      \"critical\": 0,\n      \"high\": 1,\n      \"medium\": 2,\n      \"low\": 0,\n      \"completedAt\": \"@now-2d\"\n    }\n  }\n}"
+  },
+  "workflowRuns": {
+    "ci-main.yml": [
+      {
+        "id": 9012,
+        "runNumber": 418,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "failure",
+        "headBranch": "main",
+        "event": "push",
+        "headSha": "449b975ba553dd817ddfc23f55cb7f1c54c8c43a",
+        "createdAt": "@now-3d",
+        "updatedAt": "@now-3d",
+        "htmlUrl": "https://github.com/example-org/project-beta-api/actions/runs/9012"
+      },
+      {
+        "id": 9013,
+        "runNumber": 417,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "headBranch": "main",
+        "event": "push",
+        "headSha": "7312a8745e89d8e0c383a1a990cdb367d2ff5be3",
+        "createdAt": "@now-4d",
+        "updatedAt": "@now-4d",
+        "htmlUrl": "https://github.com/example-org/project-beta-api/actions/runs/9013"
+      }
+    ],
+    "rel-release.yml": [
+      {
+        "id": 9014,
+        "runNumber": 40,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "headBranch": "main",
+        "event": "workflow_dispatch",
+        "headSha": "e89334b157409f526a8622d50964827889155c01",
+        "createdAt": "@now-6d",
+        "updatedAt": "@now-6d",
+        "htmlUrl": "https://github.com/example-org/project-beta-api/actions/runs/9014"
+      }
+    ]
+  },
+  "runFailures": {
+    "9012": {
+      "jobName": "test",
+      "stepName": "Run integration tests"
+    }
+  },
+  "codeScanningAlerts": [
+    {
+      "number": 3,
+      "state": "open",
+      "dismissedReason": null,
+      "ruleId": "py/sql-injection",
+      "ruleSeverity": "warning",
+      "securitySeverityLevel": "critical",
+      "ruleDescription": "SQL query built from user-controlled sources",
+      "toolName": "CodeQL",
+      "createdAt": "@now-3d",
+      "updatedAt": "@now-3d",
+      "htmlUrl": "https://github.com/example-org/project-beta-api/security/code-scanning/3"
+    }
+  ],
+  "codeScanningAnalysis": {
+    "createdAt": "@now-3d",
+    "toolName": "CodeQL"
+  },
+  "dependabotAlerts": [],
+  "secretScanningAlerts": {
+    "$error": {
+      "classification": "not-authorised",
+      "httpStatus": 403,
+      "message": "Resource not accessible by integration"
+    }
+  }
+}

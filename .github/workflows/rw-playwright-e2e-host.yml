@@ -1,0 +1,149 @@
+# Reusable workflow — part of this repository's CI building blocks (rw-*).
+# ==============================================================================
+# [Reusable] Playwright — end-to-end tests against the built site
+# ==============================================================================
+#
+# Purpose:  Builds the project and runs its Playwright suite. The Playwright config
+#           is expected to start the server it tests (webServer), e.g. a static
+#           preview of the build output.
+#
+# Host mode: Node.js is installed on the runner by the composite action
+#   setup-node-env. Browsers and their OS dependencies are installed with
+#   `npx playwright install --with-deps <browsers>`, using the Playwright version
+#   pinned in package-lock.json (no third-party action).
+#
+# Steps:
+#   1. Checkout (persist-credentials: false)
+#   2. Setup Node.js + npm cache, npm ci
+#   3. Install Playwright browsers (input browsers, default chromium)
+#   4. Build (input build-command)
+#   5. Test (input test-command) with CI=1
+#   6. On failure: upload <working-directory>/test-results (traces) as artifact
+#
+# Security:
+#   - Commands are passed via env: (never interpolated into run:) and executed
+#     with `bash -euo pipefail -c`. browsers is validated against [a-z0-9 -].
+#   - contents: read only. No secrets.
+#
+# Caller example:
+#   jobs:
+#     e2e:
+#       permissions:
+#         contents: read
+#       uses: ./.github/workflows/rw-playwright-e2e-host.yml
+#       with:
+#         node-version: '24'
+#         build-command: npm run ci:build
+#         test-command: npm run test:e2e
+#
+# Local test (nektos/act with podman as the container engine):
+#   act pull_request -j e2e --workflows .github/workflows/ci.yml
+#
+# Syntax check:
+#   actionlint .github/workflows/rw-playwright-e2e-host.yml
+# ==============================================================================
+
+name: Reusable — Playwright E2E Tests
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Node.js version (e.g. '22', '24')"
+        required: false
+        type: string
+        default: '24'
+      working-directory:
+        description: 'npm project root relative to the repository root'
+        required: false
+        type: string
+        default: '.'
+      browsers:
+        description: 'Space-separated Playwright browsers to install (e.g. "chromium firefox")'
+        required: false
+        type: string
+        default: 'chromium'
+      build-command:
+        description: 'Build command run before the tests (empty string → step skipped)'
+        required: false
+        type: string
+        default: 'npm run build'
+      test-command:
+        description: 'Playwright test command'
+        required: false
+        type: string
+        default: 'npx playwright test'
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: Playwright E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read # actions/checkout
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+
+    steps:
+      # -----------------------------------------------------------------------
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # -----------------------------------------------------------------------
+      - name: Setup Node.js environment
+        uses: ./.github/actions/setup-node-env
+        with:
+          node-version: ${{ inputs.node-version }}
+          working-directory: ${{ inputs.working-directory }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      # -----------------------------------------------------------------------
+      - name: Install Playwright browsers
+        env:
+          # [template-injection] inputs.browsers mapped to env var — never inline in run:
+          BROWSERS: ${{ inputs.browsers }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$BROWSERS" =~ ^[a-z0-9\ -]+$ ]]; then
+            echo "::error title=Invalid Input::browsers must contain only [a-z0-9 -] (got '$BROWSERS')"
+            exit 1
+          fi
+          read -ra BROWSER_LIST <<< "$BROWSERS"
+          npx playwright install --with-deps "${BROWSER_LIST[@]}"
+
+      # -----------------------------------------------------------------------
+      - name: Build
+        if: ${{ inputs.build-command != '' }}
+        env:
+          # [template-injection] inputs.build-command mapped to env var — never inline in run:
+          BUILD_COMMAND: ${{ inputs.build-command }}
+        run: bash -euo pipefail -c "$BUILD_COMMAND"
+
+      - name: Test
+        env:
+          CI: '1'
+          # [template-injection] inputs.test-command mapped to env var — never inline in run:
+          TEST_COMMAND: ${{ inputs.test-command }}
+        run: bash -euo pipefail -c "$TEST_COMMAND"
+
+      # -----------------------------------------------------------------------
+      # Traces/screenshots kept by Playwright on failure (trace: retain-on-failure).
+      # !env.ACT: the nektos/act artifact server does not support upload-artifact v7.
+      - name: Upload test results
+        if: ${{ failure() && !env.ACT }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: playwright-test-results-${{ github.run_id }}
+          path: ${{ inputs.working-directory }}/test-results
+          retention-days: 7
+          if-no-files-found: ignore

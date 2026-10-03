@@ -1,0 +1,58 @@
+{
+  "repository": {
+    "owner": "example-org",
+    "name": "project-alpha-coordinator",
+    "fullName": "example-org/project-alpha-coordinator",
+    "htmlUrl": "https://github.com/example-org/project-alpha-coordinator",
+    "visibility": "public",
+    "defaultBranch": "main",
+    "archived": false,
+    "updatedAt": "@now-1d",
+    "topics": ["demo"]
+  },
+  "head": {
+    "sha": "4e8100969f2ec6777df476c40eeedec80aca4380",
+    "committedAt": "@now-1d"
+  },
+  "latestRelease": {
+    "tagName": "v1.4.0",
+    "name": "v1.4.0",
+    "publishedAt": "@now-3d",
+    "prerelease": false,
+    "htmlUrl": "https://github.com/example-org/project-alpha-coordinator/releases/tag/v1.4.0"
+  },
+  "files": {
+    "release-manifest.yaml": "schemaVersion: '1.0'\nversion: 1.4.0\ncomponents:\n  backend:\n    version: 1.4.0\n  frontend:\n    version: 2.1.0\n  worker:\n    version: 1.2.0\n  helm:\n    version: 0.9.0\nenvironments:\n  dev:\n    version: 1.4.0\n  test:\n    version: 1.4.0\n  uat:\n    version: 1.4.0\n  prod:\n    version: 1.3.0\n",
+    ".gitmodules": "[submodule \"backend\"]\n\tpath = services/backend\n\turl = https://github.com/example-org/project-alpha-backend.git\n[submodule \"frontend\"]\n\tpath = apps/frontend\n\turl = ../project-alpha-frontend.git\n[submodule \"worker\"]\n\tpath = services/worker\n\turl = git@github.com:example-org/project-alpha-worker.git\n[submodule \"helm\"]\n\tpath = deploy/helm\n\turl = https://github.com/example-org/project-alpha-helm.git\n"
+  },
+  "submodules": {
+    "services/backend": "a854f48ad1aa650b2594455e44d9016866a5d5b3",
+    "apps/frontend": "7482a4cab7d0cbbb5b9bde9cb303ab22b02ef963",
+    "services/worker": "ae589794b1f6f51ea57eb1e77bdb88b5dda79046",
+    "deploy/helm": "d304f3fee80499f3c014fbbb7baea89240a9c334"
+  },
+  "workflowRuns": {
+    "rel-release.yml": [
+      {
+        "id": 9001,
+        "runNumber": 57,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "headBranch": "main",
+        "event": "workflow_dispatch",
+        "headSha": "0afa9796ac75b2347dde3f8a27f6d9299494aa10",
+        "createdAt": "@now-3d",
+        "updatedAt": "@now-3d",
+        "htmlUrl": "https://github.com/example-org/project-alpha-coordinator/actions/runs/9001"
+      }
+    ]
+  },
+  "codeScanningAlerts": [],
+  "codeScanningAnalysis": {
+    "createdAt": "@now-1d",
+    "toolName": "CodeQL"
+  },
+  "dependabotAlerts": [],
+  "secretScanningAlerts": []
+}

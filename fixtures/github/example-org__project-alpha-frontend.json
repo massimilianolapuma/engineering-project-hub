@@ -1,0 +1,108 @@
+{
+  "repository": {
+    "owner": "example-org",
+    "name": "project-alpha-frontend",
+    "fullName": "example-org/project-alpha-frontend",
+    "htmlUrl": "https://github.com/example-org/project-alpha-frontend",
+    "visibility": "public",
+    "defaultBranch": "main",
+    "archived": false,
+    "updatedAt": "@now-1d",
+    "topics": ["demo", "typescript"]
+  },
+  "head": {
+    "sha": "ae4b58f791cf66bf510c92ca102cc34470fbdf7d",
+    "committedAt": "@now-5h"
+  },
+  "latestRelease": {
+    "tagName": "v2.2.0",
+    "name": "v2.2.0",
+    "publishedAt": "@now-2d",
+    "prerelease": false,
+    "htmlUrl": "https://github.com/example-org/project-alpha-frontend/releases/tag/v2.2.0"
+  },
+  "files": {
+    ".security/project-security-status.json": "{\n  \"schemaVersion\": \"1.0\",\n  \"generatedAt\": \"@now-5h\",\n  \"repository\": \"example-org/project-alpha-frontend\",\n  \"version\": \"synthetic\",\n  \"commitSha\": \"ae4b58f791cf66bf510c92ca102cc34470fbdf7d\",\n  \"controls\": {\n    \"containerScanning\": {\n      \"status\": \"completed\",\n      \"tool\": \"trivy\",\n      \"critical\": 0,\n      \"high\": 0,\n      \"medium\": 0,\n      \"low\": 0,\n      \"completedAt\": \"@now-5h\"\n    },\n    \"sbom\": {\n      \"status\": \"available\",\n      \"format\": \"cyclonedx\"\n    }\n  }\n}"
+  },
+  "workflowRuns": {
+    "ci-main.yml": [
+      {
+        "id": 9005,
+        "runNumber": 430,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "headBranch": "main",
+        "event": "push",
+        "headSha": "9b9ce3aecd369d0215a7314d63cc294339417cd6",
+        "createdAt": "@now-5h",
+        "updatedAt": "@now-5h",
+        "htmlUrl": "https://github.com/example-org/project-alpha-frontend/actions/runs/9005"
+      },
+      {
+        "id": 9006,
+        "runNumber": 429,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "failure",
+        "headBranch": "main",
+        "event": "push",
+        "headSha": "7420c79fbd166f9d3aca2e754e908b64e47b5af0",
+        "createdAt": "@now-1d",
+        "updatedAt": "@now-1d",
+        "htmlUrl": "https://github.com/example-org/project-alpha-frontend/actions/runs/9006"
+      }
+    ],
+    "rel-release.yml": [
+      {
+        "id": 9007,
+        "runNumber": 31,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "headBranch": "main",
+        "event": "workflow_dispatch",
+        "headSha": "81af777bccdde5dfda3a757245fa18fbbdec15ed",
+        "createdAt": "@now-2d",
+        "updatedAt": "@now-2d",
+        "htmlUrl": "https://github.com/example-org/project-alpha-frontend/actions/runs/9007"
+      }
+    ]
+  },
+  "codeScanningAlerts": [],
+  "codeScanningAnalysis": {
+    "createdAt": "@now-5h",
+    "toolName": "CodeQL"
+  },
+  "dependabotAlerts": [
+    {
+      "number": 7,
+      "state": "open",
+      "dismissedReason": null,
+      "ghsaId": "GHSA-demo-0001-alph",
+      "cveId": null,
+      "severity": "high",
+      "summary": "Prototype pollution in example-lib (synthetic advisory)",
+      "packageName": "example-lib",
+      "firstPatchedVersion": "4.17.99",
+      "createdAt": "@now-4d",
+      "updatedAt": "@now-4d",
+      "htmlUrl": "https://github.com/example-org/project-alpha-frontend/security/dependabot/7"
+    },
+    {
+      "number": 5,
+      "state": "fixed",
+      "dismissedReason": null,
+      "ghsaId": "GHSA-demo-0002-alph",
+      "cveId": null,
+      "severity": "moderate",
+      "summary": "Regular expression denial of service (synthetic advisory)",
+      "packageName": "example-parser",
+      "firstPatchedVersion": "9.9.9",
+      "createdAt": "@now-40d",
+      "updatedAt": "@now-40d",
+      "htmlUrl": "https://github.com/example-org/project-alpha-frontend/security/dependabot/5"
+    }
+  ],
+  "secretScanningAlerts": []
+}

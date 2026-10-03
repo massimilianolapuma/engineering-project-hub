@@ -1,0 +1,186 @@
+# Reusable workflow — part of this repository's CI building blocks (rw-*).
+# ==============================================================================
+# [Reusable] PR title lint — Conventional Commits (squash-merge strategy)
+# ==============================================================================
+#
+# Purpose:  Validates ONLY the pull request title (not the individual commits).
+#           With squash merge and the default commit title set to the PR title,
+#           the PR title becomes the subject of the single commit that lands on
+#           `main`, so a valid title is all that is needed for a Conventional
+#           Commits history. Intermediate commits on the feature branch are free-form.
+#
+# Required title format (Conventional Commits 1.0.0):
+#   <type>(<optional scope>)!?: <subject>
+#   type ∈ feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
+#   The subject must not start with an uppercase letter.
+#   Valid:
+#     feat(collector): add GitHub App authentication
+#     fix: handle empty release list
+#     docs(readme): describe the mock data source
+#     feat!: drop the v1 snapshot format
+#   Invalid:
+#     Add GitHub App authentication     (no type)
+#     feat: Add GitHub App auth         (subject starts with uppercase)
+#     WIP                               (no type, no subject)
+#
+# Recommended repository settings (manual, Settings → General → Pull Requests):
+#   - Allow squash merging only (disable merge commits and rebase merging).
+#   - Default squash commit message: "Pull request title" (or "title and description",
+#     so that a `BREAKING CHANGE:` footer in the PR body reaches the commit).
+#   - Branch protection / ruleset on main: require this check.
+#
+# Exemptions: branches matching exempt-branch-prefixes (default: release-please
+#   branches, whose titles are generated) are skipped.
+#
+# Caller example (pull_request events only):
+#   jobs:
+#     pr-title-lint:
+#       if: ${{ github.event_name == 'pull_request' }}
+#       permissions:
+#         contents: read
+#         pull-requests: write
+#         statuses: write
+#       uses: ./.github/workflows/rw-pr-title-lint.yml
+#
+# Local test (nektos/act with podman as the container engine; needs a pull_request
+# event payload with pull_request.title):
+#   act pull_request -j pr-title-lint --workflows .github/workflows/ci.yml \
+#     --eventpath <event.json>
+# ==============================================================================
+
+name: Reusable — PR Title Lint (Conventional Commits)
+
+on:
+  workflow_call:
+    inputs:
+      types:
+        description: 'Allowed Conventional Commits types (one per line)'
+        type: string
+        default: |
+          feat
+          fix
+          docs
+          style
+          refactor
+          perf
+          test
+          build
+          ci
+          chore
+          revert
+      require-scope:
+        description: 'When true, the (scope) is mandatory'
+        type: boolean
+        default: false
+      header-pattern:
+        description: 'Regex for the title header: type, optional (scope), optional !, subject'
+        type: string
+        default: '^(\w*)(?:\(([\w$.\-*/ ]*)\))?!?: (.*)$'
+      subject-pattern:
+        description: "Regex the subject (after 'type:') must match"
+        type: string
+        default: '^(?![A-Z]).+$'
+      exempt-branch-prefixes:
+        description: 'Comma-separated head branch prefixes exempted from the lint'
+        type: string
+        default: 'release-please--branches--'
+
+permissions:
+  contents: read
+
+jobs:
+  pr-title-lint:
+    name: Lint PR title (Conventional Commits)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read # amannn/action-semantic-pull-request
+      pull-requests: write # amannn/action-semantic-pull-request with wip: true ("[WIP]" title handling)
+      statuses: write # amannn/action-semantic-pull-request — creates the commit status
+
+    steps:
+      # ------------------------------------------------------------------
+      # Step 1 — Branch exemption (e.g. release-please): skip the lint.
+      # amannn/action-semantic-pull-request has no native branch-prefix
+      # exemption, so it is handled here.
+      # ------------------------------------------------------------------
+      - name: Check branch exemption
+        id: exempt
+        env:
+          # [template-injection] context/inputs mapped to env vars — never inline in run:
+          HEAD_REF: ${{ github.head_ref }}
+          EXEMPT_PREFIXES: ${{ inputs.exempt-branch-prefixes }}
+        run: |
+          set -euo pipefail
+          echo "🔎 Head branch: \"$HEAD_REF\""
+          echo "🔎 Exempt prefixes: \"$EXEMPT_PREFIXES\""
+          is_exempt="false"
+          matched_prefix=""
+          IFS=',' read -ra prefixes <<< "$EXEMPT_PREFIXES"
+          for prefix in "${prefixes[@]}"; do
+              prefix_trimmed="$(echo "$prefix" | xargs)"
+              if [[ -n "$prefix_trimmed" && "$HEAD_REF" == "$prefix_trimmed"* ]]; then
+                  echo "✅ Branch exempted from the lint: \"$HEAD_REF\" (prefix: \"$prefix_trimmed\")"
+                  is_exempt="true"
+                  matched_prefix="$prefix_trimmed"
+                  break
+              fi
+          done
+          if [[ "$is_exempt" == "false" ]]; then
+              echo "➡️ No exemption applies: the PR title will be validated."
+          fi
+          echo "is-exempt=$is_exempt" >> "$GITHUB_OUTPUT"
+          echo "matched-prefix=$matched_prefix" >> "$GITHUB_OUTPUT"
+
+      # ------------------------------------------------------------------
+      # Step 2 — Title validation.
+      # ------------------------------------------------------------------
+      - name: Validate PR title format
+        id: lint
+        if: ${{ steps.exempt.outputs.is-exempt != 'true' }}
+        uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          types: ${{ inputs.types }}
+          requireScope: ${{ inputs.require-scope }}
+          headerPattern: ${{ inputs.header-pattern }}
+          headerPatternCorrespondence: type,scope,subject
+          subjectPattern: ${{ inputs.subject-pattern }}
+          subjectPatternError: |
+            The subject after "type:" must not start with an uppercase letter.
+          wip: true
+          validateSingleCommit: false
+
+      # ------------------------------------------------------------------
+      # Step 3 — Job summary in $GITHUB_STEP_SUMMARY (always, also when the
+      # lint fails, for immediate visibility in the run "Summary" tab).
+      # ------------------------------------------------------------------
+      - name: PR title lint summary
+        if: ${{ always() }}
+        env:
+          # [template-injection] untrusted PR title mapped to env var — never inline in run:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          HEAD_REF: ${{ github.head_ref }}
+          IS_EXEMPT: ${{ steps.exempt.outputs.is-exempt }}
+          MATCHED_PREFIX: ${{ steps.exempt.outputs.matched-prefix }}
+          LINT_OUTCOME: ${{ steps.lint.outcome }}
+        run: |
+          set -euo pipefail
+          {
+              echo "## 🔖 PR Title Lint — Conventional Commits"
+              echo ""
+              echo "| Field | Value |"
+              echo "| --- | --- |"
+              echo "| Branch | \`$HEAD_REF\` |"
+              echo "| PR title | \`$PR_TITLE\` |"
+              if [[ "$IS_EXEMPT" == "true" ]]; then
+                  echo "| Result | ⏭️ Skipped (exempt branch, prefix \`$MATCHED_PREFIX\`) |"
+              elif [[ "$LINT_OUTCOME" == "success" ]]; then
+                  echo "| Result | ✅ Valid title |"
+              elif [[ "$LINT_OUTCOME" == "failure" ]]; then
+                  echo "| Result | ❌ Invalid title (see the action error above) |"
+              else
+                  echo "| Result | ⚠️ Undetermined (outcome: \`$LINT_OUTCOME\`) |"
+              fi
+          } >> "$GITHUB_STEP_SUMMARY"

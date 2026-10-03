@@ -1,0 +1,21 @@
+---
+import type { HealthStatus, Reason } from '@model/index';
+import type { I18n } from '../i18n';
+import ReasonList from './ReasonList.astro';
+import StatusBadge from './StatusBadge.astro';
+interface Props {
+  title: string;
+  status: HealthStatus;
+  reasons: Reason[];
+  i18n: I18n;
+  emphasis?: boolean;
+}
+const { title, status, reasons, i18n, emphasis = false } = Astro.props;
+---
+
+<article class:list={['tile', `tile--${status}`, emphasis && 'tile--overall']}>
+  <h3 class="tile__title">{title}</h3>
+  <StatusBadge status={status} i18n={i18n} context={title} size={emphasis ? 'lg' : 'md'} />
+  <slot />
+  <ReasonList reasons={reasons} i18n={i18n} limit={emphasis ? undefined : 4} />
+</article>

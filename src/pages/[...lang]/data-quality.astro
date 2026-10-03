@@ -1,0 +1,194 @@
+---
+import { CapabilitySchema } from '@model/index';
+import ErrorState from '../../components/ErrorState.astro';
+import ErrorsTable from '../../components/ErrorsTable.astro';
+import Pill from '../../components/Pill.astro';
+import RelTime from '../../components/RelTime.astro';
+import StatusBadge from '../../components/StatusBadge.astro';
+import Base from '../../layouts/Base.astro';
+import { pageContext } from '../../lib/page';
+import { href, localeParams } from '../../lib/routes';
+
+export const getStaticPaths = localeParams;
+const { locale } = Astro.props;
+const { i18n, data, index, alternates } = pageContext(locale, 'dataQuality');
+const { d } = i18n;
+const q = d.dataQualityPage;
+const availTone = (a: string) =>
+  a === 'available' ? 'green' : a === 'partial' ? 'amber' : a === 'not-used' ? 'muted' : 'grey';
+---
+
+<Base i18n={i18n} title={q.title} page="dataQuality" alternates={alternates} index={index}>
+  {!data.ok && <ErrorState error={data.error} i18n={i18n} />}
+  {data.ok && index && (
+    <>
+      <header class="page-head">
+        <h1>{q.title}</h1>
+        <p class="lead">{q.intro}</p>
+      </header>
+      <section class="grid-2">
+        <div class="card">
+          <h2 class="h3">{q.run}</h2>
+          <dl class="facts">
+            <div>
+              <dt>{q.started}</dt>
+              <dd>
+                <RelTime
+                  iso={index.run.startedAt}
+                  i18n={i18n}
+                  staleHours={index.run.policy.snapshotStaleHours}
+                />
+              </dd>
+            </div>
+            <div>
+              <dt>{q.duration}</dt>
+              <dd>{(index.run.durationMs / 1000).toFixed(1)} s</dd>
+            </div>
+            <div>
+              <dt>{d.common.source}</dt>
+              <dd>
+                {index.run.dataSource === 'mock' ? d.common.sourceMock : d.common.sourceGithub}
+              </dd>
+            </div>
+            <div>
+              <dt>{d.common.auth}</dt>
+              <dd>{d.authMode[index.run.authenticationMode]}</dd>
+            </div>
+            <div>
+              <dt>{q.collectorVersion}</dt>
+              <dd>
+                <code>{index.run.collectorVersion}</code>
+              </dd>
+            </div>
+            <div>
+              <dt>{q.audience}</dt>
+              <dd>
+                {index.run.policy.audience === 'public' ? q.audiencePublic : q.audienceRestricted}
+              </dd>
+            </div>
+            <div>
+              <dt>{q.config}</dt>
+              <dd>
+                <Pill tone={index.run.configValid ? 'green' : 'red'} label={q.configValid} />
+              </dd>
+            </div>
+          </dl>
+        </div>
+        <div class="card">
+          <h2 class="h3">{q.repositories}</h2>
+          <ul class="kpis kpis--small">
+            <li class="kpi">
+              <span class="kpi__value">{index.run.repositories.total}</span>
+              <span class="kpi__label">{d.common.total}</span>
+            </li>
+            <li class="kpi kpi--green">
+              <span class="kpi__value">{index.run.repositories.ok}</span>
+              <span class="kpi__label">{q.reposOk}</span>
+            </li>
+            <li class="kpi kpi--amber">
+              <span class="kpi__value">{index.run.repositories.withErrors}</span>
+              <span class="kpi__label">{q.reposErrors}</span>
+            </li>
+            <li class="kpi kpi--grey">
+              <span class="kpi__value">{index.run.repositories.unavailable}</span>
+              <span class="kpi__label">{q.reposUnavailable}</span>
+            </li>
+          </ul>
+          <h2 class="h3">{q.capabilities}</h2>
+          <ul class="controls">
+            {CapabilitySchema.options.map((c) => (
+              <li>
+                <span>{d.capability[c]}</span>
+                <Pill
+                  tone={availTone(index.run.capabilities[c])}
+                  label={d.availability[index.run.capabilities[c]]}
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="h-inacc">
+        <h2 id="h-inacc" class="h3">
+          {q.inaccessible}
+        </h2>
+        {index.run.inaccessibleSources.length === 0 ? (
+          <p class="muted">{d.common.none}</p>
+        ) : (
+          <ul class="plain">
+            {index.run.inaccessibleSources.map((x) => (
+              <li>
+                <code>{x.repository}</code> · {d.errorSource[x.source]}{' '}
+                <Pill tone="grey" label={d.errorClass[x.classification]} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section class="grid-2">
+        <div class="card">
+          <h2 class="h3">{q.staleSnapshots}</h2>
+          <ul class="plain">
+            {data.data.projects.flatMap((p) =>
+              p.dataFreshness.staleSources.map((x) => (
+                <li>
+                  <a href={href(locale, `projects/${p.project.id}`)}>{p.project.name}</a> ·{' '}
+                  <code>{x.repository}</code> · {d.errorSource[x.source]} ·{' '}
+                  <RelTime iso={x.lastUpdatedAt} i18n={i18n} />
+                </li>
+              )),
+            )}
+          </ul>
+        </div>
+        <div class="card">
+          <h2 class="h3">{q.unresolved}</h2>
+          <ul class="plain">
+            {data.data.projects.flatMap((p) =>
+              p.coordinator.submodules
+                .filter((m) => m.association === 'unmapped' || m.status !== 'resolved')
+                .map((m) => (
+                  <li>
+                    <a href={href(locale, `projects/${p.project.id}`)}>{p.project.name}</a> ·{' '}
+                    <code>{m.path}</code>{' '}
+                    <Pill
+                      tone={m.status === 'unresolvable' ? 'red' : 'amber'}
+                      label={
+                        m.association === 'unmapped'
+                          ? d.association.unmapped
+                          : d.submoduleStatus[m.status]
+                      }
+                    />
+                  </li>
+                )),
+            )}
+          </ul>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-errors">
+        <h2 id="h-errors">{q.errors}</h2>
+        {data.data.projects.map((p) => (
+          <div class="card" id={p.project.id}>
+            <h3>
+              <a href={href(locale, `projects/${p.project.id}`)}>{p.project.name}</a>{' '}
+              <StatusBadge
+                status={p.dataFreshness.status}
+                i18n={i18n}
+                context={d.dimensions.freshness}
+                size="sm"
+                labelled
+              />
+            </h3>
+            <ErrorsTable
+              errors={p.collectionErrors}
+              i18n={i18n}
+              caption={`${q.errors} — ${p.project.name}`}
+            />
+          </div>
+        ))}
+      </section>
+    </>
+  )}
+</Base>

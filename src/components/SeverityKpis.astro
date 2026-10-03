@@ -1,0 +1,32 @@
+---
+import type { SeverityCounts } from '@model/index';
+import type { I18n } from '../i18n';
+import Count from './Count.astro';
+interface Props {
+  counts: SeverityCounts;
+  secrets: number | null;
+  partial: boolean;
+  i18n: I18n;
+}
+const { counts, secrets, partial, i18n } = Astro.props;
+const s = i18n.d.securityPage;
+const items = [
+  { label: s.kpiCritical, value: counts.critical, cls: 'red' as const },
+  { label: s.kpiHigh, value: counts.high, cls: 'amber' as const },
+  { label: s.kpiMedium, value: counts.medium, cls: 'none' as const },
+  { label: s.kpiLow, value: counts.low, cls: 'none' as const },
+  { label: s.kpiSecrets, value: secrets, cls: 'red' as const },
+];
+---
+
+<ul class="kpis kpis--severity">
+  {items.map((k) => (
+    <li class:list={['kpi', k.cls !== 'none' && (k.value ?? 0) > 0 && `kpi--${k.cls}`]}>
+      <span class="kpi__value">
+        <Count value={k.value} partial={partial} i18n={i18n} />
+      </span>
+      <span class="kpi__label">{k.label}</span>
+    </li>
+  ))}
+</ul>
+{partial && <p class="note">{i18n.d.common.partial}</p>}

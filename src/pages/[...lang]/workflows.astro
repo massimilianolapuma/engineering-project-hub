@@ -1,0 +1,138 @@
+---
+import ErrorState from '../../components/ErrorState.astro';
+import ExtLink from '../../components/ExtLink.astro';
+import Pill from '../../components/Pill.astro';
+import RelTime from '../../components/RelTime.astro';
+import StatusBadge from '../../components/StatusBadge.astro';
+import Base from '../../layouts/Base.astro';
+import { pageContext } from '../../lib/page';
+import { href, localeParams } from '../../lib/routes';
+import { workflowTone } from '../../lib/tones';
+
+export const getStaticPaths = localeParams;
+const { locale } = Astro.props;
+const { i18n, data, index, alternates } = pageContext(locale, 'workflows');
+const { d } = i18n;
+---
+
+<Base
+  i18n={i18n}
+  title={d.workflowsPage.title}
+  page="workflows"
+  alternates={alternates}
+  index={index}
+>
+  {!data.ok && <ErrorState error={data.error} i18n={i18n} />}
+  {data.ok && (
+    <>
+      <header class="page-head">
+        <h1>{d.workflowsPage.title}</h1>
+        <p class="lead">{d.workflowsPage.intro}</p>
+      </header>
+      {data.data.projects.map((s) => {
+        const tracked = [...new Map(s.workflows.map((w) => [w.workflowId, w])).values()];
+        const rows = ['coordinator', ...s.components.map((c) => c.id)].filter((id) =>
+          s.workflows.some((w) => w.componentId === id),
+        );
+        const name = (id: string) =>
+          id === 'coordinator'
+            ? d.common.coordinator
+            : (s.components.find((c) => c.id === id)?.name ?? id);
+        return (
+          <section class="card" id={s.project.id} aria-labelledby={`wf-${s.project.id}`}>
+            <h2 id={`wf-${s.project.id}`}>
+              <a href={href(locale, `projects/${s.project.id}`)}>{s.project.name}</a>{' '}
+              <StatusBadge
+                status={s.deliveryHealth.status}
+                i18n={i18n}
+                context={d.dimensions.delivery}
+                size="sm"
+                labelled
+              />
+            </h2>
+            {rows.length === 0 ? (
+              <p class="muted">{d.common.dataUnavailable}</p>
+            ) : (
+              <div class="table-wrap">
+                <table class="table table--matrix">
+                  <caption class="visually-hidden">
+                    {i18n.f(d.workflowsPage.matrixCaption, { project: s.project.name })}
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">{d.common.component}</th>
+                      {tracked.map((t) => (
+                        <th scope="col">
+                          {t.name}
+                          <code class="sub">{t.file}</code>
+                          {t.critical && <span class="tag">{d.workflowsPage.critical}</span>}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((id) => (
+                      <tr>
+                        <th scope="row">
+                          {name(id)}
+                          <code class="sub">
+                            {s.workflows.find((w) => w.componentId === id)?.repository}
+                          </code>
+                        </th>
+                        {tracked.map((t) => {
+                          const w = s.workflows.find(
+                            (x) => x.componentId === id && x.workflowId === t.workflowId,
+                          );
+                          if (!w)
+                            return (
+                              <td data-label={t.name} class="muted">
+                                {d.workflowsPage.notTracked}
+                              </td>
+                            );
+                          const r = w.lastCompletedRun ?? w.latestRun;
+                          return (
+                            <td data-label={t.name} class={`cell cell--${w.state}`}>
+                              <Pill tone={workflowTone(w.state)} label={d.workflowState[w.state]} />
+                              {r && (
+                                <span class="cell__meta">
+                                  <ExtLink
+                                    href={r.url}
+                                    i18n={i18n}
+                                    label={i18n.f(d.common.run, { n: r.runNumber })}
+                                  />{' '}
+                                  · <code>{r.branch ?? w.branch}</code> · {r.conclusion ?? r.status}
+                                  <br />
+                                  <RelTime iso={r.updatedAt} i18n={i18n} />
+                                  {w.stale && <span class="stale-tag">{d.common.stale}</span>}
+                                </span>
+                              )}
+                              {w.activeRun && w.activeRun !== r && (
+                                <span class="cell__meta">
+                                  {d.workflowsPage.active}:{' '}
+                                  <ExtLink
+                                    href={w.activeRun.url}
+                                    i18n={i18n}
+                                    label={i18n.f(d.common.run, { n: w.activeRun.runNumber })}
+                                  />
+                                </span>
+                              )}
+                              {w.lastError && (
+                                <span class="cell__error">
+                                  {d.workflowsPage.lastError}: {w.lastError}
+                                </span>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        );
+      })}
+    </>
+  )}
+</Base>

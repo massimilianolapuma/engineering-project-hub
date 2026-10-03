@@ -1,0 +1,10 @@
+# zizmor configuration (used by rw-zizmor.yml and by `zizmor --offline .github/`).
+# Add per-rule ignores here, each with a justification comment.
+# Docs: https://docs.zizmor.sh/configuration/
+rules:
+  # self-repository suggests the `$/...` syntax instead of `./...` for local
+  # reusable workflows and composite actions. actionlint (1.7.x) and nektos/act do
+  # not understand `$/...` yet, so local `./.github/...` references are kept.
+  # Low severity: both forms resolve to this repository.
+  self-repository:
+    disable: true

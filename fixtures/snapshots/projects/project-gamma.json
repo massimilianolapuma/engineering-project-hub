@@ -1,0 +1,460 @@
+{
+  "schemaVersion": "1.0",
+  "generatedAt": "2026-01-15T12:00:00.000Z",
+  "project": {
+    "id": "project-gamma",
+    "name": "Project Gamma",
+    "description": "Synthetic internal tool whose repositories are not accessible to the collector.",
+    "businessUnit": "Internal tools",
+    "lifecycle": "development"
+  },
+  "coordinator": {
+    "repository": {
+      "fullName": "example-org/project-gamma-coordinator",
+      "owner": "example-org",
+      "name": "project-gamma-coordinator",
+      "url": "https://github.com/example-org/project-gamma-coordinator",
+      "status": "not-found",
+      "visibility": "unknown",
+      "defaultBranch": null,
+      "configuredDefaultBranch": null,
+      "archived": null,
+      "updatedAt": null,
+      "topics": [],
+      "latestCommit": null
+    },
+    "version": null,
+    "versionSource": "unknown",
+    "latestRelease": null,
+    "manifest": {
+      "path": "release-manifest.yaml",
+      "status": "missing"
+    },
+    "submodules": []
+  },
+  "components": [
+    {
+      "id": "service",
+      "name": "Gamma service",
+      "type": "service",
+      "repository": {
+        "fullName": "example-org/project-gamma-service",
+        "owner": "example-org",
+        "name": "project-gamma-service",
+        "url": "https://github.com/example-org/project-gamma-service",
+        "status": "not-authorised",
+        "visibility": "unknown",
+        "defaultBranch": null,
+        "configuredDefaultBranch": null,
+        "archived": null,
+        "updatedAt": null,
+        "topics": [],
+        "latestCommit": null
+      },
+      "declaredVersion": null,
+      "latestRelease": null,
+      "submodule": null,
+      "drift": "unknown"
+    }
+  ],
+  "environments": [
+    {
+      "id": "dev",
+      "name": "DEV",
+      "version": null,
+      "source": "unknown",
+      "status": "unknown"
+    }
+  ],
+  "workflows": [
+    {
+      "workflowId": "ci",
+      "name": "Continuous Integration",
+      "file": "ci.yml",
+      "critical": true,
+      "componentId": "service",
+      "repository": "example-org/project-gamma-service",
+      "branch": null,
+      "state": "not-authorised",
+      "stale": false,
+      "latestRun": null,
+      "lastCompletedRun": null,
+      "lastFailedRun": null,
+      "activeRun": null,
+      "lastError": null
+    }
+  ],
+  "securityFindings": [],
+  "securityControls": [
+    {
+      "componentId": "coordinator",
+      "repository": "example-org/project-gamma-coordinator",
+      "controls": [
+        {
+          "control": "codeScanning",
+          "required": true,
+          "state": "unknown",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "secretScanning",
+          "required": true,
+          "state": "unknown",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "dependabot",
+          "required": true,
+          "state": "unknown",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "containerScanning",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "iacScanning",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "dast",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "sbom",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "artifactSignature",
+          "required": false,
+          "state": "not-configured",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        }
+      ]
+    },
+    {
+      "componentId": "service",
+      "repository": "example-org/project-gamma-service",
+      "controls": [
+        {
+          "control": "codeScanning",
+          "required": true,
+          "state": "not-authorised",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "secretScanning",
+          "required": true,
+          "state": "not-authorised",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "dependabot",
+          "required": true,
+          "state": "not-authorised",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "containerScanning",
+          "required": false,
+          "state": "not-authorised",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "iacScanning",
+          "required": false,
+          "state": "not-authorised",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "dast",
+          "required": false,
+          "state": "not-authorised",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "sbom",
+          "required": false,
+          "state": "not-authorised",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        },
+        {
+          "control": "artifactSignature",
+          "required": false,
+          "state": "not-authorised",
+          "tool": null,
+          "lastScanAt": null,
+          "counts": null,
+          "reportUrl": null
+        }
+      ]
+    }
+  ],
+  "deliveryHealth": {
+    "status": "grey",
+    "reasons": [
+      {
+        "code": "workflow-data-unavailable",
+        "level": "grey",
+        "params": {
+          "workflow": "Continuous Integration",
+          "repository": "example-org/project-gamma-service",
+          "component": "service",
+          "run": ""
+        }
+      }
+    ]
+  },
+  "versionHealth": {
+    "status": "grey",
+    "reasons": [
+      {
+        "code": "coordinator-version-unknown",
+        "level": "grey",
+        "params": {}
+      }
+    ]
+  },
+  "securityHealth": {
+    "status": "grey",
+    "reasons": [
+      {
+        "code": "security-data-unavailable",
+        "level": "grey",
+        "params": {}
+      }
+    ],
+    "openCounts": {
+      "critical": null,
+      "high": null,
+      "medium": null,
+      "low": null,
+      "informational": null,
+      "unknown": null
+    },
+    "countsComplete": false,
+    "openSecretAlerts": null,
+    "byCategory": {
+      "code": 0,
+      "dependency": 0,
+      "secret": 0,
+      "container": 0,
+      "iac": 0,
+      "dast": 0,
+      "supply-chain": 0,
+      "configuration": 0
+    },
+    "bySource": {
+      "github-code-scanning": 0,
+      "github-dependabot": 0,
+      "github-secret-scanning": 0,
+      "security-status-file": 0
+    }
+  },
+  "securityCoverage": {
+    "status": "grey",
+    "reasons": [
+      {
+        "code": "required-control-not-authorised",
+        "level": "grey",
+        "params": {
+          "control": "codeScanning"
+        }
+      },
+      {
+        "code": "required-control-not-authorised",
+        "level": "grey",
+        "params": {
+          "control": "secretScanning"
+        }
+      },
+      {
+        "code": "required-control-not-authorised",
+        "level": "grey",
+        "params": {
+          "control": "dependabot"
+        }
+      }
+    ],
+    "percentage": null,
+    "required": 3,
+    "available": 0,
+    "notConfigured": 0,
+    "notAuthorised": 3,
+    "unknown": 0,
+    "failed": 0,
+    "stale": 0,
+    "collectedAt": "2026-01-15T12:00:00.000Z",
+    "perControl": [
+      {
+        "control": "codeScanning",
+        "required": true,
+        "state": "not-authorised"
+      },
+      {
+        "control": "secretScanning",
+        "required": true,
+        "state": "not-authorised"
+      },
+      {
+        "control": "dependabot",
+        "required": true,
+        "state": "not-authorised"
+      },
+      {
+        "control": "containerScanning",
+        "required": false,
+        "state": "not-authorised"
+      },
+      {
+        "control": "iacScanning",
+        "required": false,
+        "state": "not-authorised"
+      },
+      {
+        "control": "dast",
+        "required": false,
+        "state": "not-authorised"
+      },
+      {
+        "control": "sbom",
+        "required": false,
+        "state": "not-authorised"
+      },
+      {
+        "control": "artifactSignature",
+        "required": false,
+        "state": "not-authorised"
+      }
+    ]
+  },
+  "governanceHealth": {
+    "status": "grey",
+    "reasons": [
+      {
+        "code": "repository-unavailable",
+        "level": "grey",
+        "params": {
+          "count": 2
+        }
+      }
+    ]
+  },
+  "overallHealth": {
+    "status": "grey",
+    "reasons": [
+      {
+        "code": "dimension-grey",
+        "level": "grey",
+        "params": {
+          "dimension": "delivery"
+        }
+      },
+      {
+        "code": "dimension-grey",
+        "level": "grey",
+        "params": {
+          "dimension": "version"
+        }
+      },
+      {
+        "code": "dimension-grey",
+        "level": "grey",
+        "params": {
+          "dimension": "security"
+        }
+      },
+      {
+        "code": "dimension-grey",
+        "level": "grey",
+        "params": {
+          "dimension": "coverage"
+        }
+      },
+      {
+        "code": "dimension-grey",
+        "level": "grey",
+        "params": {
+          "dimension": "governance"
+        }
+      }
+    ]
+  },
+  "dataFreshness": {
+    "status": "grey",
+    "collectedAt": "2026-01-15T12:00:00.000Z",
+    "oldestSourceAt": null,
+    "staleSources": []
+  },
+  "collectionErrors": [
+    {
+      "repository": "example-org/project-gamma-coordinator",
+      "componentId": "coordinator",
+      "source": "repository",
+      "classification": "not-found",
+      "httpStatus": 404,
+      "detail": "Not Found"
+    },
+    {
+      "repository": "example-org/project-gamma-service",
+      "componentId": "service",
+      "source": "repository",
+      "classification": "not-authorised",
+      "httpStatus": 403,
+      "detail": "Resource not accessible by integration"
+    }
+  ]
+}

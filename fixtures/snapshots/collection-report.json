@@ -1,0 +1,75 @@
+{
+  "generatedAt": "2026-01-15T12:00:00.000Z",
+  "dataSource": "mock",
+  "authenticationMode": "mock",
+  "durationMs": 0,
+  "projects": [
+    {
+      "id": "project-alpha",
+      "overall": "amber",
+      "errors": 0
+    },
+    {
+      "id": "project-beta",
+      "overall": "red",
+      "errors": 3
+    },
+    {
+      "id": "project-gamma",
+      "overall": "grey",
+      "errors": 2
+    }
+  ],
+  "repositories": {
+    "total": 11,
+    "ok": 6,
+    "withErrors": 3,
+    "unavailable": 2
+  },
+  "errorsByClassification": {
+    "not-authorised": 4,
+    "not-found": 1
+  },
+  "errors": [
+    {
+      "repository": "example-org/project-beta-coordinator",
+      "componentId": "coordinator",
+      "source": "secret-scanning",
+      "classification": "not-authorised",
+      "httpStatus": 403,
+      "detail": "Resource not accessible by integration"
+    },
+    {
+      "repository": "example-org/project-beta-api",
+      "componentId": "api",
+      "source": "secret-scanning",
+      "classification": "not-authorised",
+      "httpStatus": 403,
+      "detail": "Resource not accessible by integration"
+    },
+    {
+      "repository": "example-org/project-beta-web",
+      "componentId": "web",
+      "source": "secret-scanning",
+      "classification": "not-authorised",
+      "httpStatus": 403,
+      "detail": "Resource not accessible by integration"
+    },
+    {
+      "repository": "example-org/project-gamma-coordinator",
+      "componentId": "coordinator",
+      "source": "repository",
+      "classification": "not-found",
+      "httpStatus": 404,
+      "detail": "Not Found"
+    },
+    {
+      "repository": "example-org/project-gamma-service",
+      "componentId": "service",
+      "source": "repository",
+      "classification": "not-authorised",
+      "httpStatus": 403,
+      "detail": "Resource not accessible by integration"
+    }
+  ]
+}

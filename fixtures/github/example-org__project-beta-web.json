@@ -1,0 +1,79 @@
+{
+  "repository": {
+    "owner": "example-org",
+    "name": "project-beta-web",
+    "fullName": "example-org/project-beta-web",
+    "htmlUrl": "https://github.com/example-org/project-beta-web",
+    "visibility": "public",
+    "defaultBranch": "main",
+    "archived": false,
+    "updatedAt": "@now-1d",
+    "topics": ["demo", "react"]
+  },
+  "head": {
+    "sha": "b742ac48b91fee1318f9da33b686ef142b2806b6",
+    "committedAt": "@now-1d"
+  },
+  "latestRelease": {
+    "tagName": "v3.1.0",
+    "name": "v3.1.0",
+    "publishedAt": "@now-12d",
+    "prerelease": false,
+    "htmlUrl": "https://github.com/example-org/project-beta-web/releases/tag/v3.1.0"
+  },
+  "files": {
+    ".security/project-security-status.json": "{\n  \"schemaVersion\": \"1.0\",\n  \"generatedAt\": \"@now-21d\",\n  \"repository\": \"example-org/project-beta-web\",\n  \"version\": \"synthetic\",\n  \"commitSha\": \"b742ac48b91fee1318f9da33b686ef142b2806b6\",\n  \"controls\": {\n    \"containerScanning\": {\n      \"status\": \"completed\",\n      \"tool\": \"trivy\",\n      \"critical\": 0,\n      \"high\": 0,\n      \"medium\": 1,\n      \"low\": 1,\n      \"completedAt\": \"@now-21d\"\n    }\n  }\n}"
+  },
+  "workflowRuns": {
+    "ci-main.yml": [
+      {
+        "id": 9015,
+        "runNumber": 388,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "headBranch": "main",
+        "event": "push",
+        "headSha": "7d1d2c8ee8c26009c8562fd3b239cd713db82950",
+        "createdAt": "@now-1d",
+        "updatedAt": "@now-1d",
+        "htmlUrl": "https://github.com/example-org/project-beta-web/actions/runs/9015"
+      }
+    ],
+    "rel-release.yml": {
+      "$error": {
+        "classification": "not-found",
+        "httpStatus": 404,
+        "message": "Not Found"
+      }
+    }
+  },
+  "codeScanningAlerts": [],
+  "codeScanningAnalysis": {
+    "createdAt": "@now-1d",
+    "toolName": "CodeQL"
+  },
+  "dependabotAlerts": [
+    {
+      "number": 11,
+      "state": "open",
+      "dismissedReason": null,
+      "ghsaId": "GHSA-demo-0003-beta",
+      "cveId": null,
+      "severity": "high",
+      "summary": "Header injection in example-http-client (synthetic advisory)",
+      "packageName": "example-http-client",
+      "firstPatchedVersion": "2.0.1",
+      "createdAt": "@now-4d",
+      "updatedAt": "@now-4d",
+      "htmlUrl": "https://github.com/example-org/project-beta-web/security/dependabot/11"
+    }
+  ],
+  "secretScanningAlerts": {
+    "$error": {
+      "classification": "not-authorised",
+      "httpStatus": 403,
+      "message": "Resource not accessible by integration"
+    }
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "repository": {
+    "owner": "example-org",
+    "name": "project-alpha-worker",
+    "fullName": "example-org/project-alpha-worker",
+    "htmlUrl": "https://github.com/example-org/project-alpha-worker",
+    "visibility": "public",
+    "defaultBranch": "main",
+    "archived": false,
+    "updatedAt": "@now-1d",
+    "topics": ["demo", "go"]
+  },
+  "head": {
+    "sha": "d3a5814a6e7959fc09128637bc5469d3e725aea9",
+    "committedAt": "@now-1d"
+  },
+  "latestRelease": {
+    "tagName": "v1.2.0",
+    "name": "v1.2.0",
+    "publishedAt": "@now-9d",
+    "prerelease": false,
+    "htmlUrl": "https://github.com/example-org/project-alpha-worker/releases/tag/v1.2.0"
+  },
+  "files": {
+    ".security/project-security-status.json": "{\n  \"schemaVersion\": \"1.0\",\n  \"generatedAt\": \"@now-1d\",\n  \"repository\": \"example-org/project-alpha-worker\",\n  \"version\": \"synthetic\",\n  \"commitSha\": \"d3a5814a6e7959fc09128637bc5469d3e725aea9\",\n  \"controls\": {\n    \"containerScanning\": {\n      \"status\": \"not-configured\"\n    },\n    \"sbom\": {\n      \"status\": \"not-configured\"\n    }\n  }\n}"
+  },
+  "workflowRuns": {
+    "ci-main.yml": [
+      {
+        "id": 9008,
+        "runNumber": 205,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "headBranch": "main",
+        "event": "push",
+        "headSha": "6ef4f27b776f6198f811276afd803c9a45a943ca",
+        "createdAt": "@now-1d",
+        "updatedAt": "@now-1d",
+        "htmlUrl": "https://github.com/example-org/project-alpha-worker/actions/runs/9008"
+      }
+    ],
+    "rel-release.yml": [
+      {
+        "id": 9009,
+        "runNumber": 18,
+        "runAttempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "headBranch": "main",
+        "event": "workflow_dispatch",
+        "headSha": "9864747931afc2437a11287daf2aa7b0ec5b952f",
+        "createdAt": "@now-9d",
+        "updatedAt": "@now-9d",
+        "htmlUrl": "https://github.com/example-org/project-alpha-worker/actions/runs/9009"
+      }
+    ]
+  },
+  "codeScanningAlerts": [],
+  "codeScanningAnalysis": {
+    "createdAt": "@now-1d",
+    "toolName": "CodeQL"
+  },
+  "dependabotAlerts": [],
+  "secretScanningAlerts": []
+}

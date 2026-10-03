@@ -1,0 +1,70 @@
+# EditorConfig helps maintain consistent coding styles
+# https://editorconfig.org
+
+root = true
+
+# Default settings for all files
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+
+# Python
+[*.py]
+indent_size = 4
+
+# C# / .NET
+[*.{cs,csx,vb,vbx}]
+indent_size = 4
+
+[*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj}]
+indent_size = 2
+
+[*.{props,targets,ruleset,config,nuspec,resx,vsixmanifest,vsct}]
+indent_size = 2
+
+# JSON / YAML
+[*.{json,jsonc}]
+indent_size = 2
+
+[*.{yml,yaml}]
+indent_size = 2
+
+# TypeScript / JavaScript
+[*.{ts,tsx,js,jsx}]
+indent_size = 2
+
+# HTML / CSS / SCSS
+[*.{html,htm,css,scss,less}]
+indent_size = 2
+
+# SQL
+[*.sql]
+indent_size = 4
+
+# Shell scripts
+[*.{sh,bash}]
+indent_size = 2
+
+# PowerShell
+[*.{ps1,psm1,psd1}]
+indent_size = 4
+
+# Makefiles
+[Makefile]
+indent_style = tab
+
+# Terraform
+[*.{tf,tfvars}]
+indent_size = 2
+
+# Kubernetes / Helm
+[*.{yaml,yml}]
+indent_size = 2

@@ -1,0 +1,80 @@
+# Reusable workflow — part of this repository's CI building blocks (rw-*).
+# ==============================================================================
+# [Reusable] Security — zizmor workflow audit
+# ==============================================================================
+#
+# Purpose:  Static security analysis of the GitHub Actions files in .github/
+#           (workflows and composite actions). Flags dangerous patterns before merge:
+#           - template injection (${{ github.event.*.body }} in run: steps)
+#           - excessive permissions (write-all, unscoped id-token)
+#           - actions not pinned to a commit SHA (supply chain)
+#           - pull_request_target with checkout of untrusted code
+#           - credential persistence and secrets exposed in logs
+#
+# online-audits: false — offline mode: deterministic, needs no API token and no
+#   network access to api.github.com. Set it to "true" to also run the online
+#   audits (e.g. impostor-commit / known-vulnerable-actions checks).
+#
+# SARIF: advanced-security: true → zizmorcore/zizmor-action uploads the SARIF
+#   report to GitHub Code Scanning itself (category "zizmor"); it is also kept as
+#   a job artifact. Code Scanning is free for public repositories.
+#
+# Config: .github/zizmor.yml (per-rule ignores with a justification comment).
+#
+# Caller example:
+#   jobs:
+#     zizmor:
+#       permissions:
+#         contents: read
+#         security-events: write # SARIF upload to Code Scanning
+#       uses: ./.github/workflows/rw-zizmor.yml
+#
+# Local equivalent (no container needed):
+#   zizmor --offline .github/
+# ==============================================================================
+
+name: Reusable — zizmor Workflow Security Audit
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  zizmor:
+    name: zizmor — Workflow Security Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # actions/checkout
+      security-events: write # zizmor-action (advanced-security) — SARIF upload to Code Scanning
+    steps:
+      # ------------------------------------------------------------------
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # ------------------------------------------------------------------
+      # zizmor audit (the action runs ghcr.io/zizmorcore/zizmor in a container).
+      # advanced-security: true → SARIF output (output-file) + Code Scanning upload.
+      - name: zizmor — Security Audit
+        id: zizmor
+        uses: zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054 # v0.6.2
+        with:
+          inputs: .github/
+          advanced-security: 'true'
+          online-audits: 'false'
+          config: .github/zizmor.yml
+
+      # ------------------------------------------------------------------
+      # always(): upload the SARIF report even when zizmor reports findings.
+      # !env.ACT: the nektos/act artifact server does not support upload-artifact v7.
+      - name: Upload SARIF artifact
+        if: ${{ always() && !env.ACT }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: zizmor-sarif-${{ github.run_id }}
+          path: ${{ steps.zizmor.outputs.output-file }}
+          retention-days: 30

@@ -1,0 +1,28 @@
+# Composite action — part of this repository's CI building blocks.
+name: 'Test — Vitest with coverage'
+description: 'Runs the npm script ci:test (Vitest with coverage) in the given working directory'
+
+# Prerequisites: Node.js and the npm dependencies are already installed by the calling job
+# (setup-node-env + npm ci).
+#
+# The project must define an npm script "ci:test" that runs Vitest with coverage, e.g.
+#   "ci:test": "vitest run --coverage"
+# The coverage output directory comes from the Vitest config (coverage.reportsDirectory);
+# callers upload it as an artifact (rw-npm-build-test-host.yml, input coverage-report-dir).
+#
+# Do not append Jest-only flags (--ci, --forceExit, --coverageDirectory): Vitest rejects them.
+
+inputs:
+  working-directory:
+    description: 'npm project root relative to the repository root'
+    required: false
+    default: '.'
+
+runs:
+  using: 'composite'
+  steps:
+    # Fixed npm script: no input is interpolated into the command.
+    - name: Test (Vitest — coverage)
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: npm run ci:test

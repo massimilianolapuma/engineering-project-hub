@@ -1,0 +1,190 @@
+# Reusable workflow — part of this repository's CI building blocks (rw-*).
+# ==============================================================================
+# [Reusable] actionlint — GitHub Actions workflow lint
+# ==============================================================================
+#
+# Purpose:  Static syntax and semantic checks of .github/workflows/ with actionlint
+#           (rhysd/actionlint): ${{ }} expressions, contexts, reusable workflow
+#           inputs/secrets, runner labels, job needs and — when shellcheck is on the
+#           runner — the `run:` scripts. Complements rw-zizmor.yml: actionlint covers
+#           correctness, zizmor covers security.
+#
+# Binary install (no third-party action):
+#   - Downloads the official release tarball of rhysd/actionlint into $RUNNER_TEMP
+#     (nothing is written to system paths).
+#   - SHA-256 verification is MANDATORY before extraction:
+#       * actionlint-version == default → checksums pinned in this file
+#       * any other version            → input actionlint-sha256 is required
+#     The checksum is NOT read from the release's own checksums.txt (that would not
+#     protect against a compromised release).
+#
+# shellcheck:
+#   actionlint uses it automatically when `shellcheck` is on the PATH (ubuntu-latest
+#   ships it; otherwise a notice is printed and scripts are not shellchecked).
+#   Input shellcheck: false disables the integration explicitly.
+#
+# fail-on-error: true (default) fails the job; false = advisory mode (warning) for
+#   repositories that still have pre-existing findings.
+#
+# Config: input config-file (e.g. .github/actionlint.yaml). Empty → actionlint
+#   discovers .github/actionlint.yaml|yml on its own.
+#
+# Caller example:
+#   jobs:
+#     actionlint:
+#       permissions:
+#         contents: read
+#       uses: ./.github/workflows/rw-actionlint.yml
+#       with:
+#         config-file: .github/actionlint.yaml
+#
+# Local test (nektos/act with podman as the container engine):
+#   act pull_request -j actionlint --workflows .github/workflows/ci.yml
+#
+# Syntax check (local equivalent):
+#   actionlint .github/workflows/*.yml
+#
+# Version bump: update ACTIONLINT_DEFAULT_VERSION and both ACTIONLINT_SHA256_*
+#   checksums together (from actionlint_<ver>_checksums.txt of the release).
+# ==============================================================================
+
+name: Reusable — actionlint Workflow Lint
+
+on:
+  workflow_call:
+    inputs:
+      actionlint-version:
+        description: "actionlint version (without the 'v' prefix). When it differs from the
+          default, actionlint-sha256 is required too."
+        required: false
+        type: string
+        default: '1.7.12'
+      actionlint-sha256:
+        description: 'SHA-256 of the linux tarball (runner arch) for non-default versions.
+          Empty → pinned checksums of the default version.'
+        required: false
+        type: string
+        default: ''
+      config-file:
+        description: 'Path of the actionlint config file (e.g. .github/actionlint.yaml).
+          Empty → automatic discovery.'
+        required: false
+        type: string
+        default: ''
+      shellcheck:
+        description: 'Enable the shellcheck integration when shellcheck is on the runner
+          (true) or disable it explicitly (false)'
+        required: false
+        type: boolean
+        default: true
+      fail-on-error:
+        description: 'true (default) → the job fails when actionlint reports errors.
+          false → advisory mode: errors reported as warnings, job stays green.'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  actionlint:
+    name: actionlint — Workflow Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # actions/checkout
+
+    env:
+      # Pinned checksums of the default version (actionlint_1.7.12_checksums.txt)
+      ACTIONLINT_DEFAULT_VERSION: '1.7.12'
+      ACTIONLINT_SHA256_AMD64: '8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8'
+      ACTIONLINT_SHA256_ARM64: '325e971b6ba9bfa504672e29be93c24981eeb1c07576d730e9f7c8805afff0c6'
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # ------------------------------------------------------------------
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # ------------------------------------------------------------------
+      # Download + SHA-256 verification + extraction into $RUNNER_TEMP.
+      - name: Install actionlint (checksum verified)
+        env:
+          # [template-injection] inputs mapped to env vars — never inline in run:
+          ACTIONLINT_VERSION: ${{ inputs.actionlint-version }}
+          ACTIONLINT_SHA256: ${{ inputs.actionlint-sha256 }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$ACTIONLINT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error title=Invalid Input::actionlint-version must be X.Y.Z (got '$ACTIONLINT_VERSION')"
+            exit 1
+          fi
+          case "$(uname -m)" in
+            x86_64|amd64) ARCH="amd64"; PINNED_SHA="$ACTIONLINT_SHA256_AMD64" ;;
+            aarch64|arm64) ARCH="arm64"; PINNED_SHA="$ACTIONLINT_SHA256_ARM64" ;;
+            *) echo "::error::Unsupported runner architecture: $(uname -m)"; exit 1 ;;
+          esac
+          if [ -n "$ACTIONLINT_SHA256" ]; then
+            EXPECTED_SHA="$ACTIONLINT_SHA256"
+          elif [ "$ACTIONLINT_VERSION" = "$ACTIONLINT_DEFAULT_VERSION" ]; then
+            EXPECTED_SHA="$PINNED_SHA"
+          else
+            echo "::error title=Missing Input::actionlint-sha256 is required when actionlint-version ($ACTIONLINT_VERSION) differs from the pinned default ($ACTIONLINT_DEFAULT_VERSION)."
+            exit 1
+          fi
+          TARBALL="actionlint_${ACTIONLINT_VERSION}_linux_${ARCH}.tar.gz"
+          URL="https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/${TARBALL}"
+          INSTALL_DIR="$RUNNER_TEMP/actionlint-${ACTIONLINT_VERSION}"
+          mkdir -p "$INSTALL_DIR"
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/$TARBALL" "$URL"
+          echo "${EXPECTED_SHA}  $RUNNER_TEMP/$TARBALL" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$TARBALL" -C "$INSTALL_DIR" actionlint
+          echo "$INSTALL_DIR" >> "$GITHUB_PATH"
+          "$INSTALL_DIR/actionlint" -version
+
+      # ------------------------------------------------------------------
+      # Runs actionlint from the repository root (discovers .github/workflows).
+      # shellcheck: used when on the PATH and input shellcheck=true.
+      # pyflakes: disabled (no inline python scripts in the workflows).
+      - name: Run actionlint
+        env:
+          # [template-injection] inputs mapped to env vars — never inline in run:
+          CONFIG_FILE: ${{ inputs.config-file }}
+          SHELLCHECK_ENABLED: ${{ inputs.shellcheck }}
+          FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
+        run: |
+          set -euo pipefail
+          ARGS=(-color -pyflakes=)
+          if [ -n "$CONFIG_FILE" ]; then
+            if [ ! -f "$CONFIG_FILE" ]; then
+              echo "::error title=Missing Config::config-file '$CONFIG_FILE' not found"
+              exit 1
+            fi
+            ARGS+=(-config-file "$CONFIG_FILE")
+          fi
+          if [ "$SHELLCHECK_ENABLED" = "true" ]; then
+            if command -v shellcheck >/dev/null 2>&1; then
+              echo "✓ shellcheck integration enabled ($(shellcheck --version | sed -n 2p))"
+            else
+              echo "::notice title=actionlint::shellcheck not found on runner — run: scripts are not shellchecked"
+            fi
+          else
+            ARGS+=(-shellcheck=)
+            echo "ℹ️  shellcheck integration disabled by input"
+          fi
+          rc=0
+          actionlint "${ARGS[@]}" || rc=$?
+          if [ "$rc" -eq 0 ]; then
+            echo "✓ actionlint: no issues found"
+          elif [ "$FAIL_ON_ERROR" = "true" ]; then
+            echo "::error title=actionlint::actionlint reported issues (exit code $rc)"
+            exit "$rc"
+          else
+            echo "::warning title=actionlint::actionlint reported issues (exit code $rc) — advisory mode (fail-on-error: false)"
+          fi

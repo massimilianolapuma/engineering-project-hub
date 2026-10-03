@@ -1,0 +1,159 @@
+{
+  "schemaVersion": "1.0",
+  "generatedAt": "2026-01-15T12:00:00.000Z",
+  "run": {
+    "dataSource": "mock",
+    "authenticationMode": "mock",
+    "collectorVersion": "0.1.0",
+    "startedAt": "2026-01-15T12:00:00.000Z",
+    "finishedAt": "2026-01-15T12:00:00.000Z",
+    "durationMs": 0,
+    "capabilities": {
+      "metadata": "partial",
+      "contents": "available",
+      "actions": "partial",
+      "codeScanning": "available",
+      "dependabot": "available",
+      "secretScanning": "partial"
+    },
+    "inaccessibleSources": [
+      {
+        "repository": "example-org/project-beta-coordinator",
+        "source": "secret-scanning",
+        "classification": "not-authorised"
+      },
+      {
+        "repository": "example-org/project-beta-api",
+        "source": "secret-scanning",
+        "classification": "not-authorised"
+      },
+      {
+        "repository": "example-org/project-beta-web",
+        "source": "secret-scanning",
+        "classification": "not-authorised"
+      },
+      {
+        "repository": "example-org/project-gamma-coordinator",
+        "source": "repository",
+        "classification": "not-found"
+      },
+      {
+        "repository": "example-org/project-gamma-service",
+        "source": "repository",
+        "classification": "not-authorised"
+      }
+    ],
+    "repositories": {
+      "total": 11,
+      "ok": 6,
+      "withErrors": 3,
+      "unavailable": 2
+    },
+    "configValid": true,
+    "policy": {
+      "snapshotStaleHours": 24,
+      "audience": "public"
+    }
+  },
+  "projects": [
+    {
+      "id": "project-alpha",
+      "name": "Project Alpha",
+      "businessUnit": "Payments",
+      "lifecycle": "production",
+      "overall": "amber",
+      "delivery": "green",
+      "version": "amber",
+      "security": "amber",
+      "coverage": {
+        "status": "amber",
+        "percentage": 75,
+        "required": 4,
+        "available": 3
+      },
+      "governance": "green",
+      "freshness": "green",
+      "openCounts": {
+        "critical": 0,
+        "high": 1,
+        "medium": 3,
+        "low": 3,
+        "informational": 0,
+        "unknown": 0
+      },
+      "countsComplete": true,
+      "openSecretAlerts": 0,
+      "secretScanning": "enabled",
+      "failedCriticalWorkflows": 0,
+      "collectedAt": "2026-01-15T12:00:00.000Z",
+      "collectionErrorCount": 0,
+      "unresolvedSubmodules": 0
+    },
+    {
+      "id": "project-beta",
+      "name": "Project Beta",
+      "businessUnit": "Logistics",
+      "lifecycle": "production",
+      "overall": "red",
+      "delivery": "red",
+      "version": "amber",
+      "security": "red",
+      "coverage": {
+        "status": "amber",
+        "percentage": 50,
+        "required": 4,
+        "available": 2
+      },
+      "governance": "amber",
+      "freshness": "amber",
+      "openCounts": {
+        "critical": 1,
+        "high": 2,
+        "medium": 3,
+        "low": 1,
+        "informational": 0,
+        "unknown": 0
+      },
+      "countsComplete": false,
+      "openSecretAlerts": 0,
+      "secretScanning": "not-authorised",
+      "failedCriticalWorkflows": 1,
+      "collectedAt": "2026-01-15T12:00:00.000Z",
+      "collectionErrorCount": 3,
+      "unresolvedSubmodules": 1
+    },
+    {
+      "id": "project-gamma",
+      "name": "Project Gamma",
+      "businessUnit": "Internal tools",
+      "lifecycle": "development",
+      "overall": "grey",
+      "delivery": "grey",
+      "version": "grey",
+      "security": "grey",
+      "coverage": {
+        "status": "grey",
+        "percentage": null,
+        "required": 3,
+        "available": 0
+      },
+      "governance": "grey",
+      "freshness": "grey",
+      "openCounts": {
+        "critical": null,
+        "high": null,
+        "medium": null,
+        "low": null,
+        "informational": null,
+        "unknown": null
+      },
+      "countsComplete": false,
+      "openSecretAlerts": null,
+      "secretScanning": "not-authorised",
+      "failedCriticalWorkflows": null,
+      "collectedAt": "2026-01-15T12:00:00.000Z",
+      "collectionErrorCount": 2,
+      "unresolvedSubmodules": 0
+    }
+  ]
+}

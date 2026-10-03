@@ -1,0 +1,25 @@
+---
+import type { Reason } from '@model/index';
+import type { I18n } from '../i18n';
+import StatusIcon from './StatusIcon.astro';
+interface Props {
+  reasons: Reason[];
+  i18n: I18n;
+  limit?: number;
+}
+const { reasons, i18n, limit } = Astro.props;
+const shown = limit ? reasons.slice(0, limit) : reasons;
+const tone = (l: Reason['level']) => (l === 'info' ? 'muted' : l);
+---
+
+{shown.length > 0 && (
+  <ul class="reasons">
+    {shown.map((r) => (
+      <li class={`reasons__item reasons__item--${r.level}`}>
+        <StatusIcon tone={tone(r.level)} />
+        <span>{i18n.reason(r)}</span>
+      </li>
+    ))}
+    {limit && reasons.length > limit && <li class="reasons__more">+{reasons.length - limit}</li>}
+  </ul>
+)}

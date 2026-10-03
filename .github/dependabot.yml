@@ -1,0 +1,74 @@
+# ---------------------------------------------------------------------------
+# Dependabot — automated dependency updates
+#
+# Ecosystems:
+#   - github-actions : workflows + composite actions (SHA-pinned actions)
+#   - npm            : root project (Astro portal + collector)
+#
+# Both are checked weekly and grouped, so each ecosystem produces one PR per week
+# (npm majors get their own group for a dedicated review). A cooldown skips
+# releases younger than a few days.
+#
+# `directories` (plural) accepts globs: "/.github/actions/*" covers the composite
+# actions in subfolders, which `directory: "/"` alone would miss.
+#
+# No custom labels are set: Dependabot applies its default "dependencies" label
+# (plus the ecosystem label) and creates them if missing.
+# ---------------------------------------------------------------------------
+
+version: 2
+
+updates:
+  # -----------------------------------------------------------------------
+  # GitHub Actions — workflows + composite actions
+  # -----------------------------------------------------------------------
+  - package-ecosystem: 'github-actions'
+    directories:
+      - '/'
+      - '/.github/actions/*'
+    schedule:
+      interval: 'weekly'
+      day: 'sunday'
+      time: '07:00'
+      timezone: 'Europe/Rome'
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: 'chore(ci)'
+    open-pull-requests-limit: 5
+    groups:
+      github-actions-dependencies:
+        patterns:
+          - '*'
+
+  # -----------------------------------------------------------------------
+  # npm — root project. Catch-all group: one weekly PR instead of N PRs that
+  # rebase each other; majors are grouped separately for a dedicated review.
+  # -----------------------------------------------------------------------
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'sunday'
+      time: '07:00'
+      timezone: 'Europe/Rome'
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 7
+    commit-message:
+      prefix: 'chore(deps)'
+    open-pull-requests-limit: 5
+    groups:
+      npm-dependencies:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
+      npm-major:
+        patterns:
+          - '*'
+        update-types:
+          - 'major'

@@ -1,0 +1,136 @@
+# ==============================================================================
+# Deploy — GitHub Pages
+# ==============================================================================
+#
+# Purpose:  Collects the data, builds the static portal and publishes it on
+#           GitHub Pages. Three jobs with separate trust boundaries (ADR 0003):
+#
+#   collect — ./.github/workflows/collect-data.yml (the ONLY job with secrets)
+#             → artifact "snapshots" (sanitized public/data)
+#   build   — NO secrets: npm ci → download snapshots into public/data →
+#             configure-pages (base path) → npm run build:site → scan:output
+#             → artifact "site" (contents of dist/)
+#   deploy  — ./.github/workflows/rw-pages-deploy-host.yml (artifact-name: site)
+#             → upload-pages-artifact + deploy-pages via OIDC
+#             (pages: write + id-token: write only here, no secrets)
+#
+# Triggers: schedule (every 6 hours, minute 17), push to main, workflow_dispatch.
+#
+# Prerequisites (Settings): Pages → Source: "GitHub Actions"; environment
+#   "github-pages" (created by GitHub) with deployment branch rule "main".
+#   Variable DATA_SOURCE (mock | github, default mock) and — for github — the
+#   secrets GH_APP_ID / GH_APP_PRIVATE_KEY / GH_APP_INSTALLATION_ID or
+#   GH_READ_TOKEN.
+#
+# Local test (nektos/act with podman as the container engine) — collect/build
+# only; deploy needs real OIDC and the Pages API:
+#   act workflow_dispatch --workflows .github/workflows/deploy-pages.yml -j build
+#
+# Syntax check:
+#   actionlint .github/workflows/deploy-pages.yml
+# ==============================================================================
+
+name: Deploy — GitHub Pages
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # ==========================================================================
+  # collect — the only job with credentials (passed explicitly)
+  # ==========================================================================
+  collect:
+    name: Collect
+    permissions:
+      contents: read
+    uses: ./.github/workflows/collect-data.yml
+    secrets:
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
+      GH_APP_INSTALLATION_ID: ${{ secrets.GH_APP_INSTALLATION_ID }}
+      GH_READ_TOKEN: ${{ secrets.GH_READ_TOKEN }}
+
+  # ==========================================================================
+  # build — no secrets
+  # ==========================================================================
+  build:
+    name: Build site
+    needs: collect
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read # actions/checkout
+      pages: read # actions/configure-pages — GET /repos/{owner}/{repo}/pages (base path)
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js environment
+        uses: ./.github/actions/setup-node-env
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download snapshots
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ needs.collect.outputs.artifact-name }}
+          path: public/data
+
+      - name: Configure GitHub Pages
+        id: pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      # SITE_URL = origin (e.g. https://owner.github.io), BASE_PATH = /<repo>
+      # (Astro: `site` + `base`).
+      - name: Build site
+        env:
+          # [template-injection] step outputs mapped to env vars — never inline in run:
+          SITE_URL: ${{ steps.pages.outputs.origin }}
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+        run: npm run build:site
+
+      - name: Scan output for secrets
+        run: npm run scan:output
+
+      - name: Upload site artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: site
+          path: dist
+          retention-days: 1
+          if-no-files-found: error
+
+  # ==========================================================================
+  # deploy — OIDC, no secrets
+  # ==========================================================================
+  deploy:
+    name: Deploy
+    needs: build
+    permissions:
+      contents: read
+      pages: write # actions/deploy-pages (rw-pages-deploy-host.yml, job deploy)
+      id-token: write # OIDC token required by actions/deploy-pages
+    uses: ./.github/workflows/rw-pages-deploy-host.yml
+    with:
+      artifact-name: site

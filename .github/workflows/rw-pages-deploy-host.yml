@@ -1,0 +1,263 @@
+# Reusable workflow — part of this repository's CI building blocks (rw-*).
+# ==============================================================================
+# [Reusable] GitHub Pages — static site deploy
+# ==============================================================================
+#
+# Purpose:  Publishes a static site to GitHub Pages with the official "GitHub
+#           Actions" flow (configure-pages → upload-pages-artifact → deploy-pages),
+#           with no gh-pages branch and no secrets.
+#
+# Two mutually exclusive modes:
+#   A) Prebuilt artifact (artifact-name set):
+#      the caller has already uploaded, in the SAME run, a standard artifact
+#      (actions/upload-artifact) holding the site files at its root (e.g.
+#      index.html). The build job downloads it and re-publishes it as the Pages
+#      artifact. No checkout, no Node.js. Meant to separate build (with the
+#      caller's own data/secrets) from deploy (OIDC only).
+#      ⚠️ The name must NOT be "github-pages" (reserved for the Pages artifact).
+#   B) Internal build (artifact-name empty):
+#      checkout → setup-node-env → npm ci → build-command → output-dir.
+#      build-command receives PAGES_BASE_PATH / PAGES_BASE_URL (outputs of
+#      actions/configure-pages) to generate correct links under /<repo>.
+#
+# Jobs:
+#   build  — contents: read, pages: read (configure-pages reads the Pages site)
+#   deploy — pages: write + id-token: write (OIDC) at job level, environment
+#            <environment-name> with url = page_url. Concurrency
+#            pages-<repository>, cancel-in-progress: false (a running deploy is
+#            never interrupted).
+#
+# Repository prerequisites (manual, Settings → Pages / Environments):
+#   - Pages source: "GitHub Actions"
+#   - Environment "github-pages" (created by GitHub when Pages is enabled) with a
+#     deployment branch rule (e.g. main only).
+#
+# Caller example (internal build):
+#   jobs:
+#     pages:
+#       permissions:
+#         contents: read
+#         pages: write    # actions/deploy-pages (deploy job of the reusable workflow)
+#         id-token: write # OIDC token required by actions/deploy-pages
+#       uses: ./.github/workflows/rw-pages-deploy-host.yml
+#       with:
+#         node-version: '24'
+#         build-command: npm run build
+#         output-dir: dist
+#
+# Caller example (prebuilt artifact):
+#   jobs:
+#     build:
+#       ...                                 # upload-artifact name: site, path: dist
+#     deploy:
+#       needs: build
+#       permissions:
+#         contents: read
+#         pages: write    # actions/deploy-pages
+#         id-token: write # OIDC token required by actions/deploy-pages
+#       uses: ./.github/workflows/rw-pages-deploy-host.yml
+#       with:
+#         artifact-name: site
+#
+# Local test (nektos/act with podman as the container engine) — build job only;
+# deploy-pages needs real OIDC and the Pages API, which act cannot emulate:
+#   act workflow_dispatch --workflows .github/workflows/deploy-pages.yml -j build
+#
+# Syntax check:
+#   actionlint .github/workflows/rw-pages-deploy-host.yml
+#
+# Docs: https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages
+# ==============================================================================
+
+name: Reusable — GitHub Pages Static Site Deploy
+
+on:
+  workflow_call:
+    inputs:
+      artifact-name:
+        description: "Name of an artifact (actions/upload-artifact) of the same run with the
+          site files at its root. When set, the internal build is skipped. Do not use
+          'github-pages'."
+        required: false
+        type: string
+        default: ''
+      node-version:
+        description: "Node.js version for the internal build (e.g. '22', '24')"
+        required: false
+        type: string
+        default: '24'
+      working-directory:
+        description: 'npm project root for the internal build, relative to the repository'
+        required: false
+        type: string
+        default: '.'
+      build-command:
+        description: 'Build command (internal build). Receives PAGES_BASE_PATH and
+          PAGES_BASE_URL as environment variables.'
+        required: false
+        type: string
+        default: 'npm run build'
+      output-dir:
+        description: 'Site output directory, relative to working-directory (internal build)'
+        required: false
+        type: string
+        default: 'dist'
+      environment-name:
+        description: 'Name of the GitHub deployment environment'
+        required: false
+        type: string
+        default: 'github-pages'
+    outputs:
+      page-url:
+        description: 'URL of the published GitHub Pages site'
+        value: ${{ jobs.deploy.outputs.page-url }}
+
+permissions:
+  contents: read
+
+jobs:
+  # ==========================================================================
+  # build — prepares the Pages artifact (no write scope)
+  # ==========================================================================
+  build:
+    name: Pages — build artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read # actions/checkout (internal build)
+      pages: read # actions/configure-pages — GET /repos/{owner}/{repo}/pages (base_path/base_url)
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # ------------------------------------------------------------------
+      - name: Validate inputs
+        env:
+          # [template-injection] inputs mapped to env vars — never inline in run:
+          ARTIFACT_NAME: ${{ inputs.artifact-name }}
+          OUTPUT_DIR: ${{ inputs.output-dir }}
+          BUILD_COMMAND: ${{ inputs.build-command }}
+        run: |
+          set -euo pipefail
+          if [ -n "$ARTIFACT_NAME" ]; then
+            if [ "$ARTIFACT_NAME" = "github-pages" ]; then
+              echo "::error title=Invalid Input::artifact-name 'github-pages' is reserved for the Pages artifact produced by this workflow"
+              exit 1
+            fi
+            echo "ℹ️  Mode: prebuilt artifact '$ARTIFACT_NAME' (internal build skipped)"
+          else
+            if [ -z "$BUILD_COMMAND" ] || [ -z "$OUTPUT_DIR" ]; then
+              echo "::error title=Missing Input::build-command and output-dir are required when artifact-name is empty"
+              exit 1
+            fi
+            echo "ℹ️  Mode: internal build ('$BUILD_COMMAND' → '$OUTPUT_DIR')"
+          fi
+
+      # ------------------------------------------------------------------
+      # Internal build — checkout + Node.js + dependencies
+      - name: Checkout
+        if: ${{ inputs.artifact-name == '' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js environment
+        if: ${{ inputs.artifact-name == '' }}
+        uses: ./.github/actions/setup-node-env
+        with:
+          node-version: ${{ inputs.node-version }}
+          working-directory: ${{ inputs.working-directory }}
+
+      - name: Install dependencies
+        if: ${{ inputs.artifact-name == '' }}
+        working-directory: ${{ inputs.working-directory }}
+        run: npm ci
+
+      # ------------------------------------------------------------------
+      # configure-pages: checks that Pages is enabled (source: GitHub Actions)
+      # and exposes base_path / base_url for the build.
+      - name: Configure GitHub Pages
+        id: pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Build site
+        if: ${{ inputs.artifact-name == '' }}
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          # [template-injection] inputs/step outputs mapped to env vars — never inline in run:
+          BUILD_COMMAND: ${{ inputs.build-command }}
+          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          PAGES_BASE_URL: ${{ steps.pages.outputs.base_url }}
+        run: |
+          set -euo pipefail
+          echo "ℹ️  PAGES_BASE_PATH='${PAGES_BASE_PATH}' PAGES_BASE_URL='${PAGES_BASE_URL}'"
+          bash -euo pipefail -c "$BUILD_COMMAND"
+
+      # ------------------------------------------------------------------
+      # Prebuilt artifact — download from the same run
+      - name: Download prebuilt site artifact
+        if: ${{ inputs.artifact-name != '' }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: ${{ runner.temp }}/pages-site
+
+      # ------------------------------------------------------------------
+      # Resolves the site directory once, reused below.
+      - name: Resolve site directory
+        id: site
+        env:
+          # [template-injection] inputs mapped to env vars — never inline in run:
+          ARTIFACT_NAME: ${{ inputs.artifact-name }}
+          WORKING_DIRECTORY: ${{ inputs.working-directory }}
+          OUTPUT_DIR: ${{ inputs.output-dir }}
+        run: |
+          set -euo pipefail
+          if [ -n "$ARTIFACT_NAME" ]; then
+            SITE_DIR="$RUNNER_TEMP/pages-site"
+          else
+            SITE_DIR="$GITHUB_WORKSPACE/${WORKING_DIRECTORY%/}/${OUTPUT_DIR}"
+          fi
+          if [ ! -d "$SITE_DIR" ]; then
+            echo "::error title=Missing Site::site directory '$SITE_DIR' not found"
+            exit 1
+          fi
+          if [ ! -f "$SITE_DIR/index.html" ]; then
+            echo "::warning title=GitHub Pages::'$SITE_DIR' has no index.html at its root"
+          fi
+          echo "dir=$SITE_DIR" >> "$GITHUB_OUTPUT"
+          echo "✓ Site directory: $SITE_DIR ($(find "$SITE_DIR" -type f | wc -l) files)"
+
+      # Pages artifact: gzip tarball, no symlinks/hardlinks, < 10 GB, named github-pages.
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ${{ steps.site.outputs.dir }}
+
+  # ==========================================================================
+  # deploy — publishes the Pages artifact (OIDC, no secrets)
+  # ==========================================================================
+  deploy:
+    name: Pages — deploy
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write # actions/deploy-pages — creates the Pages deployment
+      id-token: write # actions/deploy-pages — OIDC token that authenticates the deployment
+    environment:
+      name: ${{ inputs.environment-name }}
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages-${{ github.repository }}
+      cancel-in-progress: false
+    outputs:
+      page-url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

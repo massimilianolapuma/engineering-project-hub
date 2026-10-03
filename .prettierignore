@@ -1,0 +1,14 @@
+dist/
+.astro/
+coverage/
+node_modules/
+public/data/
+fixtures/snapshots/
+package-lock.json
+playwright-report/
+test-results/
+.remember/
+CHANGELOG.md
+CONTRIBUTING.md
+# Generated (npm run schema:generate)
+config/schema/

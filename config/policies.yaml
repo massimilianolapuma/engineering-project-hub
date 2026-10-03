@@ -1,0 +1,54 @@
+# yaml-language-server: $schema=./schema/policies.schema.json
+#
+# Engineering Project Hub — health policies.
+# These are MVP policies chosen for this portal, NOT universal risk assessments.
+# Change them here: no code or frontend change is needed.
+# Reference: docs/configuration.md (EN) · docs/it/configuration.md (IT)
+
+schemaVersion: '1.0'
+
+freshness:
+  snapshotStaleHours: 24 # the site flags the whole snapshot as stale after this
+  workflowRunStaleDays: 14 # last completed run of a tracked workflow older than this = stale
+  securityScanStaleDays: 7 # last code scanning analysis older than this = stale
+  securityStatusFileStaleDays: 7 # .security/project-security-status.json older than this = stale
+
+delivery:
+  queuedThresholdMinutes: 60 # queued / in progress for longer = attention
+  missingCriticalWorkflow: amber
+  failedCriticalWorkflow: red
+
+security:
+  redOnSeverities: [critical]
+  amberOnSeverities: [high, medium, low]
+  openSecretAlertIsRed: true
+  requiredControlFailedIsRed: true
+  staleScanIsAmber: true
+  incompleteCoverageIsAmber: true
+
+coverage:
+  greenThresholdPercent: 100
+
+version:
+  componentDrift: amber
+  environmentBehind: amber
+  unresolvableSubmodule: red
+  unknownManifestComponent: red
+  unmappedSubmodule: amber
+
+governance:
+  missingStandardWorkflow: amber
+  archivedRepository: amber
+  missingSecurityStatusFile: amber
+  defaultBranchMismatch: amber
+
+overall:
+  criticalDimensions: [delivery, version, security]
+  requiredDimensions: [delivery, version, security, coverage, governance]
+  greyRequiredDimension: grey
+
+publication:
+  # public: titles and rule ids of findings in private/internal repositories are withheld.
+  # restricted: use only when the site is served behind access control.
+  audience: public
+  allowedLinkHosts: [github.com]

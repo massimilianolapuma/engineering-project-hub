@@ -1,0 +1,312 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "freshness": {
+      "type": "object",
+      "properties": {
+        "snapshotStaleHours": {
+          "default": 24,
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "workflowRunStaleDays": {
+          "default": 14,
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "securityScanStaleDays": {
+          "default": 7,
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "securityStatusFileStaleDays": {
+          "default": 7,
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "delivery": {
+      "type": "object",
+      "properties": {
+        "queuedThresholdMinutes": {
+          "default": 60,
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "missingCriticalWorkflow": {
+          "default": "amber",
+          "type": "string",
+          "enum": [
+            "red",
+            "amber",
+            "grey"
+          ]
+        },
+        "failedCriticalWorkflow": {
+          "default": "red",
+          "type": "string",
+          "enum": [
+            "red",
+            "amber"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "security": {
+      "type": "object",
+      "properties": {
+        "redOnSeverities": {
+          "default": [
+            "critical"
+          ],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "high",
+              "medium",
+              "low",
+              "informational",
+              "unknown"
+            ]
+          }
+        },
+        "amberOnSeverities": {
+          "default": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "high",
+              "medium",
+              "low",
+              "informational",
+              "unknown"
+            ]
+          }
+        },
+        "openSecretAlertIsRed": {
+          "default": true,
+          "type": "boolean"
+        },
+        "requiredControlFailedIsRed": {
+          "default": true,
+          "type": "boolean"
+        },
+        "staleScanIsAmber": {
+          "default": true,
+          "type": "boolean"
+        },
+        "incompleteCoverageIsAmber": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "coverage": {
+      "type": "object",
+      "properties": {
+        "greenThresholdPercent": {
+          "default": 100,
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        }
+      },
+      "additionalProperties": false
+    },
+    "version": {
+      "type": "object",
+      "properties": {
+        "componentDrift": {
+          "default": "amber",
+          "type": "string",
+          "enum": [
+            "red",
+            "amber"
+          ]
+        },
+        "environmentBehind": {
+          "default": "amber",
+          "type": "string",
+          "enum": [
+            "red",
+            "amber"
+          ]
+        },
+        "unresolvableSubmodule": {
+          "default": "red",
+          "type": "string",
+          "enum": [
+            "red",
+            "amber"
+          ]
+        },
+        "unknownManifestComponent": {
+          "default": "red",
+          "type": "string",
+          "enum": [
+            "red",
+            "amber"
+          ]
+        },
+        "unmappedSubmodule": {
+          "default": "amber",
+          "type": "string",
+          "enum": [
+            "red",
+            "amber",
+            "grey"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "governance": {
+      "type": "object",
+      "properties": {
+        "missingStandardWorkflow": {
+          "default": "amber",
+          "type": "string",
+          "enum": [
+            "red",
+            "amber",
+            "grey"
+          ]
+        },
+        "archivedRepository": {
+          "default": "amber",
+          "type": "string",
+          "enum": [
+            "red",
+            "amber",
+            "grey"
+          ]
+        },
+        "missingSecurityStatusFile": {
+          "default": "amber",
+          "type": "string",
+          "enum": [
+            "red",
+            "amber",
+            "grey"
+          ]
+        },
+        "defaultBranchMismatch": {
+          "default": "amber",
+          "type": "string",
+          "enum": [
+            "red",
+            "amber",
+            "grey"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "overall": {
+      "type": "object",
+      "properties": {
+        "criticalDimensions": {
+          "default": [
+            "delivery",
+            "version",
+            "security"
+          ],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "delivery",
+              "version",
+              "security",
+              "coverage",
+              "governance"
+            ]
+          }
+        },
+        "requiredDimensions": {
+          "default": [
+            "delivery",
+            "version",
+            "security",
+            "coverage",
+            "governance"
+          ],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "delivery",
+              "version",
+              "security",
+              "coverage",
+              "governance"
+            ]
+          }
+        },
+        "greyRequiredDimension": {
+          "default": "grey",
+          "type": "string",
+          "enum": [
+            "grey",
+            "amber"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "publication": {
+      "type": "object",
+      "properties": {
+        "audience": {
+          "default": "public",
+          "type": "string",
+          "enum": [
+            "public",
+            "restricted"
+          ]
+        },
+        "allowedLinkHosts": {
+          "default": [
+            "github.com"
+          ],
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9.-]+$"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "freshness",
+    "delivery",
+    "security",
+    "coverage",
+    "version",
+    "governance",
+    "overall",
+    "publication"
+  ],
+  "additionalProperties": false
+}
