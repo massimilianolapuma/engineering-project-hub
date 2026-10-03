@@ -78,7 +78,10 @@ flowchart TB
    suo errore classificato.
 4. **Raccolta per progetto**: il release manifest e `.gitmodules` dal coordinator, gli SHA
    dei submodule e le esecuzioni dei workflow monitorati (le ultime 20 sul branch
-   predefinito), più i nomi del job e dello step falliti nell'ultima esecuzione fallita.
+   predefinito), più i nomi del job e dello step falliti nell'ultima esecuzione fallita. Ogni
+   submodule associato a un componente viene risolto: i tag del componente vengono confrontati
+   con lo SHA fissato e, se nessun tag corrisponde, lo SHA viene confrontato con l'ultima
+   release (avanti / indietro / divergente).
 5. **Normalizzazione**: i valori dei provider diventano gli enum del modello.
    `originalSeverity` e `originalStatus` vengono conservati.
 6. **Valutazione**: delivery, versioni, rischio sicurezza, copertura, governance,
@@ -158,8 +161,10 @@ valutazioni del rischio universali.
 - **Versioni**:
   - rosso quando il manifest fa riferimento a un componente sconosciuto, oppure un
     submodule non può essere risolto
-  - ambra quando c'è drift su un componente, un ambiente è indietro o non coerente, c'è un
-    submodule non associato, oppure il manifest manca o non è valido
+  - ambra quando la versione attuale (secondo `versionSource`) differisce dall'ultima
+    release, il coordinator fissa uno SHA senza tag, il manifest non coincide con il tag
+    fissato, un ambiente è indietro o non coerente, c'è un submodule non associato, oppure il
+    manifest manca o non è valido
   - verde quando tutto è allineato
   - grigio quando non è possibile determinare alcuna versione
 - **Rischio sicurezza**:

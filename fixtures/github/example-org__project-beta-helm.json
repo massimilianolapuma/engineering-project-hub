@@ -44,5 +44,11 @@
     "toolName": "CodeQL"
   },
   "dependabotAlerts": [],
-  "secretScanningAlerts": []
+  "secretScanningAlerts": [],
+  "tags": [
+    {
+      "name": "v1.0.0",
+      "sha": "1485c43fd9e24ef6e7d082c0d83c62d7becafbed"
+    }
+  ]
 }

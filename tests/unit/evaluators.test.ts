@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { CoverageSummary, RepositoryControls, SecurityFinding } from '@model/index';
+import type {
+  ComponentSnapshot,
+  CoverageSummary,
+  RepositoryControls,
+  SecurityFinding,
+} from '@model/index';
 import {
   evaluateCoverage,
   evaluateDelivery,
@@ -250,7 +255,10 @@ describe('security risk', () => {
 });
 
 describe('version health', () => {
-  const component = (drift: 'aligned' | 'drift' | 'unknown') => ({
+  const component = (
+    drift: 'aligned' | 'drift' | 'unknown',
+    extra: Partial<ComponentSnapshot> = {},
+  ): ComponentSnapshot => ({
     id: 'fe',
     name: 'Frontend',
     type: 'webapp' as const,
@@ -265,7 +273,47 @@ describe('version health', () => {
       kind: 'release' as const,
     },
     submodule: null,
+    versionSource: 'auto',
+    pin: null,
+    effectiveVersion: '2.1.0',
+    effectiveVersionSource: 'manifest',
+    manifestConsistency: 'unknown',
     drift,
+    ...extra,
+  });
+  const pin = (
+    status: 'tagged' | 'ahead' | 'behind' | 'diverged',
+    version: string | null = null,
+  ) => ({
+    status,
+    tag: version ? `v${version}` : null,
+    version,
+    comparedTo: status === 'tagged' ? null : 'v2.2.0',
+    aheadBy: status === 'ahead' ? 3 : null,
+    behindBy: status === 'ahead' ? 0 : null,
+  });
+  it('amber when the coordinator pins an untagged SHA (ahead/behind/diverged)', () => {
+    const r = evaluateVersion(
+      { ...base, components: [component('aligned', { pin: pin('ahead') })] },
+      P,
+    );
+    expect(r.status).toBe('amber');
+    expect(r.reasons.map((x) => x.code)).toContain('submodule-untagged');
+  });
+  it('flags a manifest declaration that differs from the pinned version', () => {
+    const c = component('aligned', {
+      pin: pin('tagged', '2.0.0'),
+      manifestConsistency: 'mismatch',
+    });
+    const r = evaluateVersion({ ...base, components: [c] }, P);
+    expect(r.reasons.find((x) => x.code === 'manifest-submodule-mismatch')?.params).toMatchObject({
+      declared: '2.1.0',
+      pinned: '2.0.0',
+    });
+    const strict = policies((p) => {
+      p.version.manifestSubmoduleMismatch = 'red';
+    });
+    expect(evaluateVersion({ ...base, components: [c] }, strict).status).toBe('red');
   });
   const base = {
     coordinatorVersion: '1.4.0',

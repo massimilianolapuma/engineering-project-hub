@@ -159,6 +159,16 @@
                       "artifactSignature"
                     ]
                   }
+                },
+                "versionSource": {
+                  "default": "auto",
+                  "type": "string",
+                  "enum": [
+                    "auto",
+                    "submodule",
+                    "manifest",
+                    "release"
+                  ]
                 }
               },
               "required": [

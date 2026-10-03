@@ -75,5 +75,11 @@
       "httpStatus": 403,
       "message": "Resource not accessible by integration"
     }
-  }
+  },
+  "tags": [
+    {
+      "name": "v3.1.0",
+      "sha": "74d77c07925aea1b9d655d1455dcae68b2a0c3ce"
+    }
+  ]
 }

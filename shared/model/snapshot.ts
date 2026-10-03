@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CatalogSchema, VersionSourceSchema } from './catalog';
 import {
   AuthenticationModeSchema,
   AvailabilitySchema,
@@ -256,15 +257,44 @@ export const SecuritySummarySchema = HealthResultSchema.extend({
 }).strict();
 export type SecuritySummary = z.infer<typeof SecuritySummarySchema>;
 
+/**
+ * What the SHA pinned by the coordinator corresponds to in the component repository:
+ * - tagged: the SHA is exactly a tag (verified version)
+ * - ahead / behind / diverged: not tagged; position relative to the latest release
+ * - unknown: SHA, tags or comparison not available
+ */
+export const PinSchema = z
+  .object({
+    status: z.enum(['tagged', 'ahead', 'behind', 'diverged', 'unknown']),
+    tag: z.string().max(100).nullable(),
+    version: z.string().max(100).nullable(),
+    comparedTo: z.string().max(100).nullable(),
+    aheadBy: z.number().int().min(0).nullable(),
+    behindBy: z.number().int().min(0).nullable(),
+  })
+  .strict();
+export type Pin = z.infer<typeof PinSchema>;
+
 export const ComponentSnapshotSchema = z
   .object({
     id: z.string().max(64),
     name: z.string().max(100),
     type: ComponentTypeSchema,
     repository: RepositoryInfoSchema,
+    /** Configured source of the current version (catalog `versionSource`). */
+    versionSource: VersionSourceSchema,
+    /** Version declared in the coordinator's release manifest. */
     declaredVersion: z.string().max(100).nullable(),
     latestRelease: ReleaseInfoSchema.nullable(),
     submodule: SubmoduleSchema.nullable(),
+    /** Resolution of the submodule SHA; null when the component is not a submodule. */
+    pin: PinSchema.nullable(),
+    /** Current version according to versionSource, and where it actually came from. */
+    effectiveVersion: z.string().max(100).nullable(),
+    effectiveVersionSource: z.enum(['submodule', 'manifest', 'release', 'unknown']),
+    /** Manifest declaration vs version pinned by the submodule. */
+    manifestConsistency: z.enum(['consistent', 'mismatch', 'unknown']),
+    /** Effective version vs latest release. */
     drift: z.enum(['aligned', 'drift', 'unknown']),
   })
   .strict();
@@ -420,6 +450,32 @@ export const PortfolioIndexSchema = z
   })
   .strict();
 export type PortfolioIndex = z.infer<typeof PortfolioIndexSchema>;
+
+/**
+ * catalog.json: the validated catalog as published by the collector, so the site (catalog
+ * editor) never reads the YAML directly, plus link suggestions derived from collected data.
+ */
+export const CatalogSnapshotSchema = z
+  .object({
+    schemaVersion: SchemaVersionSchema,
+    generatedAt: isoDate,
+    catalog: CatalogSchema,
+    suggestions: z.array(
+      z
+        .object({
+          projectId: z.string().max(64),
+          /** .gitmodules entries of the coordinator not linked to any component. */
+          unmappedSubmodules: z.array(
+            z
+              .object({ path: z.string().max(255), repository: z.string().max(200).nullable() })
+              .strict(),
+          ),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+export type CatalogSnapshot = z.infer<typeof CatalogSnapshotSchema>;
 
 /** Header-only schema used to reject unsupported versions before full validation. */
 export const VersionProbeSchema = z.object({ schemaVersion: z.string() });

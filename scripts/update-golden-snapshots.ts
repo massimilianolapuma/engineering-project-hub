@@ -19,5 +19,5 @@ const result = await runCollection({
   provider: new MockProvider('fixtures/github', clock),
   clock,
 });
-await writeSnapshots('fixtures/snapshots', result.index, result.projects);
+await writeSnapshots('fixtures/snapshots', result.index, result.projects, catalog);
 console.log('✔ fixtures/snapshots regenerated');

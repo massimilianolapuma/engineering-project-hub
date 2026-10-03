@@ -49,6 +49,7 @@ projects:
         defaultBranch: main
         submodulePath: deploy/helm
         notApplicableControls: [containerScanning]
+        versionSource: release # chart released and deployed on its own cadence
 
     environments:
       - { id: dev, name: DEV }

@@ -50,6 +50,10 @@ export const PoliciesSchema = z
         unresolvableSubmodule: RedOrAmber.default('red'),
         unknownManifestComponent: RedOrAmber.default('red'),
         unmappedSubmodule: NonGreenStatus.default('amber'),
+        /** The coordinator pins a SHA that is not a release tag of the component. */
+        untaggedSubmodule: NonGreenStatus.default('amber'),
+        /** The manifest declares a version different from the one the submodule pins. */
+        manifestSubmoduleMismatch: RedOrAmber.default('amber'),
       })
       .strict(),
     governance: z

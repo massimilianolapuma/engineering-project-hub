@@ -1,4 +1,5 @@
 import { projectTargets, type ProjectConfig, type TrackedWorkflowConfig } from '@model/index';
+import { associateSubmodules } from '../normalizers/association';
 import { memoize } from '../util/concurrency';
 import { parseGitmodules, type GitmoduleEntry } from '../util/gitmodules';
 import {
@@ -6,6 +7,7 @@ import {
   type CodeScanningAlertDTO,
   type CodeScanningAnalysisDTO,
   type CommitRefDTO,
+  type CompareDTO,
   type DependabotAlertDTO,
   type FileDTO,
   type ProviderResult,
@@ -67,6 +69,17 @@ export interface WorkflowData {
   failure: ProviderResult<RunFailureDTO | null> | null;
 }
 
+/** Data used to resolve the SHA a coordinator pins for a component into a version. */
+export interface PinData {
+  componentId: string;
+  sha: string;
+  /** Component tags (name + commit SHA), newest first. */
+  tags: ProviderResult<TagDTO[]>;
+  /** Latest release tag vs the pinned SHA, only when no tag matches the SHA. */
+  compareBase: string | null;
+  compare: ProviderResult<CompareDTO> | null;
+}
+
 export interface RawProjectData {
   config: ProjectConfig;
   repos: RepoData[];
@@ -74,6 +87,7 @@ export interface RawProjectData {
   gitmodules: ProviderResult<FileDTO>;
   submodules: GitmoduleEntry[];
   submoduleRefs: Map<string, ProviderResult<SubmoduleRefDTO>>;
+  pins: PinData[];
   workflows: WorkflowData[];
 }
 
@@ -221,6 +235,36 @@ export async function collectProject(
     }),
   );
 
+  // Resolve the SHA pinned for each linked component into a tag (or a distance from the
+  // latest release when the SHA is not tagged).
+  const pins: PinData[] = [];
+  await Promise.all(
+    associateSubmodules(config, submodules).map(async (a) => {
+      const ref = submoduleRefs.get(a.entry.path);
+      if (!a.component || !ref?.ok) return;
+      const repoData = repos.find((r) => r.componentId === a.component!.id);
+      if (!repoData?.repo.ok) return;
+      const repository = a.component.repository;
+      const sha = ref.data.sha;
+      const tags = await call(ctx, `tags:${repository}`, () => p.listTags(repository));
+      const tagged = tags.ok && tags.data.some((t) => t.sha === sha);
+      const base = repoData.release.ok ? repoData.release.data.tagName : null;
+      const compare =
+        !tagged && base
+          ? await call(ctx, `cmp:${repository}:${base}...${sha}`, () =>
+              p.compareCommits(repository, base, sha),
+            )
+          : null;
+      pins.push({
+        componentId: a.component.id,
+        sha,
+        tags,
+        compareBase: compare ? base : null,
+        compare,
+      });
+    }),
+  );
+
   const workflows: WorkflowData[] = [];
   await Promise.all(
     config.trackedWorkflows.flatMap((workflow) => {
@@ -256,5 +300,5 @@ export async function collectProject(
     repos.findIndex((r) => r.componentId === w.componentId);
   workflows.sort((a, b) => order(a) - order(b));
 
-  return { config, repos, manifest, gitmodules, submodules, submoduleRefs, workflows };
+  return { config, repos, manifest, gitmodules, submodules, submoduleRefs, pins, workflows };
 }

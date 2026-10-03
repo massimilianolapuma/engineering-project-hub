@@ -62,5 +62,18 @@
     "toolName": "CodeQL"
   },
   "dependabotAlerts": [],
-  "secretScanningAlerts": []
+  "secretScanningAlerts": [],
+  "tags": [
+    {
+      "name": "v1.2.0",
+      "sha": "3d35ebe7918655a2f01caa0bb502d42fb71c9b51"
+    }
+  ],
+  "comparisons": {
+    "v1.2.0...ae589794b1f6f51ea57eb1e77bdb88b5dda79046": {
+      "status": "ahead",
+      "aheadBy": 3,
+      "behindBy": 0
+    }
+  }
 }

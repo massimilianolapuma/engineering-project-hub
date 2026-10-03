@@ -35,6 +35,7 @@ projects:
         type: service # service | webapp | worker | deployment | infrastructure | library | other
         defaultBranch: main # optional
         submodulePath: services/backend # optional: path of the submodule in the coordinator
+        versionSource: auto # optional: auto | submodule | manifest | release (see below)
         releaseTagPrefix: backend- # optional: stripped before version comparison
         notApplicableControls: [] # optional: controls that do not apply (e.g. containerScanning on Helm)
 
@@ -85,6 +86,38 @@ Associations are **explicit**. Nothing is inferred from repository names.
 3. A component with `submodulePath` that is not in `.gitmodules` is **unresolvable**,
    which is red by default.
 
+### Submodule SHA resolution and `versionSource`
+
+For every component linked to a submodule, the collector reads the **SHA the coordinator
+pins** (Contents API) and resolves it in the component repository:
+
+| Pin status | Meaning                                                                                |
+| ---------- | -------------------------------------------------------------------------------------- |
+| `tagged`   | The SHA is exactly a tag (the highest semver wins if several): a **verified** version. |
+| `ahead`    | Not tagged; N commits after the latest release (unreleased code is pinned).            |
+| `behind`   | Not tagged; older than the latest release.                                             |
+| `diverged` | Not tagged; not on the latest release's history.                                       |
+| `unknown`  | SHA, tags or comparison not readable.                                                  |
+
+Up to 300 most recent tags are scanned (`GET /tags`); when no tag matches, one
+`GET /compare/{latestRelease}...{sha}` gives the distance (only status and counters are kept).
+
+`versionSource` (per component, default `auto`) chooses the **current version**:
+
+| Value       | Current version                                                           |
+| ----------- | ------------------------------------------------------------------------- |
+| `auto`      | Verified pin (tag on the submodule SHA) → manifest declaration → unknown. |
+| `submodule` | Only the verified pin.                                                    |
+| `manifest`  | Only the release manifest declaration.                                    |
+| `release`   | The component's latest release (component deployed on its own cadence).   |
+
+Version checks (levels in `policies.yaml` → `version`):
+
+- **drift**: current version ≠ latest release (`componentDrift`);
+- **untagged pin**: the coordinator pins a SHA that is not a release tag (`untaggedSubmodule`);
+- **manifest vs submodule**: the manifest declares a version different from the pinned tag
+  (`manifestSubmoduleMismatch`).
+
 ### Workflow tracking
 
 For each tracked workflow and each target (`appliesTo`, by default every component), the
@@ -126,6 +159,24 @@ A run is **stale** when its last completed run is older than
    `.security/project-security-status.json` to the components.
 5. Open a PR. CI validates the configuration.
 
+### Catalog editor
+
+The portal's **Catalog** page (`/catalog/`, `/it/catalog/`) edits the catalog without
+touching YAML by hand: pick a project (or create one), link its coordinator, components,
+environments, tracked workflows and required controls, and choose each component's
+`versionSource`. A **Suggestions** panel lists the coordinator submodules that no component
+links to (from the last collector run); _Add as component_ creates a component linked by
+its configured `submodulePath`, with the repository prefilled when known.
+
+The page stays static and read-only: it is built from `public/data/catalog.json` (written
+by the collector, it never reads `config/` directly), validates live in the browser with
+the same Zod schema as `npm run validate:config`, and generates the **whole**
+`config/projects.yaml` (empty and default values omitted). It never calls the GitHub API
+and holds no token: copy or download the YAML, open `config/projects.yaml` in the GitHub
+editor (link derived from `package.json` `repository.url`), commit to a new branch and open
+a PR. Your own GitHub permissions apply and CI validates the result. Comments in the
+hand-written file are not preserved, so review the diff before committing.
+
 ## `config/policies.yaml`: health policies
 
 These are MVP policies, not universal risk ratings. Changing them needs no code or
@@ -152,6 +203,8 @@ frontend change.
 | `version.unresolvableSubmodule`         | red                           | A configured submodule cannot be resolved.                                                                             |
 | `version.unknownManifestComponent`      | red                           | The manifest references an unknown component.                                                                          |
 | `version.unmappedSubmodule`             | amber                         | A submodule not mapped to any component.                                                                               |
+| `version.untaggedSubmodule`             | amber                         | The coordinator pins a SHA that is not a release tag of the component.                                                 |
+| `version.manifestSubmoduleMismatch`     | amber                         | The manifest declares a version different from the one pinned by the submodule.                                        |
 | `governance.*`                          | amber                         | Missing standard workflow, archived repository, missing or invalid status file, default branch mismatch.               |
 | `overall.criticalDimensions`            | [delivery, version, security] | A red here makes the project red. A red elsewhere counts as amber.                                                     |
 | `overall.requiredDimensions`            | all five                      | All must be green for Overall to be green.                                                                             |

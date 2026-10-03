@@ -1,0 +1,52 @@
+---
+/** What the coordinator's submodule SHA resolves to in the component repository. */
+import type { ComponentSnapshot } from '@model/index';
+import type { I18n } from '../i18n';
+import { shortSha } from '../lib/format';
+import type { Tone } from '../lib/tones';
+import Pill from './Pill.astro';
+interface Props {
+  c: ComponentSnapshot;
+  i18n: I18n;
+}
+const { c, i18n } = Astro.props;
+const { d } = i18n;
+const tone: Tone = !c.pin
+  ? 'muted'
+  : c.pin.status === 'tagged'
+    ? 'green'
+    : c.pin.status === 'unknown'
+      ? 'grey'
+      : 'amber';
+---
+
+{!c.submodule ? (
+  <span class="muted">{d.common.notApplicable}</span>
+) : (
+  <span class="stack">
+    {c.submodule.sha ? (
+      <code>{shortSha(c.submodule.sha)}</code>
+    ) : (
+      <span class="muted">{d.submoduleStatus[c.submodule.status]}</span>
+    )}
+    {c.pin && (
+      <Pill
+        tone={tone}
+        label={
+          c.pin.status === 'tagged' && c.pin.tag
+            ? `${d.pinStatus.tagged} ${c.pin.tag}`
+            : d.pinStatus[c.pin.status]
+        }
+      />
+    )}
+    {c.pin && c.pin.status !== 'tagged' && c.pin.comparedTo && (
+      <span class="sub">
+        {i18n.f(d.versionsPage.pinDetail, {
+          ahead: c.pin.aheadBy ?? '',
+          behind: c.pin.behindBy ?? '',
+          base: c.pin.comparedTo,
+        })}
+      </span>
+    )}
+  </span>
+)}

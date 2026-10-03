@@ -1,0 +1,354 @@
+{
+  "schemaVersion": "1.1",
+  "generatedAt": "2026-01-15T12:00:00.000Z",
+  "catalog": {
+    "discovery": {
+      "topics": false,
+      "customProperties": false
+    },
+    "projects": [
+      {
+        "id": "project-alpha",
+        "name": "Project Alpha",
+        "description": "Synthetic multi-repository payments platform used for the demo.",
+        "businessUnit": "Payments",
+        "lifecycle": "production",
+        "coordinator": {
+          "repository": "example-org/project-alpha-coordinator",
+          "defaultBranch": "main",
+          "manifestPath": "release-manifest.yaml",
+          "notApplicableControls": [
+            "containerScanning"
+          ]
+        },
+        "components": [
+          {
+            "id": "backend",
+            "name": "Backend API",
+            "repository": "example-org/project-alpha-backend",
+            "type": "service",
+            "defaultBranch": "main",
+            "submodulePath": "services/backend",
+            "notApplicableControls": [],
+            "versionSource": "auto"
+          },
+          {
+            "id": "frontend",
+            "name": "Frontend",
+            "repository": "example-org/project-alpha-frontend",
+            "type": "webapp",
+            "defaultBranch": "main",
+            "submodulePath": "apps/frontend",
+            "notApplicableControls": [],
+            "versionSource": "auto"
+          },
+          {
+            "id": "worker",
+            "name": "Settlement worker",
+            "repository": "example-org/project-alpha-worker",
+            "type": "worker",
+            "defaultBranch": "main",
+            "submodulePath": "services/worker",
+            "notApplicableControls": [],
+            "versionSource": "auto"
+          },
+          {
+            "id": "helm",
+            "name": "Helm deployment",
+            "repository": "example-org/project-alpha-helm",
+            "type": "deployment",
+            "defaultBranch": "main",
+            "submodulePath": "deploy/helm",
+            "notApplicableControls": [
+              "containerScanning"
+            ],
+            "versionSource": "release"
+          }
+        ],
+        "environments": [
+          {
+            "id": "dev",
+            "name": "DEV"
+          },
+          {
+            "id": "test",
+            "name": "TEST"
+          },
+          {
+            "id": "uat",
+            "name": "UAT"
+          },
+          {
+            "id": "prod",
+            "name": "PROD"
+          }
+        ],
+        "trackedWorkflows": [
+          {
+            "id": "ci",
+            "name": "Continuous Integration",
+            "file": "ci-main.yml",
+            "critical": true,
+            "appliesTo": [
+              "backend",
+              "frontend",
+              "worker"
+            ]
+          },
+          {
+            "id": "release",
+            "name": "Release",
+            "file": "rel-release.yml",
+            "critical": true,
+            "appliesTo": [
+              "coordinator",
+              "backend",
+              "frontend",
+              "worker"
+            ]
+          },
+          {
+            "id": "deploy",
+            "name": "Deployment",
+            "file": "cd.yml",
+            "critical": true,
+            "appliesTo": [
+              "helm"
+            ]
+          }
+        ],
+        "securityControls": {
+          "codeScanning": {
+            "required": true
+          },
+          "secretScanning": {
+            "required": true
+          },
+          "dependabot": {
+            "required": true
+          },
+          "containerScanning": {
+            "required": true
+          },
+          "iacScanning": {
+            "required": false
+          },
+          "dast": {
+            "required": false
+          },
+          "sbom": {
+            "required": false
+          },
+          "artifactSignature": {
+            "required": false
+          }
+        },
+        "securityStatusPath": ".security/project-security-status.json"
+      },
+      {
+        "id": "project-beta",
+        "name": "Project Beta",
+        "description": "Synthetic logistics platform with a failing pipeline and restricted security data.",
+        "businessUnit": "Logistics",
+        "lifecycle": "production",
+        "coordinator": {
+          "repository": "example-org/project-beta-coordinator",
+          "defaultBranch": "main",
+          "manifestPath": "release-manifest.yaml",
+          "notApplicableControls": [
+            "containerScanning"
+          ]
+        },
+        "components": [
+          {
+            "id": "api",
+            "name": "API service",
+            "repository": "example-org/project-beta-api",
+            "type": "service",
+            "defaultBranch": "main",
+            "submodulePath": "services/api",
+            "notApplicableControls": [],
+            "versionSource": "auto"
+          },
+          {
+            "id": "web",
+            "name": "Web console",
+            "repository": "example-org/project-beta-web",
+            "type": "webapp",
+            "defaultBranch": "main",
+            "submodulePath": "apps/web",
+            "notApplicableControls": [],
+            "versionSource": "auto"
+          },
+          {
+            "id": "helm",
+            "name": "Helm deployment",
+            "repository": "example-org/project-beta-helm",
+            "type": "deployment",
+            "defaultBranch": "main",
+            "submodulePath": "deploy/helm",
+            "notApplicableControls": [
+              "containerScanning"
+            ],
+            "versionSource": "auto"
+          }
+        ],
+        "environments": [
+          {
+            "id": "dev",
+            "name": "DEV"
+          },
+          {
+            "id": "uat",
+            "name": "UAT"
+          },
+          {
+            "id": "prod",
+            "name": "PROD"
+          }
+        ],
+        "trackedWorkflows": [
+          {
+            "id": "ci",
+            "name": "Continuous Integration",
+            "file": "ci-main.yml",
+            "critical": true,
+            "appliesTo": [
+              "api",
+              "web"
+            ]
+          },
+          {
+            "id": "release",
+            "name": "Release",
+            "file": "rel-release.yml",
+            "critical": true,
+            "appliesTo": [
+              "coordinator",
+              "api",
+              "web"
+            ]
+          },
+          {
+            "id": "deploy",
+            "name": "Deployment",
+            "file": "cd.yml",
+            "critical": true,
+            "appliesTo": [
+              "helm"
+            ]
+          }
+        ],
+        "securityControls": {
+          "codeScanning": {
+            "required": true
+          },
+          "secretScanning": {
+            "required": true
+          },
+          "dependabot": {
+            "required": true
+          },
+          "containerScanning": {
+            "required": true
+          },
+          "iacScanning": {
+            "required": false
+          },
+          "dast": {
+            "required": false
+          },
+          "sbom": {
+            "required": false
+          },
+          "artifactSignature": {
+            "required": false
+          }
+        },
+        "securityStatusPath": ".security/project-security-status.json"
+      },
+      {
+        "id": "project-gamma",
+        "name": "Project Gamma",
+        "description": "Synthetic internal tool whose repositories are not accessible to the collector.",
+        "businessUnit": "Internal tools",
+        "lifecycle": "development",
+        "coordinator": {
+          "repository": "example-org/project-gamma-coordinator",
+          "manifestPath": "release-manifest.yaml",
+          "notApplicableControls": []
+        },
+        "components": [
+          {
+            "id": "service",
+            "name": "Gamma service",
+            "repository": "example-org/project-gamma-service",
+            "type": "service",
+            "notApplicableControls": [],
+            "versionSource": "auto"
+          }
+        ],
+        "environments": [
+          {
+            "id": "dev",
+            "name": "DEV"
+          }
+        ],
+        "trackedWorkflows": [
+          {
+            "id": "ci",
+            "name": "Continuous Integration",
+            "file": "ci.yml",
+            "critical": true
+          }
+        ],
+        "securityControls": {
+          "codeScanning": {
+            "required": true
+          },
+          "secretScanning": {
+            "required": true
+          },
+          "dependabot": {
+            "required": true
+          },
+          "containerScanning": {
+            "required": false
+          },
+          "iacScanning": {
+            "required": false
+          },
+          "dast": {
+            "required": false
+          },
+          "sbom": {
+            "required": false
+          },
+          "artifactSignature": {
+            "required": false
+          }
+        },
+        "securityStatusPath": ".security/project-security-status.json"
+      }
+    ]
+  },
+  "suggestions": [
+    {
+      "projectId": "project-alpha",
+      "unmappedSubmodules": []
+    },
+    {
+      "projectId": "project-beta",
+      "unmappedSubmodules": [
+        {
+          "path": "tools/legacy-scripts",
+          "repository": "example-org/legacy-scripts"
+        }
+      ]
+    },
+    {
+      "projectId": "project-gamma",
+      "unmappedSubmodules": []
+    }
+  ]
+}

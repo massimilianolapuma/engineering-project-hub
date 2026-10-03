@@ -1,0 +1,150 @@
+---
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { CONTROL_IDS } from '@model/index';
+import ErrorState from '../../components/ErrorState.astro';
+import ExtLink from '../../components/ExtLink.astro';
+import Base from '../../layouts/Base.astro';
+import { githubEditUrl, jsonForScript } from '../../lib/catalog-editor-core';
+import { loadCatalogSnapshot } from '../../lib/data';
+import { pageContext } from '../../lib/page';
+import { localeParams } from '../../lib/routes';
+
+export const getStaticPaths = localeParams;
+const { locale } = Astro.props;
+const { i18n, index, alternates } = pageContext(locale, 'catalog');
+const { d } = i18n;
+const c = d.catalogEditor;
+const catalog = loadCatalogSnapshot();
+
+/** GitHub web editor of config/projects.yaml, derived from package.json (hidden if unknown). */
+function readEditUrl(): string | null {
+  try {
+    const pkg = JSON.parse(readFileSync(resolve('package.json'), 'utf8')) as {
+      repository?: string | { url?: string };
+    };
+    return githubEditUrl(typeof pkg.repository === 'string' ? pkg.repository : pkg.repository?.url);
+  } catch {
+    return null;
+  }
+}
+const editUrl = readEditUrl();
+
+/* Data and strings for the client editor, as non-executable JSON (CSP: no inline code). */
+const editorData = catalog.ok
+  ? jsonForScript({ catalog: catalog.data.catalog, suggestions: catalog.data.suggestions })
+  : '';
+const editorStrings = jsonForScript({
+  ...c,
+  lifecycle: d.lifecycle,
+  componentType: d.componentType,
+  control: d.control,
+  controlIds: CONTROL_IDS,
+});
+---
+
+<Base i18n={i18n} title={c.title} page="catalog" alternates={alternates} index={index}>
+  {!catalog.ok && <ErrorState error={catalog.error} i18n={i18n} />}
+  {catalog.ok && (
+    <>
+      <header class="page-head">
+        <h1>{c.title}</h1>
+        <p class="lead">{c.intro}</p>
+        <p class="note">{c.readOnly}</p>
+      </header>
+      <script is:inline type="application/json" id="catalog-data" set:html={editorData} />
+      <script is:inline type="application/json" id="catalog-i18n" set:html={editorStrings} />
+      <noscript>
+        <p class="callout callout--red">{c.noscript}</p>
+      </noscript>
+      <div class="ce" data-catalog-editor>
+        <div class="ce__side">
+          <section class="card ce-panel" aria-labelledby="ce-h-projects">
+            <h2 id="ce-h-projects" class="h3">
+              {c.projects}
+            </h2>
+            <ul class="ce-projects" data-ce-projects></ul>
+            <div class="ce-actions">
+              <button type="button" class="btn btn--primary" data-ce-new>
+                {c.newProject}
+              </button>
+              <button type="button" class="btn" data-ce-reset>
+                {c.reset}
+              </button>
+            </div>
+          </section>
+          <section class="card ce-panel" aria-labelledby="ce-h-suggestions">
+            <h2 id="ce-h-suggestions" class="h3">
+              {c.suggestions}
+            </h2>
+            <p class="note">{c.suggestionsIntro}</p>
+            <div data-ce-suggestions></div>
+            <p class="note">{c.suggestionsNote}</p>
+          </section>
+        </div>
+
+        <form class="ce__form" data-ce-form aria-labelledby="ce-h-form" novalidate>
+          <h2 id="ce-h-form" class="ce__title" data-ce-form-title>
+            {c.title}
+          </h2>
+          <div data-ce-form-body></div>
+        </form>
+
+        <div class="ce__output">
+          <section class="card ce-panel" aria-labelledby="ce-h-validation">
+            <h2 id="ce-h-validation" class="h3">
+              {c.validation}
+            </h2>
+            <div class="ce-validation" aria-live="polite" data-ce-validation></div>
+          </section>
+          <section class="card ce-panel" aria-labelledby="ce-h-output">
+            <h2 id="ce-h-output" class="h3">
+              <label for="ce-yaml">{c.output}</label>
+            </h2>
+            <p class="note" id="ce-yaml-help">
+              {c.outputHelp}
+            </p>
+            <textarea
+              id="ce-yaml"
+              class="ce-yaml"
+              readonly
+              rows="22"
+              wrap="off"
+              spellcheck="false"
+              aria-describedby="ce-yaml-help"
+              data-ce-yaml
+            ></textarea>
+            <div class="ce-actions">
+              <button type="button" class="btn btn--primary" data-ce-copy>
+                {c.copy}
+              </button>
+              <button type="button" class="btn" data-ce-download>
+                {c.download}
+              </button>
+            </div>
+            <p class="ce-status" role="status" data-ce-status></p>
+            <h3 class="h3">{c.howTo}</h3>
+            <ol class="ce-steps">
+              <li>{c.step1}</li>
+              <li>
+                {c.step2}
+                {editUrl && (
+                  <>
+                    {' '}
+                    <ExtLink href={editUrl} i18n={i18n} label={c.openEditor} class="ce-editlink" />
+                  </>
+                )}
+              </li>
+              <li>{c.step3}</li>
+              <li>{c.step4}</li>
+            </ol>
+          </section>
+        </div>
+      </div>
+    </>
+  )}
+</Base>
+
+<script>
+  import '../../scripts/catalog-editor';
+</script>

@@ -35,6 +35,7 @@ const VIEWS = [
   'versions',
   'security',
   'data-quality',
+  'catalog',
   'projects/project-alpha',
   'projects/project-beta',
   'projects/project-gamma',
@@ -95,13 +96,43 @@ describe('static site', () => {
     expect(findings).toEqual([]);
   });
 
+  it.each(['catalog', 'it/catalog'])(
+    'embeds the published catalog and suggestions on /%s without inline code',
+    async (v) => {
+      const html = await page(v);
+      const json = /<script type="application\/json" id="catalog-data">([\s\S]*?)<\/script>/.exec(
+        html,
+      );
+      expect(json).not.toBeNull();
+      const data = JSON.parse(json![1]!) as {
+        catalog: { projects: { id: string }[] };
+        suggestions: { projectId: string; unmappedSubmodules: { path: string }[] }[];
+      };
+      expect(data.catalog.projects.map((p) => p.id)).toContain('project-beta');
+      expect(
+        data.suggestions
+          .find((s) => s.projectId === 'project-beta')
+          ?.unmappedSubmodules.map((m) => m.path),
+      ).toContain('tools/legacy-scripts');
+      expect(html).toContain('id="catalog-i18n"');
+      expect(html).toContain('data-catalog-editor');
+      expect(html).toContain('/edit/main/config/projects.yaml');
+      // JSON blocks are data, not code: no other inline <script> may exist (CSP script-src 'self').
+      expect(html).not.toMatch(/<script(?![^>]*\bsrc=)(?![^>]*type="application\/json")[^>]*>/);
+      expect(html).toMatch(/<script type="module" src="[^"]*catalog[^"]*\.js"/);
+      expect(html).toContain(v.startsWith('it') ? 'Editor del catalogo' : 'Catalog editor');
+      const { findings } = await scan([join(dist, v)]);
+      expect(findings).toEqual([]);
+    },
+  );
+
   it('fails in a controlled way on an unsupported snapshot schemaVersion', async () => {
     const data = join(work, 'bad-data');
     await cp('fixtures/snapshots', data, { recursive: true });
     const idx = join(data, 'index.json');
     await writeFile(
       idx,
-      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.0"', '"schemaVersion": "9.0"'),
+      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.1"', '"schemaVersion": "9.0"'),
     );
     const out = join(work, 'dist-bad');
     await buildSite(data, out);

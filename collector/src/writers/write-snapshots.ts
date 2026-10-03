@@ -1,8 +1,11 @@
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
+  CatalogSnapshotSchema,
   PortfolioIndexSchema,
   ProjectSnapshotSchema,
+  type Catalog,
+  type CatalogSnapshot,
   type CollectionError,
   type PortfolioIndex,
   type ProjectSnapshot,
@@ -24,7 +27,30 @@ export class SnapshotValidationError extends Error {
  * Validates against the strict (allowlist) schemas, runs the sanitisation gate, then
  * serialises. Throws instead of writing anything that is not publishable.
  */
-export function serialise(index: PortfolioIndex, projects: ProjectSnapshot[]): Map<string, string> {
+/** catalog.json for the catalog editor: validated catalog + suggestions from collected data. */
+export function buildCatalogSnapshot(
+  catalog: Catalog,
+  index: PortfolioIndex,
+  projects: ProjectSnapshot[],
+): CatalogSnapshot {
+  return {
+    schemaVersion: index.schemaVersion,
+    generatedAt: index.generatedAt,
+    catalog,
+    suggestions: projects.map((p) => ({
+      projectId: p.project.id,
+      unmappedSubmodules: p.coordinator.submodules
+        .filter((s) => s.association === 'unmapped')
+        .map((s) => ({ path: s.path, repository: s.repository })),
+    })),
+  };
+}
+
+export function serialise(
+  index: PortfolioIndex,
+  projects: ProjectSnapshot[],
+  catalog?: Catalog,
+): Map<string, string> {
   const files = new Map<string, string>();
   const idx = PortfolioIndexSchema.safeParse(index);
   if (!idx.success)
@@ -42,6 +68,16 @@ export function serialise(index: PortfolioIndex, projects: ProjectSnapshot[]): M
       );
     }
     files.set(`projects/${p.project.id}.json`, `${JSON.stringify(parsed.data, null, 2)}\n`);
+  }
+  if (catalog) {
+    const parsed = CatalogSnapshotSchema.safeParse(buildCatalogSnapshot(catalog, index, projects));
+    if (!parsed.success) {
+      throw new SnapshotValidationError(
+        'catalog.json does not match the schema:',
+        formatIssues(parsed.error),
+      );
+    }
+    files.set('catalog.json', `${JSON.stringify(parsed.data, null, 2)}\n`);
   }
   for (const [name, text] of files) assertPublishable(text, name);
   return files;
@@ -124,8 +160,9 @@ export async function writeSnapshots(
   outDir: string,
   index: PortfolioIndex,
   projects: ProjectSnapshot[],
+  catalog?: Catalog,
 ): Promise<CollectionReport> {
-  const files = serialise(index, projects);
+  const files = serialise(index, projects, catalog);
   const report = buildReport(index, projects);
   const reportJson = `${JSON.stringify(report, null, 2)}\n`;
   const reportMd = reportMarkdown(report);

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Submodule SHA resolution: the SHA pinned by the coordinator is resolved to a component tag (verified version) or, when untagged, compared with the latest release (ahead / behind / diverged).
+- Per-component `versionSource` (`auto` | `submodule` | `manifest` | `release`) selecting the current version; drift now compares that version with the latest release.
+- Version checks for untagged pins (`version.untaggedSubmodule`) and manifest vs submodule mismatches (`version.manifestSubmoduleMismatch`).
+- Catalog editor page (`/catalog/`, `/it/catalog/`): select projects, coordinator, components, submodule links (suggested from unmapped submodules), workflows and controls; validates in the browser and generates `config/projects.yaml` to apply through a GitHub pull request.
+- Collector publishes `catalog.json` (validated catalog + link suggestions).
+
+### Changed
+
+- Snapshot `schemaVersion` 1.1 (new component fields).
+
 ## [0.1.0] - 2026-10-03
 
 ### Added

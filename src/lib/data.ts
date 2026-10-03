@@ -1,7 +1,13 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import type { PortfolioIndex, ProjectSnapshot } from '@model/index';
-import { validatePortfolio, validateProject, type DataError, type Loaded } from './validate';
+import type { CatalogSnapshot, PortfolioIndex, ProjectSnapshot } from '@model/index';
+import {
+  validateCatalogSnapshot,
+  validatePortfolio,
+  validateProject,
+  type DataError,
+  type Loaded,
+} from './validate';
 
 /*
  * Build-time snapshot loading. The browser never calls GitHub: pages are rendered from
@@ -58,4 +64,23 @@ function load(dir: string): Loaded<SiteData> {
     projects.push(res.data);
   }
   return { ok: true, data: { index: index.data, projects } };
+}
+
+let catalogCache: { dir: string; result: Loaded<CatalogSnapshot> } | null = null;
+
+/** Catalog published by the collector (catalog.json): the site never reads config/*.yaml. */
+export function loadCatalogSnapshot(): Loaded<CatalogSnapshot> {
+  const dir = dataDir();
+  if (catalogCache?.dir === dir) return catalogCache.result;
+  const text = readText(join(dir, 'catalog.json'));
+  const result: Loaded<CatalogSnapshot> =
+    text === null
+      ? { ok: false, error: { kind: 'missing', message: `no catalog.json found in ${dir}` } }
+      : validateCatalogSnapshot(text);
+  catalogCache = { dir, result };
+  if (!result.ok)
+    console.warn(
+      `[engineering-project-hub] catalog snapshot unavailable (${result.error.kind}): ${result.error.message}`,
+    );
+  return result;
 }

@@ -193,6 +193,37 @@ describe('GitHubProvider', () => {
     });
   });
 
+  it('lists tags with their commit SHA and compares base...head (counters only)', async () => {
+    const seen: string[] = [];
+    const p = provider(
+      {
+        '/repos/o/a/tags': {
+          status: 200,
+          body: [{ name: 'v1.2.0', commit: { sha: 'c'.repeat(40), url: 'x' }, zipball_url: 'x' }],
+        },
+        [`/repos/o/a/compare/v1.2.0...${'d'.repeat(40)}`]: {
+          status: 200,
+          body: {
+            status: 'ahead',
+            ahead_by: 3,
+            behind_by: 0,
+            total_commits: 3,
+            commits: [{ sha: 'secret-free' }],
+            files: [{ patch: 'diff' }],
+          },
+        },
+      },
+      seen,
+    );
+    expect(await p.listTags('o/a')).toEqual({
+      ok: true,
+      data: [{ name: 'v1.2.0', sha: 'c'.repeat(40) }],
+    });
+    const cmp = await p.compareCommits('o/a', 'v1.2.0', 'd'.repeat(40));
+    expect(cmp).toEqual({ ok: true, data: { status: 'ahead', aheadBy: 3, behindBy: 0 } });
+    expect(JSON.stringify(cmp)).not.toContain('diff');
+  });
+
   it('reads submodule refs and refuses non-submodule paths', async () => {
     const p = provider({
       '/repos/o/c/contents/services/api': {

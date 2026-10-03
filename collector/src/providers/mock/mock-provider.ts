@@ -7,6 +7,7 @@ import {
   type CodeScanningAlertDTO,
   type CodeScanningAnalysisDTO,
   type CommitRefDTO,
+  type CompareDTO,
   type DependabotAlertDTO,
   type FileDTO,
   type ProviderError,
@@ -32,6 +33,10 @@ export interface RepoFixture {
   head?: Omit<CommitRefDTO, 'htmlUrl'> | ErrorFixture;
   latestRelease?: ReleaseDTO | ErrorFixture;
   latestTag?: TagDTO | ErrorFixture;
+  /** Tags newest first; defaults to [latestTag] when absent. */
+  tags?: TagDTO[] | ErrorFixture;
+  /** Keyed by "base...head". */
+  comparisons?: Record<string, CompareDTO | ErrorFixture>;
   files?: Record<string, string | ErrorFixture>;
   submodules?: Record<string, string | ErrorFixture>;
   workflowRuns?: Record<string, WorkflowRunDTO[] | ErrorFixture>;
@@ -120,6 +125,18 @@ export class MockProvider implements SourceProvider {
 
   getLatestTag(repo: string) {
     return this.pick(repo, (f) => f.latestTag);
+  }
+
+  async listTags(repo: string): Promise<ProviderResult<TagDTO[]>> {
+    const f = await this.fixture(repo);
+    if (f && !isError(f.repository) && f.tags === undefined) {
+      return f.latestTag && !isError(f.latestTag) ? ok([f.latestTag]) : ok([]);
+    }
+    return this.pick(repo, (x) => x.tags);
+  }
+
+  compareCommits(repo: string, base: string, head: string) {
+    return this.pick(repo, (f) => f.comparisons?.[`${base}...${head}`]);
   }
 
   async getFile(repo: string, path: string): Promise<ProviderResult<FileDTO>> {

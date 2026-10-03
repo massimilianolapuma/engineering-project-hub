@@ -193,15 +193,15 @@ Create a GitHub App owned by the organisation and **install it only on the monit
 repositories**. Give it these **read-only** repository permissions. Names were checked
 against the GitHub documentation on 2026-10-03.
 
-| Permission (UI)        | API key                  | Used for                                                    |
-| ---------------------- | ------------------------ | ----------------------------------------------------------- |
-| Metadata               | `metadata`               | repository metadata, tags (mandatory, read-only)            |
-| Contents               | `contents`               | branch head, releases, `.gitmodules`, manifest, status file |
-| Actions                | `actions`                | workflow runs and jobs (also lists environments, if used)   |
-| Code scanning alerts   | `security_events`        | code scanning alerts and analyses                           |
-| Dependabot alerts      | `vulnerability_alerts`   | Dependabot alerts                                           |
-| Secret scanning alerts | `secret_scanning_alerts` | secret scanning alerts (fetched with `hide_secret=true`)    |
-| Deployments            | `deployments`            | _not used by the MVP_ (roadmap)                             |
+| Permission (UI)        | API key                  | Used for                                                                                               |
+| ---------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Metadata               | `metadata`               | repository metadata, tags (mandatory, read-only)                                                       |
+| Contents               | `contents`               | branch head, releases, `.gitmodules`, manifest, status file, commit compare (submodule SHA vs release) |
+| Actions                | `actions`                | workflow runs and jobs (also lists environments, if used)                                              |
+| Code scanning alerts   | `security_events`        | code scanning alerts and analyses                                                                      |
+| Dependabot alerts      | `vulnerability_alerts`   | Dependabot alerts                                                                                      |
+| Secret scanning alerts | `secret_scanning_alerts` | secret scanning alerts (fetched with `hide_secret=true`)                                               |
+| Deployments            | `deployments`            | _not used by the MVP_ (roadmap)                                                                        |
 
 Do not grant any write permission, or Environments, Pages or organisation permissions.
 Then add these repository **Actions secrets** to this repository: `GH_APP_ID`,

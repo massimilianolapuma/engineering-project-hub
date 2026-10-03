@@ -1,8 +1,10 @@
 import {
+  CatalogSnapshotSchema,
   PortfolioIndexSchema,
   ProjectSnapshotSchema,
   SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS,
   VersionProbeSchema,
+  type CatalogSnapshot,
   type PortfolioIndex,
   type ProjectSnapshot,
 } from '@model/index';
@@ -56,3 +58,5 @@ export const validatePortfolio = (text: string): Loaded<PortfolioIndex> =>
   validate(PortfolioIndexSchema, text);
 export const validateProject = (text: string): Loaded<ProjectSnapshot> =>
   validate(ProjectSnapshotSchema, text);
+export const validateCatalogSnapshot = (text: string): Loaded<CatalogSnapshot> =>
+  validate(CatalogSnapshotSchema, text);

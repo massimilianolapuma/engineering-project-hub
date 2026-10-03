@@ -40,6 +40,12 @@ export function useI18n(locale: Locale) {
       if (typeof params.dimension === 'string' && params.dimension in d.dimensions) {
         params.dimension = d.dimensions[params.dimension as keyof Dict['dimensions']];
       }
+      if (typeof params.source === 'string' && params.source in d.versionSource) {
+        params.source = d.versionSource[params.source as keyof Dict['versionSource']];
+      }
+      if (typeof params.status === 'string' && params.status in d.pinStatus) {
+        params.status = d.pinStatus[params.status as keyof Dict['pinStatus']];
+      }
       if (typeof params.control === 'string' && params.control in d.control) {
         params.control = d.control[params.control as keyof Dict['control']];
       }

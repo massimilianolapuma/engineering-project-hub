@@ -40,12 +40,14 @@ async function mockRun() {
 describe('mock collection', () => {
   it('reproduces the golden snapshots exactly', async () => {
     const result = await mockRun();
-    await writeSnapshots(out, result.index, result.projects);
+    const { catalog } = await loadConfig('config');
+    await writeSnapshots(out, result.index, result.projects, catalog);
     const golden = 'fixtures/snapshots';
     const files = [
       'index.json',
       'collection-report.json',
       'collection-report.md',
+      'catalog.json',
       ...(await readdir(join(golden, 'projects'))).map((f) => `projects/${f}`),
     ];
     for (const f of files) {
@@ -200,6 +202,8 @@ describe('sanitisation end to end', () => {
             message: `Bad credentials ${poison} Authorization: token abc`,
           }),
     getSubmoduleRef: async () => fail({ classification: 'not-found' }),
+    listTags: async () => ok([{ name: poison, sha: 'e'.repeat(40) }]),
+    compareCommits: async () => ok({ status: 'ahead', aheadBy: 1, behindBy: 0 }),
     listWorkflowRuns: async () =>
       ok([
         {
@@ -298,7 +302,7 @@ describe('sanitisation end to end', () => {
 describe('snapshot schema versions', () => {
   it('fails in a controlled way on an unsupported schemaVersion', async () => {
     const text = (await readFile('fixtures/snapshots/index.json', 'utf8')).replace(
-      '"schemaVersion": "1.0"',
+      '"schemaVersion": "1.1"',
       '"schemaVersion": "9.0"',
     );
     const r = validatePortfolio(text);
