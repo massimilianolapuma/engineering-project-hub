@@ -4,7 +4,7 @@
  * Only file names and pattern names are printed, never the matched value.
  * Usage: tsx scripts/scan-output.ts [dir...]   (default: dist public/data)
  */
-import { readdir, readFile, stat } from 'node:fs/promises';
+import { open, readdir } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import { findSecretPatterns, sensitiveEnvValues } from '../shared/security/patterns';
 
@@ -21,6 +21,7 @@ const TEXT_EXT = new Set([
   '.map',
   '.webmanifest',
 ]);
+export const MAX_SCAN_BYTES = 20 * 1024 * 1024;
 const FORBIDDEN_FILES = [/\.env(\..*)?$/, /\.pem$/, /\.key$/, /id_rsa/, /\.npmrc$/];
 
 async function* walk(dir: string): AsyncGenerator<string> {
@@ -45,9 +46,20 @@ export async function scan(dirs: string[]): Promise<{ files: number; findings: s
     for await (const file of walk(dir)) {
       if (FORBIDDEN_FILES.some((r) => r.test(file))) findings.push(`${file}: forbidden file type`);
       if (!TEXT_EXT.has(extname(file).toLowerCase())) continue;
-      if ((await stat(file)).size > 20 * 1024 * 1024) continue;
       files++;
-      const text = await readFile(file, 'utf8');
+      // One handle for both the size check and the read (no check-then-use race), and an
+      // oversized file is a finding: it must never escape the scan silently.
+      const handle = await open(file, 'r');
+      let text: string;
+      try {
+        if ((await handle.stat()).size > MAX_SCAN_BYTES) {
+          findings.push(`${file}: too large to scan (> ${MAX_SCAN_BYTES} bytes)`);
+          continue;
+        }
+        text = await handle.readFile('utf8');
+      } finally {
+        await handle.close();
+      }
       for (const name of findSecretPatterns(text)) findings.push(`${file}: ${name}`);
       if (envValues.some((v) => text.includes(v))) findings.push(`${file}: environment-credential`);
     }

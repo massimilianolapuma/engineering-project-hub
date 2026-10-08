@@ -15,7 +15,7 @@
 #   e2e             — Playwright smoke tests (Chromium) against the built site
 #   actionlint      — GitHub Actions workflow lint
 #   zizmor          — workflow security audit (SARIF → Code Scanning)
-#   trivy-fs        — vuln + misconfig + license filesystem scan (advisory,
+#   trivy-fs        — vuln + misconfig + secret filesystem scan (advisory,
 #                     SARIF → Code Scanning)
 #
 # Code scanning is free for public repositories, so zizmor and trivy-fs always
