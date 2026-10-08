@@ -142,7 +142,7 @@ jobs:
     permissions:
       contents: read
       id-token: write # Sigstore signing of the attestations (keyless, no secrets)
-      attestations: write # actions/attest-build-provenance + actions/attest-sbom
+      attestations: write # actions/attest-build-provenance + actions/attest (SBOM)
 
     steps:
       - name: Download site
@@ -163,7 +163,8 @@ jobs:
           subject-path: site.tar
 
       - name: Attest SBOM
-        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        # actions/attest-sbom is deprecated: actions/attest with sbom-path replaces it.
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: site.tar
           sbom-path: dist/sbom.cdx.json
