@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Repository hardening: secret scanning with push protection, CodeQL default setup (`javascript-typescript`, `actions`, extended queries), read-only default `GITHUB_TOKEN` without PR approval, mandatory SHA-pinned actions, `release-tags` ruleset protecting `v*` tags (documented in `docs/security.md`).
+- `scan-output`: no check-then-read race (one file handle) and files too large to scan are reported instead of silently skipped (CodeQL `js/file-system-race`).
+- Deploy: CycloneDX SBOM published at `/sbom.cdx.json`; build provenance and SBOM attestations for the exact deployed bundle (`gh attestation verify site.tar -R <owner>/<repo>`).
+- Trivy: license findings no longer uploaded to Code Scanning (not vulnerabilities, ~40 noise alerts); scanners now `vuln,misconfig,secret` (configurable).
+- Astro 7.3.6, typescript-eslint 8.71.1.
+
 ### Added
 
 - Repository discovery (`config/catalog.yaml`): the collector scans the configured owners (public repositories only while the site is public) and proposes coordinators (`.gitmodules`), monorepos (npm/yarn/pnpm workspaces, lerna, `go.work`, Cargo, turbo/nx) and single repositories, with their workflows. Proposals are published in `catalog.json` and never applied automatically.

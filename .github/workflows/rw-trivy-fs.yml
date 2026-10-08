@@ -50,13 +50,19 @@ on:
         description: 'Exit code when findings are reported (1 = fail the job, 0 = advisory)'
         type: string
         default: '1'
+      scanners:
+        description: >-
+          Comma-separated Trivy scanners. License findings are not vulnerabilities and flood
+          Code Scanning, so "license" is opt-in.
+        type: string
+        default: 'vuln,misconfig,secret'
 
 permissions:
   contents: read
 
 jobs:
   trivy-fs:
-    name: Trivy FS — vuln + misconfig + license
+    name: Trivy FS — vuln + misconfig + secret
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -67,6 +73,7 @@ jobs:
     env:
       TRIVY_SCAN_REF: ${{ inputs.scan-path }}
       TRIVY_SEVERITY: ${{ inputs.severity }}
+      TRIVY_SCANNERS: ${{ inputs.scanners }}
       TRIVY_EXIT_CODE: ${{ inputs.exit-code }}
 
     steps:
@@ -81,7 +88,7 @@ jobs:
         with:
           scan-type: fs
           scan-ref: ${{ env.TRIVY_SCAN_REF }}
-          scanners: 'vuln,misconfig,license'
+          scanners: ${{ env.TRIVY_SCANNERS }}
           severity: ${{ env.TRIVY_SEVERITY }}
           exit-code: ${{ env.TRIVY_EXIT_CODE }}
           sarif-output: 'trivy-results.sarif'
