@@ -7,48 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- Deploy: SBOM attestation uses `actions/attest` (`actions/attest-sbom` is deprecated).
-
-### Security
-
-- Repository hardening: secret scanning with push protection, CodeQL default setup (`javascript-typescript`, `actions`, extended queries), read-only default `GITHUB_TOKEN` without PR approval, mandatory SHA-pinned actions, `release-tags` ruleset protecting `v*` tags (documented in `docs/security.md`).
-- `scan-output`: no check-then-read race (one file handle) and files too large to scan are reported instead of silently skipped (CodeQL `js/file-system-race`).
-- Deploy: CycloneDX SBOM published at `/sbom.cdx.json`; build provenance and SBOM attestations for the exact deployed bundle (`gh attestation verify site.tar -R <owner>/<repo>`).
-- Trivy: license findings no longer uploaded to Code Scanning (not vulnerabilities, ~40 noise alerts); scanners now `vuln,misconfig,secret` (configurable).
-- Astro 7.3.6, typescript-eslint 8.71.1.
-
-### Added
-
-- Repository discovery (`config/catalog.yaml`): the collector scans the configured owners (public repositories only while the site is public) and proposes coordinators (`.gitmodules`), monorepos (npm/yarn/pnpm workspaces, lerna, `go.work`, Cargo, turbo/nx) and single repositories, with their workflows. Proposals are published in `catalog.json` and never applied automatically.
-- Catalog stored one file per project (`config/projects/<id>.yaml`); the legacy `config/projects.yaml` is still read. The catalog editor proposes changes as pull requests on GitHub (new / edit / delete file pages), so the saved configuration is restored on every run (ADR 0004).
-- Monorepo support: components with a `path` inside the coordinator repository, versions from prefixed tags (`releaseTagPrefix`), alerts attributed to components by file path, repository-level data evaluated once per repository. Single-repository projects (no components).
-- Demo: `platform` monorepo project and `docs-site` discovery proposal (synthetic).
-
-### Changed
-
-- Snapshot `schemaVersion` 1.2 (component `path`, discovery in `catalog.json`).
-
-### Fixed
-
-- Repositories that cannot be read (e.g. 404 from a wrong catalog) no longer turn their skipped calls into "workflow missing" or "status file missing": workflows, controls and the manifest are Unknown, so Delivery, Coverage and Overall are grey instead of amber. Skipped calls are not reported as extra errors and do not affect capability availability.
-
-### Added
-
-- Local, git-ignored catalog (`config.local/`) documented for collecting real repositories without committing their names to this public repository.
+## [0.2.0] - 2026-10-14
 
 ### Added
 
 - Submodule SHA resolution: the SHA pinned by the coordinator is resolved to a component tag (verified version) or, when untagged, compared with the latest release (ahead / behind / diverged).
-- Per-component `versionSource` (`auto` | `submodule` | `manifest` | `release`) selecting the current version; drift now compares that version with the latest release.
-- Version checks for untagged pins (`version.untaggedSubmodule`) and manifest vs submodule mismatches (`version.manifestSubmoduleMismatch`).
-- Catalog editor page (`/catalog/`, `/it/catalog/`): select projects, coordinator, components, submodule links (suggested from unmapped submodules), workflows and controls; validates in the browser and generates `config/projects.yaml` to apply through a GitHub pull request.
-- Collector publishes `catalog.json` (validated catalog + link suggestions).
+- Per-component `versionSource` (`auto` | `submodule` | `manifest` | `release`) selecting the current version; drift compares that version with the latest release. Version checks for untagged pins (`version.untaggedSubmodule`) and manifest vs submodule mismatches (`version.manifestSubmoduleMismatch`).
+- Catalog editor (`/catalog/`, `/it/catalog/`): edit projects, coordinator, components, submodule and monorepo links, workflows and controls; live validation in the browser; changes proposed as pull requests on GitHub (new / edit / delete file pages), no tokens in the browser.
+- Repository discovery (`config/catalog.yaml`): proposes coordinators (`.gitmodules`), monorepos (npm/yarn/pnpm workspaces, lerna, `go.work`, Cargo, turbo/nx) and single repositories with their workflows; public repositories only while the site is public; proposal-only, published in `catalog.json`.
+- Catalog stored one file per project (`config/projects/<id>.yaml`); the legacy `config/projects.yaml` is still read; every run restores the saved configuration (ADR 0004).
+- Monorepo support: components with a `path`, versions from prefixed tags (`releaseTagPrefix`), alerts attributed to components by file path, repository-level data evaluated once per repository; single-repository projects.
+- Local, git-ignored catalog (`config.local/`) for collecting real repositories without committing their names.
+- Demo: `platform` monorepo project and `docs-site` discovery proposal (synthetic).
 
 ### Changed
 
-- Snapshot `schemaVersion` 1.1 (new component fields).
+- Snapshot `schemaVersion` 1.2 (component pin, `versionSource`, effective version and `path`; discovery in `catalog.json`). Older snapshots are not read: they are regenerated on every run.
+- E2E tests build an isolated site from the golden snapshots and stop the preview server reliably.
+- Deploy: SBOM attestation uses `actions/attest` (`actions/attest-sbom` is deprecated).
+
+### Fixed
+
+- Repositories that cannot be read (e.g. 404 from a wrong catalog) no longer turn skipped calls into "workflow missing" or "status file missing": they are Unknown (or Not authorised), so health is grey instead of amber.
+- Pull-request runs from forks and `action_required` conclusions no longer affect the default-branch workflow state.
+
+### Security
+
+- Repository hardening: secret scanning with push protection, CodeQL default setup (`javascript-typescript`, `actions`, extended queries), read-only default `GITHUB_TOKEN` without PR approval, mandatory SHA-pinned actions, `release-tags` ruleset protecting `v*` tags, organisation 2FA (documented in `docs/security.md`).
+- `scan-output`: no check-then-read race, and files too large to scan are reported instead of silently skipped (CodeQL `js/file-system-race`).
+- Discovery: workspace pattern expansion from untrusted manifests is bounded (resource exhaustion).
+- Deploy: CycloneDX SBOM published at `/sbom.cdx.json`; build provenance and SBOM attestations for the exact deployed bundle, signed in an isolated job that never runs npm (`gh attestation verify site.tar -R <owner>/<repo>`).
+- Trivy: license findings no longer uploaded to Code Scanning; scanners `vuln,misconfig,secret`.
+- Astro 7.3.6, typescript-eslint 8.71.1.
 
 ## [0.1.0] - 2026-10-03
 
@@ -69,5 +59,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Read-only by design: no write calls, alert dismissals or workflow triggers. Secret scanning alerts are fetched with `hide_secret=true` and only the secret type is kept.
 - The public demo publishes synthetic mock data only.
 
-[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/massimilianolapuma/engineering-project-hub/releases/tag/v0.1.0
