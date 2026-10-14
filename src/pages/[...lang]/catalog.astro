@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { CONTROL_IDS } from '@model/index';
 import ErrorState from '../../components/ErrorState.astro';
 import Base from '../../layouts/Base.astro';
-import { githubRepoFromUrl, jsonForScript } from '../../lib/catalog-editor-core';
+import { catalogRepository, jsonForScript } from '../../lib/catalog-editor-core';
 import { loadCatalogSnapshot } from '../../lib/data';
 import { pageContext } from '../../lib/page';
 import { localeParams } from '../../lib/routes';
@@ -17,20 +17,22 @@ const c = d.catalogEditor;
 const catalog = loadCatalogSnapshot();
 
 /**
- * "owner/repo" of this portal's own repository, from package.json: the GitHub web editor links
- * (new / edit / delete a project file) are built from it. Hidden when unknown.
+ * "owner/repo" that holds the catalog (config/projects/*.yaml): the GitHub web editor links
+ * (new / edit / delete a project file) are built from it. CATALOG_REPOSITORY overrides it for
+ * deployments whose configuration lives in another (e.g. private deploy) repository; the
+ * default is this portal's own repository from package.json. Hidden when unknown.
  */
 function readGithubRepo(): string | null {
+  let url: string | undefined;
   try {
     const pkg = JSON.parse(readFileSync(resolve('package.json'), 'utf8')) as {
       repository?: string | { url?: string };
     };
-    return githubRepoFromUrl(
-      typeof pkg.repository === 'string' ? pkg.repository : pkg.repository?.url,
-    );
+    url = typeof pkg.repository === 'string' ? pkg.repository : pkg.repository?.url;
   } catch {
-    return null;
+    url = undefined;
   }
+  return catalogRepository(process.env.CATALOG_REPOSITORY, url);
 }
 const githubRepo = readGithubRepo();
 

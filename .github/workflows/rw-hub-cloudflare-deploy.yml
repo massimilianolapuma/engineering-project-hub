@@ -1,0 +1,280 @@
+# Reusable workflow — part of this repository's CI building blocks (rw-*).
+# ==============================================================================
+# Reusable — Engineering Project Hub: collect + build + deploy to Cloudflare Pages
+# ==============================================================================
+#
+# Purpose:  Runs the hub (this public repository, at a pinned ref) against the
+#           configuration of the CALLING repository — typically a private
+#           "deploy" repository holding the real catalog and the secrets — and
+#           publishes the site on Cloudflare Pages, protected by Cloudflare Access.
+#           Because everything runs in the caller's workflow run, artifacts,
+#           logs and job summaries inherit the caller's (private) visibility.
+#
+# Jobs (trust boundaries):
+#   collect — the ONLY job with GitHub read credentials (GitHub App / PAT):
+#             validate config → collect → validate snapshots → artifact
+#   build   — no secrets, no write permission: npm ci → astro build → SBOM →
+#             secret scan → artifact "site"
+#   deploy  — only the Cloudflare token: wrangler pages deploy (no hub code)
+#
+# Caller example (private deploy repository):
+#   jobs:
+#     hub:
+#       permissions:
+#         contents: read
+#       uses: massimilianolapuma/engineering-project-hub/.github/workflows/rw-hub-cloudflare-deploy.yml@<commit-sha> # vX.Y.Z
+#       with:
+#         hub-ref: <same commit-sha>
+#         cloudflare-account-id: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+#         cloudflare-project: engineering-project-hub
+#         site-url: https://hub.example.com
+#       secrets:
+#         GH_APP_ID: ${{ secrets.GH_APP_ID }}
+#         GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
+#         GH_APP_INSTALLATION_ID: ${{ secrets.GH_APP_INSTALLATION_ID }}
+#         CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+#
+# Cloudflare Access must cover the custom domain AND <project>.pages.dev and
+# *.<project>.pages.dev, otherwise the preview hostnames bypass the login
+# (see docs/operations.md → Protected hosting).
+#
+# Lint: actionlint .github/workflows/rw-hub-cloudflare-deploy.yml
+# ==============================================================================
+
+name: Reusable — Hub collect + build + Cloudflare Pages deploy [host]
+
+on:
+  workflow_call:
+    inputs:
+      hub-repository:
+        description: 'Repository with the hub code (owner/name)'
+        type: string
+        default: 'massimilianolapuma/engineering-project-hub'
+      hub-ref:
+        description: 'Commit SHA (recommended) or tag of the hub code to run'
+        type: string
+        required: true
+      config-path:
+        description: 'Directory of the catalog in the CALLING repository (catalog.yaml, projects/, policies.yaml)'
+        type: string
+        default: 'config'
+      cloudflare-account-id:
+        description: 'Cloudflare account id (not a secret)'
+        type: string
+        required: true
+      cloudflare-project:
+        description: 'Cloudflare Pages project name'
+        type: string
+        required: true
+      site-url:
+        description: 'Public URL of the protected site (e.g. https://hub.example.com)'
+        type: string
+        required: true
+      catalog-repository:
+        description: 'owner/name targeted by the catalog editor (default: the calling repository)'
+        type: string
+        default: ''
+      deploy-environment:
+        description: 'GitHub environment of the calling repository used by the deploy job'
+        type: string
+        default: 'production'
+    secrets:
+      GH_APP_ID:
+        required: false
+      GH_APP_PRIVATE_KEY:
+        required: false
+      GH_APP_INSTALLATION_ID:
+        required: false
+      GH_READ_TOKEN:
+        required: false
+      CLOUDFLARE_API_TOKEN:
+        required: true
+    outputs:
+      deployment-url:
+        description: 'URL printed by wrangler for this deployment'
+        value: ${{ jobs.deploy.outputs.deployment-url }}
+
+permissions:
+  contents: read
+
+jobs:
+  # ==========================================================================
+  # collect — the only job holding GitHub read credentials
+  # ==========================================================================
+  collect:
+    name: Collect
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read # checkout of the calling repository's configuration
+    defaults:
+      run:
+        shell: bash
+        working-directory: hub
+    steps:
+      # [template-injection] inputs mapped to env and validated before any use.
+      - name: Validate inputs
+        working-directory: .
+        env:
+          HUB_REF: ${{ inputs.hub-ref }}
+          CONFIG_PATH: ${{ inputs.config-path }}
+        run: |
+          [[ "$HUB_REF" =~ ^[A-Za-z0-9._/-]+$ ]] || { echo "::error::invalid hub-ref"; exit 1; }
+          [[ "$CONFIG_PATH" =~ ^[A-Za-z0-9._/-]+$ && "$CONFIG_PATH" != *..* ]] || { echo "::error::invalid config-path"; exit 1; }
+
+      - name: Checkout hub
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ inputs.hub-repository }}
+          ref: ${{ inputs.hub-ref }}
+          path: hub
+          persist-credentials: false
+
+      - name: Checkout configuration (calling repository)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: deploy
+          sparse-checkout: ${{ inputs.config-path }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: hub/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate configuration
+        env:
+          CONFIG_DIR: ${{ github.workspace }}/deploy/${{ inputs.config-path }}
+        run: npx tsx scripts/validate-config.ts "$CONFIG_DIR"
+
+      # Credentials only in this step's environment.
+      - name: Collect
+        env:
+          DATA_SOURCE: github
+          CONFIG_DIR: ${{ github.workspace }}/deploy/${{ inputs.config-path }}
+          GH_APP_ID: ${{ secrets.GH_APP_ID }}
+          GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          GH_APP_INSTALLATION_ID: ${{ secrets.GH_APP_INSTALLATION_ID }}
+          GH_READ_TOKEN: ${{ secrets.GH_READ_TOKEN }}
+        run: npx tsx collector/src/index.ts --source github --config "$CONFIG_DIR" --out public/data
+
+      - name: Validate snapshots
+        run: npm run validate:snapshots
+
+      - name: Job summary
+        run: cat public/data/collection-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload snapshots
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: snapshots
+          path: hub/public/data
+          retention-days: 7
+          if-no-files-found: error
+
+  # ==========================================================================
+  # build — no secrets, no write permission
+  # ==========================================================================
+  build:
+    name: Build site
+    needs: collect
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+        working-directory: hub
+    steps:
+      - name: Checkout hub
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ inputs.hub-repository }}
+          ref: ${{ inputs.hub-ref }}
+          path: hub
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: hub/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download snapshots
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: snapshots
+          path: hub/public/data
+
+      - name: Build site
+        env:
+          # [template-injection] inputs mapped to env vars — never inline in run:
+          SITE_URL: ${{ inputs.site-url }}
+          BASE_PATH: /
+          CATALOG_REPOSITORY: ${{ inputs.catalog-repository != '' && inputs.catalog-repository || github.repository }}
+        run: npm run build:site
+
+      - name: Generate SBOM (CycloneDX)
+        run: npm sbom --sbom-format cyclonedx --omit dev --package-lock-only > dist/sbom.cdx.json
+
+      - name: Scan output for secrets
+        run: npm run scan:output
+
+      - name: Upload site
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: site
+          path: hub/dist
+          retention-days: 1
+          if-no-files-found: error
+
+  # ==========================================================================
+  # deploy — only the Cloudflare token; no hub code is executed here
+  # ==========================================================================
+  deploy:
+    name: Deploy to Cloudflare Pages
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: ${{ inputs.deploy-environment }}
+    permissions:
+      contents: read
+    outputs:
+      deployment-url: ${{ steps.deploy.outputs.deployment-url }}
+    steps:
+      - name: Validate inputs
+        shell: bash
+        env:
+          CF_PROJECT: ${{ inputs.cloudflare-project }}
+          CF_ACCOUNT: ${{ inputs.cloudflare-account-id }}
+          HUB_REF: ${{ inputs.hub-ref }}
+        run: |
+          [[ "$CF_PROJECT" =~ ^[a-z0-9][a-z0-9-]{0,57}$ ]] || { echo "::error::invalid cloudflare-project"; exit 1; }
+          [[ "$CF_ACCOUNT" =~ ^[0-9a-f]{32}$ ]] || { echo "::error::invalid cloudflare-account-id"; exit 1; }
+          [[ "$HUB_REF" =~ ^[A-Za-z0-9._/-]+$ ]] || { echo "::error::invalid hub-ref"; exit 1; }
+
+      - name: Download site
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: site
+          path: dist
+
+      # Inputs validated above; wrangler version pinned.
+      - name: Deploy
+        id: deploy
+        uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4.1.3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ inputs.cloudflare-account-id }}
+          wranglerVersion: '4.151.0'
+          command: pages deploy dist --project-name=${{ inputs.cloudflare-project }} --branch=main --commit-dirty=true

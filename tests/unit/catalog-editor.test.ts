@@ -5,6 +5,7 @@ import { CatalogSchema, CatalogSnapshotSchema, ProjectConfigSchema } from '@mode
 import {
   MAX_GITHUB_URL_LENGTH,
   addSuggestedComponent,
+  catalogRepository,
   catalogToYaml,
   emptyComponent,
   emptyProject,
@@ -171,6 +172,16 @@ describe('catalog editor: saving through GitHub', () => {
     expect(githubRepoFromUrl('git@github.com:acme/hub.git')).toBe('acme/hub');
     expect(githubRepoFromUrl('https://gitlab.com/acme/hub')).toBeNull();
     expect(githubRepoFromUrl(undefined)).toBeNull();
+  });
+
+  it('lets CATALOG_REPOSITORY override the catalog repository (separate deploy repository)', () => {
+    const pkg = 'git+https://github.com/acme/hub.git';
+    expect(catalogRepository(undefined, pkg)).toBe('acme/hub');
+    expect(catalogRepository('  ', pkg)).toBe('acme/hub');
+    expect(catalogRepository('acme/hub-deploy', pkg)).toBe('acme/hub-deploy');
+    // An invalid override hides the links instead of pointing at the wrong repository.
+    expect(catalogRepository('acme/hub/../x', pkg)).toBeNull();
+    expect(catalogRepository('https://evil.example/acme', pkg)).toBeNull();
   });
 
   it('builds the prefilled new-file URL of config/projects/<id>.yaml', () => {

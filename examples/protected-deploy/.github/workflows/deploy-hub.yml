@@ -1,0 +1,40 @@
+# Template for a PRIVATE deploy repository (e.g. <owner>/engineering-project-hub-deploy).
+# Copy it to .github/workflows/deploy-hub.yml of that repository, together with its
+# config/ directory (catalog.yaml, projects/, policies.yaml with audience: restricted).
+# Guide: https://github.com/massimilianolapuma/engineering-project-hub/blob/main/docs/protected-hosting.md
+#
+# Replace HUB_SHA (both occurrences) with the commit SHA of a hub release tag:
+#   gh api repos/massimilianolapuma/engineering-project-hub/commits/vX.Y.Z --jq .sha
+
+name: Deploy — Engineering Project Hub (protected)
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  push:
+    branches: [main]
+    paths: ['config/**', '.github/workflows/deploy-hub.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-hub
+  cancel-in-progress: false
+
+jobs:
+  hub:
+    permissions:
+      contents: read
+    uses: massimilianolapuma/engineering-project-hub/.github/workflows/rw-hub-cloudflare-deploy.yml@HUB_SHA # vX.Y.Z
+    with:
+      hub-ref: HUB_SHA
+      cloudflare-account-id: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      cloudflare-project: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+      site-url: ${{ vars.HUB_SITE_URL }}
+    secrets:
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
+      GH_APP_INSTALLATION_ID: ${{ secrets.GH_APP_INSTALLATION_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

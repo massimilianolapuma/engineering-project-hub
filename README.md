@@ -254,6 +254,12 @@ which authentication mode was used.
 > still published. Read [docs/security.md](docs/security.md) before pointing the collector
 > at private repositories.
 
+**Real data behind a login.** To publish real (also private) repositories, serve the portal
+from Cloudflare Pages behind Cloudflare Access (GitHub login) with a private deploy
+repository calling `rw-hub-cloudflare-deploy.yml`: see
+[docs/protected-hosting.md](docs/protected-hosting.md). There, `public/_headers` also sets
+the HTTP security headers GitHub Pages cannot (`frame-ancestors`, HSTS, …).
+
 ## CI/CD workflows
 
 The callers are built on reusable `rw-*` building blocks in this repository
