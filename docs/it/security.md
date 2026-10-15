@@ -123,6 +123,7 @@ accessi) richiedono GitHub Enterprise Cloud. **Verifica il tuo piano effettivo.*
 | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | I repository monitorati sono pubblici                         | `audience: public` va bene.                                                                                                                                                                       |
 | Alcuni repository monitorati sono privati, la Page è pubblica | Mantieni `audience: public` (dettagli omessi). Ricorda che nomi dei repository, conteggi, stati e versioni vengono comunque pubblicati. Se anche questo è riservato, non usare una Page pubblica. |
+| Dati reali dietro login (consigliato)                         | Cloudflare Pages + Access con un repository di deploy privato: [protected-hosting.md](protected-hosting.md). `audience: restricted`; header HTTP di sicurezza da `public/_headers`.               |
 | Page con controllo degli accessi (Pages private)              | `audience: restricted` è accettabile. Chiunque possa aprire il sito vede i dettagli di tutti i progetti, quindi il portale **non applica alcuna autorizzazione per progetto o per alert**.        |
 
 **Portale riservato e vista sanitizzata.** Un portale riservato mostra il dettaglio

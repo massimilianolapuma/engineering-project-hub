@@ -120,6 +120,7 @@ repository is private. Private (access-controlled) Pages need GitHub Enterprise 
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Monitored repositories are public                    | `audience: public` is fine.                                                                                                                                                          |
 | Some monitored repositories are private, Page public | Keep `audience: public` (details withheld). Remember that repository names, counts, states and versions are still published. If even that is confidential, do not use a public Page. |
+| Real data behind a login (recommended)               | Cloudflare Pages + Access with a private deploy repository: [protected-hosting.md](protected-hosting.md). `audience: restricted`; HTTP security headers from `public/_headers`.      |
 | Page access-controlled (private Pages)               | `audience: restricted` is acceptable. Everyone who can open the site sees every project's details, so the portal applies **no per-project or per-alert authorisation**.              |
 
 **Restricted portal and sanitised view.** A restricted portal shows full sanitised detail

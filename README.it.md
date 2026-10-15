@@ -266,6 +266,12 @@ e su richiesta.
 > comunque pubblicati. Leggi [docs/it/security.md](docs/it/security.md) prima di puntare il
 > collector su repository privati.
 
+**Dati reali dietro login.** Per pubblicare repository reali (anche privati), servi il
+portale da Cloudflare Pages dietro Cloudflare Access (login GitHub), con un repository di
+deploy privato che chiama `rw-hub-cloudflare-deploy.yml`: vedi
+[docs/it/protected-hosting.md](docs/it/protected-hosting.md). Lì `public/_headers` imposta
+anche gli header HTTP di sicurezza che GitHub Pages non consente (`frame-ancestors`, HSTS, …).
+
 ## Workflow CI/CD
 
 I workflow chiamanti usano i mattoni riusabili `rw-*` di questo repository (qualità Node,

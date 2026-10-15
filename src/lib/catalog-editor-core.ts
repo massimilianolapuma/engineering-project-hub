@@ -445,6 +445,20 @@ export function githubRepoFromUrl(url: string | undefined | null): string | null
   return m ? `${m[1]}/${m[2]}` : null;
 }
 
+/**
+ * Repository holding the catalog: an explicit "owner/repo" override (CATALOG_REPOSITORY, used
+ * when the configuration lives in a separate deploy repository) wins; an invalid override
+ * disables the GitHub links instead of falling back silently.
+ */
+export function catalogRepository(
+  override: string | undefined | null,
+  packageRepositoryUrl: string | undefined | null,
+): string | null {
+  const o = override?.trim();
+  if (o) return /^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/.test(o) ? o : null;
+  return githubRepoFromUrl(packageRepositoryUrl);
+}
+
 /* ---------- Saving: one file per project, proposed through the GitHub web editor ---------- */
 
 export const PROJECTS_DIR = 'config/projects';
