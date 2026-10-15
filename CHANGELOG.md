@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-15
+
 ### Added
 
 - Protected hosting: reusable `rw-hub-cloudflare-deploy.yml` (collect → build → Cloudflare Pages deploy, same trust boundaries as `deploy-pages.yml`) to run the hub from a private deploy repository with the real catalog, behind Cloudflare Access; only the commit of a protected `v*` release tag is accepted as `hub-ref` (CodeQL `actions/untrusted-checkout`); caller template in `examples/protected-deploy/`; guide in `docs/protected-hosting.md` (EN/IT).
@@ -69,6 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Read-only by design: no write calls, alert dismissals or workflow triggers. Secret scanning alerts are fetched with `hide_secret=true` and only the secret type is kept.
 - The public demo publishes synthetic mock data only.
 
-[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/massimilianolapuma/engineering-project-hub/releases/tag/v0.1.0
