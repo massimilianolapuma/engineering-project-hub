@@ -38,6 +38,10 @@ flowchart LR
 - Il **repository di deploy privato** contiene il catalogo reale, i secret e il workflow
   che chiama `rw-hub-cloudflare-deploy.yml`. L'esecuzione avviene nel chiamante, quindi
   log, riepiloghi e artifact (snapshot con nomi reali) sono privati.
+- Gira solo codice dell'hub **rilasciato**: un primo job senza permessi rifiuta qualsiasi
+  `hub-ref` che non sia lo SHA completo del commit di un tag di release `v*` (tag protetti
+  dal ruleset `release-tags`), quindi un branch o un commit arbitrario non gira mai accanto
+  alle credenziali.
 - I job mantengono i confini di fiducia di `deploy-pages.yml`: credenziali GitHub solo in
   `collect`, nessun secret in `build`, solo il token Cloudflare in `deploy` (che non esegue
   codice dell'hub).

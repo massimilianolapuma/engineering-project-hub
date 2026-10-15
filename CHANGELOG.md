@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Protected hosting: reusable `rw-hub-cloudflare-deploy.yml` (collect → build → Cloudflare Pages deploy, same trust boundaries as `deploy-pages.yml`) to run the hub from a private deploy repository with the real catalog, behind Cloudflare Access; caller template in `examples/protected-deploy/`; guide in `docs/protected-hosting.md` (EN/IT).
+- Protected hosting: reusable `rw-hub-cloudflare-deploy.yml` (collect → build → Cloudflare Pages deploy, same trust boundaries as `deploy-pages.yml`) to run the hub from a private deploy repository with the real catalog, behind Cloudflare Access; only the commit of a protected `v*` release tag is accepted as `hub-ref` (CodeQL `actions/untrusted-checkout`); caller template in `examples/protected-deploy/`; guide in `docs/protected-hosting.md` (EN/IT).
 - `public/_headers`: HTTP security headers (CSP with `frame-ancestors 'none'`, `X-Frame-Options`, HSTS, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, COOP/CORP) and `no-store` for `/data/*` on hosts that honour it (ignored by GitHub Pages).
 - `CATALOG_REPOSITORY` build variable: the catalog editor targets the repository that holds the configuration.
 
