@@ -106,7 +106,7 @@ jobs:
   # ==========================================================================
   verify:
     name: Verify hub release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions: {}
     outputs:
@@ -145,7 +145,7 @@ jobs:
   collect:
     name: Collect
     needs: verify
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       contents: read # checkout of the calling repository's configuration
@@ -215,7 +215,7 @@ jobs:
   build:
     name: Build site
     needs: [verify, collect]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       contents: read
@@ -276,7 +276,7 @@ jobs:
   deploy:
     name: Deploy to Cloudflare Pages
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     environment: ${{ inputs.deploy-environment }}
     permissions:

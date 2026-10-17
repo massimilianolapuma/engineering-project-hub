@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- CI and deploy workflows (including `rw-hub-cloudflare-deploy.yml`) run on `ubuntu-24.04` instead of `ubuntu-latest`, which moves to Ubuntu 26.04 on 19 October 2026.
+
 ## [0.3.0] - 2026-10-15
 
 ### Added
