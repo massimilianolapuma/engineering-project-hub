@@ -121,7 +121,7 @@ jobs:
   # ==========================================================================
   build:
     name: Pages — build artifact
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       contents: read # actions/checkout (internal build)
@@ -242,7 +242,7 @@ jobs:
   deploy:
     name: Pages — deploy
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
       contents: read

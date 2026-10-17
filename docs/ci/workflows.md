@@ -5,9 +5,11 @@
 
 CI/CD is built from small **reusable workflows** (`.github/workflows/rw-*.yml`) and
 **composite actions** (`.github/actions/*`), called by three project workflows: `ci.yml`,
-`collect-data.yml` and `deploy-pages.yml`. All jobs run on GitHub-hosted runners
-(`ubuntu-latest`). Workflows suffixed `-host` install their tools directly on the runner
-(tool cache) instead of using a job container.
+`collect-data.yml` and `deploy-pages.yml`. All jobs run on GitHub-hosted runners pinned
+to `ubuntu-24.04` (not `ubuntu-latest`, which moves to Ubuntu 26.04 from 19 October 2026:
+move the pin only after a green CI and deploy run on the new image). Workflows suffixed
+`-host` install their tools directly on the runner (tool cache) instead of using a job
+container.
 
 Conventions shared by every file:
 
@@ -66,7 +68,7 @@ zizmor --offline .github/
 # Run CI jobs with nektos/act, using podman as the container engine
 podman machine start                       # macOS: start the podman VM once
 export DOCKER_HOST="unix://$(podman machine inspect --format '{{.ConnectionInfo.PodmanSocket.Path}}')"
-ACT_OPTS=(--container-daemon-socket - -P ubuntu-latest=catthehacker/ubuntu:act-latest)
+ACT_OPTS=(--container-daemon-socket - -P ubuntu-24.04=catthehacker/ubuntu:act-24.04)
 act pull_request --workflows .github/workflows/ci.yml -j node-quality "${ACT_OPTS[@]}"
 act pull_request --workflows .github/workflows/ci.yml -j build-test "${ACT_OPTS[@]}" \
   --env TMPDIR="$PWD/.astro"
