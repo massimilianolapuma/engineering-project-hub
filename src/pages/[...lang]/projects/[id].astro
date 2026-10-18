@@ -399,7 +399,7 @@ const kindLabel = !s
                     {c.required ? d.securityPage.required : d.securityPage.optional}
                   </span>
                 </span>
-                <Pill tone={controlTone(c.state)} label={d.controlState[c.state]} />
+                <Pill tone={controlTone(c.state, c.required)} label={d.controlState[c.state]} />
               </li>
             ))}
           </ul>

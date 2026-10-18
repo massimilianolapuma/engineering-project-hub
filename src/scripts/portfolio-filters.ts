@@ -56,7 +56,18 @@ if (form && tbody) {
         .replace('{shown}', String(shown))
         .replace('{total}', String(rows.length));
     if (empty) empty.hidden = shown > 0;
+    for (const b of counts)
+      b.setAttribute('aria-pressed', String(b.dataset.healthFilter === health));
   };
+  // The status counts above the sheet are shortcuts for the Overall health filter.
+  const counts = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-health-filter]'));
+  const healthSelect = form.elements.namedItem('health') as HTMLSelectElement | null;
+  for (const b of counts)
+    b.addEventListener('click', () => {
+      if (!healthSelect) return;
+      healthSelect.value = b.dataset.healthFilter ?? '';
+      apply();
+    });
   form.addEventListener('input', apply);
   form.addEventListener('change', apply);
   form.addEventListener('submit', (e) => e.preventDefault());

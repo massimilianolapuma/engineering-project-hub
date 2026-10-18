@@ -200,7 +200,10 @@ const componentName = (pid: string, cid: string) =>
                         return (
                           <td data-label={d.control[c]}>
                             {x ? (
-                              <Pill tone={controlTone(x.state)} label={d.controlState[x.state]} />
+                              <Pill
+                                tone={controlTone(x.state, x.required)}
+                                label={d.controlState[x.state]}
+                              />
                             ) : (
                               d.common.unknownValue
                             )}
@@ -238,7 +241,10 @@ const componentName = (pid: string, cid: string) =>
                   .map((c) => (
                     <li>
                       <code>{rc.repository}</code> · {d.control[c.control]}{' '}
-                      <Pill tone={controlTone(c.state)} label={d.controlState[c.state]} />
+                      <Pill
+                        tone={controlTone(c.state, c.required)}
+                        label={d.controlState[c.state]}
+                      />
                     </li>
                   )),
               ),

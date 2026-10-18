@@ -238,3 +238,10 @@ config.local/
 
 # Local Cloudflare wrangler / miniflare state
 .wrangler/
+
+# Impeccable working files (decision sketches, review captures, live mode)
+.impeccable/mocks/
+.impeccable/review/
+.impeccable/live/
+.impeccable/questions/
+.impeccable/hook.cache.json

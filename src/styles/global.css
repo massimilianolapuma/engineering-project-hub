@@ -6,11 +6,22 @@
 html {
   font-family: var(--font-sans);
   font-size: 100%;
-  font-weight: 450;
+  font-weight: 400;
   line-height: 1.5;
   background: var(--bg);
   color: var(--text);
   -webkit-text-size-adjust: 100%;
+  accent-color: var(--primary);
+  caret-color: var(--primary);
+  scrollbar-color: var(--border-strong) transparent;
+}
+::selection {
+  background: color-mix(in srgb, var(--primary) 22%, var(--surface));
+  color: var(--text);
+}
+::placeholder {
+  color: var(--text-tertiary);
+  opacity: 1;
 }
 body {
   margin: 0;
@@ -43,11 +54,13 @@ a {
   text-underline-offset: 2px;
 }
 code,
+.env__version {
+  font-family: var(--font-mono);
+}
 .count,
 .kpi__value,
-.env__version,
 .reltime {
-  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 code {
   font-size: 0.85em;
@@ -137,18 +150,20 @@ code.sub {
 .mainnav a {
   display: block;
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius);
-  color: var(--text);
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
   text-decoration: none;
   font-size: var(--fs-sm);
+  font-weight: 500;
 }
 .mainnav a:hover {
-  background: var(--surface-2);
+  color: var(--text);
+  border-bottom-color: var(--border-strong);
 }
 .mainnav a[aria-current='page'] {
-  background: var(--accent-bg);
-  color: var(--primary);
-  font-weight: 600;
+  color: var(--text);
+  border-bottom-color: var(--frame);
+  font-weight: 700;
 }
 .topbar__tools {
   margin-left: auto;
@@ -287,12 +302,28 @@ main section {
 .icon--info {
   color: var(--info);
 }
+.icon--blind {
+  color: var(--amber-icon);
+}
+.icon--sev-critical {
+  color: var(--red);
+}
+.icon--sev-high {
+  color: var(--sev-high);
+}
+.icon--sev-medium {
+  color: var(--amber-icon);
+}
+.icon--sev-low,
+.icon--sev-unknown {
+  color: var(--grey);
+}
 .badge,
 .pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   font-weight: 600;
   white-space: nowrap;
   line-height: 1.2;
@@ -330,7 +361,7 @@ main section {
   border-color: color-mix(in srgb, var(--green) 35%, transparent);
 }
 .badge--grey {
-  background: var(--grey-bg);
+  background: var(--surface);
   color: var(--grey);
   border-style: dashed;
   border-color: var(--grey);
@@ -345,6 +376,25 @@ main section {
 }
 .pill--muted {
   color: var(--text-muted);
+}
+/* Blind spot: a required control the collector cannot see. A hatched icon on plain sheet
+   white with a solid ochre edge, so it is never calmer than an optional gap. */
+.pill--blind {
+  background: var(--surface);
+  border-color: var(--amber-icon);
+  font-weight: 600;
+}
+.pill--grey {
+  background: var(--surface);
+  border-style: dashed;
+  border-color: var(--grey);
+}
+.pill--sev-critical {
+  border-color: color-mix(in srgb, var(--red) 45%, var(--border));
+  font-weight: 600;
+}
+.pill--sev-high {
+  border-color: color-mix(in srgb, var(--sev-high) 40%, var(--border));
 }
 .tag {
   display: inline-block;
@@ -398,25 +448,11 @@ main section {
 .kpi {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-left: 4px solid var(--border);
   border-radius: var(--radius);
   padding: var(--space-3) var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-}
-.kpi--red {
-  border-left-color: var(--red);
-}
-.kpi--amber {
-  border-left-color: var(--amber-icon);
-}
-.kpi--green {
-  border-left-color: var(--green);
-}
-.kpi--grey {
-  border-left-color: var(--grey);
-  border-left-style: dashed;
 }
 .kpi__value {
   font-size: var(--fs-xl);
@@ -475,10 +511,17 @@ select {
   border-radius: var(--radius-lg);
   background: var(--surface);
 }
+/* A table inside a card is part of the card, not a second box. */
+.card .table-wrap {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
 .table {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
 }
 .table th,
 .table td {
@@ -491,8 +534,9 @@ select {
   background: var(--surface-2);
   font-size: var(--fs-xs);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: var(--tracking-ref);
   color: var(--text-muted);
+  font-weight: 600;
 }
 .table tbody tr:hover {
   background: var(--surface-hover);
@@ -516,7 +560,7 @@ select {
   min-width: 140px;
 }
 .row--muted {
-  opacity: 0.7;
+  color: var(--text-muted);
 }
 .project-link {
   font-weight: 700;
@@ -547,31 +591,35 @@ select {
 .tile {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-top: 4px solid var(--border);
   border-radius: var(--radius-lg);
   padding: var(--space-3) var(--space-4);
 }
+/* Tiles are inked like sheet cells: the status tints the ground, never a coloured edge. */
 .tile--red {
-  border-top-color: var(--red);
+  background: var(--red-bg);
+  border-color: color-mix(in srgb, var(--red) 30%, var(--border));
 }
 .tile--amber {
-  border-top-color: var(--amber-icon);
+  background: var(--amber-bg);
+  border-color: color-mix(in srgb, var(--amber) 30%, var(--border));
 }
 .tile--green {
-  border-top-color: var(--green);
+  background: var(--green-bg);
+  border-color: color-mix(in srgb, var(--green) 25%, var(--border));
 }
 .tile--grey {
-  border-top-color: var(--grey);
-  border-top-style: dashed;
+  background: var(--hatch), var(--surface);
+  border-style: dashed;
+  border-color: var(--grey);
 }
 .tile--overall {
   grid-column: 1 / -1;
 }
 .tile__title {
-  font-size: var(--fs-sm);
+  font-size: var(--fs-xs);
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--tracking-ref);
 }
 .tile__metric {
   font-size: var(--fs-lg);
@@ -1358,10 +1406,11 @@ a.btn--primary:hover {
 .ce-flow {
   margin: 0 0 var(--space-3);
   padding: var(--space-2) var(--space-3);
-  border-left: 3px solid var(--info);
+  border: 1px solid color-mix(in srgb, var(--info) 35%, var(--border));
   border-radius: var(--radius-sm);
   background: var(--info-bg);
   font-size: var(--fs-sm);
+  max-width: 75ch;
 }
 .ce-merge {
   border-color: color-mix(in srgb, var(--info) 45%, var(--border));
@@ -1376,4 +1425,436 @@ a.btn--primary:hover {
 }
 .ce-legacy .note {
   margin: var(--space-1) 0 var(--space-3);
+}
+
+/* ==========================================================================
+   Survey sheet — the portfolio as a surveyed map sheet (direction contract in
+   .impeccable/surfaces/). Grid letters are dimensions, row numbers projects.
+   ========================================================================== */
+.sheet-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-5);
+  margin-bottom: var(--space-3);
+}
+.sheet-title h1 {
+  margin: 0;
+}
+.sheet-title__lead {
+  margin: var(--space-1) 0 0;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-3);
+}
+.filters-row .filters {
+  flex: 1 1 640px;
+}
+.filters-row .results {
+  margin: 0;
+  padding-bottom: var(--space-2);
+}
+.sheet-head {
+  margin: 0 0 var(--space-2);
+  padding-bottom: var(--space-1);
+  border-bottom: 1px solid var(--frame);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-ref);
+  color: var(--frame);
+}
+.page-head--sheet {
+  margin-bottom: var(--space-4);
+}
+.sheet-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.sheet-count {
+  font: inherit;
+  font-size: var(--fs-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: var(--space-1) var(--space-3);
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.sheet-count:hover {
+  border-color: var(--border-strong);
+}
+.sheet-count[aria-pressed='true'] {
+  border-color: var(--frame);
+  background: var(--surface-2);
+  box-shadow: inset 0 -2px 0 var(--frame);
+  font-weight: 600;
+}
+.sheet-count__value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 1ch;
+}
+.filters--sheet {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.filters__more {
+  align-self: center;
+  font-size: var(--fs-sm);
+}
+.filters__more summary {
+  cursor: pointer;
+  color: var(--link);
+  padding: var(--space-2) 0;
+}
+.filters__more[open] {
+  flex-basis: 100%;
+}
+.filters__more-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.sheet-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--space-5);
+  align-items: start;
+}
+.sheet {
+  background: var(--surface);
+  border: 1px solid var(--frame);
+  outline: 1px solid var(--frame);
+  outline-offset: 3px;
+  margin: 4px;
+}
+.sheet__bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+}
+.sheet__foot {
+  border-top: 1px solid var(--frame);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-ref);
+  color: var(--frame);
+}
+.sheet__foot .reltime {
+  font-family: inherit;
+}
+.sheet__scroll {
+  overflow-x: auto;
+}
+.sheet .empty {
+  padding: var(--space-4);
+  margin: 0;
+}
+.table--sheet th,
+.table--sheet td {
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+.table--sheet th:last-child,
+.table--sheet td:last-child {
+  border-right: 0;
+}
+.table--sheet thead th {
+  background: var(--surface);
+  border-bottom-color: var(--frame);
+}
+.sheet__refs td {
+  padding: 2px var(--space-3);
+  text-align: center;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-ref);
+  color: var(--frame);
+  background: var(--surface-2);
+}
+.table--sheet tbody th[scope='row'] {
+  position: relative;
+  min-width: 176px;
+  padding-left: calc(28px + var(--space-3));
+  background: var(--surface);
+}
+.sheet__rowref {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--frame);
+  background: var(--surface-2);
+  border-right: 1px solid var(--border);
+}
+.table--sheet tbody th[scope='row'] .sub {
+  margin-top: 2px;
+}
+.sheet__col-project {
+  width: 15%;
+}
+.sheet__col-overall {
+  width: 17%;
+}
+.sheet__cell {
+  min-width: 120px;
+  overflow-wrap: anywhere;
+  padding: var(--space-2) var(--space-3) var(--space-3);
+}
+.sheet__cellhead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+/* Column A leads: wider, set off from B–F by an ink rule, one step larger. */
+.table--sheet .sheet__overall {
+  border-right: 2px solid var(--text);
+}
+.table--sheet thead th.sheet__overall {
+  color: var(--text);
+}
+.sheet__overall .sheet__reason {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+.sheet__cell > * + * {
+  margin-top: var(--space-1);
+}
+.sheet__cell--red {
+  background: var(--red-bg);
+}
+.sheet__cell--amber {
+  background: var(--amber-bg);
+}
+.sheet__cell--green {
+  background: var(--green-bg);
+}
+.sheet__cell--grey {
+  background: var(--hatch), var(--surface);
+}
+/* The Overall cell of an all-unknown row joins the void; its text sits on a sheet-white plate. */
+.sheet__cell--void {
+  background: var(--hatch-void);
+}
+.sheet__plate {
+  display: block;
+  padding: var(--space-2);
+  background: var(--surface);
+  border: 1px solid var(--frame);
+}
+.sheet__plate > * + * {
+  margin-top: var(--space-1);
+}
+.nowrap {
+  white-space: nowrap;
+}
+.sheet__cellref {
+  flex: none;
+  padding-top: 2px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+}
+.sheet__reason,
+.sheet__metric {
+  display: block;
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+}
+.sheet__reason {
+  color: var(--text);
+}
+/* Inside a tinted cell the ground carries the status: the chip loses its box. */
+.sheet__cell .badge--sm {
+  background: transparent;
+  border-color: transparent;
+  padding-left: 0;
+}
+.sheet__cell .pill {
+  white-space: normal;
+  align-items: flex-start;
+}
+.sheet__cell .pill .icon {
+  margin-top: 1px;
+}
+.sheet__metric {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.sheet__band {
+  background: var(--hatch-void);
+  text-align: center;
+  vertical-align: middle;
+  padding: var(--space-4);
+}
+.sheet__band-label {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 46ch;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--frame);
+  font-size: var(--fs-sm);
+}
+.sheet__band-label strong {
+  font-size: var(--fs-md);
+}
+.sheet__counts {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+
+.sheet-margin {
+  display: grid;
+  gap: var(--space-5);
+  align-content: start;
+}
+.legend[data-variant='sheet'] {
+  border: 0;
+  background: transparent;
+  font-size: var(--fs-sm);
+}
+.legend__keys {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+.legend__keys li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: start;
+}
+.legend__keys .icon {
+  justify-self: center;
+  margin-top: 2px;
+}
+.legend__swatch {
+  width: 28px;
+  height: 18px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+}
+.legend__swatch--red {
+  background: var(--red-bg);
+  border-color: color-mix(in srgb, var(--red) 40%, var(--border));
+}
+.legend__swatch--amber {
+  background: var(--amber-bg);
+  border-color: color-mix(in srgb, var(--amber) 40%, var(--border));
+}
+.legend__swatch--green {
+  background: var(--green-bg);
+  border-color: color-mix(in srgb, var(--green) 40%, var(--border));
+}
+.legend__swatch--grey {
+  background: var(--hatch-void);
+  border-style: dashed;
+  border-color: var(--grey);
+}
+.legend__swatch--blind {
+  background: var(--hatch), var(--surface);
+  border-color: var(--amber-icon);
+}
+.legend[data-variant='sheet'] .sub {
+  margin-top: 2px;
+}
+.sheet-notes__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+  font-size: var(--fs-sm);
+}
+.sheet-note {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: baseline;
+}
+.sheet-note__ref {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-ref);
+  color: var(--frame);
+  font-variant-numeric: tabular-nums;
+}
+.sheet-note--red .sheet-note__ref {
+  color: var(--red);
+}
+
+@media (max-width: 1240px) {
+  .sheet-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sheet-notes {
+    order: -1;
+  }
+  .sheet-margin {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+  .table--sheet tr {
+    gap: 0;
+    padding: 0;
+    border-bottom: 1px solid var(--frame);
+  }
+  .table--sheet tbody th[scope='row'] {
+    padding: var(--space-3) var(--space-3) var(--space-3) calc(28px + var(--space-3));
+    border-bottom: 1px solid var(--border);
+  }
+  .table--sheet td.sheet__cell,
+  .table--sheet td.sheet__band {
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+  .table--sheet td.sheet__band {
+    grid-column: 1 / -1;
+    display: block;
+  }
+  .table--sheet .sheet__cell > * + * {
+    margin-top: 0;
+  }
+}
+@media (max-width: 720px) {
+  .table--sheet tr {
+    border: 1px solid var(--frame);
+    border-radius: 0;
+    margin-bottom: var(--space-3);
+  }
+  .table--sheet td.sheet__cell,
+  .table--sheet td.sheet__band {
+    border-right: 0;
+  }
 }

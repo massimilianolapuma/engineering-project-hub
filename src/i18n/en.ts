@@ -84,6 +84,10 @@ export const en = {
     notAuthorisedLabel: 'Not authorised — collector lacks permission',
     noOpenAlertsLabel: 'No open alerts — only when collection succeeded',
     collectionFailedLabel: 'Collection failed — API or network error',
+    unsurveyedLabel:
+      'Hatched — not surveyed: nothing was measured, never counted as Healthy or zero',
+    blindLabel:
+      'Hatched with an ochre edge — blind spot: a required control the collector cannot see',
   },
   dimensions: {
     overall: 'Overall',
@@ -268,7 +272,7 @@ export const en = {
   portfolio: {
     title: 'Portfolio',
     intro:
-      'Every project as one logical unit across its repositories. Each health dimension is shown separately.',
+      'Projects × dimensions. Ground the collector could not survey is hatched, never counted as zero.',
     summaryProjects: 'Projects',
     summaryCritical: 'Critical',
     summaryAttention: 'Attention',
@@ -298,6 +302,25 @@ export const en = {
     colUpdated: 'Last updated',
     colErrors: 'Collection',
     tableCaption: 'Projects with health per dimension',
+    sheetTitle: 'Sheet 1 · Portfolio',
+    gridKey: 'Grid A–F: dimensions · rows 1–{count}: projects',
+    notSurveyed: 'Not surveyed',
+    notSurveyedBody: 'No dimension of this project could be measured.',
+    openAlertsUnknown: 'Open alerts',
+    reviewErrors: 'Review access and collection errors',
+    notesTitle: 'Sheet notes',
+    noNotes: 'Every project is within its thresholds.',
+    moreFilters: 'More filters',
+    countsLabel: 'Filter by overall status',
+    showAll: 'Show all',
+    collected: 'Collected',
+    causeRepos: 'Repositories not readable: {list}',
+    blindSpot: 'blind spot',
+    secretsBlind: 'Secrets: blind spot',
+    surveyedAt: 'Surveyed {date}',
+    synthetic: 'Synthetic demo data',
+    noteMore: '+{count} more',
+    openProject: 'Open the project',
   },
   project: {
     general: 'General information',

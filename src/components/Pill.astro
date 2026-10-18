@@ -1,9 +1,9 @@
 ---
 /** Generic state pill for control / workflow / version states. Shape icon + text, never colour only. */
-import type { Tone } from '../lib/tones';
+import type { SeverityTone, Tone } from '../lib/tones';
 import StatusIcon from './StatusIcon.astro';
 interface Props {
-  tone: Tone;
+  tone: Tone | SeverityTone;
   label: string;
   title?: string;
 }

@@ -18,6 +18,22 @@ test('filters are keyboard accessible and narrow the list', async ({ page }) => 
   await expect(page.getByText('1 of 4 projects')).toBeVisible();
 });
 
+test('status counts filter the sheet and unsurveyed projects are hatched, not zero', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const counts = page.getByRole('group', { name: 'Filter by overall status' });
+  await counts.getByRole('button', { name: /Critical/ }).click();
+  await expect(page.locator('tr[data-project]:not([hidden])')).toHaveCount(1);
+  await expect(counts.getByRole('button', { name: /Critical/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await counts.getByRole('button', { name: /Show all/ }).click();
+  await expect(page.locator('tr[data-project]:not([hidden])')).toHaveCount(4);
+  await expect(page.locator('tr[data-health="grey"] .sheet__band')).toContainText('Not surveyed');
+});
+
 test('navigates the main views in both languages', async ({ page }) => {
   await page.goto('/');
   for (const name of ['Workflows', 'Versions', 'Security', 'Data quality']) {

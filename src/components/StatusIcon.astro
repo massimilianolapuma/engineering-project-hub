@@ -3,11 +3,17 @@
  * Shape-coded status icon: each state has a distinct shape so status never relies on colour
  * alone. Decorative (aria-hidden): the accompanying text carries the meaning.
  */
-import type { Tone } from '../lib/tones';
+import type { SeverityTone, Tone } from '../lib/tones';
 interface Props {
-  tone: Tone;
+  tone: Tone | SeverityTone;
 }
 const { tone } = Astro.props;
+/** Severity glyph: 1–4 rising bars (signal-strength shape), never a health shape. */
+const bars = { 'sev-low': 1, 'sev-medium': 2, 'sev-high': 3, 'sev-critical': 4 } as Record<
+  string,
+  number
+>;
+const level = bars[tone] ?? 0;
 ---
 
 <svg
@@ -79,5 +85,41 @@ const { tone } = Astro.props;
   )}
   {tone === 'muted' && (
     <path d="M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+  )}
+  {tone === 'blind' && (
+    <>
+      <rect
+        x="1.5"
+        y="1.5"
+        width="13"
+        height="13"
+        rx="2"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+      />
+      <path
+        d="M1.5 9.5l8-8M5.5 14.5l9-9M1.5 14.5L14.5 1.5"
+        stroke="currentColor"
+        stroke-width="1.2"
+      />
+    </>
+  )}
+  {tone.startsWith('sev-') && (
+    <>
+      {[0, 1, 2, 3].map((i) => (
+        <rect
+          x={1.5 + i * 3.5}
+          y={11 - i * 3}
+          width="2.6"
+          height={3.5 + i * 3}
+          rx="0.6"
+          fill={i < level ? 'currentColor' : 'none'}
+          stroke="currentColor"
+          stroke-width="1"
+          stroke-dasharray={level === 0 ? '1.4 1' : undefined}
+        />
+      ))}
+    </>
   )}
 </svg>

@@ -1,0 +1,435 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-18T00:00:00Z",
+  "title": "Design System: Engineering Project Hub",
+  "extensions": {
+    "colorMeta": {
+      "contour-brown": {
+        "role": "primary",
+        "displayName": "Contour Brown",
+        "canonical": "#7d4f24",
+        "oklch": "oklch(47.1% 0.085 61)",
+        "tonalRamp": [
+          "#210000",
+          "#411700",
+          "#613604",
+          "#84552a",
+          "#a7764c",
+          "#cc996e",
+          "#f2bd91",
+          "#ffe2b5"
+        ],
+        "darkCounterpart": "night-contour-brown"
+      },
+      "water-blue": {
+        "role": "secondary",
+        "displayName": "Water Blue",
+        "canonical": "#1a5f9e",
+        "oklch": "oklch(47.7% 0.121 251)",
+        "tonalRamp": [
+          "#00003b",
+          "#00225c",
+          "#00427f",
+          "#2064a3",
+          "#4486c8",
+          "#68aaee",
+          "#8bcfff",
+          "#b1f5ff"
+        ],
+        "darkCounterpart": "night-water-blue"
+      },
+      "road-red": {
+        "role": "tertiary",
+        "displayName": "Road Red (Critical)",
+        "canonical": "#a92d22",
+        "oklch": "oklch(49.0% 0.162 29)",
+        "tonalRamp": [
+          "#2d0000",
+          "#5d0000",
+          "#830000",
+          "#aa2e23",
+          "#d25445",
+          "#fa7867",
+          "#ff9d8a",
+          "#ffd0c0"
+        ],
+        "darkCounterpart": "night-road-red"
+      },
+      "ochre": {
+        "role": "tertiary",
+        "displayName": "Ochre (Attention, blind-spot edge, medium severity)",
+        "canonical": "#855400",
+        "oklch": "oklch(48.9% 0.105 71)",
+        "tonalRamp": [
+          "#230000",
+          "#431600",
+          "#643500",
+          "#865502",
+          "#aa7633",
+          "#cf9957",
+          "#f5be7b",
+          "#ffe39f"
+        ],
+        "darkCounterpart": "night-ochre"
+      },
+      "woodland-green": {
+        "role": "tertiary",
+        "displayName": "Woodland Green (Healthy)",
+        "canonical": "#36612a",
+        "oklch": "oklch(44.7% 0.097 139)",
+        "tonalRamp": [
+          "#001200",
+          "#022f00",
+          "#234e16",
+          "#436e37",
+          "#639057",
+          "#85b479",
+          "#a9d99c",
+          "#cdffc0"
+        ],
+        "darkCounterpart": "night-woodland-green"
+      },
+      "survey-grey": {
+        "role": "tertiary",
+        "displayName": "Survey Grey (Unknown)",
+        "canonical": "#55595c",
+        "oklch": "oklch(46.1% 0.007 240)",
+        "tonalRamp": [
+          "#090c0e",
+          "#222628",
+          "#3f4345",
+          "#5e6265",
+          "#7f8386",
+          "#a1a6a9",
+          "#c5cacd",
+          "#eaeff3"
+        ],
+        "darkCounterpart": "night-survey-grey"
+      },
+      "burnt-sienna": {
+        "role": "tertiary",
+        "displayName": "Burnt Sienna (high severity only)",
+        "canonical": "#9a3f12",
+        "oklch": "oklch(48.5% 0.133 43)",
+        "tonalRamp": [
+          "#2c0000",
+          "#530000",
+          "#771e00",
+          "#9d4115",
+          "#c3643b",
+          "#ea875e",
+          "#ffab81",
+          "#ffd4ae"
+        ],
+        "darkCounterpart": "night-burnt-sienna"
+      },
+      "sheet-white": {
+        "role": "neutral",
+        "displayName": "Sheet White",
+        "canonical": "#fdfdfb",
+        "oklch": "oklch(99.3% 0.003 106)",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#252524",
+          "#424240",
+          "#616160",
+          "#828281",
+          "#a5a5a3",
+          "#c9c9c7",
+          "#eeeeec"
+        ],
+        "darkCounterpart": "night-sheet"
+      },
+      "linework-ink": {
+        "role": "neutral",
+        "displayName": "Linework Ink",
+        "canonical": "#1d1f21",
+        "oklch": "oklch(23.8% 0.005 248)",
+        "tonalRamp": [
+          "#0a0b0d",
+          "#232527",
+          "#404244",
+          "#5f6164",
+          "#808385",
+          "#a3a5a8",
+          "#c7c9cc",
+          "#eceff2"
+        ],
+        "darkCounterpart": "night-ink"
+      },
+      "sheet-tint": {
+        "role": "neutral",
+        "displayName": "Sheet Tint",
+        "darkCounterpart": "night-sheet-tint"
+      },
+      "sheet-hover": {
+        "role": "neutral",
+        "displayName": "Sheet Hover",
+        "darkCounterpart": "night-sheet-hover"
+      },
+      "void-ground": {
+        "role": "neutral",
+        "displayName": "Void Ground",
+        "darkCounterpart": "night-void-ground"
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "darkCounterpart": "night-hairline"
+      },
+      "hairline-strong": {
+        "role": "neutral",
+        "displayName": "Hairline Strong",
+        "darkCounterpart": "night-hairline-strong"
+      },
+      "hairline-faint": {
+        "role": "neutral",
+        "displayName": "Hairline Faint",
+        "darkCounterpart": "night-hairline-faint"
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Ink Muted",
+        "darkCounterpart": "night-ink-muted"
+      },
+      "ink-tertiary": {
+        "role": "neutral",
+        "displayName": "Ink Tertiary",
+        "darkCounterpart": "night-ink-tertiary"
+      },
+      "ink-data": {
+        "role": "neutral",
+        "displayName": "Ink Data",
+        "darkCounterpart": "night-ink-data"
+      },
+      "icon-ink": {
+        "role": "neutral",
+        "displayName": "Icon Ink",
+        "darkCounterpart": "night-icon-ink"
+      },
+      "water-blue-ink": {
+        "role": "neutral",
+        "displayName": "Water Blue Ink",
+        "darkCounterpart": "night-water-blue-ink"
+      },
+      "derived-status-grounds": {
+        "role": "derived",
+        "displayName": "Status grounds",
+        "canonical": "color-mix(in srgb, <ink> var(--tint), var(--surface)); --tint 13% light / 16% dark",
+        "note": "--red-bg, --amber-bg, --green-bg, --grey-bg, --info-bg; --accent-bg mixes primary at 12%"
+      },
+      "hatch": {
+        "role": "derived",
+        "displayName": "Survey Hatch (light)",
+        "canonical": "repeating-linear-gradient(45deg, color-mix(in srgb, var(--frame) 30%, transparent) 0 1px, transparent 1px 7px)",
+        "note": "Single unknown cells and tiles, blind-spot legend swatch; layered over var(--surface)."
+      },
+      "hatch-void": {
+        "role": "derived",
+        "displayName": "Survey Hatch (void)",
+        "canonical": "repeating-linear-gradient(45deg, color-mix(in srgb, var(--frame) var(--hatch-strength), transparent) 0 1.5px, transparent 1.5px 6px), var(--void-ground)",
+        "note": "--hatch-strength 62% light / 34% dark. All-unknown row band and its Overall cell; Unknown legend swatch."
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Page title only; the one large line on the sheet."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section titles on inherited pages."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Table, form, notes and legend text; tabular figures."
+      },
+      "cell-reason": {
+        "displayName": "Cell reason",
+        "purpose": "One-line reason and metric inside a sheet cell; column A steps to 0.8125rem/500."
+      },
+      "label": {
+        "displayName": "Sheet furniture label",
+        "purpose": "Uppercase, 0.08em tracked: sheet title bar, footer imprint, grid letters, margin heads, column heads, note refs. Contour brown."
+      },
+      "grid-ref": {
+        "displayName": "Grid ref",
+        "purpose": "Cell reference (A1, D2) in the cell's top-right corner, tertiary ink."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Code, SHAs, versions."
+      }
+    },
+    "shadows": [
+      {
+        "name": "none",
+        "value": "none",
+        "purpose": "--shadow is none: the sheet is flat."
+      },
+      {
+        "name": "pressed-underline",
+        "value": "inset 0 -2px 0 var(--frame)",
+        "purpose": "State only: pressed count filter."
+      },
+      {
+        "name": "neatline",
+        "value": "border: 1px solid var(--frame); outline: 1px solid var(--frame); outline-offset: 3px",
+        "purpose": "Double neatline around the sheet; line, not elevation."
+      }
+    ],
+    "motion": [
+      {
+        "name": "reduced-motion",
+        "value": "transition: none !important under prefers-reduced-motion",
+        "purpose": "The sheet has no motion grammar; state changes are instant."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sheet-stack",
+        "value": "1240px",
+        "purpose": "Margin below sheet, notes first; rows become stacked cards."
+      },
+      {
+        "name": "narrow",
+        "value": "720px",
+        "purpose": "Each row card framed in contour brown."
+      }
+    ],
+    "focus": {
+      "value": "outline: 3px solid var(--focus); outline-offset: 2px; border-radius: var(--radius-sm)"
+    },
+    "themes": {
+      "switch": "prefers-color-scheme, overridable with :root[data-theme='light'|'dark']",
+      "contrastTest": "tests/unit/tokens-contrast.test.ts"
+    }
+  },
+  "components": [
+    {
+      "name": "Status Badge (health)",
+      "kind": "chip",
+      "refersTo": "badge-critical",
+      "description": "Health chip: shape icon + label; tint ground, ink text, 35% ink border; Unknown is dashed on sheet white.",
+      "html": "<span class=\"ds-root\"><span class=\"ds-badge ds-badge--red\"><svg class=\"ds-icon\" viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" aria-hidden=\"true\"><path d=\"M5.1 1h5.8L15 5.1v5.8L10.9 15H5.1L1 10.9V5.1z\" fill=\"currentColor\"/><path d=\"M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8\" stroke=\"var(--icon-ink,#fff)\" stroke-width=\"1.8\" stroke-linecap=\"round\"/></svg><span>Critical</span></span> <span class=\"ds-badge ds-badge--amber\"><svg class=\"ds-icon\" viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" aria-hidden=\"true\"><path d=\"M8 1.2l7 12.6H1z\" fill=\"currentColor\"/><path d=\"M8 5.6v4\" stroke=\"var(--icon-ink,#fff)\" stroke-width=\"1.8\" stroke-linecap=\"round\"/><circle cx=\"8\" cy=\"11.9\" r=\"1\" fill=\"var(--icon-ink,#fff)\"/></svg><span>Attention</span></span> <span class=\"ds-badge ds-badge--green\"><svg class=\"ds-icon\" viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" aria-hidden=\"true\"><circle cx=\"8\" cy=\"8\" r=\"7\" fill=\"currentColor\"/><path d=\"M4.6 8.3l2.2 2.2 4.6-4.8\" fill=\"none\" stroke=\"var(--icon-ink,#fff)\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg><span>Healthy</span></span> <span class=\"ds-badge ds-badge--grey\"><svg class=\"ds-icon\" viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" aria-hidden=\"true\"><rect x=\"1.5\" y=\"1.5\" width=\"13\" height=\"13\" rx=\"2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-dasharray=\"2.4 1.6\"/><path d=\"M5 8h6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"/></svg><span>Unknown</span></span></span>",
+      "css": ":host,.ds-root{--frame:#7d4f24;--surface:#fdfdfb;--surface-2:#f2f3ef;--border:#d5d7d0;--border-strong:#a9aca3;--text:#1d1f21;--text-muted:#45484b;--text-tertiary:#585c5f;--focus:#1a5f9e;--link:#1a5f9e;--red:#a92d22;--amber:#855400;--green:#36612a;--grey:#55595c;--icon-ink:#fff;--void-ground:#ecede8;font-family:'Public Sans',system-ui,sans-serif}.ds-badge{display:inline-flex;align-items:center;gap:6px;border-radius:2px;font-weight:600;line-height:1.2;white-space:nowrap;border:1px solid transparent;padding:3px 10px 3px 7px;font-size:0.8125rem}.ds-badge--red{color:var(--red,#a92d22);background:color-mix(in srgb,var(--red,#a92d22) 13%,var(--surface,#fdfdfb));border-color:color-mix(in srgb,var(--red,#a92d22) 35%,transparent)}.ds-badge--amber{color:var(--amber,#855400);background:color-mix(in srgb,var(--amber,#855400) 13%,var(--surface,#fdfdfb));border-color:color-mix(in srgb,var(--amber,#855400) 35%,transparent)}.ds-badge--green{color:var(--green,#36612a);background:color-mix(in srgb,var(--green,#36612a) 13%,var(--surface,#fdfdfb));border-color:color-mix(in srgb,var(--green,#36612a) 35%,transparent)}.ds-badge--grey{color:var(--grey,#55595c);background:var(--surface,#fdfdfb);border-style:dashed;border-color:var(--grey,#55595c)}.ds-badge:focus-visible{outline:3px solid var(--focus,#1a5f9e);outline-offset:2px}.ds-icon{flex:none}"
+    },
+    {
+      "name": "Pill (blind spot)",
+      "kind": "chip",
+      "refersTo": "pill-blind",
+      "description": "Control state pill; a required control the collector cannot see keeps a solid ochre edge and the hatched-square icon.",
+      "html": "<span class=\"ds-root\"><span class=\"ds-pill ds-pill--blind\"><svg class=\"ds-icon\" style=\"color:#855400\" viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" aria-hidden=\"true\"><rect x=\"1.5\" y=\"1.5\" width=\"13\" height=\"13\" rx=\"2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"/><path d=\"M1.5 9.5l8-8M5.5 14.5l9-9M1.5 14.5L14.5 1.5\" stroke=\"currentColor\" stroke-width=\"1.2\"/></svg><span>Secrets: blind spot</span></span> <span class=\"ds-pill\"><svg class=\"ds-icon\" viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" aria-hidden=\"true\"><circle cx=\"8\" cy=\"8\" r=\"7\" fill=\"currentColor\"/><path d=\"M4.6 8.3l2.2 2.2 4.6-4.8\" fill=\"none\" stroke=\"var(--icon-ink,#fff)\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg><span>Code scanning</span></span></span>",
+      "css": ":host,.ds-root{--frame:#7d4f24;--surface:#fdfdfb;--surface-2:#f2f3ef;--border:#d5d7d0;--border-strong:#a9aca3;--text:#1d1f21;--text-muted:#45484b;--text-tertiary:#585c5f;--focus:#1a5f9e;--link:#1a5f9e;--red:#a92d22;--amber:#855400;--green:#36612a;--grey:#55595c;--icon-ink:#fff;--void-ground:#ecede8;font-family:'Public Sans',system-ui,sans-serif}.ds-pill{display:inline-flex;align-items:center;gap:6px;border-radius:2px;padding:2px 8px 2px 6px;font-size:0.75rem;font-weight:500;line-height:1.2;background:var(--surface-2,#f2f3ef);color:var(--text,#1d1f21);border:1px solid var(--border,#d5d7d0)}.ds-pill .ds-icon{color:var(--green,#36612a)}.ds-pill--blind{background:var(--surface,#fdfdfb);border-color:var(--amber,#855400);font-weight:600}.ds-pill--blind .ds-icon{color:var(--amber,#855400)}"
+    },
+    {
+      "name": "Count Filter",
+      "kind": "button",
+      "refersTo": "sheet-count",
+      "description": "Counts in the title line act as filters; pressed state uses contour brown and an inset underline.",
+      "html": "<span class=\"ds-root\"><button class=\"ds-count\" aria-pressed=\"true\"><b>4</b> Show all</button> <button class=\"ds-count\" aria-pressed=\"false\"><b>1</b> <svg class=\"ds-icon\" viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" aria-hidden=\"true\"><path d=\"M5.1 1h5.8L15 5.1v5.8L10.9 15H5.1L1 10.9V5.1z\" fill=\"#a92d22\"/><path d=\"M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8\" stroke=\"var(--icon-ink,#fff)\" stroke-width=\"1.8\" stroke-linecap=\"round\"/></svg> Critical</button></span>",
+      "css": ":host,.ds-root{--frame:#7d4f24;--surface:#fdfdfb;--surface-2:#f2f3ef;--border:#d5d7d0;--border-strong:#a9aca3;--text:#1d1f21;--text-muted:#45484b;--text-tertiary:#585c5f;--focus:#1a5f9e;--link:#1a5f9e;--red:#a92d22;--amber:#855400;--green:#36612a;--grey:#55595c;--icon-ink:#fff;--void-ground:#ecede8;font-family:'Public Sans',system-ui,sans-serif}.ds-count{font:inherit;font-size:0.8125rem;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:4px 12px;color:var(--text,#1d1f21);background:var(--surface,#fdfdfb);border:1px solid var(--border,#d5d7d0);border-radius:2px;cursor:pointer}.ds-count b{font-variant-numeric:tabular-nums}.ds-count:hover{border-color:var(--border-strong,#a9aca3)}.ds-count[aria-pressed='true']{border-color:var(--frame,#7d4f24);background:var(--surface-2,#f2f3ef);box-shadow:inset 0 -2px 0 var(--frame,#7d4f24);font-weight:600}.ds-count:focus-visible{outline:3px solid var(--focus,#1a5f9e);outline-offset:2px}"
+    },
+    {
+      "name": "Sheet Cell",
+      "kind": "custom",
+      "refersTo": "sheet-cell",
+      "description": "Chip + grid ref head, optional metric, one reason; the tint carries status so the chip loses its box. Unknown cell uses the light hatch.",
+      "html": "<table class=\"ds-root ds-sheet\"><tr><td class=\"ds-cell ds-cell--red\"><span class=\"ds-head\"><span class=\"ds-chip\" style=\"color:#a92d22\"><svg class=\"ds-icon\" viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" aria-hidden=\"true\"><path d=\"M5.1 1h5.8L15 5.1v5.8L10.9 15H5.1L1 10.9V5.1z\" fill=\"currentColor\"/><path d=\"M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8\" stroke=\"var(--icon-ink,#fff)\" stroke-width=\"1.8\" stroke-linecap=\"round\"/></svg> Critical</span><span class=\"ds-ref\">D1</span></span><span class=\"ds-metric\">≥1 critical · ≥2 high</span><span class=\"ds-reason\">1 open critical alert(s)</span></td><td class=\"ds-cell ds-cell--grey\"><span class=\"ds-head\"><span class=\"ds-chip\" style=\"color:#55595c\"><svg class=\"ds-icon\" viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" aria-hidden=\"true\"><rect x=\"1.5\" y=\"1.5\" width=\"13\" height=\"13\" rx=\"2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-dasharray=\"2.4 1.6\"/><path d=\"M5 8h6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"/></svg> Unknown</span><span class=\"ds-ref\">E4</span></span><span class=\"ds-reason\">Not authorised (403)</span></td></tr></table>",
+      "css": ":host,.ds-root{--frame:#7d4f24;--surface:#fdfdfb;--surface-2:#f2f3ef;--border:#d5d7d0;--border-strong:#a9aca3;--text:#1d1f21;--text-muted:#45484b;--text-tertiary:#585c5f;--focus:#1a5f9e;--link:#1a5f9e;--red:#a92d22;--amber:#855400;--green:#36612a;--grey:#55595c;--icon-ink:#fff;--void-ground:#ecede8;font-family:'Public Sans',system-ui,sans-serif}.ds-sheet{border-collapse:collapse;border:1px solid var(--frame,#7d4f24);outline:1px solid var(--frame,#7d4f24);outline-offset:3px;margin:4px}.ds-cell{min-width:140px;vertical-align:top;padding:8px 12px 12px;border-right:1px solid var(--border,#d5d7d0)}.ds-cell>*+*{margin-top:4px}.ds-cell--red{background:color-mix(in srgb,var(--red,#a92d22) 13%,var(--surface,#fdfdfb))}.ds-cell--grey{background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--frame,#7d4f24) 30%,transparent) 0 1px,transparent 1px 7px),var(--surface,#fdfdfb)}.ds-head{display:flex;justify-content:space-between;gap:8px}.ds-chip{display:inline-flex;gap:6px;align-items:center;font-size:0.75rem;font-weight:600}.ds-ref{font-size:0.6875rem;font-weight:600;letter-spacing:0.04em;color:var(--text-tertiary,#585c5f)}.ds-metric,.ds-reason{display:block;font-size:0.75rem;line-height:1.4}.ds-metric{color:var(--text-muted,#45484b);font-variant-numeric:tabular-nums}.ds-reason{color:var(--text,#1d1f21)}"
+    },
+    {
+      "name": "Void Band",
+      "kind": "custom",
+      "refersTo": "sheet-plate",
+      "description": "A row with nothing measured collapses into one heavy-hatched band; text sits on a sheet-white plate with a brown border.",
+      "html": "<div class=\"ds-root ds-band\"><div class=\"ds-plate\"><strong>Not surveyed</strong><span>Repositories not readable: 1 not found (404), 1 not authorised (401/403)</span><span class=\"ds-muted\">Open alerts: — critical · — high</span><a href=\"#\">Review access and collection errors</a></div></div>",
+      "css": ":host,.ds-root{--frame:#7d4f24;--surface:#fdfdfb;--surface-2:#f2f3ef;--border:#d5d7d0;--border-strong:#a9aca3;--text:#1d1f21;--text-muted:#45484b;--text-tertiary:#585c5f;--focus:#1a5f9e;--link:#1a5f9e;--red:#a92d22;--amber:#855400;--green:#36612a;--grey:#55595c;--icon-ink:#fff;--void-ground:#ecede8;font-family:'Public Sans',system-ui,sans-serif}.ds-band{background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--frame,#7d4f24) 62%,transparent) 0 1.5px,transparent 1.5px 6px),var(--void-ground,#ecede8);padding:16px;text-align:center}.ds-plate{display:inline-flex;flex-direction:column;align-items:center;gap:4px;max-width:46ch;padding:12px 16px;background:var(--surface,#fdfdfb);border:1px solid var(--frame,#7d4f24);font-size:0.8125rem;color:var(--text,#1d1f21)}.ds-plate strong{font-size:0.875rem}.ds-muted{color:var(--text-muted,#45484b);font-size:0.75rem}.ds-plate a{color:var(--link,#1a5f9e);text-underline-offset:2px}.ds-plate a:hover{text-decoration-thickness:2px}.ds-plate a:focus-visible{outline:3px solid var(--focus,#1a5f9e);outline-offset:2px;border-radius:2px}"
+    },
+    {
+      "name": "Margin Notes",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Sheet notes keyed by grid reference under a contour-brown margin head.",
+      "html": "<section class=\"ds-root ds-notes\"><h2 class=\"ds-mhead\">Sheet notes</h2><ol><li class=\"ds-note ds-note--red\"><a class=\"ds-nref\" href=\"#\">B1</a><span><a href=\"#\">Project Beta</a><br>Release is not defined</span></li><li class=\"ds-note\"><a class=\"ds-nref\" href=\"#\">B4–F4</a><span><a href=\"#\">Project Gamma</a><br>Repositories not readable</span></li></ol></section>",
+      "css": ":host,.ds-root{--frame:#7d4f24;--surface:#fdfdfb;--surface-2:#f2f3ef;--border:#d5d7d0;--border-strong:#a9aca3;--text:#1d1f21;--text-muted:#45484b;--text-tertiary:#585c5f;--focus:#1a5f9e;--link:#1a5f9e;--red:#a92d22;--amber:#855400;--green:#36612a;--grey:#55595c;--icon-ink:#fff;--void-ground:#ecede8;font-family:'Public Sans',system-ui,sans-serif}.ds-mhead{margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid var(--frame,#7d4f24);font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--frame,#7d4f24)}.ds-notes ol{list-style:none;margin:0;padding:0;display:grid;gap:12px;font-size:0.8125rem;color:var(--text,#1d1f21)}.ds-note{display:grid;grid-template-columns:56px 1fr;gap:8px;align-items:baseline}.ds-nref{font-size:0.75rem;font-weight:700;letter-spacing:0.08em;color:var(--frame,#7d4f24);font-variant-numeric:tabular-nums}.ds-note--red .ds-nref{color:var(--red,#a92d22)}.ds-notes a{color:var(--link,#1a5f9e)}.ds-notes .ds-nref{color:var(--frame,#7d4f24)}.ds-note--red a.ds-nref{color:var(--red,#a92d22)}.ds-notes a:focus-visible{outline:3px solid var(--focus,#1a5f9e);outline-offset:2px}"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Sheet-white field, hairline stroke, 2px corners, water-blue focus ring.",
+      "html": "<label class=\"ds-root ds-field\"><span>Search projects</span><input class=\"ds-input\" placeholder=\"Project name...\"></label>",
+      "css": ":host,.ds-root{--frame:#7d4f24;--surface:#fdfdfb;--surface-2:#f2f3ef;--border:#d5d7d0;--border-strong:#a9aca3;--text:#1d1f21;--text-muted:#45484b;--text-tertiary:#585c5f;--focus:#1a5f9e;--link:#1a5f9e;--red:#a92d22;--amber:#855400;--green:#36612a;--grey:#55595c;--icon-ink:#fff;--void-ground:#ecede8;font-family:'Public Sans',system-ui,sans-serif}.ds-field{display:flex;flex-direction:column;gap:4px;font-size:0.8125rem;color:var(--text,#1d1f21)}.ds-field span{font-weight:600}.ds-input{font:inherit;color:var(--text,#1d1f21);background:var(--surface,#fdfdfb);border:1px solid var(--border,#d5d7d0);border-radius:2px;padding:6px 10px;min-height:36px}.ds-input:hover{border-color:var(--border-strong,#a9aca3)}.ds-input:focus-visible{outline:3px solid var(--focus,#1a5f9e);outline-offset:2px}"
+    },
+    {
+      "name": "Top Navigation",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Muted links with a 2px underline; current page in ink with a contour-brown underline.",
+      "html": "<nav class=\"ds-root ds-nav\"><a href=\"#\" aria-current=\"page\">Portfolio</a><a href=\"#\">Workflows</a><a href=\"#\">Versions</a><a href=\"#\">Security</a></nav>",
+      "css": ":host,.ds-root{--frame:#7d4f24;--surface:#fdfdfb;--surface-2:#f2f3ef;--border:#d5d7d0;--border-strong:#a9aca3;--text:#1d1f21;--text-muted:#45484b;--text-tertiary:#585c5f;--focus:#1a5f9e;--link:#1a5f9e;--red:#a92d22;--amber:#855400;--green:#36612a;--grey:#55595c;--icon-ink:#fff;--void-ground:#ecede8;font-family:'Public Sans',system-ui,sans-serif}.ds-nav{display:flex;gap:4px;border-bottom:1px solid var(--border,#d5d7d0);background:var(--surface,#fdfdfb)}.ds-nav a{display:block;padding:8px 12px;border-bottom:2px solid transparent;color:var(--text-muted,#45484b);text-decoration:none;font-size:0.8125rem;font-weight:500}.ds-nav a:hover{color:var(--text,#1d1f21);border-bottom-color:var(--border-strong,#a9aca3)}.ds-nav a[aria-current='page']{color:var(--text,#1d1f21);border-bottom-color:var(--frame,#7d4f24);font-weight:700}.ds-nav a:focus-visible{outline:3px solid var(--focus,#1a5f9e);outline-offset:2px;border-radius:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Survey Sheet",
+    "overview": "The portfolio is a surveyed territory, drawn with the grammar of a 1:25,000 topographic sheet. Projects are numbered rows, dimensions are lettered columns (A Overall, B Delivery, C Version, D Security risk, E Security coverage, F Governance), and every cell is a parcel of ground that was either measured, and inked by its status, or not surveyed, and hatched and named as such. Sheet furniture (the double neatline, grid letters, row numbers, the title bar, the footer imprint, margin notes and the legend) is drawn in contour brown. Data is set in linework ink. Water blue is reserved for links and focus.\n\nThe sheet is dense and flat. There are no shadows or floating cards, and corners are square. Hairline rules separate cells, a 2px ink rule sets column A off from B–F, and status is carried by a pale tint of the ground rather than by coloured boxes or edges. Unknown is never blank, never zero and never calm. It is drawn with a 45° survey hatch, and a row where nothing was measured collapses into one heavy hatched \"void\" band. That band is the darkest silhouette on the sheet.\n\nTwo themes describe the same sheet. Light is sheet white by day. Dark is the same sheet read at night, with lifted inks and a darker void ground. Both follow `prefers-color-scheme` and can be overridden with `[data-theme]`. Every text pair is held to WCAG AA by `tests/unit/tokens-contrast.test.ts`.",
+    "keyCharacteristics": [
+      "Grid letters A–F across, row numbers down, and a grid reference (for example B1) in the corner of every cell.",
+      "Each cell holds one status chip and one line of reason, plus a metric where one exists.",
+      "Status uses a pale ground tint, a distinct shape icon and a text label, so it never depends on colour alone.",
+      "Hatch marks ground that was not surveyed. The void band marks a row where nothing was measured.",
+      "Contour-brown furniture, linework-ink data, water-blue links.",
+      "Square corners (2–3px), hairline rules, tabular figures and no shadows."
+    ],
+    "rules": [
+      {
+        "name": "The Contour Brown Rule",
+        "body": "Brown draws the sheet and never the data. If something is a status, a link or a value, it is not brown.",
+        "section": "colors"
+      },
+      {
+        "name": "The Never-Zero Ground Rule",
+        "body": "Ground that was not measured is drawn with the survey hatch: the light hatch (`--hatch`, frame at 30%, 1px strokes every 7px) for a single unknown cell or tile, and the void hatch (`--hatch-void`, frame at 62% light / 34% dark, 1.5px strokes every 6px over void ground) for a row where nothing was measured. Unknown is never left blank, tinted green, or rendered as 0.",
+        "section": "colors"
+      },
+      {
+        "name": "The Ground Carries Status Rule",
+        "body": "Inside a tinted cell the chip loses its box (no background, no border, no left padding). The tint is the status. Column A keeps its boxed chip because it summarises the row.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tracked Furniture Rule",
+        "body": "Small, tracked uppercase type belongs to the sheet's furniture: grid letters, column heads, margin heads and imprints. It always names a real structure (a section, a column, a reference). It is never decoration above a heading.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Figures Rule",
+        "body": "Counts, percentages, references and times always use `tabular-nums`. A partial count is prefixed with ≥, and an unknown count is shown as a dash with accessible text. It is never shown as 0.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Sheet Rule",
+        "body": "Nothing floats. The only inset line is the 2px contour-brown underline on a pressed count filter, and it marks state, not elevation.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** give every cell a grid reference (column letter + row number) and key every margin note to one.",
+      "**Do** put exactly one status chip and one reason line in each cell. Add a metric line only when a measured value exists.",
+      "**Do** draw unknown ground with `--hatch`, and collapse a fully unknown row into a `--hatch-void` band with its text on a sheet-white plate.",
+      "**Do** pair every status colour with its shape icon and a text label. Use the four-bar glyph for severity.",
+      "**Do** keep sheet furniture (neatline, grid letters, row numbers, margin heads, imprints) in contour brown, with links and focus in water blue.",
+      "**Do** derive status grounds with `color-mix` at `--tint` (13% light, 16% dark) rather than picking new tint hexes.",
+      "**Do** keep corners at 2–3px and sheet cells, plates and bands at 0px."
+    ],
+    "donts": [
+      "**Don't** render unknown, not authorised, collection failed or partial counts as 0, as blank ground or in green.",
+      "**Don't** use health shapes or health tones for severity. Burnt sienna is high severity only.",
+      "**Don't** let a blind spot (a required control the collector cannot see) look calmer than an optional gap. Keep its solid ochre edge and hatched icon.",
+      "**Don't** mark status with a coloured side edge on a tile or cell. The ground tint carries it.",
+      "**Don't** use drop shadows or floating cards anywhere on the sheet.",
+      "**Don't** use contour brown for status, values or links."
+    ]
+  }
+}

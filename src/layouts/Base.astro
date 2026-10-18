@@ -14,8 +14,10 @@ interface Props {
   /** Path of this page in every locale, for the language switcher and hreflang. */
   alternates: Record<Locale, string>;
   index: PortfolioIndex | null;
+  /** The legend strip under the header; the portfolio draws its legend in the sheet margin. */
+  legend?: boolean;
 }
-const { i18n, title, page, alternates, index } = Astro.props;
+const { i18n, title, page, alternates, index, legend = true } = Astro.props;
 const { d, locale } = i18n;
 const nav: PageKey[] = ['portfolio', 'workflows', 'versions', 'security', 'dataQuality', 'catalog'];
 const run = index?.run;
@@ -129,7 +131,7 @@ const staleHours = run?.policy.snapshotStaleHours ?? 24;
           {i18n.f(d.common.staleBanner, { hours: staleHours })}
         </div>
       )}
-      <Legend i18n={i18n} />
+      {legend && <Legend i18n={i18n} />}
     </header>
     <div class="layout">
       <main id="main" tabindex="-1">
