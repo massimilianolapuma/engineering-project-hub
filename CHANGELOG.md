@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `PRODUCT.md`: product context (users, purpose, positioning, constraints, principles, WCAG 2.2 AA).
+- Portfolio as a survey sheet: projects × dimensions (A–F, now including Governance) with a reason per cell, a hatched "Not surveyed" band for projects with no measured dimension, margin legend and sheet notes keyed by grid reference; status counts act as filters (EN/IT).
+
+### Changed
+
+- Visual world "Survey Sheet": Public Sans with tabular figures, square corners, contour-brown sheet frame, status shown as tinted ground instead of coloured edges; a 45° hatch marks Unknown and blind spots. Light and dark palettes checked for WCAG AA by a unit test.
+- Severity has its own scale and glyph (rising bars): Medium and Low findings no longer render as Healthy.
+- Security controls are toned by requiredness: an optional control that is not configured is muted, a required control the collector cannot see (not authorised / unknown) is a highlighted blind spot.
+
+### Fixed
+
+- Contrast below AA on the active navigation item, red badges, muted rows and input placeholders.
 ### Changed
 
 - CI and deploy workflows (including `rw-hub-cloudflare-deploy.yml`) run on `ubuntu-24.04` instead of `ubuntu-latest`, which moves to Ubuntu 26.04 on 19 October 2026.

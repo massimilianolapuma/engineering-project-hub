@@ -86,6 +86,10 @@ export const it: Dict = {
     notAuthorisedLabel: 'Non autorizzato — permessi del collector insufficienti',
     noOpenAlertsLabel: 'Nessun alert aperto — solo se la raccolta è riuscita',
     collectionFailedLabel: 'Raccolta fallita — errore API o di rete',
+    unsurveyedLabel:
+      'Tratteggio — non rilevato: nulla è stato misurato, mai contato come sano o zero',
+    blindLabel:
+      'Tratteggio con bordo ocra — punto cieco: un controllo obbligatorio che il collector non vede',
   },
   dimensions: {
     overall: 'Complessivo',
@@ -270,7 +274,7 @@ export const it: Dict = {
   portfolio: {
     title: 'Portfolio',
     intro:
-      'Ogni progetto come unità logica sui suoi repository. Ogni dimensione di salute è mostrata separatamente.',
+      'Progetti × dimensioni. Ciò che il collector non ha potuto rilevare è tratteggiato, mai contato come zero.',
     summaryProjects: 'Progetti',
     summaryCritical: 'Critici',
     summaryAttention: 'Attenzione',
@@ -300,6 +304,25 @@ export const it: Dict = {
     colUpdated: 'Ultimo aggiornamento',
     colErrors: 'Raccolta',
     tableCaption: 'Progetti con salute per dimensione',
+    sheetTitle: 'Foglio 1 · Portfolio',
+    gridKey: 'Griglia A–F: dimensioni · righe 1–{count}: progetti',
+    notSurveyed: 'Non rilevato',
+    notSurveyedBody: 'Nessuna dimensione di questo progetto è stata misurata.',
+    openAlertsUnknown: 'Alert aperti',
+    reviewErrors: 'Controlla accessi ed errori di raccolta',
+    notesTitle: 'Note al foglio',
+    noNotes: 'Tutti i progetti sono entro le soglie.',
+    moreFilters: 'Altri filtri',
+    countsLabel: 'Filtra per stato complessivo',
+    showAll: 'Mostra tutti',
+    collected: 'Rilevato',
+    causeRepos: 'Repository non leggibili: {list}',
+    blindSpot: 'punto cieco',
+    secretsBlind: 'Segreti: punto cieco',
+    surveyedAt: 'Rilevato il {date}',
+    synthetic: 'Dati demo sintetici',
+    noteMore: '+{count} altri',
+    openProject: 'Apri il progetto',
   },
   project: {
     general: 'Informazioni generali',

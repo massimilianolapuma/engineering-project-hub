@@ -13,3 +13,4 @@ CONTRIBUTING.md
 # Generated (npm run schema:generate)
 config/schema/
 .e2e-dist/
+.impeccable/
