@@ -7,23 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-18
+
 ### Added
 
-- `PRODUCT.md`: product context (users, purpose, positioning, constraints, principles, WCAG 2.2 AA).
-- Portfolio as a survey sheet: projects × dimensions (A–F, now including Governance) with a reason per cell, a hatched "Not surveyed" band for projects with no measured dimension, margin legend and sheet notes keyed by grid reference; status counts act as filters (EN/IT).
+- `PRODUCT.md`: product context (users, purpose, positioning, constraints, principles, WCAG 2.2 AA); `DESIGN.md` and `.impeccable/design.json`: the "Survey Sheet" design system derived from the built UI.
+- Portfolio as a survey sheet: projects × dimensions (A–F, now including Governance) with a reason per cell, the Overall column leading, a hatched "Not surveyed" band that names the cause for projects with no measured dimension, margin legend and sheet notes keyed by grid reference; status counts act as filters (EN/IT).
 
 ### Changed
 
-- Visual world "Survey Sheet": Public Sans with tabular figures, square corners, contour-brown sheet frame, status shown as tinted ground instead of coloured edges; a 45° hatch marks Unknown and blind spots. Light and dark palettes checked for WCAG AA by a unit test.
+- Visual world "Survey Sheet": Public Sans (self-hosted, replaces Geist Sans) with tabular figures, sheet-white ground, square corners, contour-brown sheet frame, status shown as tinted ground instead of coloured edges; a 45° hatch marks Unknown and blind spots. Light and dark palettes checked for WCAG AA by a unit test.
 - Severity has its own scale and glyph (rising bars): Medium and Low findings no longer render as Healthy.
 - Security controls are toned by requiredness: an optional control that is not configured is muted, a required control the collector cannot see (not authorised / unknown) is a highlighted blind spot.
+- CI and deploy workflows (including `rw-hub-cloudflare-deploy.yml`) run on `ubuntu-24.04` instead of `ubuntu-latest`, which moves to Ubuntu 26.04 on 19 October 2026.
+- Dependencies: Astro 7.3.8, Playwright 1.64.0, Prettier 3.9.10, prettier-plugin-astro 1.1.1, @types/node 24.19.2.
 
 ### Fixed
 
 - Contrast below AA on the active navigation item, red badges, muted rows and input placeholders.
-### Changed
-
-- CI and deploy workflows (including `rw-hub-cloudflare-deploy.yml`) run on `ubuntu-24.04` instead of `ubuntu-latest`, which moves to Ubuntu 26.04 on 19 October 2026.
 
 ## [0.3.0] - 2026-10-15
 
@@ -89,7 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Read-only by design: no write calls, alert dismissals or workflow triggers. Secret scanning alerts are fetched with `hide_secret=true` and only the secret type is kept.
 - The public demo publishes synthetic mock data only.
 
-[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/massimilianolapuma/engineering-project-hub/releases/tag/v0.1.0
