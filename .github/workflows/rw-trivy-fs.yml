@@ -63,7 +63,7 @@ permissions:
 jobs:
   trivy-fs:
     name: Trivy FS — vuln + misconfig + secret
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
       contents: read # actions/checkout
