@@ -6,8 +6,10 @@
 La CI/CD è composta da piccoli **reusable workflow** (`.github/workflows/rw-*.yml`) e
 **composite action** (`.github/actions/*`), chiamati da tre workflow di progetto: `ci.yml`,
 `collect-data.yml` e `deploy-pages.yml`. Tutti i job girano su runner GitHub-hosted
-(`ubuntu-latest`). I workflow con suffisso `-host` installano i tool direttamente sul runner
-(tool cache) invece di usare un container di job.
+fissati a `ubuntu-24.04` (non `ubuntu-latest`, che dal 19 ottobre 2026 passa a Ubuntu
+26.04: sposta il pin solo dopo una CI e un deploy verdi sulla nuova immagine). I workflow
+con suffisso `-host` installano i tool direttamente sul runner (tool cache) invece di usare
+un container di job.
 
 Convenzioni comuni a tutti i file:
 
@@ -67,7 +69,7 @@ zizmor --offline .github/
 # Job della CI con nektos/act, usando podman come container engine
 podman machine start                       # macOS: avviare una volta la VM podman
 export DOCKER_HOST="unix://$(podman machine inspect --format '{{.ConnectionInfo.PodmanSocket.Path}}')"
-ACT_OPTS=(--container-daemon-socket - -P ubuntu-latest=catthehacker/ubuntu:act-latest)
+ACT_OPTS=(--container-daemon-socket - -P ubuntu-24.04=catthehacker/ubuntu:act-24.04)
 act pull_request --workflows .github/workflows/ci.yml -j node-quality "${ACT_OPTS[@]}"
 act pull_request --workflows .github/workflows/ci.yml -j build-test "${ACT_OPTS[@]}" \
   --env TMPDIR="$PWD/.astro"

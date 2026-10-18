@@ -19,7 +19,7 @@
 #     protect against a compromised release).
 #
 # shellcheck:
-#   actionlint uses it automatically when `shellcheck` is on the PATH (ubuntu-latest
+#   actionlint uses it automatically when `shellcheck` is on the PATH (ubuntu-24.04
 #   ships it; otherwise a notice is printed and scripts are not shellchecked).
 #   Input shellcheck: false disables the integration explicitly.
 #
@@ -90,7 +90,7 @@ permissions:
 jobs:
   actionlint:
     name: actionlint — Workflow Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read # actions/checkout
