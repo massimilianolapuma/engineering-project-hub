@@ -227,7 +227,9 @@ Altre decisioni:
 - L'i18n usa le route `[...lang]`: EN su `/`, IT su `/it/`. I dizionari tipizzati devono
   avere chiavi identiche, vincolo imposto da `Dict` e verificato dai test. Gli snapshot
   restano indipendenti dalla lingua: i motivi sono codici più parametri.
-- Design token in CSS nativo (tema scuro e chiaro, contrasto WCAG AA). La UI è stata
-  validata con mockup hi-fi prima dell'implementazione. I font sono Geist self-hosted (OFL).
+- Design token in CSS nativo ("Warm Graphite", tema chiaro e scuro, contrasto WCAG AA
+  verificato da un test unitario), descritti in [`DESIGN.md`](../../DESIGN.md). La UI è
+  stata validata con mockup hi-fi prima dell'implementazione. I font sono IBM Plex Sans e
+  IBM Plex Mono self-hosted (OFL) tramite `@fontsource`.
 - TypeScript è fissato alla 6.0 per compatibilità con il tooling (typescript-eslint,
   `@astrojs/check`).

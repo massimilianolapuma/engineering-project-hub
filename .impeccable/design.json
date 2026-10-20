@@ -1,304 +1,325 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-18T00:00:00Z",
+  "generatedAt": "2026-10-20T00:00:00Z",
   "title": "Design System: Engineering Project Hub",
   "extensions": {
     "colorMeta": {
-      "contour-brown": {
+      "teal-accent": {
         "role": "primary",
-        "displayName": "Contour Brown",
-        "canonical": "#7d4f24",
-        "oklch": "oklch(47.1% 0.085 61)",
+        "displayName": "Teal Accent (links, focus, primary action; never status)",
+        "canonical": "#047879",
+        "oklch": "oklch(52.0% 0.090 195)",
         "tonalRamp": [
-          "#210000",
-          "#411700",
-          "#613604",
-          "#84552a",
-          "#a7764c",
-          "#cc996e",
-          "#f2bd91",
-          "#ffe2b5"
+          "#000e0f",
+          "#012828",
+          "#044444",
+          "#036262",
+          "#138282",
+          "#3fa0a0",
+          "#6bcac9",
+          "#99f8f7"
         ],
-        "darkCounterpart": "night-contour-brown"
+        "darkCounterpart": "night-teal-accent"
       },
-      "water-blue": {
-        "role": "secondary",
-        "displayName": "Water Blue",
-        "canonical": "#1a5f9e",
-        "oklch": "oklch(47.7% 0.121 251)",
-        "tonalRamp": [
-          "#00003b",
-          "#00225c",
-          "#00427f",
-          "#2064a3",
-          "#4486c8",
-          "#68aaee",
-          "#8bcfff",
-          "#b1f5ff"
-        ],
-        "darkCounterpart": "night-water-blue"
-      },
-      "road-red": {
+      "vermilion": {
         "role": "tertiary",
-        "displayName": "Road Red (Critical)",
-        "canonical": "#a92d22",
-        "oklch": "oklch(49.0% 0.162 29)",
+        "displayName": "Vermilion (Critical fill)",
+        "canonical": "#da4620",
+        "oklch": "oklch(60.0% 0.190 35)",
         "tonalRamp": [
-          "#2d0000",
-          "#5d0000",
-          "#830000",
-          "#aa2e23",
-          "#d25445",
-          "#fa7867",
-          "#ff9d8a",
-          "#ffd0c0"
+          "#1d0200",
+          "#420a00",
+          "#6c1701",
+          "#992400",
+          "#c83406",
+          "#eb5833",
+          "#ff987e",
+          "#fedcd3"
         ],
-        "darkCounterpart": "night-road-red"
+        "darkCounterpart": "night-vermilion"
+      },
+      "vermilion-text": {
+        "role": "tertiary",
+        "displayName": "Vermilion Text (Critical text on tint or surface)",
+        "canonical": "#a42e0c",
+        "oklch": "oklch(48.0% 0.160 35)",
+        "tonalRamp": [
+          "#1d0200",
+          "#420a00",
+          "#6c1701",
+          "#992400",
+          "#bc4527",
+          "#df6446",
+          "#ff987e",
+          "#fedcd3"
+        ],
+        "darkCounterpart": "night-vermilion-text"
       },
       "ochre": {
         "role": "tertiary",
-        "displayName": "Ochre (Attention, blind-spot edge, medium severity)",
-        "canonical": "#855400",
-        "oklch": "oklch(48.9% 0.105 71)",
+        "displayName": "Ochre (Attention fill)",
+        "canonical": "#c68206",
+        "oklch": "oklch(66.0% 0.150 72)",
         "tonalRamp": [
-          "#230000",
-          "#431600",
-          "#643500",
-          "#865502",
-          "#aa7633",
-          "#cf9957",
-          "#f5be7b",
-          "#ffe39f"
+          "#130900",
+          "#311d00",
+          "#523301",
+          "#754b01",
+          "#9b6406",
+          "#c27f05",
+          "#f2a635",
+          "#ffdfb8"
         ],
         "darkCounterpart": "night-ochre"
       },
-      "woodland-green": {
+      "ochre-text": {
         "role": "tertiary",
-        "displayName": "Woodland Green (Healthy)",
-        "canonical": "#36612a",
-        "oklch": "oklch(44.7% 0.097 139)",
+        "displayName": "Ochre Text (Attention text on tint or surface)",
+        "canonical": "#804d0c",
+        "oklch": "oklch(47.0% 0.100 65)",
         "tonalRamp": [
-          "#001200",
-          "#022f00",
-          "#234e16",
-          "#436e37",
-          "#639057",
-          "#85b479",
-          "#a9d99c",
-          "#cdffc0"
+          "#150800",
+          "#341b00",
+          "#563001",
+          "#7a4702",
+          "#99642a",
+          "#b98249",
+          "#e4aa71",
+          "#ffdec0"
         ],
-        "darkCounterpart": "night-woodland-green"
+        "darkCounterpart": "night-ochre-text"
       },
-      "survey-grey": {
+      "emerald": {
         "role": "tertiary",
-        "displayName": "Survey Grey (Unknown)",
-        "canonical": "#55595c",
-        "oklch": "oklch(46.1% 0.007 240)",
+        "displayName": "Emerald (Healthy fill)",
+        "canonical": "#19966e",
+        "oklch": "oklch(60.0% 0.120 165)",
         "tonalRamp": [
-          "#090c0e",
-          "#222628",
-          "#3f4345",
-          "#5e6265",
-          "#7f8386",
-          "#a1a6a9",
-          "#c5cacd",
-          "#eaeff3"
+          "#000f08",
+          "#01291b",
+          "#034631",
+          "#026548",
+          "#078661",
+          "#32a67d",
+          "#62d0a4",
+          "#92fed1"
         ],
-        "darkCounterpart": "night-survey-grey"
+        "darkCounterpart": "night-emerald"
       },
-      "burnt-sienna": {
+      "emerald-text": {
         "role": "tertiary",
-        "displayName": "Burnt Sienna (high severity only)",
-        "canonical": "#9a3f12",
-        "oklch": "oklch(48.5% 0.133 43)",
+        "displayName": "Emerald Text (Healthy text on tint or surface)",
+        "canonical": "#026548",
+        "oklch": "oklch(45.0% 0.100 165)",
         "tonalRamp": [
-          "#2c0000",
-          "#530000",
-          "#771e00",
-          "#9d4115",
-          "#c3643b",
-          "#ea875e",
-          "#ffab81",
-          "#ffd4ae"
+          "#000f08",
+          "#01291b",
+          "#034631",
+          "#026548",
+          "#288463",
+          "#4ba280",
+          "#75cca7",
+          "#a3fad4"
         ],
-        "darkCounterpart": "night-burnt-sienna"
+        "darkCounterpart": "night-emerald-text"
       },
-      "sheet-white": {
+      "unknown-stroke": {
         "role": "neutral",
-        "displayName": "Sheet White",
-        "canonical": "#fdfdfb",
-        "oklch": "oklch(99.3% 0.003 106)",
+        "displayName": "Unknown Stroke (dashed outline, 3:1)",
+        "canonical": "#8f8a83",
+        "oklch": "oklch(63.6% 0.012 77)",
         "tonalRamp": [
-          "#0b0b0a",
-          "#252524",
-          "#424240",
-          "#616160",
-          "#828281",
-          "#a5a5a3",
-          "#c9c9c7",
-          "#eeeeec"
+          "#0e0b06",
+          "#25211b",
+          "#3e3a34",
+          "#59554e",
+          "#76716a",
+          "#938e87",
+          "#bcb6af",
+          "#e9e4dc"
         ],
-        "darkCounterpart": "night-sheet"
+        "darkCounterpart": "night-unknown-stroke"
       },
-      "linework-ink": {
+      "ground": {
         "role": "neutral",
-        "displayName": "Linework Ink",
-        "canonical": "#1d1f21",
-        "oklch": "oklch(23.8% 0.005 248)",
+        "displayName": "Ground (page)",
+        "canonical": "#f6f5f3",
+        "oklch": "oklch(97.0% 0.003 85)",
         "tonalRamp": [
-          "#0a0b0d",
-          "#232527",
-          "#404244",
-          "#5f6164",
-          "#808385",
-          "#a3a5a8",
-          "#c7c9cc",
-          "#eceff2"
+          "#0c0b0a",
+          "#222120",
+          "#3b3a39",
+          "#565553",
+          "#727170",
+          "#908f8d",
+          "#b8b7b5",
+          "#e5e4e2"
         ],
-        "darkCounterpart": "night-ink"
+        "darkCounterpart": "night-ground"
       },
-      "sheet-tint": {
+      "surface": {
         "role": "neutral",
-        "displayName": "Sheet Tint",
-        "darkCounterpart": "night-sheet-tint"
-      },
-      "sheet-hover": {
-        "role": "neutral",
-        "displayName": "Sheet Hover",
-        "darkCounterpart": "night-sheet-hover"
-      },
-      "void-ground": {
-        "role": "neutral",
-        "displayName": "Void Ground",
-        "darkCounterpart": "night-void-ground"
+        "displayName": "Surface (cards, lists, controls)",
+        "canonical": "#fffefc",
+        "oklch": "oklch(99.7% 0.003 85)",
+        "tonalRamp": [
+          "#0c0b0a",
+          "#222120",
+          "#3b3a39",
+          "#565553",
+          "#727170",
+          "#908f8d",
+          "#b8b7b5",
+          "#e5e4e2"
+        ],
+        "darkCounterpart": "night-surface"
       },
       "hairline": {
         "role": "neutral",
-        "displayName": "Hairline",
+        "displayName": "Hairline (borders)",
+        "canonical": "#e7e5e1",
+        "oklch": "oklch(92.2% 0.006 85)",
+        "tonalRamp": [
+          "#0c0b08",
+          "#23211f",
+          "#3c3a37",
+          "#575552",
+          "#73716e",
+          "#918f8b",
+          "#b9b7b3",
+          "#e6e4e0"
+        ],
         "darkCounterpart": "night-hairline"
       },
-      "hairline-strong": {
+      "control-stroke": {
         "role": "neutral",
-        "displayName": "Hairline Strong",
-        "darkCounterpart": "night-hairline-strong"
+        "displayName": "Control Stroke (input and button borders, 3:1)",
+        "canonical": "#928d86",
+        "oklch": "oklch(64.6% 0.012 77)",
+        "tonalRamp": [
+          "#0e0b06",
+          "#25211b",
+          "#3e3a34",
+          "#59554e",
+          "#76716a",
+          "#938e87",
+          "#bcb6af",
+          "#e9e4dc"
+        ],
+        "darkCounterpart": "night-control-stroke"
       },
-      "hairline-faint": {
+      "graphite-ink": {
         "role": "neutral",
-        "displayName": "Hairline Faint",
-        "darkCounterpart": "night-hairline-faint"
+        "displayName": "Graphite Ink (text)",
+        "canonical": "#1c1917",
+        "oklch": "oklch(21.6% 0.006 56)",
+        "tonalRamp": [
+          "#0d0b09",
+          "#24211f",
+          "#3d3a37",
+          "#585452",
+          "#74716e",
+          "#928e8c",
+          "#bbb6b4",
+          "#e8e4e1"
+        ],
+        "darkCounterpart": "night-graphite-ink"
       },
-      "ink-muted": {
+      "graphite-muted": {
         "role": "neutral",
-        "displayName": "Ink Muted",
-        "darkCounterpart": "night-ink-muted"
-      },
-      "ink-tertiary": {
-        "role": "neutral",
-        "displayName": "Ink Tertiary",
-        "darkCounterpart": "night-ink-tertiary"
-      },
-      "ink-data": {
-        "role": "neutral",
-        "displayName": "Ink Data",
-        "darkCounterpart": "night-ink-data"
-      },
-      "icon-ink": {
-        "role": "neutral",
-        "displayName": "Icon Ink",
-        "darkCounterpart": "night-icon-ink"
-      },
-      "water-blue-ink": {
-        "role": "neutral",
-        "displayName": "Water Blue Ink",
-        "darkCounterpart": "night-water-blue-ink"
-      },
-      "derived-status-grounds": {
-        "role": "derived",
-        "displayName": "Status grounds",
-        "canonical": "color-mix(in srgb, <ink> var(--tint), var(--surface)); --tint 13% light / 16% dark",
-        "note": "--red-bg, --amber-bg, --green-bg, --grey-bg, --info-bg; --accent-bg mixes primary at 12%"
-      },
-      "hatch": {
-        "role": "derived",
-        "displayName": "Survey Hatch (light)",
-        "canonical": "repeating-linear-gradient(45deg, color-mix(in srgb, var(--frame) 30%, transparent) 0 1px, transparent 1px 7px)",
-        "note": "Single unknown cells and tiles, blind-spot legend swatch; layered over var(--surface)."
-      },
-      "hatch-void": {
-        "role": "derived",
-        "displayName": "Survey Hatch (void)",
-        "canonical": "repeating-linear-gradient(45deg, color-mix(in srgb, var(--frame) var(--hatch-strength), transparent) 0 1.5px, transparent 1.5px 6px), var(--void-ground)",
-        "note": "--hatch-strength 62% light / 34% dark. All-unknown row band and its Overall cell; Unknown legend swatch."
+        "displayName": "Graphite Muted (secondary text)",
+        "canonical": "#57534e",
+        "oklch": "oklch(44.4% 0.010 74)",
+        "tonalRamp": [
+          "#0e0b07",
+          "#24211d",
+          "#3e3a35",
+          "#595550",
+          "#75716c",
+          "#938e89",
+          "#bbb7b1",
+          "#e8e4de"
+        ],
+        "darkCounterpart": "night-graphite-muted"
       }
     },
     "typographyMeta": {
       "headline": {
         "displayName": "Headline",
-        "purpose": "Page title only; the one large line on the sheet."
+        "purpose": "Page title (h1), 600, 1.375rem/28px. One per page."
+      },
+      "lead": {
+        "displayName": "Lead sentence",
+        "purpose": "The one dominant sentence under the title (\"3 of 4 projects need attention\"), 600, 1.0625rem/24px."
       },
       "title": {
         "displayName": "Title",
-        "purpose": "Section titles on inherited pages."
+        "purpose": "Section and card titles (h2), 600, 1.125rem/24px; card titles inside forms 15px/22px."
       },
       "body": {
         "displayName": "Body",
-        "purpose": "Table, form, notes and legend text; tabular figures."
+        "purpose": "Lists, tables, reasons and forms, 400, 0.875rem/1.5. Never below 14px for running text."
       },
-      "cell-reason": {
-        "displayName": "Cell reason",
-        "purpose": "One-line reason and metric inside a sheet cell; column A steps to 0.8125rem/500."
+      "small": {
+        "displayName": "Small",
+        "purpose": "Notes, filter labels, secondary lines, 0.8125rem."
       },
       "label": {
-        "displayName": "Sheet furniture label",
-        "purpose": "Uppercase, 0.08em tracked: sheet title bar, footer imprint, grid letters, margin heads, column heads, note refs. Contour brown."
+        "displayName": "Label",
+        "purpose": "Pills, column heads, dimension labels, confidence, 600 (pills) or 400, 0.75rem. The smallest size used."
       },
-      "grid-ref": {
-        "displayName": "Grid ref",
-        "purpose": "Cell reference (A1, D2) in the cell's top-right corner, tertiary ink."
+      "score": {
+        "displayName": "Score figure",
+        "purpose": "Project score, 700, tabular: 1.125rem/24px in a row, 1.75rem/34px in the project header."
       },
       "mono": {
         "displayName": "Mono",
-        "purpose": "Code, SHAs, versions."
+        "purpose": "IBM Plex Mono 400/500 for code, repository names, SHAs and versions only."
       }
     },
     "shadows": [
       {
         "name": "none",
         "value": "none",
-        "purpose": "--shadow is none: the sheet is flat."
+        "purpose": "No elevation: surfaces are separated by 1px hairlines, never by shadows."
       },
       {
-        "name": "pressed-underline",
-        "value": "inset 0 -2px 0 var(--frame)",
-        "purpose": "State only: pressed count filter."
-      },
-      {
-        "name": "neatline",
-        "value": "border: 1px solid var(--frame); outline: 1px solid var(--frame); outline-offset: 3px",
-        "purpose": "Double neatline around the sheet; line, not elevation."
+        "name": "pressed-ring",
+        "value": "inset 0 0 0 1px var(--text)",
+        "purpose": "State only: pressed count filter and current project type segment."
       }
     ],
     "motion": [
       {
         "name": "reduced-motion",
-        "value": "transition: none !important under prefers-reduced-motion",
-        "purpose": "The sheet has no motion grammar; state changes are instant."
+        "value": "transition: none !important; animation: none !important under prefers-reduced-motion",
+        "purpose": "No motion grammar: state changes are instant; disclosures use native <details>."
       }
     ],
     "breakpoints": [
       {
-        "name": "sheet-stack",
-        "value": "1240px",
-        "purpose": "Margin below sheet, notes first; rows become stacked cards."
+        "name": "phone",
+        "value": "640px",
+        "purpose": "Project header, environments path, security cards and data-quality rows stack vertically."
       },
       {
         "name": "narrow",
         "value": "720px",
-        "purpose": "Each row card framed in contour brown."
+        "purpose": "Generic tables become stacked label/value cards; side gutters drop to 16px."
+      },
+      {
+        "name": "compact",
+        "value": "760px",
+        "purpose": "Portfolio and workflow rows wrap into two lines (name, status and score first; bars and reason second); no horizontal page scroll."
+      },
+      {
+        "name": "catalog",
+        "value": "900px",
+        "purpose": "Catalog editor: side list and form side by side."
       }
     ],
     "focus": {
-      "value": "outline: 3px solid var(--focus); outline-offset: 2px; border-radius: var(--radius-sm)"
+      "value": "outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm)"
     },
     "themes": {
       "switch": "prefers-color-scheme, overridable with :root[data-theme='light'|'dark']",
@@ -307,129 +328,168 @@
   },
   "components": [
     {
-      "name": "Status Badge (health)",
-      "kind": "chip",
-      "refersTo": "badge-critical",
-      "description": "Health chip: shape icon + label; tint ground, ink text, 35% ink border; Unknown is dashed on sheet white.",
-      "html": "<span class=\"ds-root\"><span class=\"ds-badge ds-badge--red\"><svg class=\"ds-icon\" viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" aria-hidden=\"true\"><path d=\"M5.1 1h5.8L15 5.1v5.8L10.9 15H5.1L1 10.9V5.1z\" fill=\"currentColor\"/><path d=\"M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8\" stroke=\"var(--icon-ink,#fff)\" stroke-width=\"1.8\" stroke-linecap=\"round\"/></svg><span>Critical</span></span> <span class=\"ds-badge ds-badge--amber\"><svg class=\"ds-icon\" viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" aria-hidden=\"true\"><path d=\"M8 1.2l7 12.6H1z\" fill=\"currentColor\"/><path d=\"M8 5.6v4\" stroke=\"var(--icon-ink,#fff)\" stroke-width=\"1.8\" stroke-linecap=\"round\"/><circle cx=\"8\" cy=\"11.9\" r=\"1\" fill=\"var(--icon-ink,#fff)\"/></svg><span>Attention</span></span> <span class=\"ds-badge ds-badge--green\"><svg class=\"ds-icon\" viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" aria-hidden=\"true\"><circle cx=\"8\" cy=\"8\" r=\"7\" fill=\"currentColor\"/><path d=\"M4.6 8.3l2.2 2.2 4.6-4.8\" fill=\"none\" stroke=\"var(--icon-ink,#fff)\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg><span>Healthy</span></span> <span class=\"ds-badge ds-badge--grey\"><svg class=\"ds-icon\" viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" aria-hidden=\"true\"><rect x=\"1.5\" y=\"1.5\" width=\"13\" height=\"13\" rx=\"2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-dasharray=\"2.4 1.6\"/><path d=\"M5 8h6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"/></svg><span>Unknown</span></span></span>",
-      "css": ":host,.ds-root{--frame:#7d4f24;--surface:#fdfdfb;--surface-2:#f2f3ef;--border:#d5d7d0;--border-strong:#a9aca3;--text:#1d1f21;--text-muted:#45484b;--text-tertiary:#585c5f;--focus:#1a5f9e;--link:#1a5f9e;--red:#a92d22;--amber:#855400;--green:#36612a;--grey:#55595c;--icon-ink:#fff;--void-ground:#ecede8;font-family:'Public Sans',system-ui,sans-serif}.ds-badge{display:inline-flex;align-items:center;gap:6px;border-radius:2px;font-weight:600;line-height:1.2;white-space:nowrap;border:1px solid transparent;padding:3px 10px 3px 7px;font-size:0.8125rem}.ds-badge--red{color:var(--red,#a92d22);background:color-mix(in srgb,var(--red,#a92d22) 13%,var(--surface,#fdfdfb));border-color:color-mix(in srgb,var(--red,#a92d22) 35%,transparent)}.ds-badge--amber{color:var(--amber,#855400);background:color-mix(in srgb,var(--amber,#855400) 13%,var(--surface,#fdfdfb));border-color:color-mix(in srgb,var(--amber,#855400) 35%,transparent)}.ds-badge--green{color:var(--green,#36612a);background:color-mix(in srgb,var(--green,#36612a) 13%,var(--surface,#fdfdfb));border-color:color-mix(in srgb,var(--green,#36612a) 35%,transparent)}.ds-badge--grey{color:var(--grey,#55595c);background:var(--surface,#fdfdfb);border-style:dashed;border-color:var(--grey,#55595c)}.ds-badge:focus-visible{outline:3px solid var(--focus,#1a5f9e);outline-offset:2px}.ds-icon{flex:none}"
+      "name": "Status Dot",
+      "kind": "indicator",
+      "refersTo": "status-dot",
+      "description": "10px circle: filled vermilion / ochre / emerald for Critical / Attention / Healthy, a 1.5px dashed outline for Unknown (never a fill). Has an accessible name and always sits next to text.",
+      "html": "<span class=\"ds-root\"><span class=\"ds-dot ds-dot--red\" role=\"img\" aria-label=\"Critical\"></span> <span class=\"ds-dot ds-dot--amber\" role=\"img\" aria-label=\"Attention\"></span> <span class=\"ds-dot ds-dot--green\" role=\"img\" aria-label=\"Healthy\"></span> <span class=\"ds-dot ds-dot--grey\" role=\"img\" aria-label=\"Unknown\"></span></span>",
+      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle}.ds-dot--red{background:var(--red)}.ds-dot--amber{background:var(--amber)}.ds-dot--green{background:var(--green)}.ds-dot--grey{border:1.5px dashed var(--unknown)}"
     },
     {
-      "name": "Pill (blind spot)",
+      "name": "Dimension Bars",
+      "kind": "indicator",
+      "refersTo": "dimension-bars",
+      "description": "Five 32×10px bars with a 4px gap (Delivery, Versions, Security, Coverage, Governance), 4px corners. Each bar has an accessible name such as \"Security risk: Critical\"; labels appear once in the list header. Unknown is a dashed outline.",
+      "html": "<span class=\"ds-root\"><span class=\"ds-bars\" role=\"group\" aria-label=\"Health dimensions\"><span class=\"ds-bar ds-bar--red\" role=\"img\" aria-label=\"Delivery: Critical\"></span><span class=\"ds-bar ds-bar--amber\" role=\"img\" aria-label=\"Versions: Attention\"></span><span class=\"ds-bar ds-bar--red\" role=\"img\" aria-label=\"Security risk: Critical\"></span><span class=\"ds-bar ds-bar--grey\" role=\"img\" aria-label=\"Coverage: Unknown\"></span><span class=\"ds-bar ds-bar--green\" role=\"img\" aria-label=\"Governance: Healthy\"></span></span></span>",
+      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-bars{display:inline-flex;gap:4px;align-items:center}.ds-bar{display:block;width:32px;height:10px;border-radius:4px}.ds-bar--red{background:var(--red)}.ds-bar--amber{background:var(--amber)}.ds-bar--green{background:var(--green)}.ds-bar--grey{border:1.5px dashed var(--unknown)}"
+    },
+    {
+      "name": "Score",
+      "kind": "figure",
+      "refersTo": "score",
+      "description": "Project score 0–100 in 700 tabular figures with its confidence as visible secondary text (\"measured 4 of 5\"). With insufficient data: an em dash and \"insufficient data\", never 0.",
+      "html": "<span class=\"ds-root\"><span class=\"ds-score\"><span class=\"ds-score__v\">38</span><span class=\"ds-score__c\">measured 5 of 5</span></span> <span class=\"ds-score\"><span class=\"ds-score__v ds-score__v--none\">—</span><span class=\"ds-score__c\">insufficient data · measured 0 of 5</span></span></span>",
+      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-root{display:flex;gap:32px}.ds-score{display:inline-flex;flex-direction:column;font-variant-numeric:tabular-nums}.ds-score__v{font-size:1.125rem;line-height:24px;font-weight:700}.ds-score__v--none{color:var(--text-muted)}.ds-score__c{font-size:.75rem;line-height:16px;color:var(--text-muted)}"
+    },
+    {
+      "name": "Status Pill",
       "kind": "chip",
-      "refersTo": "pill-blind",
-      "description": "Control state pill; a required control the collector cannot see keeps a solid ochre edge and the hatched-square icon.",
-      "html": "<span class=\"ds-root\"><span class=\"ds-pill ds-pill--blind\"><svg class=\"ds-icon\" style=\"color:#855400\" viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" aria-hidden=\"true\"><rect x=\"1.5\" y=\"1.5\" width=\"13\" height=\"13\" rx=\"2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"/><path d=\"M1.5 9.5l8-8M5.5 14.5l9-9M1.5 14.5L14.5 1.5\" stroke=\"currentColor\" stroke-width=\"1.2\"/></svg><span>Secrets: blind spot</span></span> <span class=\"ds-pill\"><svg class=\"ds-icon\" viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" aria-hidden=\"true\"><circle cx=\"8\" cy=\"8\" r=\"7\" fill=\"currentColor\"/><path d=\"M4.6 8.3l2.2 2.2 4.6-4.8\" fill=\"none\" stroke=\"var(--icon-ink,#fff)\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg><span>Code scanning</span></span></span>",
-      "css": ":host,.ds-root{--frame:#7d4f24;--surface:#fdfdfb;--surface-2:#f2f3ef;--border:#d5d7d0;--border-strong:#a9aca3;--text:#1d1f21;--text-muted:#45484b;--text-tertiary:#585c5f;--focus:#1a5f9e;--link:#1a5f9e;--red:#a92d22;--amber:#855400;--green:#36612a;--grey:#55595c;--icon-ink:#fff;--void-ground:#ecede8;font-family:'Public Sans',system-ui,sans-serif}.ds-pill{display:inline-flex;align-items:center;gap:6px;border-radius:2px;padding:2px 8px 2px 6px;font-size:0.75rem;font-weight:500;line-height:1.2;background:var(--surface-2,#f2f3ef);color:var(--text,#1d1f21);border:1px solid var(--border,#d5d7d0)}.ds-pill .ds-icon{color:var(--green,#36612a)}.ds-pill--blind{background:var(--surface,#fdfdfb);border-color:var(--amber,#855400);font-weight:600}.ds-pill--blind .ds-icon{color:var(--amber,#855400)}"
+      "refersTo": "status-pill",
+      "description": "12px/600 label on a fixed status tint, 999px radius, 3px 10px padding, shape icon before the text. Unknown is transparent with a dashed outline. Pills placed before text sit in a 112px column so the text aligns.",
+      "html": "<span class=\"ds-root\"><span class=\"ds-pill ds-pill--red\">Critical</span> <span class=\"ds-pill ds-pill--amber\">Attention</span> <span class=\"ds-pill ds-pill--green\">Healthy</span> <span class=\"ds-pill ds-pill--grey\">Unknown</span></span>",
+      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:.75rem;line-height:16px;font-weight:600;border:1px solid transparent}.ds-pill--red{background:var(--red-tint);color:var(--red-text)}.ds-pill--amber{background:var(--amber-tint);color:var(--amber-text)}.ds-pill--green{background:var(--green-tint);color:var(--green-text)}.ds-pill--grey{color:var(--text-muted);border:1px dashed var(--unknown)}"
+    },
+    {
+      "name": "Control Symbol",
+      "kind": "indicator",
+      "refersTo": "control-symbol",
+      "description": "24px box with one of six glyphs, same meaning everywhere: ✓ enabled, ! required but not configured, ⧖ stale scan, ✕ failed, ? not visible, – not required. The glyph carries the meaning and has an accessible name; colour is secondary.",
+      "html": "<span class=\"ds-root\"><span class=\"ds-sym ds-sym--green\" role=\"img\" aria-label=\"Enabled\">✓</span> <span class=\"ds-sym ds-sym--amber\" role=\"img\" aria-label=\"Required but not configured\">!</span> <span class=\"ds-sym ds-sym--amber\" role=\"img\" aria-label=\"Stale scan\">⧖</span> <span class=\"ds-sym ds-sym--red\" role=\"img\" aria-label=\"Scan failed\">✕</span> <span class=\"ds-sym ds-sym--unknown\" role=\"img\" aria-label=\"Not visible\">?</span> <span class=\"ds-sym ds-sym--muted\" role=\"img\" aria-label=\"Not required\">–</span></span>",
+      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-sym{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;font-size:.8125rem;font-weight:700;line-height:1}.ds-sym--green{background:var(--green-tint);color:var(--green-text)}.ds-sym--amber{background:var(--amber-tint);color:var(--amber-text)}.ds-sym--red{background:var(--red-tint);color:var(--red-text)}.ds-sym--unknown{color:var(--text-muted);border:1.5px dashed var(--unknown)}.ds-sym--muted{color:var(--text-muted)}"
     },
     {
       "name": "Count Filter",
       "kind": "button",
-      "refersTo": "sheet-count",
-      "description": "Counts in the title line act as filters; pressed state uses contour brown and an inset underline.",
-      "html": "<span class=\"ds-root\"><button class=\"ds-count\" aria-pressed=\"true\"><b>4</b> Show all</button> <button class=\"ds-count\" aria-pressed=\"false\"><b>1</b> <svg class=\"ds-icon\" viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" aria-hidden=\"true\"><path d=\"M5.1 1h5.8L15 5.1v5.8L10.9 15H5.1L1 10.9V5.1z\" fill=\"#a92d22\"/><path d=\"M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8\" stroke=\"var(--icon-ink,#fff)\" stroke-width=\"1.8\" stroke-linecap=\"round\"/></svg> Critical</button></span>",
-      "css": ":host,.ds-root{--frame:#7d4f24;--surface:#fdfdfb;--surface-2:#f2f3ef;--border:#d5d7d0;--border-strong:#a9aca3;--text:#1d1f21;--text-muted:#45484b;--text-tertiary:#585c5f;--focus:#1a5f9e;--link:#1a5f9e;--red:#a92d22;--amber:#855400;--green:#36612a;--grey:#55595c;--icon-ink:#fff;--void-ground:#ecede8;font-family:'Public Sans',system-ui,sans-serif}.ds-count{font:inherit;font-size:0.8125rem;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:4px 12px;color:var(--text,#1d1f21);background:var(--surface,#fdfdfb);border:1px solid var(--border,#d5d7d0);border-radius:2px;cursor:pointer}.ds-count b{font-variant-numeric:tabular-nums}.ds-count:hover{border-color:var(--border-strong,#a9aca3)}.ds-count[aria-pressed='true']{border-color:var(--frame,#7d4f24);background:var(--surface-2,#f2f3ef);box-shadow:inset 0 -2px 0 var(--frame,#7d4f24);font-weight:600}.ds-count:focus-visible{outline:3px solid var(--focus,#1a5f9e);outline-offset:2px}"
+      "refersTo": "count-filter",
+      "description": "Status counts in the Portfolio title line double as the status filter: 40px high, hairline border, 8px radius, dot + 700 tabular value + label. Pressed: ink border with a 1px inset ink ring on the sunk surface.",
+      "html": "<span class=\"ds-root\"><button class=\"ds-count\" aria-pressed=\"true\"><span class=\"ds-count__dot\" style=\"background:oklch(0.6 0.19 35)\"></span><b>1</b> Critical</button> <button class=\"ds-count\" aria-pressed=\"false\"><span class=\"ds-count__dot\" style=\"background:oklch(0.66 0.15 72)\"></span><b>2</b> Attention</button></span>",
+      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-count{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:inherit;cursor:pointer}.ds-count b{font-size:1rem;font-variant-numeric:tabular-nums}.ds-count[aria-pressed=true]{border-color:var(--text);background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--text)}.ds-count__dot{width:10px;height:10px;border-radius:50%}"
     },
     {
-      "name": "Sheet Cell",
-      "kind": "custom",
-      "refersTo": "sheet-cell",
-      "description": "Chip + grid ref head, optional metric, one reason; the tint carries status so the chip loses its box. Unknown cell uses the light hatch.",
-      "html": "<table class=\"ds-root ds-sheet\"><tr><td class=\"ds-cell ds-cell--red\"><span class=\"ds-head\"><span class=\"ds-chip\" style=\"color:#a92d22\"><svg class=\"ds-icon\" viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" aria-hidden=\"true\"><path d=\"M5.1 1h5.8L15 5.1v5.8L10.9 15H5.1L1 10.9V5.1z\" fill=\"currentColor\"/><path d=\"M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8\" stroke=\"var(--icon-ink,#fff)\" stroke-width=\"1.8\" stroke-linecap=\"round\"/></svg> Critical</span><span class=\"ds-ref\">D1</span></span><span class=\"ds-metric\">≥1 critical · ≥2 high</span><span class=\"ds-reason\">1 open critical alert(s)</span></td><td class=\"ds-cell ds-cell--grey\"><span class=\"ds-head\"><span class=\"ds-chip\" style=\"color:#55595c\"><svg class=\"ds-icon\" viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" aria-hidden=\"true\"><rect x=\"1.5\" y=\"1.5\" width=\"13\" height=\"13\" rx=\"2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-dasharray=\"2.4 1.6\"/><path d=\"M5 8h6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"/></svg> Unknown</span><span class=\"ds-ref\">E4</span></span><span class=\"ds-reason\">Not authorised (403)</span></td></tr></table>",
-      "css": ":host,.ds-root{--frame:#7d4f24;--surface:#fdfdfb;--surface-2:#f2f3ef;--border:#d5d7d0;--border-strong:#a9aca3;--text:#1d1f21;--text-muted:#45484b;--text-tertiary:#585c5f;--focus:#1a5f9e;--link:#1a5f9e;--red:#a92d22;--amber:#855400;--green:#36612a;--grey:#55595c;--icon-ink:#fff;--void-ground:#ecede8;font-family:'Public Sans',system-ui,sans-serif}.ds-sheet{border-collapse:collapse;border:1px solid var(--frame,#7d4f24);outline:1px solid var(--frame,#7d4f24);outline-offset:3px;margin:4px}.ds-cell{min-width:140px;vertical-align:top;padding:8px 12px 12px;border-right:1px solid var(--border,#d5d7d0)}.ds-cell>*+*{margin-top:4px}.ds-cell--red{background:color-mix(in srgb,var(--red,#a92d22) 13%,var(--surface,#fdfdfb))}.ds-cell--grey{background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--frame,#7d4f24) 30%,transparent) 0 1px,transparent 1px 7px),var(--surface,#fdfdfb)}.ds-head{display:flex;justify-content:space-between;gap:8px}.ds-chip{display:inline-flex;gap:6px;align-items:center;font-size:0.75rem;font-weight:600}.ds-ref{font-size:0.6875rem;font-weight:600;letter-spacing:0.04em;color:var(--text-tertiary,#585c5f)}.ds-metric,.ds-reason{display:block;font-size:0.75rem;line-height:1.4}.ds-metric{color:var(--text-muted,#45484b);font-variant-numeric:tabular-nums}.ds-reason{color:var(--text,#1d1f21)}"
+      "name": "Portfolio Row",
+      "kind": "list-row",
+      "refersTo": "portfolio-row",
+      "description": "One row per project, worst first, in a 10px-radius surface list: status dot, project link, score with confidence, five dimension bars, one-line main reason. 14px 16px cell padding, hairline row rules, sunk-surface hover. At 760px and below the row wraps into two lines.",
+      "html": "<div class=\"ds-root\"><div class=\"ds-row\"><span class=\"ds-dot\" style=\"background:oklch(0.6 0.19 35)\"></span><a href=\"#\">Project Beta</a><span class=\"ds-sc\"><b>38</b><small>measured 5 of 5</small></span><span class=\"ds-bars\"><i style=\"background:oklch(0.6 0.19 35)\"></i><i style=\"background:oklch(0.66 0.15 72)\"></i><i style=\"background:oklch(0.6 0.19 35)\"></i><i style=\"background:oklch(0.66 0.15 72)\"></i><i style=\"background:oklch(0.66 0.15 72)\"></i></span><span class=\"ds-reason\">1 open critical alert</span></div></div>",
+      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px}.ds-dot{width:10px;height:10px;border-radius:50%}.ds-row a{color:var(--accent);font-weight:600}.ds-sc{display:inline-flex;flex-direction:column;font-variant-numeric:tabular-nums}.ds-sc b{font-size:1.125rem}.ds-sc small{font-size:.75rem;color:var(--text-muted)}.ds-bars{display:inline-flex;gap:4px}.ds-bars i{width:32px;height:10px;border-radius:4px}.ds-reason{color:var(--text)}"
     },
     {
-      "name": "Void Band",
-      "kind": "custom",
-      "refersTo": "sheet-plate",
-      "description": "A row with nothing measured collapses into one heavy-hatched band; text sits on a sheet-white plate with a brown border.",
-      "html": "<div class=\"ds-root ds-band\"><div class=\"ds-plate\"><strong>Not surveyed</strong><span>Repositories not readable: 1 not found (404), 1 not authorised (401/403)</span><span class=\"ds-muted\">Open alerts: — critical · — high</span><a href=\"#\">Review access and collection errors</a></div></div>",
-      "css": ":host,.ds-root{--frame:#7d4f24;--surface:#fdfdfb;--surface-2:#f2f3ef;--border:#d5d7d0;--border-strong:#a9aca3;--text:#1d1f21;--text-muted:#45484b;--text-tertiary:#585c5f;--focus:#1a5f9e;--link:#1a5f9e;--red:#a92d22;--amber:#855400;--green:#36612a;--grey:#55595c;--icon-ink:#fff;--void-ground:#ecede8;font-family:'Public Sans',system-ui,sans-serif}.ds-band{background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--frame,#7d4f24) 62%,transparent) 0 1.5px,transparent 1.5px 6px),var(--void-ground,#ecede8);padding:16px;text-align:center}.ds-plate{display:inline-flex;flex-direction:column;align-items:center;gap:4px;max-width:46ch;padding:12px 16px;background:var(--surface,#fdfdfb);border:1px solid var(--frame,#7d4f24);font-size:0.8125rem;color:var(--text,#1d1f21)}.ds-plate strong{font-size:0.875rem}.ds-muted{color:var(--text-muted,#45484b);font-size:0.75rem}.ds-plate a{color:var(--link,#1a5f9e);text-underline-offset:2px}.ds-plate a:hover{text-decoration-thickness:2px}.ds-plate a:focus-visible{outline:3px solid var(--focus,#1a5f9e);outline-offset:2px;border-radius:2px}"
+      "name": "Dimension Card",
+      "kind": "card",
+      "refersTo": "dimension-card",
+      "description": "Project page: one card per dimension (status dot, name, status pill, one-line summary) linking to its section. 16px padding, 10px radius, hairline border; an Unknown dimension shows a dashed dot and names the cause. No side-stripe borders.",
+      "html": "<div class=\"ds-root\"><a class=\"ds-card\" href=\"#\"><span class=\"ds-card__head\"><span class=\"ds-dot\"></span>Security risk</span><span class=\"ds-card__sum\">1 open critical alert</span></a></div>",
+      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-card{display:flex;flex-direction:column;gap:6px;width:220px;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);text-decoration:none}.ds-card__head{display:flex;align-items:center;gap:8px;font-weight:600}.ds-dot{width:10px;height:10px;border-radius:50%;background:var(--red)}.ds-card__sum{color:var(--text-muted);font-size:.8125rem}"
     },
     {
-      "name": "Margin Notes",
-      "kind": "custom",
-      "refersTo": "",
-      "description": "Sheet notes keyed by grid reference under a contour-brown margin head.",
-      "html": "<section class=\"ds-root ds-notes\"><h2 class=\"ds-mhead\">Sheet notes</h2><ol><li class=\"ds-note ds-note--red\"><a class=\"ds-nref\" href=\"#\">B1</a><span><a href=\"#\">Project Beta</a><br>Release is not defined</span></li><li class=\"ds-note\"><a class=\"ds-nref\" href=\"#\">B4–F4</a><span><a href=\"#\">Project Gamma</a><br>Repositories not readable</span></li></ol></section>",
-      "css": ":host,.ds-root{--frame:#7d4f24;--surface:#fdfdfb;--surface-2:#f2f3ef;--border:#d5d7d0;--border-strong:#a9aca3;--text:#1d1f21;--text-muted:#45484b;--text-tertiary:#585c5f;--focus:#1a5f9e;--link:#1a5f9e;--red:#a92d22;--amber:#855400;--green:#36612a;--grey:#55595c;--icon-ink:#fff;--void-ground:#ecede8;font-family:'Public Sans',system-ui,sans-serif}.ds-mhead{margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid var(--frame,#7d4f24);font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--frame,#7d4f24)}.ds-notes ol{list-style:none;margin:0;padding:0;display:grid;gap:12px;font-size:0.8125rem;color:var(--text,#1d1f21)}.ds-note{display:grid;grid-template-columns:56px 1fr;gap:8px;align-items:baseline}.ds-nref{font-size:0.75rem;font-weight:700;letter-spacing:0.08em;color:var(--frame,#7d4f24);font-variant-numeric:tabular-nums}.ds-note--red .ds-nref{color:var(--red,#a92d22)}.ds-notes a{color:var(--link,#1a5f9e)}.ds-notes .ds-nref{color:var(--frame,#7d4f24)}.ds-note--red a.ds-nref{color:var(--red,#a92d22)}.ds-notes a:focus-visible{outline:3px solid var(--focus,#1a5f9e);outline-offset:2px}"
+      "name": "Environments Path",
+      "kind": "sequence",
+      "refersTo": "environments-path",
+      "description": "DEV → UAT → PROD as cards (10px radius, 12px 16px padding, min 140px) joined by muted arrows; each shows the version in IBM Plex Mono and aligned / behind. Turns vertical at 640px and below.",
+      "html": "<div class=\"ds-root\"><span class=\"ds-env\"><small>DEV</small><code>2.4.0</code></span><span class=\"ds-arrow\">→</span><span class=\"ds-env\"><small>UAT</small><code>2.4.0</code></span><span class=\"ds-arrow\">→</span><span class=\"ds-env\"><small>PROD</small><code>2.3.1</code><em>behind</em></span></div>",
+      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-root{display:flex;align-items:center;gap:8px}.ds-env{display:flex;flex-direction:column;gap:4px;min-width:140px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px}.ds-env small{font-size:.75rem;font-weight:600;color:var(--text-muted)}.ds-env code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:1rem}.ds-env em{font-style:normal;font-size:.75rem;color:var(--amber-text)}.ds-arrow{color:var(--text-muted)}"
+    },
+    {
+      "name": "Button",
+      "kind": "button",
+      "refersTo": "button",
+      "description": "Secondary by default: surface ground, control-stroke border, 8px radius, ≥40px. The one primary action per view (\"Propose on GitHub\") is teal with ≥44px height.",
+      "html": "<span class=\"ds-root\"><button class=\"ds-btn ds-btn--primary\">Propose on GitHub</button> <button class=\"ds-btn\">Download YAML</button></span>",
+      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-btn{min-height:40px;padding:6px 16px;font:inherit;font-weight:600;color:var(--text);background:var(--surface);border:1px solid var(--border-strong);border-radius:8px;cursor:pointer}.ds-btn--primary{min-height:44px;padding:6px 18px;background:var(--accent);border-color:var(--accent);color:var(--on-accent)}"
     },
     {
       "name": "Text Input",
       "kind": "input",
       "refersTo": "input-field",
-      "description": "Sheet-white field, hairline stroke, 2px corners, water-blue focus ring.",
-      "html": "<label class=\"ds-root ds-field\"><span>Search projects</span><input class=\"ds-input\" placeholder=\"Project name...\"></label>",
-      "css": ":host,.ds-root{--frame:#7d4f24;--surface:#fdfdfb;--surface-2:#f2f3ef;--border:#d5d7d0;--border-strong:#a9aca3;--text:#1d1f21;--text-muted:#45484b;--text-tertiary:#585c5f;--focus:#1a5f9e;--link:#1a5f9e;--red:#a92d22;--amber:#855400;--green:#36612a;--grey:#55595c;--icon-ink:#fff;--void-ground:#ecede8;font-family:'Public Sans',system-ui,sans-serif}.ds-field{display:flex;flex-direction:column;gap:4px;font-size:0.8125rem;color:var(--text,#1d1f21)}.ds-field span{font-weight:600}.ds-input{font:inherit;color:var(--text,#1d1f21);background:var(--surface,#fdfdfb);border:1px solid var(--border,#d5d7d0);border-radius:2px;padding:6px 10px;min-height:36px}.ds-input:hover{border-color:var(--border-strong,#a9aca3)}.ds-input:focus-visible{outline:3px solid var(--focus,#1a5f9e);outline-offset:2px}"
+      "description": "Surface field, control-stroke border (3:1), 8px radius, ≥40px, 0.875rem text. Focus: 2px teal outline at 2px offset.",
+      "html": "<span class=\"ds-root\"><label class=\"ds-field\">Search<input value=\"Alpha\"></label></span>",
+      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-field{display:flex;flex-direction:column;gap:4px;font-size:.75rem;font-weight:600;color:var(--text-muted)}.ds-field input{font:inherit;font-size:.875rem;font-weight:400;color:var(--text);background:var(--surface);border:1px solid var(--border-strong);border-radius:8px;padding:0 12px;min-height:40px}.ds-field input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}"
     },
     {
       "name": "Top Navigation",
-      "kind": "nav",
+      "kind": "navigation",
       "refersTo": "nav-link",
-      "description": "Muted links with a 2px underline; current page in ink with a contour-brown underline.",
-      "html": "<nav class=\"ds-root ds-nav\"><a href=\"#\" aria-current=\"page\">Portfolio</a><a href=\"#\">Workflows</a><a href=\"#\">Versions</a><a href=\"#\">Security</a></nav>",
-      "css": ":host,.ds-root{--frame:#7d4f24;--surface:#fdfdfb;--surface-2:#f2f3ef;--border:#d5d7d0;--border-strong:#a9aca3;--text:#1d1f21;--text-muted:#45484b;--text-tertiary:#585c5f;--focus:#1a5f9e;--link:#1a5f9e;--red:#a92d22;--amber:#855400;--green:#36612a;--grey:#55595c;--icon-ink:#fff;--void-ground:#ecede8;font-family:'Public Sans',system-ui,sans-serif}.ds-nav{display:flex;gap:4px;border-bottom:1px solid var(--border,#d5d7d0);background:var(--surface,#fdfdfb)}.ds-nav a{display:block;padding:8px 12px;border-bottom:2px solid transparent;color:var(--text-muted,#45484b);text-decoration:none;font-size:0.8125rem;font-weight:500}.ds-nav a:hover{color:var(--text,#1d1f21);border-bottom-color:var(--border-strong,#a9aca3)}.ds-nav a[aria-current='page']{color:var(--text,#1d1f21);border-bottom-color:var(--frame,#7d4f24);font-weight:700}.ds-nav a:focus-visible{outline:3px solid var(--focus,#1a5f9e);outline-offset:2px;border-radius:2px}"
+      "description": "Surface bar with a hairline under it: brand, then Portfolio, Security, Versions, Workflows, Data quality, Catalog (muted 500, 40px targets, 8px radius); the current page is ink on the sunk surface. \"How to read\", theme and language sit at the right.",
+      "html": "<nav class=\"ds-root ds-nav\"><b>Engineering Project Hub</b><a aria-current=\"page\" href=\"#\">Portfolio</a><a href=\"#\">Security</a><a href=\"#\">Versions</a><a href=\"#\">Workflows</a></nav>",
+      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-nav{display:flex;align-items:center;gap:2px;padding:12px 24px;background:var(--surface);border-bottom:1px solid var(--border)}.ds-nav b{margin-right:16px}.ds-nav a{display:flex;align-items:center;min-height:40px;padding:8px 10px;border-radius:8px;color:var(--text-muted);text-decoration:none;font-weight:500}.ds-nav a[aria-current=page]{color:var(--text);background:var(--surface-2)}"
     }
   ],
   "narrative": {
-    "northStar": "The Survey Sheet",
-    "overview": "The portfolio is a surveyed territory, drawn with the grammar of a 1:25,000 topographic sheet. Projects are numbered rows, dimensions are lettered columns (A Overall, B Delivery, C Version, D Security risk, E Security coverage, F Governance), and every cell is a parcel of ground that was either measured, and inked by its status, or not surveyed, and hatched and named as such. Sheet furniture (the double neatline, grid letters, row numbers, the title bar, the footer imprint, margin notes and the legend) is drawn in contour brown. Data is set in linework ink. Water blue is reserved for links and focus.\n\nThe sheet is dense and flat. There are no shadows or floating cards, and corners are square. Hairline rules separate cells, a 2px ink rule sets column A off from B–F, and status is carried by a pale tint of the ground rather than by coloured boxes or edges. Unknown is never blank, never zero and never calm. It is drawn with a 45° survey hatch, and a row where nothing was measured collapses into one heavy hatched \"void\" band. That band is the darkest silhouette on the sheet.\n\nTwo themes describe the same sheet. Light is sheet white by day. Dark is the same sheet read at night, with lifted inks and a darker void ground. Both follow `prefers-color-scheme` and can be overridden with `[data-theme]`. Every text pair is held to WCAG AA by `tests/unit/tokens-contrast.test.ts`.",
+    "northStar": "Warm Graphite: legibility first",
+    "overview": "Warm Graphite is a reading instrument for a weekly portfolio review. Each page says one thing first (a single sentence such as \"3 of 4 projects need attention\"), then shows the list sorted worst first, and keeps the detail one click away. Character comes from restraint and precision: warm neutral greys, generous padding, hairline borders, one teal accent, and status colours used only where a status is.\n\nStatus is a small, exact mark rather than a painted area: a 10px dot, five 32×10px dimension bars, a pill on a fixed tint, a 24px control symbol. Vermilion, ochre and emerald fill those marks; darker *-text variants carry any text on their tints. Unknown is never a fill and never calm: it is a dashed outline in a dedicated stroke colour, with the cause named in words. A project score (0–100) sits next to the status dot with its confidence (\"measured 4 of 5\") always visible; when data is insufficient there is an em dash, never a 0.\n\nLight and dark themes share hues and character; dark lifts the fills and inverts the tints onto a warm near-black. Both follow `prefers-color-scheme` and can be overridden with `[data-theme]`. Every text and graphic pair, including the fixed pill tints, is held to WCAG 2.2 AA by `tests/unit/tokens-contrast.test.ts`.",
     "keyCharacteristics": [
-      "Grid letters A–F across, row numbers down, and a grid reference (for example B1) in the corner of every cell.",
-      "Each cell holds one status chip and one line of reason, plus a metric where one exists.",
-      "Status uses a pale ground tint, a distinct shape icon and a text label, so it never depends on colour alone.",
-      "Hatch marks ground that was not surveyed. The void band marks a row where nothing was measured.",
-      "Contour-brown furniture, linework-ink data, water-blue links.",
-      "Square corners (2–3px), hairline rules, tabular figures and no shadows."
+      "One dominant sentence per page, then the list worst first, detail on demand.",
+      "Warm neutral greys; one teal accent for links, focus and the primary action, never for status.",
+      "Status as small exact marks (dot, dimension bars, pill, control symbol), always paired with text or an accessible name.",
+      "Unknown is a dashed outline with the cause in words: never a fill, never zero, never calmer than a gap.",
+      "Score next to the status, with visible confidence; insufficient data shows a dash and says so.",
+      "IBM Plex Sans with tabular figures; IBM Plex Mono only for code, repositories and versions.",
+      "8px controls, 10px cards and lists, 999px pills; 1px hairlines; no shadows, gradients or side stripes."
     ],
     "rules": [
       {
-        "name": "The Contour Brown Rule",
-        "body": "Brown draws the sheet and never the data. If something is a status, a link or a value, it is not brown.",
+        "name": "The One Sentence Rule",
+        "body": "Every page opens with one sentence that states what matters now (\"1 open critical alert · 3 required controls we cannot see\"). Counts and filters follow it; they never replace it.",
+        "section": "overview"
+      },
+      {
+        "name": "The Accent Is Not Status Rule",
+        "body": "Teal is for links, focus rings and the single primary action. It never marks a health state, a severity or a count.",
         "section": "colors"
       },
       {
-        "name": "The Never-Zero Ground Rule",
-        "body": "Ground that was not measured is drawn with the survey hatch: the light hatch (`--hatch`, frame at 30%, 1px strokes every 7px) for a single unknown cell or tile, and the void hatch (`--hatch-void`, frame at 62% light / 34% dark, 1.5px strokes every 6px over void ground) for a row where nothing was measured. Unknown is never left blank, tinted green, or rendered as 0.",
+        "name": "The Dashed Unknown Rule",
+        "body": "Unknown, not authorised and collection failed are drawn with a 1.5px dashed `--unknown` outline and muted text, and the cause is named. They are never filled, never green, never shown as 0, and never visually calmer than an optional gap.",
         "section": "colors"
       },
       {
-        "name": "The Ground Carries Status Rule",
-        "body": "Inside a tinted cell the chip loses its box (no background, no border, no left padding). The tint is the status. Column A keeps its boxed chip because it summarises the row.",
+        "name": "The Fixed Tint Rule",
+        "body": "Pill and symbol tints are fixed OKLCH values per theme (not `color-mix`), so every `*-text` on its tint can be contrast-tested. Fills reach 3:1 on the surface as graphics; text variants reach 4.5:1 on their tint and on the surface.",
         "section": "colors"
       },
       {
-        "name": "The Tracked Furniture Rule",
-        "body": "Small, tracked uppercase type belongs to the sheet's furniture: grid letters, column heads, margin heads and imprints. It always names a real structure (a section, a column, a reference). It is never decoration above a heading.",
-        "section": "typography"
+        "name": "The Status Column Rule",
+        "body": "A pill placed before text sits in a fixed 112px column (`--status-col`) so the text after it starts at the same x on every row, whatever the label length.",
+        "section": "layout"
       },
       {
         "name": "The Tabular Figures Rule",
-        "body": "Counts, percentages, references and times always use `tabular-nums`. A partial count is prefixed with ≥, and an unknown count is shown as a dash with accessible text. It is never shown as 0.",
+        "body": "Scores, counts, versions in tables and times use `tabular-nums`. A partial count is marked as incomplete; an unknown count is a dash with accessible text, never 0.",
         "section": "typography"
       },
       {
-        "name": "The Flat Sheet Rule",
-        "body": "Nothing floats. The only inset line is the 2px contour-brown underline on a pressed count filter, and it marks state, not elevation.",
+        "name": "The Flat Surface Rule",
+        "body": "Nothing floats. Surfaces are separated by 1px hairlines; the only inset ring marks a pressed state (count filter, current project type).",
         "section": "elevation"
       }
     ],
     "dos": [
-      "**Do** give every cell a grid reference (column letter + row number) and key every margin note to one.",
-      "**Do** put exactly one status chip and one reason line in each cell. Add a metric line only when a measured value exists.",
-      "**Do** draw unknown ground with `--hatch`, and collapse a fully unknown row into a `--hatch-void` band with its text on a sheet-white plate.",
-      "**Do** pair every status colour with its shape icon and a text label. Use the four-bar glyph for severity.",
-      "**Do** keep sheet furniture (neatline, grid letters, row numbers, margin heads, imprints) in contour brown, with links and focus in water blue.",
-      "**Do** derive status grounds with `color-mix` at `--tint` (13% light, 16% dark) rather than picking new tint hexes.",
-      "**Do** keep corners at 2–3px and sheet cells, plates and bands at 0px."
+      "**Do** start each page with one sentence, then the list sorted worst first; put detail in collapsible sections or on the project page.",
+      "**Do** pair every status mark with a text label or an accessible name; use the six control symbols with the same meaning everywhere.",
+      "**Do** draw unknown with the dashed `--unknown` outline and name the cause (\"2 collection errors\").",
+      "**Do** show the score with its confidence as visible text, and an em dash with \"insufficient data\" when fewer than half the dimensions are measured.",
+      "**Do** keep pills before text in the 112px status column.",
+      "**Do** keep touch targets at least 40px, and 44px for the primary action.",
+      "**Do** use IBM Plex Mono only for code, repository names, SHAs and versions."
     ],
     "donts": [
-      "**Don't** render unknown, not authorised, collection failed or partial counts as 0, as blank ground or in green.",
-      "**Don't** use health shapes or health tones for severity. Burnt sienna is high severity only.",
-      "**Don't** let a blind spot (a required control the collector cannot see) look calmer than an optional gap. Keep its solid ochre edge and hatched icon.",
-      "**Don't** mark status with a coloured side edge on a tile or cell. The ground tint carries it.",
-      "**Don't** use drop shadows or floating cards anywhere on the sheet.",
-      "**Don't** use contour brown for status, values or links."
+      "**Don't** render unknown, not authorised, collection failed or partial counts as 0, as a fill, or in green.",
+      "**Don't** use teal for status, or status colours for links.",
+      "**Don't** draw severity with health shapes or as health states; severity keeps its own scale and text labels.",
+      "**Don't** add side-stripe borders to cards, gradients, gradient text, glassmorphism or heavy shadows.",
+      "**Don't** add decorative KPI tiles that carry no decision.",
+      "**Don't** let colour be the only carrier of status.",
+      "**Don't** set running text below 14px or any label below 12px."
     ]
   }
 }

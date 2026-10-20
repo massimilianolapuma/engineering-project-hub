@@ -217,7 +217,9 @@ Further decisions:
 - i18n uses `[...lang]` routes: EN at `/`, IT at `/it/`. The typed dictionaries must have
   identical keys, which is enforced by `Dict` and tested. Snapshots stay language-neutral:
   reasons are codes plus parameters.
-- Native CSS design tokens (dark and light themes, WCAG AA contrast). The UI was validated
-  with hi-fi mockups before implementation. Fonts are self-hosted Geist (OFL).
+- Native CSS design tokens ("Warm Graphite", light and dark themes, WCAG AA contrast checked
+  by a unit test), described in [`DESIGN.md`](../DESIGN.md). The UI was validated with
+  hi-fi mockups before implementation. Fonts are self-hosted IBM Plex Sans and IBM Plex
+  Mono (OFL) via `@fontsource`.
 - TypeScript is pinned to 6.0 for tooling compatibility (typescript-eslint,
   `@astrojs/check`).

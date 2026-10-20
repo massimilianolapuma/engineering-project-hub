@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Project score (0–100) computed by the collector to rank and compare projects: weighted mean of the measured dimensions (green 100, amber 60, red 20), capped by the overall status (red ≤ 49, amber and grey ≤ 89), with confidence "measured n of m"; unreadable dimensions are excluded, never counted as zero, and below half measured the site shows "insufficient data". Weights, points, caps and the minimum measured ratio are configurable in an optional `score` block of `config/policies.yaml` (EN/IT docs).
+- "How to read" page (EN/IT): state meanings, the six control symbols, unknown vs not authorised vs not configured vs not applicable, the score formula and caps, thresholds from `policies.yaml`; each page keeps a one-line legend that links to it.
+
+### Changed
+
+- Visual system "Warm Graphite" on every page: warm neutral greys, one teal accent for links, focus and the primary action, vermilion / ochre / emerald status fills with fixed pill tints, Unknown as a dashed outline; light and dark palettes checked for WCAG AA by a unit test. Each page opens with one sentence, then the list worst first, detail on demand.
+- Portfolio as a compact list: status dot, score with confidence, five dimension bars and the main reason; projects with insufficient data sort right after the critical ones.
+- Project page: why-box with reasons as sentences, five dimension cards, environments as a DEV → UAT → PROD path, collapsible detail sections. Security grouped per project with blind spots; Versions, Workflows and Data quality list only what needs attention; Catalog editor restyled.
+- Navigation order: Portfolio, Security, Versions, Workflows, Data quality, Catalog; "How to read" as a header utility link.
+- Snapshot `schemaVersion` 1.3: `score` on project snapshots and portfolio summaries. Older snapshots are not read: they are regenerated on every run.
+- Fonts: IBM Plex Sans and IBM Plex Mono (self-hosted via `@fontsource`) replace Public Sans and Geist Mono.
+- `DESIGN.md`, `.impeccable/design.json` and the Portfolio surface brief describe Warm Graphite.
+
+### Removed
+
+- The "Survey Sheet" visual world: hatching, grid references, sheet frame, margin notes and the per-page legend block.
+- Unused v0.4.0 components (`HealthTile`, `SeverityKpis`, `Count`), styles, token aliases and UI strings.
+
 ## [0.4.0] - 2026-10-18
 
 ### Added

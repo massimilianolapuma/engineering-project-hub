@@ -1,88 +1,99 @@
 ---
 name: Engineering Project Hub
-description: The project portfolio drawn as a surveyed map sheet. Measured ground is inked by status, and ground that was not surveyed is hatched and named.
+description: Warm Graphite, legibility first. Each page says one thing, lists projects worst first and keeps detail on demand; status is a small exact mark, and unknown is a named, dashed outline.
 colors:
-  sheet-white: '#fdfdfb'
-  sheet-tint: '#f2f3ef'
-  sheet-hover: '#f6f7f3'
-  void-ground: '#ecede8'
-  hairline: '#d5d7d0'
-  hairline-strong: '#a9aca3'
-  hairline-faint: '#e6e8e2'
-  linework-ink: '#1d1f21'
-  ink-muted: '#45484b'
-  ink-tertiary: '#585c5f'
-  ink-data: '#26292b'
-  contour-brown: '#7d4f24'
-  water-blue: '#1a5f9e'
-  water-blue-ink: '#ffffff'
-  road-red: '#a92d22'
-  ochre: '#855400'
-  woodland-green: '#36612a'
-  survey-grey: '#55595c'
-  burnt-sienna: '#9a3f12'
-  icon-ink: '#ffffff'
-  night-sheet: '#171a18'
-  night-sheet-tint: '#1f2320'
-  night-sheet-hover: '#1b1e1c'
-  night-void-ground: '#121412'
-  night-hairline: '#2c312d'
-  night-hairline-strong: '#4c544c'
-  night-hairline-faint: '#222623'
-  night-ink: '#ecede7'
-  night-ink-muted: '#b3b6ae'
-  night-ink-tertiary: '#9a9d95'
-  night-ink-data: '#dfe0da'
-  night-contour-brown: '#c89a6a'
-  night-water-blue: '#79b0e6'
-  night-water-blue-ink: '#101211'
-  night-road-red: '#f08d80'
-  night-ochre: '#e3b35a'
-  night-woodland-green: '#8fc77a'
-  night-survey-grey: '#a6a9a1'
-  night-burnt-sienna: '#f0a070'
-  night-icon-ink: '#101211'
+  ground: '#f6f5f3'
+  surface: '#fffefc'
+  surface-sunk: '#f6f5f3'
+  hairline: '#e7e5e1'
+  control-stroke: '#928d86'
+  graphite-ink: '#1c1917'
+  graphite-muted: '#57534e'
+  unknown-stroke: '#8f8a83'
+  teal-accent: '#047879'
+  teal-tint: '#d8f5f5'
+  on-accent: '#ffffff'
+  vermilion: '#da4620'
+  vermilion-text: '#a42e0c'
+  vermilion-tint: '#fee9e4'
+  ochre: '#c68206'
+  ochre-text: '#804d0c'
+  ochre-tint: '#feedc9'
+  emerald: '#19966e'
+  emerald-text: '#026548'
+  emerald-tint: '#ddf5e9'
+  night-ground: '#151311'
+  night-surface: '#1c1a17'
+  night-surface-sunk: '#181614'
+  night-hairline: '#2c2925'
+  night-control-stroke: '#746e66'
+  night-graphite-ink: '#ece9e4'
+  night-graphite-muted: '#a8a29e'
+  night-unknown-stroke: '#7f786f'
+  night-teal-accent: '#50bfbe'
+  night-teal-tint: '#082c2c'
+  night-on-accent: '#151311'
+  night-vermilion: '#f57050'
+  night-vermilion-text: '#ffac97'
+  night-vermilion-tint: '#3b1d15'
+  night-ochre: '#edb345'
+  night-ochre-text: '#f2cb83'
+  night-ochre-tint: '#38280a'
+  night-emerald: '#4dbc92'
+  night-emerald-text: '#8ad7b6'
+  night-emerald-tint: '#112d21'
 typography:
   headline:
-    fontFamily: 'Public Sans, system-ui, sans-serif'
-    fontSize: '1.5rem'
-    fontWeight: 700
-    lineHeight: 1.25
+    fontFamily: 'IBM Plex Sans, system-ui, sans-serif'
+    fontSize: '1.375rem'
+    fontWeight: 600
+    lineHeight: '28px'
+  lead:
+    fontFamily: 'IBM Plex Sans, system-ui, sans-serif'
+    fontSize: '1.0625rem'
+    fontWeight: 600
+    lineHeight: '24px'
   title:
-    fontFamily: 'Public Sans, system-ui, sans-serif'
+    fontFamily: 'IBM Plex Sans, system-ui, sans-serif'
     fontSize: '1.125rem'
-    fontWeight: 700
-    lineHeight: 1.25
+    fontWeight: 600
+    lineHeight: '24px'
   body:
-    fontFamily: 'Public Sans, system-ui, sans-serif'
+    fontFamily: 'IBM Plex Sans, system-ui, sans-serif'
+    fontSize: '0.875rem'
+    fontWeight: 400
+    lineHeight: 1.5
+  small:
+    fontFamily: 'IBM Plex Sans, system-ui, sans-serif'
     fontSize: '0.8125rem'
     fontWeight: 400
     lineHeight: 1.5
-    fontFeature: 'tnum'
-  cell-reason:
-    fontFamily: 'Public Sans, system-ui, sans-serif'
-    fontSize: '0.75rem'
-    fontWeight: 400
-    lineHeight: 1.4
   label:
-    fontFamily: 'Public Sans, system-ui, sans-serif'
+    fontFamily: 'IBM Plex Sans, system-ui, sans-serif'
     fontSize: '0.75rem'
-    fontWeight: 700
-    lineHeight: 1.25
-    letterSpacing: '0.08em'
-  grid-ref:
-    fontFamily: 'Public Sans, system-ui, sans-serif'
-    fontSize: '0.6875rem'
     fontWeight: 600
-    lineHeight: 1.25
-    letterSpacing: '0.04em'
+    lineHeight: '16px'
+  score:
+    fontFamily: 'IBM Plex Sans, system-ui, sans-serif'
+    fontSize: '1.125rem'
+    fontWeight: 700
+    lineHeight: '24px'
+    fontFeature: 'tnum'
+  score-header:
+    fontFamily: 'IBM Plex Sans, system-ui, sans-serif'
+    fontSize: '1.75rem'
+    fontWeight: 700
+    lineHeight: '34px'
+    fontFeature: 'tnum'
   mono:
-    fontFamily: 'Geist Mono, ui-monospace, SFMono-Regular, Menlo, monospace'
-    fontSize: '0.85em'
+    fontFamily: 'IBM Plex Mono, ui-monospace, SFMono-Regular, Menlo, monospace'
+    fontSize: '0.8125rem'
     fontWeight: 400
 rounded:
-  sm: '2px'
-  md: '3px'
+  sm: '4px'
+  md: '8px'
+  lg: '10px'
+  pill: '999px'
 spacing:
   '1': '4px'
   '2': '8px'
@@ -90,259 +101,278 @@ spacing:
   '4': '16px'
   '5': '24px'
   '6': '32px'
+  '7': '40px'
+  '8': '48px'
 components:
-  badge-critical:
-    textColor: '{colors.road-red}'
+  status-dot:
+    size: '10px'
+    rounded: '50%'
+  dimension-bars:
+    size: '32px x 10px'
+    gap: '4px'
     rounded: '{rounded.sm}'
-    padding: '3px 10px 3px 7px'
-  badge-attention:
-    textColor: '{colors.ochre}'
+  status-pill-critical:
+    backgroundColor: '{colors.vermilion-tint}'
+    textColor: '{colors.vermilion-text}'
+    typography: '{typography.label}'
+    rounded: '{rounded.pill}'
+    padding: '3px 10px'
+  status-pill-attention:
+    backgroundColor: '{colors.ochre-tint}'
+    textColor: '{colors.ochre-text}'
+    typography: '{typography.label}'
+    rounded: '{rounded.pill}'
+    padding: '3px 10px'
+  status-pill-healthy:
+    backgroundColor: '{colors.emerald-tint}'
+    textColor: '{colors.emerald-text}'
+    typography: '{typography.label}'
+    rounded: '{rounded.pill}'
+    padding: '3px 10px'
+  status-pill-unknown:
+    textColor: '{colors.graphite-muted}'
+    typography: '{typography.label}'
+    rounded: '{rounded.pill}'
+    padding: '3px 10px'
+  control-symbol:
+    size: '24px'
     rounded: '{rounded.sm}'
-    padding: '3px 10px 3px 7px'
-  badge-healthy:
-    textColor: '{colors.woodland-green}'
-    rounded: '{rounded.sm}'
-    padding: '3px 10px 3px 7px'
-  badge-unknown:
-    backgroundColor: '{colors.sheet-white}'
-    textColor: '{colors.survey-grey}'
-    rounded: '{rounded.sm}'
-    padding: '3px 10px 3px 7px'
-  pill:
-    backgroundColor: '{colors.sheet-tint}'
-    textColor: '{colors.linework-ink}'
-    rounded: '{rounded.sm}'
-    padding: '2px 8px 2px 6px'
-  pill-blind:
-    backgroundColor: '{colors.sheet-white}'
-    textColor: '{colors.linework-ink}'
-    rounded: '{rounded.sm}'
-    padding: '2px 8px 2px 6px'
-  sheet-count:
-    backgroundColor: '{colors.sheet-white}'
-    textColor: '{colors.linework-ink}'
-    rounded: '{rounded.sm}'
-    padding: '4px 12px'
-    height: '36px'
-  sheet-count-pressed:
-    backgroundColor: '{colors.sheet-tint}'
-    textColor: '{colors.linework-ink}'
-    rounded: '{rounded.sm}'
-    padding: '4px 12px'
-    height: '36px'
-  sheet-cell:
-    textColor: '{colors.linework-ink}'
-    typography: '{typography.cell-reason}'
-    rounded: '0px'
-    padding: '8px 12px 12px'
-  sheet-plate:
-    backgroundColor: '{colors.sheet-white}'
-    textColor: '{colors.linework-ink}'
-    rounded: '0px'
-    padding: '8px'
+  count-filter:
+    backgroundColor: '{colors.surface}'
+    textColor: '{colors.graphite-ink}'
+    rounded: '{rounded.md}'
+    padding: '0 14px'
+    height: '40px'
+  list:
+    backgroundColor: '{colors.surface}'
+    rounded: '{rounded.lg}'
+    padding: '14px 16px'
+  card:
+    backgroundColor: '{colors.surface}'
+    rounded: '{rounded.lg}'
+    padding: '16px 20px'
   input-field:
-    backgroundColor: '{colors.sheet-white}'
-    textColor: '{colors.linework-ink}'
-    rounded: '{rounded.sm}'
-    padding: '6px 10px'
-    height: '36px'
+    backgroundColor: '{colors.surface}'
+    textColor: '{colors.graphite-ink}'
+    rounded: '{rounded.md}'
+    padding: '0 12px'
+    height: '40px'
+  button:
+    backgroundColor: '{colors.surface}'
+    textColor: '{colors.graphite-ink}'
+    rounded: '{rounded.md}'
+    padding: '6px 16px'
+    height: '40px'
+  button-primary:
+    backgroundColor: '{colors.teal-accent}'
+    textColor: '{colors.on-accent}'
+    rounded: '{rounded.md}'
+    padding: '6px 18px'
+    height: '44px'
   nav-link:
-    textColor: '{colors.ink-muted}'
-    padding: '8px 12px'
+    textColor: '{colors.graphite-muted}'
+    rounded: '{rounded.md}'
+    padding: '8px 10px'
+    height: '40px'
   nav-link-current:
-    textColor: '{colors.linework-ink}'
-    padding: '8px 12px'
+    backgroundColor: '{colors.surface-sunk}'
+    textColor: '{colors.graphite-ink}'
+    rounded: '{rounded.md}'
+    padding: '8px 10px'
+    height: '40px'
 ---
 
 # Design System: Engineering Project Hub
 
 ## Overview
 
-**Creative North Star: "The Survey Sheet"**
+**Creative North Star: "Warm Graphite: legibility first"**
 
-The portfolio is a surveyed territory, drawn with the grammar of a 1:25,000 topographic sheet. Projects are numbered rows, dimensions are lettered columns (A Overall, B Delivery, C Version, D Security risk, E Security coverage, F Governance), and every cell is a parcel of ground that was either measured, and inked by its status, or not surveyed, and hatched and named as such. Sheet furniture (the double neatline, grid letters, row numbers, the title bar, the footer imprint, margin notes and the legend) is drawn in contour brown. Data is set in linework ink. Water blue is reserved for links and focus.
+Warm Graphite is a reading instrument for a weekly portfolio review. Each page says one thing first (a single sentence such as "3 of 4 projects need attention"), then shows the list sorted worst first, and keeps the detail one click away. Character comes from restraint and precision: warm neutral greys, generous padding, hairline borders, one teal accent, and status colours used only where a status is.
 
-The sheet is dense and flat. There are no shadows or floating cards, and corners are square. Hairline rules separate cells, a 2px ink rule sets column A off from B–F, and status is carried by a pale tint of the ground rather than by coloured boxes or edges. Unknown is never blank, never zero and never calm. It is drawn with a 45° survey hatch, and a row where nothing was measured collapses into one heavy hatched "void" band. That band is the darkest silhouette on the sheet.
+Status is a small, exact mark rather than a painted area: a 10px dot, five 32×10px dimension bars, a pill on a fixed tint, a 24px control symbol. Vermilion, ochre and emerald fill those marks; darker `*-text` variants carry any text on their tints. Unknown is never a fill and never calm: it is a dashed outline in a dedicated stroke colour, with the cause named in words. A project score (0–100) sits next to the status dot with its confidence ("measured 4 of 5") always visible; when data is insufficient there is an em dash, never a 0.
 
-Two themes describe the same sheet. Light is sheet white by day. Dark is the same sheet read at night, with lifted inks and a darker void ground. Both follow `prefers-color-scheme` and can be overridden with `[data-theme]`. Every text pair is held to WCAG AA by `tests/unit/tokens-contrast.test.ts`.
+Light and dark themes share hues and character; dark lifts the fills and inverts the tints onto a warm near-black. Both follow `prefers-color-scheme` and can be overridden with `[data-theme]`. Every text and graphic pair, including the fixed pill tints, is held to WCAG 2.2 AA by `tests/unit/tokens-contrast.test.ts`. Tokens live in `src/styles/tokens.css`; shared base styles in `src/styles/global.css`; page-specific styles in each page's scoped `<style>`.
 
 **Key Characteristics:**
 
-- Grid letters A–F across, row numbers down, and a grid reference (for example B1) in the corner of every cell.
-- Each cell holds one status chip and one line of reason, plus a metric where one exists.
-- Status uses a pale ground tint, a distinct shape icon and a text label, so it never depends on colour alone.
-- Hatch marks ground that was not surveyed. The void band marks a row where nothing was measured.
-- Contour-brown furniture, linework-ink data, water-blue links.
-- Square corners (2–3px), hairline rules, tabular figures and no shadows.
+- One dominant sentence per page, then the list worst first, detail on demand.
+- Warm neutral greys; one teal accent for links, focus and the primary action, never for status.
+- Status as small exact marks (dot, dimension bars, pill, control symbol), always paired with text or an accessible name.
+- Unknown is a dashed outline with the cause in words: never a fill, never zero, never calmer than a gap.
+- Score next to the status, with visible confidence; insufficient data shows a dash and says so.
+- IBM Plex Sans with tabular figures; IBM Plex Mono only for code, repositories and versions.
+- 8px controls, 10px cards and lists, 999px pills; 1px hairlines; no shadows, gradients or side stripes.
 
 ## Colors
 
-The palette is a survey sheet's: off-white paper, near-black linework, brown contours, blue water, and the red, ochre and green used for roads, outcrops and woodland, here reassigned to Critical, Attention and Healthy.
+Neutrals are warm greys with a slight brown undertone, so the page reads as paper rather than as a cold dashboard. Status hues are earthy (vermilion, ochre, emerald) and appear only on status marks. The light and dark values are in the frontmatter (`night-*` for dark); the CSS custom properties are given in brackets.
 
 ### Primary
 
-- **Contour Brown** (light / dark values in frontmatter: `contour-brown`, `night-contour-brown`): the sheet's own colour. Use it for the double neatline around the sheet, the grid-letter row, row numbers, the sheet title bar and footer imprint, section heads in the margin (`Sheet notes`, `Legend`), margin-note references, the current-page underline in the top nav, the pressed state of the count filters, the plates' borders and the hatch strokes. Use it for nothing else.
+- **Teal Accent** (`--accent`, `oklch(0.52 0.09 195)` light, `oklch(0.74 0.1 195)` dark): links, the focus ring, the skip link, text selection (on `--accent-tint`) and the single primary action ("Propose on GitHub"). Nothing else.
 
-### Secondary
+### Status
 
-- **Water Blue** (`water-blue`, `night-water-blue`): links, the 3px focus ring, the skip link fill and the "Mock data" source mark. It is never used for status.
+| State     | Fill (dots, bars, graphics)                   | Text on tint or surface              | Pill tint (light / dark)                        |
+| --------- | --------------------------------------------- | ------------------------------------ | ----------------------------------------------- |
+| Critical  | `--red` vermilion `oklch(0.6 0.19 35)`        | `--red-text` `oklch(0.48 0.16 35)`   | `oklch(0.95 0.03 35)` / `oklch(0.27 0.05 35)`   |
+| Attention | `--amber` ochre `oklch(0.66 0.15 72)`         | `--amber-text` `oklch(0.47 0.1 65)`  | `oklch(0.95 0.05 85)` / `oklch(0.29 0.05 80)`   |
+| Healthy   | `--green` emerald `oklch(0.6 0.12 165)`       | `--green-text` `oklch(0.45 0.1 165)` | `oklch(0.95 0.03 165)` / `oklch(0.27 0.04 165)` |
+| Unknown   | no fill: 1.5px dashed `--unknown` (`#8f8a83`) | `--text-muted`                       | transparent                                     |
 
-### Tertiary (status inks)
+Dark fills: red `oklch(0.7 0.17 35)`, amber `oklch(0.8 0.14 80)`, green `oklch(0.72 0.12 165)`; dark text variants `oklch(0.82 0.11 35)`, `oklch(0.86 0.1 82)`, `oklch(0.82 0.09 165)`.
 
-- **Road Red** (`road-red`): Critical. Also used for critical severity and for margin-note references on red cells.
-- **Ochre** (`ochre`): Attention, and the edge of a blind spot. Medium severity uses the same ink.
-- **Woodland Green** (`woodland-green`): Healthy.
-- **Survey Grey** (`survey-grey`): Unknown, not authorised, not configured, and low or unknown severity.
-- **Burnt Sienna** (`burnt-sienna`): high severity only. It sits between ochre and road red on the severity scale and never stands for a health state.
-- Status grounds are derived, not picked. Each tint is `color-mix(in srgb, <ink> var(--tint), var(--surface))` with `--tint` at 13% in light and 16% in dark. Badge borders mix the ink at 35% into transparent.
+Severity keeps its own scale (critical / high / medium / low) with text labels and a rising-bars glyph; it may borrow the red and amber hues for critical and high badges, but it is never drawn with health shapes or called a health state.
 
 ### Neutral
 
-- **Sheet White** (`sheet-white`, `night-sheet`): page and surface. The page is the sheet, so the two share one value.
-- **Sheet Tint** (`sheet-tint`, `night-sheet-tint`): the grid-letter row, the row-number gutter, the run bar, generic pills and the pressed count.
-- **Sheet Hover** (`sheet-hover`): the table-row hover ground.
-- **Void Ground** (`void-ground`, `night-void-ground`): the ground beneath the heavy void hatch.
-- **Hairline / Hairline Strong / Hairline Faint**: cell rules and input strokes, hover strokes, and the faintest dividers.
-- **Linework Ink / Ink Muted / Ink Tertiary / Ink Data**: body text and reasons, secondary lines (metrics, meta, nav at rest), grid refs inside cells, and dense numeric text.
-- **Icon Ink** (`icon-ink`): the glyph knocked out of a filled status icon. It is white by day and near-black at night.
+- **Ground** (`--bg`): the page.
+- **Surface** (`--surface`): cards, lists, the top bar, inputs and buttons.
+- **Surface Sunk** (`--surface-2`): table heads, row hover, the current nav item, pressed filters.
+- **Hairline** (`--border`): every 1px border and row rule.
+- **Control Stroke** (`--border-strong`): input and button borders, at least 3:1 against the surface.
+- **Graphite Ink / Graphite Muted** (`--text`, `--text-muted`): body text and secondary text (meta, confidence, column heads, nav at rest).
+- **Unknown Stroke** (`--unknown`): the dashed outline of every unknown mark, at least 3:1 as a graphic.
 
 ### Named Rules
 
-**The Contour Brown Rule.** Brown draws the sheet and never the data. If something is a status, a link or a value, it is not brown.
+**The Accent Is Not Status Rule.** Teal is for links, focus rings and the single primary action. It never marks a health state, a severity or a count.
 
-**The Never-Zero Ground Rule.** Ground that was not measured is drawn with the survey hatch: the light hatch (`--hatch`, frame at 30%, 1px strokes every 7px) for a single unknown cell or tile, and the void hatch (`--hatch-void`, frame at 62% light / 34% dark, 1.5px strokes every 6px over void ground) for a row where nothing was measured. Unknown is never left blank, tinted green, or rendered as 0.
+**The Dashed Unknown Rule.** Unknown, not authorised and collection failed are drawn with a 1.5px dashed `--unknown` outline and muted text, and the cause is named. They are never filled, never green, never shown as 0, and never visually calmer than an optional gap.
 
-**The Ground Carries Status Rule.** Inside a tinted cell the chip loses its box (no background, no border, no left padding). The tint is the status. Column A keeps its boxed chip because it summarises the row.
+**The Fixed Tint Rule.** Pill and symbol tints are fixed OKLCH values per theme (not `color-mix`), so every `*-text` on its tint can be contrast-tested. Fills reach 3:1 on the surface as graphics; text variants reach 4.5:1 on their tint and on the surface.
 
 ## Typography
 
-**Body Font:** Public Sans (self-hosted, weights 400/500/600/700; fallback system-ui, sans-serif)
-**Label/Mono Font:** Geist Mono (self-hosted, 400/500; fallback ui-monospace, SFMono-Regular, Menlo) for code, SHAs and versions
+**Font:** IBM Plex Sans (self-hosted via `@fontsource/ibm-plex-sans`, weights 400/500/600/700; fallback system-ui, sans-serif) for everything.
+**Mono:** IBM Plex Mono (`@fontsource/ibm-plex-mono`, 400/500; fallback ui-monospace, SFMono-Regular, Menlo) only for code, repository names, SHAs and versions.
 
-**Character:** Public Sans is a neutral, public-service grotesque, so it reads like the lettering on a government survey sheet. Every figure is tabular so counts line up down a column.
+**Character:** a technical grotesque with open counters that stays legible at 12–14px in dense lists; tabular figures keep scores and counts aligned down a column.
 
 ### Hierarchy
 
-- **Headline** (700, 1.5rem, 1.25): the page title ("Portfolio"). It is the only large type on the sheet.
-- **Title** (700, 1.125rem, 1.25): section titles on inherited pages.
-- **Body** (400, 0.8125rem, 1.5, tabular): table and form text, notes and legend. Long leads cap at 70ch.
-- **Cell reason** (400, 0.75rem, 1.4): the single-line reason and metric inside a sheet cell. The column-A reason steps up to 0.8125rem/500.
-- **Label** (700, 0.75rem, uppercase, 0.08em tracking): sheet furniture, meaning the sheet title bar, footer imprint, grid letters, margin heads, column heads and margin-note refs. It is drawn in contour brown (column heads use muted ink).
-- **Grid ref** (600, 0.6875rem, 0.04em, tertiary ink): the cell's own reference (A1, D2) in its top-right corner.
+- **Headline** (600, 1.375rem/28px): the page title. One per page.
+- **Lead** (600, 1.0625rem/24px): the one sentence under the title that says what matters.
+- **Title** (600, 1.125rem/24px): section titles; card and form-group titles use 15px/22px.
+- **Body** (400, 0.875rem, 1.5): lists, tables, reasons and forms. Running text never goes below 14px.
+- **Small** (400, 0.8125rem): notes, filter results, secondary lines.
+- **Label** (600, 0.75rem/16px): pills, column heads, dimension labels, confidence. 12px is the smallest size used.
+- **Score** (700, tabular): 1.125rem/24px in a list row, 1.75rem/34px with "/ 100" in the project header.
 
 ### Named Rules
 
-**The Tracked Furniture Rule.** Small, tracked uppercase type belongs to the sheet's furniture: grid letters, column heads, margin heads and imprints. It always names a real structure (a section, a column, a reference). It is never decoration above a heading.
-
-**The Tabular Figures Rule.** Counts, percentages, references and times always use `tabular-nums`. A partial count is prefixed with ≥, and an unknown count is shown as a dash with accessible text. It is never shown as 0.
+**The Tabular Figures Rule.** Scores, counts, versions in tables and times use `tabular-nums`. A partial count is marked as incomplete; an unknown count is a dash with accessible text, never 0.
 
 ## Layout
 
-The shell is a max 1440px column with 16px side gutters and 24px top padding. On the portfolio, a title line carries the headline and lead on the left and the count filters on the right. Below it is one compact filter row (search grows to fill; extra filters sit behind a "More filters" disclosure). Then comes the sheet layout: a two-column grid of `minmax(0, 1fr) 300px` with a 24px gap. The sheet sits on the left, and the margin (sheet notes, then legend) sits on the right.
+The shell is a centred column of at most 1200px with 24px side gutters (16px at 720px and below) and 32px top padding. A surface top bar holds the brand, the main navigation (Portfolio, Security, Versions, Workflows, Data quality, Catalog) and, on the right, "How to read", the theme toggle and the language switch; a run bar under it shows the data source and the last collection. Sections are separated by 32px.
 
-The sheet is a table. A "Sheet 1 · Portfolio" title bar comes first, followed by the grid-letter row (A–F), the column-head row, and then one row per project. The project cell has a 28px row-number gutter in sheet tint. Column widths are 15% for the project and 17% for Overall, and cells are at least 120px. Cell padding is 8px 12px 12px, with 4px between a cell's stacked parts. A row whose dimensions are all unknown collapses B–F into a single band cell (`colspan`) and centres a plate in it.
+Every page follows the same order: title, one lead sentence, then the list worst first, then secondary or collapsed sections, then a one-line legend that links to "How to read".
 
-Spacing follows a 4px base: 4 / 8 / 12 / 16 / 24 / 32. Sections are separated by 32px.
+- **Portfolio:** title and lead on the left, status count filters on the right; one inline filter row (search, status, business unit, sort) with lifecycle and severity under "More filters"; then a single list in a 10px-radius surface: status dot, project, score with confidence, five dimension bars (short labels once in the header), main reason.
+- **Project:** breadcrumb; header with name, status pill, score and confidence; a "Why it is critical / needs attention" box with reasons as sentences, red first; five dimension cards; environments as a DEV → UAT → PROD path; a components table; collapsible Workflows, Security, Coverage and Collection errors.
+- **Security, Versions, Workflows:** one card per project, worst first, showing only what needs attention; healthy projects collapse into one line.
+- **Data quality:** repository counts, then what could not be read grouped by cause with how to fix it.
+- **Catalog:** side list of projects and discovered repositories, a form in bordered groups, and a proposal box with the one primary action.
 
-Responsive behaviour:
-
-- **≤1240px:** the margin drops below the sheet and sheet notes come before the legend. Margin blocks tile at a minimum of 260px. Table rows become stacked cards separated by contour-brown rules, and the void band spans the full width.
-- **≤720px:** each row card gets its own contour-brown frame with square corners and a 12px gap between cards.
-
-## Elevation & Depth
-
-The system is completely flat (`--shadow: none`). Depth comes from line weight and ground: hairlines between cells, a 2px ink rule after column A, a contour-brown double neatline around the sheet (a 1px border plus a 1px outline offset 3px), and the light-to-heavy hatch ladder for what is unknown. Plates (sheet-white boxes with a 1px brown border) lift text off the void hatch by contrast, not by shadow.
+Spacing follows a 4px base: 4 / 8 / 12 / 16 / 24 / 32 / 40 / 48. Cells are at least 8px × 10px of padding; list rows use 14px 16px.
 
 ### Named Rules
 
-**The Flat Sheet Rule.** Nothing floats. The only inset line is the 2px contour-brown underline on a pressed count filter, and it marks state, not elevation.
+**The Status Column Rule.** A pill placed before text sits in a fixed 112px column (`--status-col`) so the text after it starts at the same x on every row, whatever the label length.
+
+### Responsive behaviour
+
+- **≤760px:** portfolio and workflow rows wrap into two lines (name, status and score first; bars and reason second). The page never scrolls horizontally.
+- **≤720px:** generic tables become stacked label/value cards; side gutters drop to 16px.
+- **≤640px:** the project header, the environments path (arrows turn downward), security cards and data-quality rows stack vertically.
+- Tables that cannot wrap scroll inside their own container.
+
+## Elevation & Depth
+
+The system is flat. Surfaces are separated by 1px hairlines and by the step from ground to surface; there are no drop shadows, gradients or blur.
+
+### Named Rules
+
+**The Flat Surface Rule.** Nothing floats. The only inset ring (`inset 0 0 0 1px var(--text)`) marks a pressed state: the active count filter and the current project type in the catalog.
 
 ## Shapes
 
-Corners are nearly square: 2px for chips, counts and focus rings, and 3px for inherited cards, tiles and tables. Sheet cells, plates, the band and the mobile row cards have 0px corners. The Unknown chip and the grey pill use a dashed stroke, while the blind-spot pill uses a solid ochre stroke. Status icons are 14px SVGs on a 16px grid, and each state has its own silhouette:
-
-- **Healthy:** filled circle with a knocked-out check.
-- **Attention:** filled triangle with a knocked-out exclamation mark.
-- **Critical:** filled octagon with a knocked-out ×.
-- **Unknown / not authorised:** dashed open square with a dash.
-- **Blind spot:** solid open square crossed by three 45° hatch strokes, in ochre.
-- **Not configured / not applicable (muted):** a single horizontal stroke.
-- **Info (in progress):** open clock circle.
-- **Severity:** four rising bars filled from 1 (low) to 4 (critical). The unknown level uses dashed empty bars.
+Radius is 4px for small marks (dimension bars, control symbols, focus ring), 8px for controls (inputs, buttons, nav items, count filters), 10px for cards, lists and tables, and 999px for pills. Borders are 1px; unknown outlines are 1.5px dashed. Status dots are 10px circles. Health shape icons (14px SVG on a 16px grid: circle with check, triangle with exclamation, octagon with ×, dashed square with a dash) remain inside pills and badges so status never depends on colour.
 
 ## Components
 
-### Status badge (health)
+### Status dot
 
-A compact square chip that pairs the shape icon with a text label and a screen-reader description.
+A 10px circle: filled vermilion, ochre or emerald, or a 1.5px dashed outline for Unknown. It has an accessible name and always sits next to text (a project name, a count, a pill). In forced-colours mode it gets a solid or dashed `CanvasText` border.
 
-- **Shape:** 2px corners and a 1px border. Gap is 6px, weight 600, line height 1.2.
-- **Sizes:** sm (2px 8px 2px 6px, 0.75rem), md (3px 10px 3px 7px, 0.8125rem), lg (6px 14px 6px 10px, 0.875rem, 18px icon).
-- **Critical / Attention / Healthy:** the status ground tint with status ink, plus a border of the ink at 35%.
-- **Unknown:** a sheet-white ground with survey-grey ink and a dashed survey-grey border.
-- **In a sheet cell:** follows the Ground Carries Status Rule.
+### Dimension bars
 
-### Pill (control, workflow, version and severity states)
+Five 32×10px bars with a 4px gap and 4px corners, in a fixed order: Delivery, Versions, Security, Coverage, Governance. Each bar has an accessible name ("Security risk: Critical"); the short labels appear once in the list header as abbreviations with their full names. Unknown is a dashed outline.
 
-- **Style:** sheet tint ground, linework ink, hairline border, weight 500, 0.75rem.
-- **Variants:** muted uses muted ink. Grey uses a sheet-white ground and a dashed grey border. Blind uses a sheet-white ground, a solid ochre border and weight 600. Severity critical and high mix their ink into the border at 45% and 40%.
-- **In a sheet cell:** wraps, with the icon top-aligned.
+### Score
+
+The score in 700 tabular figures with the confidence as visible secondary text ("measured 4 of 5"), so it is readable without hover. With insufficient data: an em dash and "insufficient data · measured 1 of 5". Header size adds "/ 100".
+
+### Status pill
+
+12px/600 text with a shape icon on a fixed tint, 999px radius, 3px 10px padding. Unknown is transparent with a dashed `--unknown` border and muted text. Before text it sits in the 112px status column.
+
+### Control symbol
+
+A 24px box with one of six glyphs, used with the same meaning on every page: ✓ enabled, ! required but not configured, ⧖ stale scan, ✕ failed, ? not visible (not authorised, unknown or collection failed), – not required or not applicable. The glyph carries the meaning and has an accessible name; colour (tint for ✓ ! ⧖ ✕, dashed outline for ?, none for –) is secondary.
 
 ### Count filters
 
-The counts in the title line are also the filter controls.
+The status counts in the Portfolio title line are also the status filter. Surface button, hairline border, 8px radius, at least 40px high: dot, 700 tabular value, label. Hover moves the border to the control stroke; pressed (`aria-pressed=true`) uses an ink border, the sunk surface and a 1px inset ink ring. Pressing the active count clears the filter.
 
-- **Style:** sheet-white button, hairline border, 2px corners, at least 36px high. The value is 700 with tabular figures and is followed by the status icon and label.
-- **Hover:** the border moves to hairline strong.
-- **Pressed (`aria-pressed=true`):** contour-brown border, sheet-tint ground, a 2px inset brown underline and weight 600.
+### Portfolio row
 
-### Sheet cell (signature)
+One row per project in a single surface list: status dot, project link (600), score with confidence, dimension bars, one-line main reason. 14px 16px cells, hairline rules, sunk-surface hover. An unknown project has a dashed dot and dashed bars, and its reason names the cause with a link to Data quality.
 
-- **Content:** a head line (chip on the left, grid ref on the right), an optional metric line (muted, tabular), and one reason line.
-- **Ground:** the status tint for red, amber and green. Grey cells use the light hatch over sheet white.
-- **Column A:** wider, followed by a 2px linework-ink rule. Its reason is one step larger.
+### Dimension card and why box
 
-### Void band (signature)
+On the project page, the why box lists the reasons as sentences, red first, each with a pill in the status column and a link to its section. Below it, five dimension cards (16px padding, 10px radius, hairline border) show dot, name, pill and a one-line summary, and link to the matching section.
 
-- A row where every dimension is unknown spans B–F with the heavy void hatch. Its A cell joins the void, and its content sits on a sheet-white plate with a brown border.
-- The band label is a plate centred in the band (max 46ch, 12px 16px padding). It states "Not surveyed", gives the reason, shows the open-alert counts as dashes, and links to access and collection errors.
+### Environments path
 
-### Margin notes and legend
+DEV → UAT → PROD as cards (10px radius, 12px 16px padding, at least 140px wide) joined by muted arrows; each shows the version in IBM Plex Mono and whether it is aligned or behind. An unknown environment uses the dashed outline.
 
-- **Sheet notes:** an ordered list keyed by grid reference (B1, D1, B4–F4) in a 56px ref column. Refs use the label style in contour brown (road red for red cells) and link to the cell anchor.
-- **Sheet legend:** a 28×18px swatch for each ground (red, amber and green tints, the void hatch with a dashed grey edge, and the light hatch with an ochre edge for a blind spot), each next to its badge and description. Icon-only keys cover not authorised and not configured, and a policy note closes the legend.
-- **Margin heads:** the label style in contour brown with a 1px brown underline.
+### Buttons
+
+Secondary by default: surface ground, control-stroke border, 8px radius, at least 40px. One primary action per view, in teal with on-accent text and at least 44px high. Danger actions use red text and a red border, never a red fill.
 
 ### Inputs / Fields
 
-- **Style:** sheet-white field, hairline border, 2px corners, 6px 10px padding, at least 36px high. Labels are 600 at 0.8125rem.
-- **Focus:** a global 3px water-blue outline at 2px offset with 2px corners.
+Surface field, control-stroke border, 8px radius, 0 12px padding, at least 40px high, 0.875rem text. Labels are 12px/600 muted above the field. Invalid fields get a red border and a red message under them.
 
 ### Navigation
 
-- **Top bar:** sheet white with a hairline under it. The brand is 700 linework ink. Links are 0.8125rem/500 in muted ink with a 2px transparent underline.
-- **Hover:** ink, with the underline in hairline strong.
-- **Current page:** ink at 700 with a contour-brown underline.
-- **Run bar:** a sheet-tint strip under the top bar showing the data-source mark (water-blue 1px outlined chip) and the last collector run.
-- **Theme toggle and language switch:** sheet-tint or hairline-bordered controls with 2px corners.
+Surface top bar with a hairline under it. Links are 500 muted text in 40px targets with 8px corners; hover and the current page use ink on the sunk surface. The language switch is a bordered segmented control; the theme toggle cycles Auto / Light / Dark.
+
+### Legend
+
+One line under each list: the four status dots (or the six control symbols) with their names, and a link to "How to read", which holds the full explanation.
 
 ## Do's and Don'ts
 
 ### Do:
 
-- **Do** give every cell a grid reference (column letter + row number) and key every margin note to one.
-- **Do** put exactly one status chip and one reason line in each cell. Add a metric line only when a measured value exists.
-- **Do** draw unknown ground with `--hatch`, and collapse a fully unknown row into a `--hatch-void` band with its text on a sheet-white plate.
-- **Do** pair every status colour with its shape icon and a text label. Use the four-bar glyph for severity.
-- **Do** keep sheet furniture (neatline, grid letters, row numbers, margin heads, imprints) in contour brown, with links and focus in water blue.
-- **Do** derive status grounds with `color-mix` at `--tint` (13% light, 16% dark) rather than picking new tint hexes.
-- **Do** keep corners at 2–3px and sheet cells, plates and bands at 0px.
+- **Do** start each page with one sentence, then the list sorted worst first; put detail in collapsible sections or on the project page.
+- **Do** pair every status mark with a text label or an accessible name; use the six control symbols with the same meaning everywhere.
+- **Do** draw unknown with the dashed `--unknown` outline and name the cause ("2 collection errors").
+- **Do** show the score with its confidence as visible text, and an em dash with "insufficient data" when fewer than half the dimensions are measured.
+- **Do** keep pills before text in the 112px status column.
+- **Do** keep touch targets at least 40px, and 44px for the primary action.
+- **Do** use IBM Plex Mono only for code, repository names, SHAs and versions.
 
 ### Don't:
 
-- **Don't** render unknown, not authorised, collection failed or partial counts as 0, as blank ground or in green.
-- **Don't** use health shapes or health tones for severity. Burnt sienna is high severity only.
-- **Don't** let a blind spot (a required control the collector cannot see) look calmer than an optional gap. Keep its solid ochre edge and hatched icon.
-- **Don't** mark status with a coloured side edge on a tile or cell. The ground tint carries it.
-- **Don't** use drop shadows or floating cards anywhere on the sheet.
-- **Don't** use contour brown for status, values or links.
+- **Don't** render unknown, not authorised, collection failed or partial counts as 0, as a fill, or in green.
+- **Don't** use teal for status, or status colours for links.
+- **Don't** draw severity with health shapes or as health states; severity keeps its own scale and text labels.
+- **Don't** add side-stripe borders to cards, gradients, gradient text, glassmorphism or heavy shadows.
+- **Don't** add decorative KPI tiles that carry no decision.
+- **Don't** let colour be the only carrier of status.
+- **Don't** set running text below 14px or any label below 12px.
