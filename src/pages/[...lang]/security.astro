@@ -61,7 +61,10 @@ const lead = f(t.lead, {
   critical:
     criticalTotal === null
       ? t.leadCriticalUnknown
-      : plural(criticalTotal, t.leadCriticalOne, t.leadCriticalOther),
+      : f(criticalTotal === 1 ? t.leadCriticalOne : t.leadCriticalOther, {
+          // Incomplete counts are a lower bound, as in the totals below.
+          n: lowerBound ? `${t.atLeast} ${criticalTotal}` : criticalTotal,
+        }),
   blind: blindCount === 0 ? t.leadBlindNone : plural(blindCount, t.leadBlindOne, t.leadBlindOther),
 });
 

@@ -481,7 +481,11 @@ describe('static site', () => {
       /<span aria-hidden="true"[^>]*>≥<\/span>\s*<span class="visually-hidden"[^>]*>at least </,
     );
     expect(totals).toContain('Incomplete counts');
-    expect(await page('it/security')).toMatch(/<span class="visually-hidden"[^>]*>almeno </);
+    // The lead sentence agrees with the totals: a lower bound, never an exact count.
+    expect(html).toContain('at least 1 open critical alert');
+    const itHtml = await page('it/security');
+    expect(itHtml).toMatch(/<span class="visually-hidden"[^>]*>almeno </);
+    expect(itHtml).toContain('almeno 1 alert critico aperto');
     // One card per project, in the portfolio order (score, insufficient data right after red).
     const order = [...html.matchAll(/<article[^>]*data-project="([\w-]+)"/g)].map((m) => m[1]);
     expect(order).toEqual(['project-beta', 'project-gamma', 'project-alpha', 'platform']);
