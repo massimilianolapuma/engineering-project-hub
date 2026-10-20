@@ -95,7 +95,9 @@ test('adds a discovered single repository as a new project proposed on GitHub', 
   await expect(name).toBeFocused();
   await expect(name).toHaveValue('Docs Site');
   await expect(page.getByText('Project type:')).toBeVisible();
-  await expect(page.locator('[data-ce-kind]')).toContainText('Single repository');
+  await expect(page.locator('[data-ce-kind] [aria-current="true"]')).toContainText(
+    'Single repository',
+  );
   await expect(page.getByText(/No components: single-repository project/)).toBeVisible();
   await expect(docs.getByText('Added to the editor: Docs Site')).toBeVisible();
   // Nothing is saved: it only appears as a pending change.
@@ -119,6 +121,11 @@ test('an edited project is a modified file with an "Edit on GitHub" link', async
   await page.getByLabel('Name', { exact: true }).first().fill('Gamma tools');
   const change = pending(page).getByRole('listitem').filter({ hasText: 'Gamma tools' });
   await expect(change.getByText('Modified', { exact: true })).toBeVisible();
+  // The side list flags the project with a pending-change badge; the proposal box counts it.
+  await expect(projectList(page).getByRole('button', { name: /Gamma tools/ })).toContainText(
+    'Modified',
+  );
+  await expect(page.locator('[data-ce-proposal-summary]')).toHaveText('1 file(s) to propose');
   await expect(change.getByRole('link', { name: /Edit on GitHub/ })).toHaveAttribute(
     'href',
     /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/edit\/main\/config\/projects\/project-gamma\.yaml$/,
@@ -137,7 +144,7 @@ test('an edited project is a modified file with an "Edit on GitHub" link', async
 test('a monorepo shows component paths and merges missing workflows', async ({ page }) => {
   await page.goto('/catalog/');
   await selectProject(page, /Platform/);
-  await expect(page.locator('[data-ce-kind]')).toContainText('Monorepo');
+  await expect(page.locator('[data-ce-kind] [aria-current="true"]')).toContainText('Monorepo');
   const api = page.getByRole('group', { name: 'Component 2' });
   const path = api.getByLabel(/^Path/);
   await expect(path).toHaveValue('services/api');

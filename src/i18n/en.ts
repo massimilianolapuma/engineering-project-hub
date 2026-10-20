@@ -620,6 +620,7 @@ export const en = {
   },
   catalogEditor: {
     title: 'Catalog editor',
+    headline: 'Edit the projects and propose the changes as pull requests',
     intro:
       'Select projects and link their coordinator, components, submodules or monorepo directories, or start from a discovered repository. The editor generates one file per project (config/projects/<id>.yaml) in your browser and you propose each change on GitHub as a pull request.',
     readOnly:
@@ -659,6 +660,7 @@ export const en = {
       monorepo: 'Every component is a directory of the coordinator repository.',
       single: 'The coordinator is the only repository.',
     },
+    projectKindDerived: 'Set by the components: add or remove components to change it.',
     environments: 'Environments',
     environmentN: 'Environment {n}',
     addEnvironment: 'Add environment',
@@ -752,6 +754,9 @@ export const en = {
     step4:
       'CI validates the configuration (npm run validate:config); after the merge the next collector run uses it.',
     pending: 'Pending changes',
+    proposal: 'Proposal',
+    proposalSummary: '{count} file(s) to propose',
+    proposalNone: 'Nothing to propose yet',
     pendingIntro:
       'Project files that differ from the published catalog. Each file is proposed as its own change.',
     noPending: 'No changes: the editor matches the published catalog.',

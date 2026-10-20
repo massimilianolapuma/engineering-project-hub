@@ -624,6 +624,7 @@ export const it: Dict = {
   },
   catalogEditor: {
     title: 'Editor del catalogo',
+    headline: 'Modifica i progetti e proponi le modifiche come pull request',
     intro:
       'Seleziona i progetti e collega coordinator, componenti, submodule o cartelle di un monorepo, oppure parti da un repository scoperto. L’editor genera un file per progetto (config/projects/<id>.yaml) nel browser e ogni modifica si propone su GitHub come pull request.',
     readOnly:
@@ -663,6 +664,7 @@ export const it: Dict = {
       monorepo: 'Ogni componente è una cartella del repository coordinator.',
       single: 'Il coordinator è l’unico repository.',
     },
+    projectKindDerived: 'Dipende dai componenti: aggiungi o rimuovi componenti per cambiarlo.',
     environments: 'Ambienti',
     environmentN: 'Ambiente {n}',
     addEnvironment: 'Aggiungi ambiente',
@@ -756,6 +758,9 @@ export const it: Dict = {
     step4:
       'La CI valida la configurazione (npm run validate:config); dopo il merge la successiva esecuzione del collector la usa.',
     pending: 'Modifiche in sospeso',
+    proposal: 'Proposta',
+    proposalSummary: '{count} file da proporre',
+    proposalNone: 'Ancora niente da proporre',
     pendingIntro:
       'File di progetto diversi dal catalogo pubblicato. Ogni file si propone come modifica a sé.',
     noPending: 'Nessuna modifica: l’editor corrisponde al catalogo pubblicato.',
