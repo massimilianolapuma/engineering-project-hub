@@ -116,7 +116,7 @@ flowchart TB
   threshold, audience)
 - `projects[]`: a `ProjectSummary` for each project. It holds every dimension status,
   coverage summary, open counts (`null` = unknown), the secret scanning state, failed
-  critical workflows, error counts and unresolved submodules.
+  critical workflows, error counts, unresolved submodules and the project `score`.
 
 `projects/<id>.json` (`ProjectSnapshot`) has these fields:
 
@@ -126,6 +126,8 @@ flowchart TB
   control state)
 - `deliveryHealth`, `versionHealth`, `securityHealth` (with counts and breakdowns),
   `securityCoverage`, `governanceHealth` and `overallHealth`
+- `score`: `{ value, measured, required }`, computed by the collector (`value` is `null`
+  when data is insufficient; see [Configuration](configuration.md#project-score))
 - `dataFreshness` and `collectionErrors[]`
 
 Normalised enums:

@@ -24,6 +24,7 @@ import {
   sumCounts,
   type GovernanceRepo,
 } from './evaluators/health';
+import { evaluateScore } from './evaluators/score';
 import {
   recordError,
   toReleaseInfo,
@@ -245,6 +246,17 @@ export function buildProjectSnapshot(
     },
     policies,
   );
+  const score = evaluateScore(
+    {
+      delivery: deliveryHealth,
+      version: versionHealth,
+      security: securityResult,
+      coverage,
+      governance: governanceHealth,
+    },
+    overallHealth.status,
+    policies,
+  );
 
   // Freshness.
   const staleSources: ProjectSnapshot['dataFreshness']['staleSources'] = [];
@@ -305,6 +317,7 @@ export function buildProjectSnapshot(
     securityCoverage: coverage,
     governanceHealth,
     overallHealth,
+    score,
     dataFreshness: {
       status: !anyRepo ? 'grey' : staleSources.length ? 'amber' : 'green',
       collectedAt: generatedAt,
@@ -326,6 +339,7 @@ export function toProjectSummary(s: ProjectSnapshot): ProjectSummary {
     businessUnit: s.project.businessUnit,
     lifecycle: s.project.lifecycle,
     overall: s.overallHealth.status,
+    score: s.score,
     delivery: s.deliveryHealth.status,
     version: s.versionHealth.status,
     security: s.securityHealth.status,

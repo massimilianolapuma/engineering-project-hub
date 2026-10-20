@@ -282,35 +282,69 @@ hand-written files are not preserved, so review the diff before committing.
 These are MVP policies, not universal risk ratings. Changing them needs no code or
 frontend change.
 
-| Key                                     | Default                       | Meaning                                                                                                                |
-| --------------------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `freshness.snapshotStaleHours`          | 24                            | The site flags the snapshot as stale (computed in the browser).                                                        |
-| `freshness.workflowRunStaleDays`        | 14                            | Last completed run older than this is stale.                                                                           |
-| `freshness.securityScanStaleDays`       | 7                             | Last code scanning analysis older than this is stale.                                                                  |
-| `freshness.securityStatusFileStaleDays` | 7                             | Pipeline status results older than this are stale.                                                                     |
-| `delivery.queuedThresholdMinutes`       | 60                            | Queued or running longer than this means Attention.                                                                    |
-| `delivery.missingCriticalWorkflow`      | amber                         | Status for a critical workflow that is missing or has never run.                                                       |
-| `delivery.failedCriticalWorkflow`       | red                           | Status for a failed or cancelled critical workflow.                                                                    |
-| `security.redOnSeverities`              | [critical]                    | Open findings at these severities make Security risk red.                                                              |
-| `security.amberOnSeverities`            | [high, medium, low]           | Open findings at these severities make Security risk amber.                                                            |
-| `security.openSecretAlertIsRed`         | true                          | An open secret scanning alert is red.                                                                                  |
-| `security.requiredControlFailedIsRed`   | true                          | A failed required control is red.                                                                                      |
-| `security.staleScanIsAmber`             | true                          | A stale required scan is amber.                                                                                        |
-| `security.incompleteCoverageIsAmber`    | true                          | Coverage that is not green makes Security risk amber.                                                                  |
-| `coverage.greenThresholdPercent`        | 100                           | Coverage is green at or above this percentage.                                                                         |
-| `version.componentDrift`                | amber                         | Declared version differs from the latest release.                                                                      |
-| `version.environmentBehind`             | amber                         | Environment behind, or mismatched with, the coordinator version.                                                       |
-| `version.unresolvableSubmodule`         | red                           | A configured submodule cannot be resolved.                                                                             |
-| `version.unknownManifestComponent`      | red                           | The manifest references an unknown component.                                                                          |
-| `version.unmappedSubmodule`             | amber                         | A submodule not mapped to any component.                                                                               |
-| `version.untaggedSubmodule`             | amber                         | The coordinator pins a SHA that is not a release tag of the component.                                                 |
-| `version.manifestSubmoduleMismatch`     | amber                         | The manifest declares a version different from the one pinned by the submodule.                                        |
-| `governance.*`                          | amber                         | Missing standard workflow, archived repository, missing or invalid status file, default branch mismatch.               |
-| `overall.criticalDimensions`            | [delivery, version, security] | A red here makes the project red. A red elsewhere counts as amber.                                                     |
-| `overall.requiredDimensions`            | all five                      | All must be green for Overall to be green.                                                                             |
-| `overall.greyRequiredDimension`         | grey                          | Effect of an Unknown required dimension (grey or amber).                                                               |
-| `publication.audience`                  | public                        | `public` withholds finding titles and rule ids of non-public repositories. `restricted` needs access-controlled Pages. |
-| `publication.allowedLinkHosts`          | [github.com]                  | Only links to these hosts are published.                                                                               |
+| Key                                     | Default                                                          | Meaning                                                                                                                |
+| --------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `freshness.snapshotStaleHours`          | 24                                                               | The site flags the snapshot as stale (computed in the browser).                                                        |
+| `freshness.workflowRunStaleDays`        | 14                                                               | Last completed run older than this is stale.                                                                           |
+| `freshness.securityScanStaleDays`       | 7                                                                | Last code scanning analysis older than this is stale.                                                                  |
+| `freshness.securityStatusFileStaleDays` | 7                                                                | Pipeline status results older than this are stale.                                                                     |
+| `delivery.queuedThresholdMinutes`       | 60                                                               | Queued or running longer than this means Attention.                                                                    |
+| `delivery.missingCriticalWorkflow`      | amber                                                            | Status for a critical workflow that is missing or has never run.                                                       |
+| `delivery.failedCriticalWorkflow`       | red                                                              | Status for a failed or cancelled critical workflow.                                                                    |
+| `security.redOnSeverities`              | [critical]                                                       | Open findings at these severities make Security risk red.                                                              |
+| `security.amberOnSeverities`            | [high, medium, low]                                              | Open findings at these severities make Security risk amber.                                                            |
+| `security.openSecretAlertIsRed`         | true                                                             | An open secret scanning alert is red.                                                                                  |
+| `security.requiredControlFailedIsRed`   | true                                                             | A failed required control is red.                                                                                      |
+| `security.staleScanIsAmber`             | true                                                             | A stale required scan is amber.                                                                                        |
+| `security.incompleteCoverageIsAmber`    | true                                                             | Coverage that is not green makes Security risk amber.                                                                  |
+| `coverage.greenThresholdPercent`        | 100                                                              | Coverage is green at or above this percentage.                                                                         |
+| `version.componentDrift`                | amber                                                            | Declared version differs from the latest release.                                                                      |
+| `version.environmentBehind`             | amber                                                            | Environment behind, or mismatched with, the coordinator version.                                                       |
+| `version.unresolvableSubmodule`         | red                                                              | A configured submodule cannot be resolved.                                                                             |
+| `version.unknownManifestComponent`      | red                                                              | The manifest references an unknown component.                                                                          |
+| `version.unmappedSubmodule`             | amber                                                            | A submodule not mapped to any component.                                                                               |
+| `version.untaggedSubmodule`             | amber                                                            | The coordinator pins a SHA that is not a release tag of the component.                                                 |
+| `version.manifestSubmoduleMismatch`     | amber                                                            | The manifest declares a version different from the one pinned by the submodule.                                        |
+| `governance.*`                          | amber                                                            | Missing standard workflow, archived repository, missing or invalid status file, default branch mismatch.               |
+| `overall.criticalDimensions`            | [delivery, version, security]                                    | A red here makes the project red. A red elsewhere counts as amber.                                                     |
+| `overall.requiredDimensions`            | all five                                                         | All must be green for Overall to be green.                                                                             |
+| `overall.greyRequiredDimension`         | grey                                                             | Effect of an Unknown required dimension (grey or amber).                                                               |
+| `score.weights`                         | delivery 25, version 15, security 30, coverage 15, governance 15 | Weight of each dimension in the project score. See [Project score](#project-score).                                    |
+| `score.points`                          | green 100, amber 60, red 20                                      | Points of a measured dimension by status. Grey is not measured, never 0.                                               |
+| `score.caps`                            | red 49, amber 89, grey 89                                        | Highest score allowed for each overall status.                                                                         |
+| `score.minMeasuredRatio`                | 0.5                                                              | Below this share of measured required dimensions the score is "insufficient data".                                     |
+| `publication.audience`                  | public                                                           | `public` withholds finding titles and rule ids of non-public repositories. `restricted` needs access-controlled Pages. |
+| `publication.allowedLinkHosts`          | [github.com]                                                     | Only links to these hosts are published.                                                                               |
+
+### Project score
+
+The collector computes a score from 0 to 100 for each project, to rank and compare
+projects in today's snapshot. The site only shows it; it never replaces the five
+dimensions. The optional `score` block in `config/policies.yaml` changes the formula
+(policies `schemaVersion` stays `1.0`).
+
+- **Points** per measured dimension: green 100, amber 60, red 20. Grey (not measured) is
+  left out, never counted as 0.
+- **Weighted mean** over the measured required dimensions (`overall.requiredDimensions`).
+  Default weights: delivery 25, version 15, security 30, coverage 15, governance 15.
+- **Caps** keep the number consistent with the status: overall red → at most 49; overall
+  amber → at most 89; overall grey (some required dimension unknown, none red or amber) →
+  at most 89, so a partly unreadable project never ranks with healthy ones. A red project
+  is therefore always below any amber or grey one.
+- **Green is 100**: green needs every required dimension green, so healthy projects tie at
+  the top.
+- **Not applicable is not unknown**: a dimension that is grey only because there is
+  nothing to measure (delivery reason `no-critical-workflows`) leaves both `measured` and
+  `required`. Grey for any other reason (not authorised, unknown, collection failed)
+  counts as not measured.
+- **Confidence** is `measured / required` ("measured 4 of 5").
+- **Insufficient data**: when fewer than `minMeasuredRatio` (default half) of the required
+  dimensions are measured, `value` is `null` and the site shows "insufficient data".
+- The result is rounded to an integer.
+
+Snapshot schema 1.3 publishes it as `score: { value, measured, required }` on each
+project snapshot and on each project of `index.json`. With the mock data: Platform 88,
+Project Alpha 76, Project Beta 38, Project Gamma insufficient data.
 
 ## Contracts read from monitored repositories
 

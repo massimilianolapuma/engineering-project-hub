@@ -76,6 +76,46 @@ export const PoliciesSchema = z
         greyRequiredDimension: z.enum(['grey', 'amber']).default('grey'),
       })
       .strict(),
+    /**
+     * Project score (0–100) used to rank and compare projects. Optional: omitted, the
+     * defaults below apply. Grey dimensions are never counted as 0 (see docs/configuration.md).
+     */
+    score: z
+      .object({
+        /** Relative weight of each dimension in the weighted mean. */
+        weights: z
+          .object({
+            delivery: z.number().min(0).default(25),
+            version: z.number().min(0).default(15),
+            security: z.number().min(0).default(30),
+            coverage: z.number().min(0).default(15),
+            governance: z.number().min(0).default(15),
+          })
+          .strict()
+          .prefault({}),
+        /** Points of a measured dimension by status. Grey is not measured. */
+        points: z
+          .object({
+            green: z.number().min(0).max(100).default(100),
+            amber: z.number().min(0).max(100).default(60),
+            red: z.number().min(0).max(100).default(20),
+          })
+          .strict()
+          .prefault({}),
+        /** Upper bound of the score by overall status, so the number agrees with the status. */
+        caps: z
+          .object({
+            red: z.number().int().min(0).max(100).default(49),
+            amber: z.number().int().min(0).max(100).default(89),
+            grey: z.number().int().min(0).max(100).default(89),
+          })
+          .strict()
+          .prefault({}),
+        /** Below this share of measured required dimensions the score is null (insufficient data). */
+        minMeasuredRatio: z.number().min(0).max(1).default(0.5),
+      })
+      .strict()
+      .prefault({}),
     publication: z
       .object({
         /**

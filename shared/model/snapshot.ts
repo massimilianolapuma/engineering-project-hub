@@ -313,6 +313,19 @@ export const EnvironmentSnapshotSchema = z
   .strict();
 export type EnvironmentSnapshot = z.infer<typeof EnvironmentSnapshotSchema>;
 
+/**
+ * Project score computed by the collector. value is null when too few required dimensions
+ * could be measured ("insufficient data"); measured / required is the confidence.
+ */
+export const ProjectScoreSchema = z
+  .object({
+    value: z.number().int().min(0).max(100).nullable(),
+    measured: z.number().int().min(0),
+    required: z.number().int().min(0),
+  })
+  .strict();
+export type ProjectScore = z.infer<typeof ProjectScoreSchema>;
+
 export const ProjectSnapshotSchema = z
   .object({
     schemaVersion: SchemaVersionSchema,
@@ -352,6 +365,7 @@ export const ProjectSnapshotSchema = z
     securityCoverage: CoverageSummarySchema,
     governanceHealth: HealthResultSchema,
     overallHealth: HealthResultSchema,
+    score: ProjectScoreSchema,
     dataFreshness: z
       .object({
         status: HealthStatusSchema,
@@ -380,6 +394,7 @@ export const ProjectSummarySchema = z
     businessUnit: z.string().max(100),
     lifecycle: LifecycleSchema,
     overall: HealthStatusSchema,
+    score: ProjectScoreSchema,
     delivery: HealthStatusSchema,
     version: HealthStatusSchema,
     security: HealthStatusSchema,
