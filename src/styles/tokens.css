@@ -62,8 +62,12 @@
   --fs-xs: 0.75rem;
   --fs-sm: 0.8125rem;
   --fs-md: 0.875rem;
+  --fs-card: 0.9375rem; /* card, row and form-group titles (15px) */
+  --fs-count: 1rem; /* count values in the status shortcuts (16px) */
+  --fs-lead: 1.0625rem; /* the one-sentence lead under a page title (17px) */
   --fs-lg: 1.125rem;
   --fs-xl: 1.375rem;
+  --fs-score: 1.75rem; /* the score in the project header and the large summary numbers (28px) */
   --status-col: 112px;
 }
 

@@ -53,6 +53,16 @@ typography:
     fontSize: '1.0625rem'
     fontWeight: 600
     lineHeight: '24px'
+  count:
+    fontFamily: 'IBM Plex Sans, system-ui, sans-serif'
+    fontSize: '1rem'
+    fontWeight: 700
+    fontFeature: 'tnum'
+  card-title:
+    fontFamily: 'IBM Plex Sans, system-ui, sans-serif'
+    fontSize: '0.9375rem'
+    fontWeight: 600
+    lineHeight: '22px'
   title:
     fontFamily: 'IBM Plex Sans, system-ui, sans-serif'
     fontSize: '1.125rem'
@@ -259,6 +269,9 @@ Severity keeps its own scale (critical / high / medium / low) with text labels a
 - **Small** (400, 0.8125rem): notes, filter results, secondary lines.
 - **Label** (600, 0.75rem/16px): pills, column heads, dimension labels, confidence. 12px is the smallest size used.
 - **Score** (700, tabular): 1.125rem/24px in a list row, 1.75rem/34px with "/ 100" in the project header.
+- **Count** (700, tabular, 1rem): the number inside a status shortcut ("2 Critical") and the security severity totals.
+
+Every size is a token in `src/styles/tokens.css`: `--fs-xs` 12px, `--fs-sm` 13px, `--fs-md` 14px, `--fs-card` 15px, `--fs-count` 16px, `--fs-lead` 17px, `--fs-lg` 18px, `--fs-xl` 22px, `--fs-score` 28px. Pages use the tokens, never a literal size.
 
 ### Named Rules
 

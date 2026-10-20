@@ -44,6 +44,7 @@ export const it: Dict = {
     partial: 'Parziale: alcune sorgenti non sono leggibili, i conteggi sono un minimo',
     unknownValue: '—',
     errors: '{count} errori di raccolta',
+    errorsOne: '{count} errore di raccolta',
     noErrors: 'Nessun errore di raccolta',
     project: 'Progetto',
     component: 'Componente',
@@ -282,6 +283,7 @@ export const it: Dict = {
     sortCritical: 'Alert critici',
     results: '{shown} di {total} progetti',
     noResults: 'Nessun progetto corrisponde ai filtri.',
+    clearFilters: 'Azzera filtri',
     colProject: 'Progetto',
     tableCaption: 'Progetti con score e salute per dimensione, peggiori prima',
     statusColumn: 'Stato',
@@ -726,6 +728,7 @@ export const it: Dict = {
     validation: 'Validazione',
     valid: 'Il catalogo è valido.',
     invalid: '{count} problemi da correggere: la CI rifiuta un catalogo non valido.',
+    invalidOne: '{count} problema da correggere: la CI rifiuta un catalogo non valido.',
     output: 'File di progetto generato',
     outputHelp:
       'Contenuto del file del progetto selezionato (un file per progetto). I valori predefiniti e vuoti sono omessi.',
@@ -751,6 +754,17 @@ export const it: Dict = {
     pending: 'Modifiche in sospeso',
     proposal: 'Proposta',
     proposalSummary: '{count} file da proporre',
+    proposalSummaryOne: '{count} file da proporre',
+    dockValid: 'Valido',
+    dockInvalid: '{count} da correggere',
+    dockReview: 'Rivedi e proponi',
+    dockLabel: 'Stato della proposta',
+    undo: 'Annulla',
+    componentRemoved: 'Componente {n} rimosso.',
+    environmentRemoved: 'Ambiente {n} rimosso.',
+    workflowRemoved: 'Workflow {n} rimosso.',
+    restored: 'Ripristinato.',
+    resetConfirm: 'Annullare tutte le modifiche in sospeso e tornare al catalogo pubblicato?',
     proposalNone: 'Ancora niente da proporre',
     pendingIntro:
       'File di progetto diversi dal catalogo pubblicato. Ogni file si propone come modifica a sé.',
@@ -940,6 +954,15 @@ export const it: Dict = {
     'unsupported-schema':
       'Lo snapshot usa la versione di schema {version}, non supportata da questo sito.',
     invalid: 'Lo snapshot non corrisponde allo schema atteso.',
+  },
+  /** Forme singolari delle motivazioni, usate quando `count` vale 1. */
+  reasonsOne: {
+    'critical-workflows-succeeded': "L'unica esecuzione critica è riuscita",
+    'open-critical-alerts': '{count} alert critico aperto',
+    'open-high-alerts': '{count} alert alto aperto',
+    'open-medium-low-alerts': '{count} alert medio/basso aperto',
+    'open-secret-alerts': '{count} alert secret scanning aperto',
+    'all-required-controls-available': "L'unico controllo obbligatorio è disponibile",
   },
   reasons: {
     'workflow-failed': '{workflow} fallito su {component} (run #{run})',

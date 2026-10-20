@@ -107,6 +107,24 @@ const editorStrings = jsonForScript({
             <div class="ce-form-body" data-ce-form-body></div>
           </form>
 
+          {/* Compact proposal status, kept in view while editing (sticky on wide screens and
+              while an undo is offered); the full proposal box follows. */}
+          <div class="ce-dock" role="region" aria-label={c.dockLabel} data-ce-dock>
+            <div class="ce-dock__undo" data-ce-undo hidden>
+              <span data-ce-undo-text></span>
+              <button type="button" class="btn btn--sm" data-ce-undo-btn>
+                {c.undo}
+              </button>
+            </div>
+            <div class="ce-dock__status">
+              <span class="pill" data-ce-dock-valid></span>
+              <span class="ce-dock__count" data-ce-dock-count></span>
+              <a class="ce-dock__go" href="#ce-h-proposal">
+                {c.dockReview}
+              </a>
+            </div>
+          </div>
+
           <section class="card ce-proposal-box" aria-labelledby="ce-h-proposal">
             <div class="ce-proposal-box__head">
               <h2 id="ce-h-proposal">{c.proposal}</h2>
@@ -171,7 +189,7 @@ const editorStrings = jsonForScript({
                 </p>
               </div>
             </section>
-            <details class="ce-howto">
+            <details class="ce-howto disclosure">
               <summary>{c.howTo}</summary>
               <p class="note">{c.intro}</p>
               <p class="note">{c.flowNote}</p>
@@ -211,7 +229,7 @@ const editorStrings = jsonForScript({
   .ce-headline {
     margin: 6px 0 0;
     max-width: 70ch;
-    font-size: 17px;
+    font-size: var(--fs-lead);
     line-height: 24px;
     font-weight: 600;
     color: var(--text);
@@ -257,7 +275,7 @@ const editorStrings = jsonForScript({
   }
   .ce-panel__title {
     margin: 0;
-    font-size: 15px;
+    font-size: var(--fs-card);
     line-height: 22px;
     font-weight: 600;
   }
@@ -313,7 +331,7 @@ const editorStrings = jsonForScript({
   }
   .ce__title {
     margin: 0;
-    font-size: 17px;
+    font-size: var(--fs-lead);
     line-height: 24px;
     font-weight: 600;
   }
@@ -327,7 +345,7 @@ const editorStrings = jsonForScript({
   }
   .ce :global(.ce-section > h3) {
     margin: 0 0 var(--space-3);
-    font-size: 15px;
+    font-size: var(--fs-card);
     line-height: 22px;
     font-weight: 600;
   }
@@ -374,7 +392,7 @@ const editorStrings = jsonForScript({
     display: none;
   }
   .ce :global(.ce-kind__label) {
-    font-size: 15px;
+    font-size: var(--fs-card);
     line-height: 22px;
     font-weight: 600;
   }
@@ -507,6 +525,54 @@ const editorStrings = jsonForScript({
     border-color: var(--border-strong);
   }
 
+  /* Proposal dock: one line, sticky at the bottom of the form column on wide screens. */
+  .ce-dock {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: var(--space-4) 0;
+    padding: var(--space-2) var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    z-index: 2;
+  }
+  .ce-dock:has(.ce-dock__undo:not([hidden])) {
+    position: sticky;
+    bottom: var(--space-3);
+  }
+  @media (min-width: 1024px) {
+    .ce-dock {
+      position: sticky;
+      bottom: var(--space-3);
+    }
+  }
+  .ce-dock__undo,
+  .ce-dock__status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+  }
+  .ce-dock__undo[hidden] {
+    display: none;
+  }
+  .ce-dock__undo {
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+  .ce-dock__count {
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .ce-dock__go {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    margin-left: auto;
+  }
+
   /* Proposal box: validation pill, pending changes with their GitHub action, generated file. */
   .ce-proposal-box {
     margin: 0;
@@ -523,7 +589,7 @@ const editorStrings = jsonForScript({
   }
   .ce-proposal-box__head h2 {
     margin: 0;
-    font-size: 17px;
+    font-size: var(--fs-lead);
     line-height: 24px;
     font-weight: 600;
   }
@@ -542,7 +608,7 @@ const editorStrings = jsonForScript({
   }
   .ce-part__title {
     margin: 0 0 var(--space-2);
-    font-size: 15px;
+    font-size: var(--fs-card);
     line-height: 22px;
     font-weight: 600;
   }

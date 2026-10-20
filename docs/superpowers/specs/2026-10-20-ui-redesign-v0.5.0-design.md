@@ -93,7 +93,7 @@ Typography: **IBM Plex Sans** (400/500/600/700) for everything, tabular figures 
 
 Shape and space: radius 8px (controls, pills 999px), 10px (cards, tables); 1px borders; no heavy shadows; no side-stripe borders; generous padding (pills ≥ 4px × 10px, cells ≥ 8px × 10px).
 
-Status symbols (coverage and controls), used everywhere with the same meaning: ✓ enabled · ! required but not configured · ⧖ stale scan · ? not visible (not authorised / unknown / collection failed) · – not required / not applicable. Each symbol has an accessible name; colour is secondary.
+Status symbols (coverage and controls), used everywhere with the same meaning: ✓ enabled · ! required but not configured · ⧖ stale scan · ? not visible (not authorised / unknown / collection failed) · ✕ scan failed (the control ran and failed) · – not required / not applicable. Six symbols in all; "How to read" and the Security legend list all six. Each symbol has an accessible name; colour is secondary.
 
 Removed from v0.4.0: `--hatch`, `--hatch-void`, `--frame` brown, grid references, sheet neatline, margin notes, sheet legend variant, Public Sans.
 

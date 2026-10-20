@@ -82,7 +82,7 @@ describe('static site', () => {
     expect(row).toContain('insufficient data');
     expect(row).toMatch(/dimbars__bar--grey/);
     expect(row).toMatch(/href="[^"]*data-quality\/#project-gamma"/);
-    expect(row).toContain('2 collection error(s)');
+    expect(row).toContain('2 collection errors');
     expect(row).not.toMatch(/>\s*0\s*</);
   });
 
@@ -234,7 +234,7 @@ describe('static site', () => {
 
     it('reads monorepo components from the shared repository', async () => {
       const comps = between(await page('projects/platform'), 'id="h-components"', '</section>');
-      const rows = [...comps.matchAll(/<tr data-component="(\w+)"[\s\S]*?<\/tr>/g)];
+      const rows = [...comps.matchAll(/<tr[^>]*data-component="(\w+)"[\s\S]*?<\/tr>/g)];
       expect(rows.map((m) => m[1])).toEqual(['web', 'api', 'worker']);
       for (const [row, idRow] of rows) {
         expect(row, idRow).not.toContain('None required');
@@ -461,8 +461,10 @@ describe('static site', () => {
     expect(sub).toMatch(/href="[^"]*\/catalog\/"/);
     // Capabilities as pills (shape + text), run details collapsed last.
     expect(html).toMatch(/pill pill--amber[\s\S]{0,400}Partial[\s\S]{0,200}Metadata/);
-    expect(html).toMatch(/<details class="dq-run"(?![^>]*\bopen\b)[^>]*>\s*<summary/);
-    expect(html.lastIndexOf('<section')).toBeLessThan(html.indexOf('<details class="dq-run"'));
+    expect(html).toMatch(/<details class="dq-run disclosure"(?![^>]*\bopen\b)[^>]*>\s*<summary/);
+    expect(html.lastIndexOf('<section')).toBeLessThan(
+      html.indexOf('<details class="dq-run disclosure"'),
+    );
     expect(html).not.toContain('kpi__value');
 
     const it = await page('it/data-quality');
@@ -628,7 +630,7 @@ describe('static site', () => {
     // static button is primary.
     expect(html).not.toContain('btn--primary');
     // How-to steps are detail on demand.
-    expect(box).toMatch(/<details[^>]*class="ce-howto"/);
+    expect(box).toMatch(/<details[^>]*class="ce-howto disclosure"/);
   });
 
   it.each([

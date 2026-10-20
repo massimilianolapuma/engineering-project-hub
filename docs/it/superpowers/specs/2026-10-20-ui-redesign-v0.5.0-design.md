@@ -93,7 +93,7 @@ Tipografia: **IBM Plex Sans** (400/500/600/700) per tutto, cifre tabulari per sc
 
 Forma e spazio: raggio 8px (controlli, pill 999px), 10px (card, tabelle); bordi da 1px; nessuna ombra pesante; nessun bordo laterale colorato; padding generoso (pill ≥ 4px × 10px, celle ≥ 8px × 10px).
 
-Simboli di stato (copertura e controlli), usati ovunque con lo stesso significato: ✓ abilitato · ! richiesto ma non configurato · ⧖ scansione obsoleta · ? non visibile (non autorizzato / sconosciuto / raccolta fallita) · – non richiesto / non applicabile. Ogni simbolo ha un nome accessibile; il colore è secondario.
+Simboli di stato (copertura e controlli), usati ovunque con lo stesso significato: ✓ abilitato · ! richiesto ma non configurato · ⧖ scansione obsoleta · ? non visibile (non autorizzato / sconosciuto / raccolta fallita) · ✕ scansione fallita (il controllo è stato eseguito e non è riuscito) · – non richiesto / non applicabile. Sei simboli in tutto; "Come leggere" e la legenda Sicurezza li elencano tutti e sei. Ogni simbolo ha un nome accessibile; il colore è secondario.
 
 Rimossi dalla v0.4.0: `--hatch`, `--hatch-void`, marrone `--frame`, riferimenti di griglia, neatline del foglio, note a margine, variante legenda del foglio, Public Sans.
 

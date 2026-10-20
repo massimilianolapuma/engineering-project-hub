@@ -20,6 +20,7 @@ import Pill from '../../../components/Pill.astro';
 import RelTime from '../../../components/RelTime.astro';
 import ScoreBadge from '../../../components/ScoreBadge.astro';
 import StatusBadge from '../../../components/StatusBadge.astro';
+import UnknownValue from '../../../components/UnknownValue.astro';
 import Base from '../../../layouts/Base.astro';
 import { loadSiteData } from '../../../lib/data';
 import { displayVersion } from '../../../lib/format';
@@ -350,7 +351,12 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
 
       <section class="dimcards" aria-label={d.project.dimensionCards}>
         {dims.map(({ dim, anchor, health }) => (
-          <a class="card dimcard" href={`#${anchor}`} data-dimension={dim}>
+          <a
+            class="card dimcard"
+            href={`#${anchor}`}
+            data-dimension={dim}
+            data-status={statusOf(health)}
+          >
             <span class="dimcard__head">
               <span class={`dimcard__dot dimcard__dot--${statusOf(health)}`} aria-hidden="true" />
               <strong class="dimcard__name">{i18n.dimension(dim)}</strong>
@@ -426,18 +432,28 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
           <p class="muted">{d.project.noComponents}</p>
         ) : (
           <div class="table-wrap">
-            <table class="table comps">
+            <table role="table" class="table comps">
               <caption class="visually-hidden">{d.project.componentsCaption}</caption>
-              <thead>
-                <tr>
-                  <th scope="col">{d.common.component}</th>
-                  <th scope="col">{d.common.version}</th>
-                  <th scope="col">{d.project.ci}</th>
-                  <th scope="col">{d.project.openAlerts}</th>
-                  <th scope="col">{d.project.coverageCol}</th>
+              <thead role="rowgroup">
+                <tr role="row">
+                  <th role="columnheader" scope="col">
+                    {d.common.component}
+                  </th>
+                  <th role="columnheader" scope="col">
+                    {d.common.version}
+                  </th>
+                  <th role="columnheader" scope="col">
+                    {d.project.ci}
+                  </th>
+                  <th role="columnheader" scope="col">
+                    {d.project.openAlerts}
+                  </th>
+                  <th role="columnheader" scope="col">
+                    {d.project.coverageCol}
+                  </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody role="rowgroup">
                 {s.components.map((c) => {
                   const eff = displayVersion(c.effectiveVersion);
                   const latest = c.latestRelease;
@@ -445,8 +461,8 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
                   const alerts = alertsOf(c);
                   const gaps = gapsOf(c);
                   return (
-                    <tr data-component={c.id}>
-                      <th scope="row">
+                    <tr role="row" data-component={c.id}>
+                      <th role="rowheader" scope="row">
                         <span class="comps__name">{c.name}</span>{' '}
                         <span class="sub">{d.componentType[c.type]}</span>
                         <span class="comps__repo">
@@ -469,7 +485,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
                           )}
                         </span>
                       </th>
-                      <td data-label={d.common.version}>
+                      <td role="cell" data-label={d.common.version}>
                         <span class="cell">
                           {eff ? (
                             <span class="mono">{eff}</span>
@@ -501,14 +517,14 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
                           )}
                         </span>
                       </td>
-                      <td data-label={d.project.ci}>
+                      <td role="cell" data-label={d.project.ci}>
                         {ci ? (
                           <Pill tone={ci.tone} label={ci.label} />
                         ) : (
                           <span class="muted">{d.project.noCriticalWorkflows}</span>
                         )}
                       </td>
-                      <td data-label={d.project.openAlerts}>
+                      <td role="cell" data-label={d.project.openAlerts}>
                         {sharedControls(c) ? (
                           <span class="sub">{d.project.sharedRepo}</span>
                         ) : (
@@ -520,7 +536,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
                           </span>
                         )}
                       </td>
-                      <td data-label={d.project.coverageCol}>
+                      <td role="cell" data-label={d.project.coverageCol}>
                         {!hasRequired(c) ? (
                           <span class="muted">{d.project.noRequired}</span>
                         ) : gaps.length === 0 ? (
@@ -560,45 +576,55 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
       </section>
 
       <div class="block sections">
-        <details id="workflows" class="fold">
+        <details id="workflows" class="fold disclosure">
           <summary>
             <span class="fold__title">{d.project.workflows}</span>
             <span class="fold__hint">{wfHint || d.common.none}</span>
           </summary>
           <div class="fold__body">
             <div class="table-wrap">
-              <table class="table">
+              <table role="table" class="table">
                 <caption class="visually-hidden">{d.project.workflows}</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">{d.common.status}</th>
-                    <th scope="col">{d.project.workflowCol}</th>
-                    <th scope="col">{d.common.component}</th>
-                    <th scope="col">{d.common.updated}</th>
-                    <th scope="col">{d.workflowsPage.lastError}</th>
+                <thead role="rowgroup">
+                  <tr role="row">
+                    <th role="columnheader" scope="col">
+                      {d.common.status}
+                    </th>
+                    <th role="columnheader" scope="col">
+                      {d.project.workflowCol}
+                    </th>
+                    <th role="columnheader" scope="col">
+                      {d.common.component}
+                    </th>
+                    <th role="columnheader" scope="col">
+                      {d.common.updated}
+                    </th>
+                    <th role="columnheader" scope="col">
+                      {d.workflowsPage.lastError}
+                    </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody role="rowgroup">
                   {workflows.map((w) => {
                     const v = wfView(w);
                     return (
-                      <tr>
-                        <td data-label={d.common.status}>
+                      <tr role="row">
+                        <td role="cell" data-label={d.common.status}>
                           <span class="status-col">
                             <Pill tone={v.tone} label={v.label} />
                           </span>
                         </td>
-                        <th scope="row">
+                        <th role="rowheader" scope="row">
                           {w.name} <code class="sub">{w.file}</code>
                           {w.critical && <span class="tag">{d.workflowsPage.critical}</span>}
                         </th>
-                        <td data-label={d.common.component}>
+                        <td role="cell" data-label={d.common.component}>
                           <span class="cell">
                             {nameOf(w.componentId)}
                             <code class="sub comps__repo">{w.repository}</code>
                           </span>
                         </td>
-                        <td data-label={d.common.updated}>
+                        <td role="cell" data-label={d.common.updated}>
                           {w.lastCompletedRun ? (
                             <span class="cell">
                               <RelTime iso={w.lastCompletedRun.updatedAt} i18n={i18n} />{' '}
@@ -609,11 +635,11 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
                               />
                             </span>
                           ) : (
-                            <span>{d.common.unknownValue}</span>
+                            <UnknownValue i18n={i18n} />
                           )}
                         </td>
-                        <td data-label={d.workflowsPage.lastError}>
-                          <span>{w.lastError ?? d.common.unknownValue}</span>
+                        <td role="cell" data-label={d.workflowsPage.lastError}>
+                          {w.lastError ? <span>{w.lastError}</span> : <UnknownValue i18n={i18n} />}
                         </td>
                       </tr>
                     );
@@ -624,7 +650,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
           </div>
         </details>
 
-        <details id="security" class="fold">
+        <details id="security" class="fold disclosure">
           <summary>
             <span class="fold__title">{d.project.securityTitle}</span>
             <span class="fold__hint">{d.project.securityHint}</span>
@@ -686,7 +712,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
           </div>
         </details>
 
-        <details id="coverage" class="fold">
+        <details id="coverage" class="fold disclosure">
           <summary>
             <span class="fold__title">{d.project.coveragePerControl}</span>
             <span class="fold__hint">
@@ -719,7 +745,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
           </div>
         </details>
 
-        <details id="errors" class="fold">
+        <details id="errors" class="fold disclosure">
           <summary>
             <span class="fold__title">{d.project.errors}</span>
             <span class="fold__hint">
@@ -747,7 +773,9 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
         </details>
       </div>
 
-      <Legend i18n={i18n} />
+      <div class="plegend">
+        <Legend i18n={i18n} />
+      </div>
     </>
   )}
 </Base>
@@ -854,6 +882,16 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
   }
   .dimcard:hover {
     border-color: var(--border-strong);
+  }
+  /* Unknown is a dashed outline, as on the environment and unknown cards. */
+  .dimcard[data-status='grey'] {
+    border: 1.5px dashed var(--unknown);
+  }
+  .dimcard__dot--grey {
+    border-width: 2px;
+  }
+  .plegend {
+    margin-top: var(--space-5);
   }
   .dimcard__head {
     display: flex;
@@ -977,8 +1015,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
     border-radius: var(--radius-lg);
     scroll-margin-top: var(--space-4);
   }
-  /* The summary is a flex row, which drops the native disclosure marker: draw an explicit
-     chevron (CSS content, so not announced) that turns when the section is open. */
+  /* Flex row; the chevron comes from the shared .disclosure style. */
   .fold > summary {
     display: flex;
     flex-wrap: wrap;
@@ -986,27 +1023,10 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
     gap: var(--space-1) var(--space-3);
     min-height: 44px;
     padding: var(--space-3) var(--space-4);
-    cursor: pointer;
-    list-style: none;
-  }
-  .fold > summary::-webkit-details-marker {
-    display: none;
   }
   .fold > summary::before {
-    content: '▸';
-    content: '▸' / '';
-    display: inline-block;
-    width: 1ch;
-    color: var(--text-muted);
-    transition: transform 0.15s ease;
-  }
-  .fold[open] > summary::before {
-    transform: rotate(90deg);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .fold > summary::before {
-      transition: none;
-    }
+    margin-right: 0;
+    align-self: center;
   }
   .fold__title {
     font-weight: 600;
@@ -1069,6 +1089,13 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
     overflow-wrap: anywhere;
   }
 
+  /* Narrow phones: the pill goes on its own line above the reason, text stays left-aligned. */
+  @media (max-width: 480px) {
+    .why__item {
+      flex-direction: column;
+      gap: var(--space-1);
+    }
+  }
   @media (max-width: 640px) {
     .phead {
       align-items: flex-start;

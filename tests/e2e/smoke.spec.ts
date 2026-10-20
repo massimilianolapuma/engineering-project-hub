@@ -48,6 +48,59 @@ test('no horizontal scroll at phone width', async ({ page }) => {
   expect(overflow).toBeLessThanOrEqual(0);
 });
 
+test('no horizontal scroll at tablet width and the reason stays fully visible', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 768, height: 1000 });
+  await page.goto('/');
+  await expect(page.locator('tr[data-project]')).toHaveCount(4);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+  const plist = await page.evaluate(() => {
+    const el = document.querySelector<HTMLElement>('.plist')!;
+    return el.scrollWidth - el.clientWidth;
+  });
+  expect(plist).toBeLessThanOrEqual(0);
+  for (const cell of await page.locator('td.plist__reason').all()) {
+    const box = (await cell.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(768);
+  }
+});
+
+test('filters live in the URL, apply on load and can be cleared from the empty state', async ({
+  page,
+}) => {
+  await page.goto('/?q=zzz-nothing');
+  const rows = page.locator('tr[data-project]:not([hidden])');
+  await expect(rows).toHaveCount(0);
+  await expect(page.getByLabel('Search projects')).toHaveValue('zzz-nothing');
+  await page.locator('[data-empty]').getByRole('button', { name: 'Clear filters' }).click();
+  await expect(rows).toHaveCount(4);
+  await expect(page).toHaveURL(/\/$/);
+  await page.getByLabel('Status', { exact: true }).selectOption('red');
+  await expect(page).toHaveURL(/\?health=red$/);
+  await page.reload();
+  await expect(rows).toHaveCount(1);
+});
+
+test('the chosen theme survives navigation', async ({ page }) => {
+  await page.goto('/');
+  const toggle = page.locator('[data-theme-toggle]');
+  await toggle.click(); // Auto → Light
+  await toggle.click(); // Light → Dark
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('link', { name: 'Security' })
+    .click();
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(toggle).toHaveText('Dark');
+});
+
 test('navigates the main views in both languages', async ({ page }) => {
   await page.goto('/');
   for (const name of ['Security', 'Versions', 'Workflows', 'Data quality']) {

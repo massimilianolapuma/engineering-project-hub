@@ -41,6 +41,7 @@ h2,
 h3 {
   margin: 0 0 var(--space-3);
   font-weight: 600;
+  text-wrap: balance;
 }
 h1 {
   font-size: var(--fs-xl);
@@ -80,7 +81,8 @@ code,
   font-variant-numeric: tabular-nums;
 }
 code {
-  font-size: 0.93em;
+  /* Never below the 12px label minimum, also inside 12px .sub text. */
+  font-size: max(var(--fs-xs), 0.93em);
   overflow-wrap: anywhere;
 }
 :focus-visible {
@@ -157,7 +159,7 @@ code.sub {
   gap: var(--space-2);
   min-height: 40px;
   color: var(--text);
-  font-size: 0.9375rem;
+  font-size: var(--fs-card);
   font-weight: 700;
   text-decoration: none;
 }
@@ -212,7 +214,13 @@ code.sub {
   display: flex;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  overflow: hidden;
+}
+/* No overflow clipping on the group (it would cut the focus ring): round the ends instead. */
+.langswitch a:first-child {
+  border-radius: calc(var(--radius-md) - 1px) 0 0 calc(var(--radius-md) - 1px);
+}
+.langswitch a:last-child {
+  border-radius: 0 calc(var(--radius-md) - 1px) calc(var(--radius-md) - 1px) 0;
 }
 .langswitch a {
   display: flex;
@@ -609,6 +617,31 @@ select {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
+/* One disclosure marker for every <details>: a chevron (no text, so not announced) that turns
+   when the section opens. */
+.disclosure > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.disclosure > summary::before {
+  content: '';
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin: 0 10px 0 2px;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  vertical-align: 0.15em;
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+}
+.disclosure[open] > summary::before {
+  transform: translateY(-2px) rotate(45deg);
+}
 .extlink__arrow {
   margin-left: 2px;
   font-size: 0.85em;
@@ -695,7 +728,9 @@ select {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     transition: none !important;
     animation: none !important;
   }
@@ -947,6 +982,10 @@ textarea.ce-input {
   border-radius: var(--radius-sm);
   padding: var(--space-1) var(--space-2);
   cursor: pointer;
+}
+.ce-issue:focus-visible {
+  /* Inside a scrolling list: keep the ring inside the button so it is not clipped. */
+  outline-offset: -2px;
 }
 .ce-yaml {
   display: block;

@@ -314,7 +314,7 @@ const lead = [
         </ul>
       </section>
 
-      <details class="dq-run">
+      <details class="dq-run disclosure">
         <summary>
           {f(q.runSummary, {
             date: i18n.date(index.run.startedAt),
@@ -331,7 +331,7 @@ const lead = [
             </div>
             <div>
               <dt>{q.duration}</dt>
-              <dd>{(index.run.durationMs / 1000).toFixed(1)} s</dd>
+              <dd>{i18n.seconds(index.run.durationMs)}</dd>
             </div>
             <div>
               <dt>{d.common.source}</dt>
@@ -404,7 +404,7 @@ const lead = [
   }
   .dq-lead {
     margin: 6px 0 0;
-    font-size: 1.0625rem;
+    font-size: var(--fs-lead);
     line-height: 24px;
     font-weight: 600;
   }
@@ -428,7 +428,7 @@ const lead = [
     padding: var(--space-4);
   }
   .dq-count__value {
-    font-size: 1.75rem;
+    font-size: var(--fs-score);
     line-height: 34px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
@@ -451,7 +451,7 @@ const lead = [
   }
   .dq-card h2 {
     margin: 0;
-    font-size: 0.9375rem;
+    font-size: var(--fs-card);
     line-height: 22px;
   }
   .dq-card > p {

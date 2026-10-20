@@ -11,6 +11,7 @@ import ExtLink from '../../components/ExtLink.astro';
 import Legend from '../../components/Legend.astro';
 import Pill from '../../components/Pill.astro';
 import StatusDot from '../../components/StatusDot.astro';
+import UnknownValue from '../../components/UnknownValue.astro';
 import Base from '../../layouts/Base.astro';
 import { displayVersion, shortSha } from '../../lib/format';
 import { pageContext } from '../../lib/page';
@@ -252,36 +253,49 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
                         {v.toCheck}
                       </h3>
                       <div class="table-wrap vcheck__wrap">
-                        <table class="table vcheck__table">
-                          <thead>
-                            <tr>
-                              <th scope="col">{d.common.component}</th>
-                              <th scope="col">{v.colManifest}</th>
-                              <th scope="col">{v.colSubmodule}</th>
-                              <th scope="col">{v.colLatest}</th>
-                              <th scope="col">{v.colWhat}</th>
+                        <table role="table" class="table vcheck__table">
+                          <caption class="visually-hidden">
+                            {v.toCheck} · {s.project.name}
+                          </caption>
+                          <thead role="rowgroup">
+                            <tr role="row">
+                              <th role="columnheader" scope="col">
+                                {d.common.component}
+                              </th>
+                              <th role="columnheader" scope="col">
+                                {v.colManifest}
+                              </th>
+                              <th role="columnheader" scope="col">
+                                {v.colSubmodule}
+                              </th>
+                              <th role="columnheader" scope="col">
+                                {v.colLatest}
+                              </th>
+                              <th role="columnheader" scope="col">
+                                {v.colWhat}
+                              </th>
                             </tr>
                           </thead>
-                          <tbody>
+                          <tbody role="rowgroup">
                             {card.rows.map((row) =>
                               row.kind === 'component' ? (
-                                <tr>
-                                  <th scope="row">
+                                <tr role="row">
+                                  <th role="rowheader" scope="row">
                                     {row.component.name}
                                     <span class="sub mono vcheck__repo">
                                       {row.component.repository.name}
                                     </span>
                                   </th>
-                                  <td class="mono" data-label={v.colManifest}>
+                                  <td role="cell" class="mono" data-label={v.colManifest}>
                                     {displayVersion(row.component.declaredVersion) ?? (
-                                      <span class="muted">{unknownText}</span>
+                                      <UnknownValue i18n={i18n} class="muted" />
                                     )}
                                   </td>
-                                  <td class="mono" data-label={v.colSubmodule}>
+                                  <td role="cell" class="mono" data-label={v.colSubmodule}>
                                     {row.component.submodule ? (
                                       (displayVersion(row.component.pin?.version) ??
                                       shortSha(row.component.submodule.sha) ?? (
-                                        <span class="muted">{unknownText}</span>
+                                        <UnknownValue i18n={i18n} class="muted" />
                                       ))
                                     ) : (
                                       <span class="muted" title={d.common.notApplicable}>
@@ -292,7 +306,7 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
                                       </span>
                                     )}
                                   </td>
-                                  <td class="mono" data-label={v.colLatest}>
+                                  <td role="cell" class="mono" data-label={v.colLatest}>
                                     {row.component.latestRelease ? (
                                       <ExtLink
                                         href={row.component.latestRelease.url}
@@ -300,10 +314,10 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
                                         label={row.component.latestRelease.tag}
                                       />
                                     ) : (
-                                      <span class="muted">{unknownText}</span>
+                                      <UnknownValue i18n={i18n} class="muted" />
                                     )}
                                   </td>
-                                  <td class="vcheck__what" data-label={v.colWhat}>
+                                  <td role="cell" class="vcheck__what" data-label={v.colWhat}>
                                     <ul class="vissues">
                                       {row.issues.map((issue) => {
                                         const p = issuePill(issue);
@@ -320,31 +334,32 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
                                   </td>
                                 </tr>
                               ) : (
-                                <tr>
-                                  <th scope="row">
+                                <tr role="row">
+                                  <th role="rowheader" scope="row">
                                     <span class="mono">{row.submodule.path}</span>
                                     <span class="sub vcheck__repo">{v.submoduleKind}</span>
                                   </th>
-                                  <td data-label={v.colManifest}>
+                                  <td role="cell" data-label={v.colManifest}>
                                     <span class="muted" title={d.common.notApplicable}>
                                       <span aria-hidden="true">–</span>
                                       <span class="visually-hidden">{d.common.notApplicable}</span>
                                     </span>
                                   </td>
-                                  <td class="mono" data-label={v.colSubmodule}>
-                                    {shortSha(row.submodule.sha) ?? (
-                                      <span class="muted">
-                                        {row.kind === 'unmapped' ? v.present : unknownText}
-                                      </span>
-                                    )}
+                                  <td role="cell" class="mono" data-label={v.colSubmodule}>
+                                    {shortSha(row.submodule.sha) ??
+                                      (row.kind === 'unmapped' ? (
+                                        <span class="muted">{v.present}</span>
+                                      ) : (
+                                        <UnknownValue i18n={i18n} class="muted" />
+                                      ))}
                                   </td>
-                                  <td data-label={v.colLatest}>
+                                  <td role="cell" data-label={v.colLatest}>
                                     <span class="muted" title={d.common.notApplicable}>
                                       <span aria-hidden="true">–</span>
                                       <span class="visually-hidden">{d.common.notApplicable}</span>
                                     </span>
                                   </td>
-                                  <td class="vcheck__what" data-label={v.colWhat}>
+                                  <td role="cell" class="vcheck__what" data-label={v.colWhat}>
                                     <ul class="vissues">
                                       {row.kind === 'unmapped' ? (
                                         <li class="vissue" data-issue="unmapped">
@@ -378,7 +393,7 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
                     </section>
                   )}
                   {card.aligned.length > 0 && (
-                    <details class="valigned">
+                    <details class="valigned disclosure">
                       <summary>{plural(card.aligned.length, v.alignedCollapsed)}</summary>
                       <ul class="valigned__list">
                         {card.aligned.map((c) => (
@@ -410,7 +425,7 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
 <style>
   .vlead {
     margin: 6px 0 0;
-    font-size: 1.0625rem;
+    font-size: var(--fs-lead);
     line-height: 24px;
     font-weight: 600;
     color: var(--text);
@@ -451,7 +466,7 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
   }
   .vcard__title {
     margin: 0;
-    font-size: 0.9375rem;
+    font-size: var(--fs-card);
     line-height: 22px;
     font-weight: 600;
   }

@@ -179,7 +179,7 @@ const detailKind = (issue: WorkflowIssue, w: WorkflowStatus) =>
                 </ul>
               )}
               {sum.issues.length > 0 && sum.ok.length > 0 && (
-                <details class="wf-ok">
+                <details class="wf-ok disclosure">
                   <summary>{plural(t.okCollapsed, sum.ok.length)}</summary>
                   <ul class="wf-ok__list">
                     {sum.ok.map((w) => (
@@ -216,7 +216,7 @@ const detailKind = (issue: WorkflowIssue, w: WorkflowStatus) =>
   }
   .wf-lead {
     margin: 0;
-    font-size: 1.0625rem;
+    font-size: var(--fs-lead);
     line-height: 1.45;
     font-weight: 600;
     color: var(--text);
@@ -251,7 +251,7 @@ const detailKind = (issue: WorkflowIssue, w: WorkflowStatus) =>
   }
   .wf-card__head h2 {
     margin: 0;
-    font-size: 0.9375rem;
+    font-size: var(--fs-card);
     line-height: 22px;
     font-weight: 600;
   }
@@ -290,9 +290,9 @@ const detailKind = (issue: WorkflowIssue, w: WorkflowStatus) =>
     padding-top: 10px;
   }
   .wf-ok summary {
-    cursor: pointer;
     color: var(--text-muted);
-    min-height: 24px;
+    min-height: 40px;
+    padding: 10px 0;
   }
   .wf-ok__list {
     margin: var(--space-2) 0 0;
@@ -315,6 +315,16 @@ const detailKind = (issue: WorkflowIssue, w: WorkflowStatus) =>
     .wf-card__meta {
       margin-left: 0;
       flex-basis: 100%;
+    }
+  }
+  /* Narrow phones: one column, the pill on its own line above the text (still left-aligned). */
+  @media (max-width: 480px) {
+    .wf-row {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .wf-row__repo,
+    .wf-row__what {
+      grid-column: 1;
     }
   }
 </style>

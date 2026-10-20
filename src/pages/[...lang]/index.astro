@@ -144,7 +144,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
             <option value="critical">{d.portfolio.sortCritical}</option>
           </select>
         </div>
-        <details class="portfolio__more">
+        <details class="portfolio__more disclosure">
           <summary>{d.portfolio.moreFilters}</summary>
           <div class="portfolio__more-body">
             <div class="field">
@@ -174,35 +174,48 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
         >
           {i18n.f(d.portfolio.results, { shown: projects.length, total: projects.length })}
         </p>
+        <button type="button" class="btn btn--ghost portfolio__clear" data-clear-filters hidden>
+          {d.portfolio.clearFilters}
+        </button>
       </form>
 
       <div class="plist">
-        <table class="plist__table" data-portfolio-table>
+        <table role="table" class="plist__table" data-portfolio-table>
           <caption class="visually-hidden">
             {d.portfolio.tableCaption}. {d.portfolio.scoreHelp}
           </caption>
-          <thead>
-            <tr>
-              <th scope="col" class="plist__c-dot">
+          <thead role="rowgroup">
+            <tr role="row">
+              <th role="columnheader" scope="col" class="plist__c-dot">
                 <span class="visually-hidden">{d.portfolio.statusColumn}</span>
               </th>
-              <th scope="col">{d.portfolio.colProject}</th>
-              <th scope="col" class="plist__c-score" title={d.portfolio.scoreHelp}>
+              <th role="columnheader" scope="col">
+                {d.portfolio.colProject}
+              </th>
+              <th
+                role="columnheader"
+                scope="col"
+                class="plist__c-score"
+                title={d.portfolio.scoreHelp}
+              >
                 {d.portfolio.scoreColumn}
               </th>
-              <th scope="col" class="plist__c-dims">
+              <th role="columnheader" scope="col" class="plist__c-dims">
                 <span class="visually-hidden">{d.portfolio.dimensionsColumn}</span>
                 <DimensionBars variant="header" locale={locale} />
               </th>
-              <th scope="col">{d.portfolio.reasonColumn}</th>
+              <th role="columnheader" scope="col">
+                {d.portfolio.reasonColumn}
+              </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody role="rowgroup">
             {sorted.map((p) => {
               const none = unmeasured(p);
               const reason = mainReason(p);
               return (
                 <tr
+                  role="row"
                   data-project
                   data-name={p.name.toLowerCase()}
                   data-search={searchText(p)}
@@ -215,28 +228,32 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
                   data-high={p.openCounts.high ?? -1}
                   data-updated={p.collectedAt}
                 >
-                  <td class="plist__dot">
+                  <td role="cell" class="plist__dot">
                     <StatusDot
                       status={p.overall}
                       label={`${d.dimensions.overall}: ${i18n.status(p.overall)}`}
                     />
                   </td>
-                  <th scope="row" class="plist__name">
+                  <th role="rowheader" scope="row" class="plist__name">
                     <a class="plist__link" href={href(locale, `projects/${p.id}`)}>
                       {p.name}
                     </a>
                     <span class="plist__bu">{p.businessUnit}</span>
                   </th>
-                  <td class="plist__score">
+                  <td role="cell" class="plist__score">
                     <ScoreBadge score={p.score} locale={locale} />
                   </td>
-                  <td class="plist__dims">
+                  <td role="cell" class="plist__dims">
+                    {/* Phone and tablet: the header row is hidden, so label the bars here. */}
+                    <span class="plist__dimlabels" aria-hidden="true">
+                      <DimensionBars variant="header" locale={locale} />
+                    </span>
                     <DimensionBars
                       dims={DIMS.map((k) => ({ dimension: k, status: statusOf(p, k) }))}
                       locale={locale}
                     />
                   </td>
-                  <td class="plist__reason">
+                  <td role="cell" class="plist__reason">
                     <div class="plist__why">
                       <span class="status-col">
                         <StatusBadge
@@ -253,7 +270,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
                             href={`${href(locale, 'dataQuality')}#${p.id}`}
                             title={d.portfolio.reviewErrors}
                           >
-                            {i18n.f(d.common.errors, { count: p.collectionErrorCount })}
+                            {i18n.errors(p.collectionErrorCount)}
                           </a>
                         </span>
                       ) : (
@@ -266,7 +283,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
                                 href={`${href(locale, 'dataQuality')}#${p.id}`}
                                 title={d.portfolio.reviewErrors}
                               >
-                                {i18n.f(d.common.errors, { count: p.collectionErrorCount })}
+                                {i18n.errors(p.collectionErrorCount)}
                               </a>
                             </>
                           )}
@@ -279,9 +296,12 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
             })}
           </tbody>
         </table>
-        <p class="plist__empty" hidden data-empty>
-          {d.portfolio.noResults}
-        </p>
+        <div class="plist__empty" hidden data-empty>
+          <p>{d.portfolio.noResults}</p>
+          <button type="button" class="btn" data-clear-filters>
+            {d.portfolio.clearFilters}
+          </button>
+        </div>
       </div>
 
       <Legend i18n={i18n} />
@@ -316,7 +336,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
   }
   .portfolio__lead {
     margin: 6px 0 0;
-    font-size: 1.0625rem;
+    font-size: var(--fs-lead);
     line-height: 24px;
     font-weight: 600;
   }
@@ -349,7 +369,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     box-shadow: inset 0 0 0 1px var(--text);
   }
   .count-btn__value {
-    font-size: 1rem;
+    font-size: var(--fs-count);
     font-weight: 700;
     font-variant-numeric: tabular-nums;
   }
@@ -369,7 +389,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     background: var(--green);
   }
   .count-btn__dot--grey {
-    border: 1.5px dashed var(--unknown);
+    border: 2px dashed var(--unknown);
   }
 
   /* Filters: one inline row; lifecycle and severity under "More filters". */
@@ -383,7 +403,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     align-self: flex-end;
     font-size: var(--fs-sm);
   }
-  .portfolio__more summary {
+  .portfolio__more > summary {
     display: inline-flex;
     align-items: center;
     min-height: 40px;
@@ -392,7 +412,6 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     border-radius: var(--radius-md);
     color: var(--text);
     font-weight: 500;
-    cursor: pointer;
   }
   .portfolio__more[open] {
     flex-basis: 100%;
@@ -408,6 +427,12 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     align-self: center;
     font-size: var(--fs-sm);
     color: var(--text-muted);
+  }
+  .portfolio__clear {
+    align-self: center;
+  }
+  .portfolio__clear[hidden] {
+    display: none;
   }
 
   /* The list: one row per project, worst first. */
@@ -455,12 +480,12 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     width: 212px;
   }
   .plist__name {
-    min-width: 180px;
+    min-width: 160px;
     font-weight: 400;
   }
   .plist__link {
     display: inline-block;
-    font-size: 0.9375rem;
+    font-size: var(--fs-card);
     font-weight: 600;
   }
   .plist__bu {
@@ -474,12 +499,24 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     grid-template-columns: var(--status-col) minmax(0, 1fr);
     align-items: center;
     column-gap: var(--space-3);
-    min-width: 280px;
+    min-width: 240px;
   }
   .plist__empty {
-    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
     padding: var(--space-4);
     color: var(--text-muted);
+  }
+  .plist__empty[hidden] {
+    display: none;
+  }
+  .plist__empty p {
+    margin: 0;
+  }
+  .plist__dimlabels {
+    display: none;
   }
 
   .portfolio__foot {
@@ -494,10 +531,11 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
   }
 
   /*
-   * Phone and narrow tablet: each row wraps — status, name and score on line one, the
-   * dimension bars then the reason below. No horizontal page scroll.
+   * Phone and tablet: each row wraps — status, name and score on line one, the dimension
+   * bars (with their short labels) then the reason below. No horizontal scroll, and the
+   * reason, the most important text, always wraps inside the viewport.
    */
-  @media (max-width: 760px) {
+  @media (max-width: 1000px) {
     .plist {
       overflow-x: visible;
     }
@@ -545,13 +583,23 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     }
     .plist__score {
       grid-area: score;
+      max-width: 10rem;
     }
     .plist__score :global(.score) {
       align-items: flex-end;
       text-align: right;
     }
+    .plist__score :global(.score__conf) {
+      text-wrap: balance;
+    }
     .plist__dims {
       grid-area: dims;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .plist__dimlabels {
+      display: block;
     }
     .plist__reason {
       grid-area: reason;

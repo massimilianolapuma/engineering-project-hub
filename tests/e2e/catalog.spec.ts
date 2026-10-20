@@ -125,7 +125,7 @@ test('an edited project is a modified file with an "Edit on GitHub" link', async
   await expect(projectList(page).getByRole('button', { name: /Gamma tools/ })).toContainText(
     'Modified',
   );
-  await expect(page.locator('[data-ce-proposal-summary]')).toHaveText('1 file(s) to propose');
+  await expect(page.locator('[data-ce-proposal-summary]')).toHaveText('1 file to propose');
   await expect(change.getByRole('link', { name: /Edit on GitHub/ })).toHaveAttribute(
     'href',
     /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/edit\/main\/config\/projects\/project-gamma\.yaml$/,
@@ -139,6 +139,10 @@ test('an edited project is a modified file with an "Edit on GitHub" link', async
     'href',
     /\/delete\/main\/config\/projects\/project-gamma\.yaml$/,
   );
+  // The removal can be undone: the project comes back and the deletion is no longer proposed.
+  await page.locator('[data-ce-undo]').getByRole('button', { name: 'Undo' }).click();
+  await expect(projectList(page).getByRole('button', { name: /Gamma tools/ })).toBeVisible();
+  await expect(pending(page).getByText('Removed', { exact: true })).toHaveCount(0);
 });
 
 test('a monorepo shows component paths and merges missing workflows', async ({ page }) => {

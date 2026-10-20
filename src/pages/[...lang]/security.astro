@@ -12,6 +12,7 @@ import ExtLink from '../../components/ExtLink.astro';
 import Legend from '../../components/Legend.astro';
 import RelTime from '../../components/RelTime.astro';
 import StatusDot from '../../components/StatusDot.astro';
+import UnknownValue from '../../components/UnknownValue.astro';
 import Base from '../../layouts/Base.astro';
 import { pageContext } from '../../lib/page';
 import { href, localeParams } from '../../lib/routes';
@@ -126,9 +127,8 @@ const pillTone = (s: ProjectSnapshot['securityHealth']['status']) => (s === 'gre
                   { 'sec-total__num--unknown': n === null },
                 ]}
                 data-severity={k}
-                title={n === null ? d.common.unknown : undefined}
               >
-                {n === null ? d.common.unknownValue : i18n.number(n)}
+                {n === null ? <UnknownValue i18n={i18n} /> : i18n.number(n)}
               </span>
               <span class="muted">{d.severity[k]}</span>
             </li>
@@ -201,9 +201,8 @@ const pillTone = (s: ProjectSnapshot['securityHealth']['status']) => (s === 'gre
                               { 'sec-sev__num--critical': k === 'critical' && n !== null && n > 0 },
                             ]}
                             data-count={k}
-                            title={n === null ? d.common.unknown : undefined}
                           >
-                            {n === null ? d.common.unknownValue : i18n.number(n)}
+                            {n === null ? <UnknownValue i18n={i18n} /> : i18n.number(n)}
                           </b>{' '}
                           {d.severity[k]}
                         </li>
@@ -281,7 +280,7 @@ const pillTone = (s: ProjectSnapshot['securityHealth']['status']) => (s === 'gre
         })}
       </section>
 
-      <details class="sec-matrix">
+      <details class="sec-matrix disclosure">
         <summary>{t.coverageMatrix}</summary>
         <div class="sec-matrix__body">
           <p class="note">{t.coverageNote}</p>
@@ -291,19 +290,21 @@ const pillTone = (s: ProjectSnapshot['securityHealth']['status']) => (s === 'gre
                 <a href={href(locale, `projects/${p.project.id}`)}>{p.project.name}</a>
               </h3>
               <div class="table-wrap">
-                <table class="table table--matrix table--coverage">
+                <table role="table" class="table table--matrix table--coverage">
                   <caption class="visually-hidden">
                     {t.coverageMatrix} · {p.project.name}
                   </caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">{d.common.repository}</th>
+                  <thead role="rowgroup">
+                    <tr role="row">
+                      <th role="columnheader" scope="col">
+                        {d.common.repository}
+                      </th>
                       {CONTROL_IDS.map((c) => {
                         const req = p.securityCoverage.perControl.find(
                           (x) => x.control === c,
                         )?.required;
                         return (
-                          <th scope="col">
+                          <th role="columnheader" scope="col">
                             {d.control[c]}
                             <span class="sub">{req ? t.required : t.optional}</span>
                           </th>
@@ -311,17 +312,17 @@ const pillTone = (s: ProjectSnapshot['securityHealth']['status']) => (s === 'gre
                       })}
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody role="rowgroup">
                     {p.securityControls.map((rc) => (
-                      <tr>
-                        <th scope="row">
+                      <tr role="row">
+                        <th role="rowheader" scope="row">
                           <code>{rc.repository}</code>
                           <span class="sub">{componentName(p, rc.componentId)}</span>
                         </th>
                         {CONTROL_IDS.map((c) => {
                           const x = rc.controls.find((y) => y.control === c);
                           return (
-                            <td data-label={d.control[c]}>
+                            <td role="cell" data-label={d.control[c]}>
                               {x ? (
                                 <ControlSymbol
                                   state={x.state}
@@ -329,9 +330,7 @@ const pillTone = (s: ProjectSnapshot['securityHealth']['status']) => (s === 'gre
                                   locale={locale}
                                 />
                               ) : (
-                                <span class="muted" title={d.common.unknown}>
-                                  {d.common.unknownValue}
-                                </span>
+                                <UnknownValue i18n={i18n} class="muted" />
                               )}
                             </td>
                           );
@@ -362,7 +361,7 @@ const pillTone = (s: ProjectSnapshot['securityHealth']['status']) => (s === 'gre
   }
   .sec-lead {
     margin: 6px 0 0;
-    font-size: 1.0625rem;
+    font-size: var(--fs-lead);
     line-height: 24px;
     font-weight: 600;
   }
@@ -389,7 +388,7 @@ const pillTone = (s: ProjectSnapshot['securityHealth']['status']) => (s === 'gre
     padding: var(--space-4);
   }
   .sec-total__num {
-    font-size: 1.75rem;
+    font-size: var(--fs-score);
     line-height: 34px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
@@ -428,7 +427,7 @@ const pillTone = (s: ProjectSnapshot['securityHealth']['status']) => (s === 'gre
   }
   .sec-card__title {
     margin: 0;
-    font-size: 0.9375rem;
+    font-size: var(--fs-card);
     line-height: 22px;
     font-weight: 600;
   }
@@ -446,7 +445,7 @@ const pillTone = (s: ProjectSnapshot['securityHealth']['status']) => (s === 'gre
     flex-wrap: wrap;
     gap: var(--space-1) var(--space-4);
   }
-  .sec-card__links a {
+  .sec-card__links :global(a) {
     display: inline-flex;
     align-items: center;
     min-height: 40px;
@@ -461,7 +460,7 @@ const pillTone = (s: ProjectSnapshot['securityHealth']['status']) => (s === 'gre
     list-style: none;
   }
   .sec-sev__num {
-    font-size: 1rem;
+    font-size: var(--fs-count);
     font-variant-numeric: tabular-nums;
   }
   .sec-sev__num--critical {
