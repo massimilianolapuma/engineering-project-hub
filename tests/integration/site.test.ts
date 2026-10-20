@@ -59,12 +59,39 @@ describe('static site', () => {
     expect(html).toMatch(/data-health="grey"/);
   });
 
-  it('never renders unknown counts as zero', async () => {
+  it('never renders unknown as zero: insufficient data, dashed, with its cause', async () => {
     const html = await page('');
     const gamma = html.slice(html.indexOf('data-name="project gamma"'));
     const row = gamma.slice(0, gamma.indexOf('</tr>'));
-    expect(row).toContain('count--unknown');
-    expect(row).not.toMatch(/class="count[^"]*"[^>]*>\s*0\s*</);
+    // Empty score (no number): Astro serialises data-score="" as a bare attribute.
+    expect(row).toMatch(/\sdata-score(="")?[\s>]/);
+    expect(row).toContain('insufficient data');
+    expect(row).toMatch(/dimbars__bar--grey/);
+    expect(row).toMatch(/href="[^"]*data-quality\/#project-gamma"/);
+    expect(row).toContain('2 collection error(s)');
+    expect(row).not.toMatch(/>\s*0\s*</);
+  });
+
+  it('lists the portfolio by score, worst first, with insufficient data right after red', async () => {
+    const html = await page('');
+    expect(html).toContain('3 of 4 projects need attention');
+    const names = [...html.matchAll(/<tr[^>]*data-project[^>]*data-name="([^"]+)"/g)].map(
+      (m) => m[1],
+    );
+    expect(names).toEqual([
+      'project beta',
+      'project gamma',
+      'project alpha',
+      'platform (monorepo)',
+    ]);
+    const beta = html.slice(html.indexOf('data-name="project beta"'));
+    expect(beta.slice(0, beta.indexOf('>'))).toContain('data-score="38"');
+    expect(html).toMatch(/<option value="score" selected/);
+    // One-line legend under the list, linking to "How to read".
+    expect(html).toMatch(/<a class="legend__link"[^>]*href="[^"]*how-to-read\/"/);
+    // The v0.4.0 survey sheet is gone.
+    expect(html).not.toMatch(/sheet__|sheet-/);
+    expect(await page('it')).toContain('3 progetti su 4 chiedono attenzione');
   });
 
   it('renders Italian pages in Italian with lang="it"', async () => {

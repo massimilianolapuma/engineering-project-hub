@@ -9,6 +9,7 @@ import {
   type ReasonCode,
 } from '@model/index';
 import { evaluateScore, NOT_APPLICABLE_REASON_CODES } from '../../collector/src/evaluators/score';
+import { scoreSortKey } from '../../src/lib/score';
 
 const P = PoliciesSchema.parse(parse(readFileSync('config/policies.yaml', 'utf8')));
 
@@ -150,5 +151,39 @@ describe('project score', () => {
 
   it('rejects unknown keys in the score block', () => {
     expect(() => PoliciesSchema.parse({ ...P, score: { bonus: 1 } })).toThrow();
+  });
+});
+
+describe('portfolio score sort key', () => {
+  type Row = { name: string; score: { value: number | null } };
+  const order = (rows: Row[]) =>
+    [...rows]
+      .sort((a, b) => scoreSortKey(a.score) - scoreSortKey(b.score) || a.name.localeCompare(b.name))
+      .map((r) => r.name);
+
+  it('sorts insufficient data right after red projects', () => {
+    const rows: Row[] = [
+      { name: 'Platform', score: { value: 88 } },
+      { name: 'Healthy', score: { value: 100 } },
+      { name: 'Gamma', score: { value: null } },
+      { name: 'Alpha', score: { value: 76 } },
+      { name: 'Beta', score: { value: 38 } },
+      { name: 'Red at cap', score: { value: P.score.caps.red } },
+      { name: 'Amber floor', score: { value: P.score.caps.red + 1 } },
+    ];
+    expect(order(rows)).toEqual([
+      'Beta',
+      'Red at cap',
+      'Gamma',
+      'Amber floor',
+      'Alpha',
+      'Platform',
+      'Healthy',
+    ]);
+  });
+
+  it('never treats insufficient data as zero', () => {
+    expect(scoreSortKey({ value: null })).toBeGreaterThan(P.score.caps.red);
+    expect(scoreSortKey({ value: 0 })).toBe(0);
   });
 });
