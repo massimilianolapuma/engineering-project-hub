@@ -3,8 +3,9 @@ import { z } from 'zod';
 /** Snapshot contract versions the site and validators understand. */
 // 1.1: components carry the submodule pin (SHA → tag), versionSource and effective version.
 // 1.2: component path (monorepos); catalog.json carries discovery settings and proposals.
-export const SNAPSHOT_SCHEMA_VERSION = '1.2';
-export const SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS = ['1.2'] as const;
+// 1.3: project score (value, measured, required) on project snapshots and summaries.
+export const SNAPSHOT_SCHEMA_VERSION = '1.3';
+export const SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS = ['1.3'] as const;
 
 export const HealthStatusSchema = z.enum(['green', 'amber', 'red', 'grey']);
 export type HealthStatus = z.infer<typeof HealthStatusSchema>;

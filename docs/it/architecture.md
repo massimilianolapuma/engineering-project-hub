@@ -121,7 +121,7 @@ flowchart TB
 - `projects[]`: un `ProjectSummary` per ciascun progetto. Contiene lo stato di ogni
   dimensione, il riepilogo della copertura, i conteggi degli elementi aperti
   (`null` = sconosciuto), lo stato del secret scanning, i workflow critici falliti, i
-  conteggi degli errori e i submodule non risolti.
+  conteggi degli errori, i submodule non risolti e lo `score` del progetto.
 
 `projects/<id>.json` (`ProjectSnapshot`) contiene questi campi:
 
@@ -131,6 +131,8 @@ flowchart TB
   controllo)
 - `deliveryHealth`, `versionHealth`, `securityHealth` (con conteggi e suddivisioni),
   `securityCoverage`, `governanceHealth` e `overallHealth`
+- `score`: `{ value, measured, required }`, calcolato dal collector (`value` è `null`
+  quando i dati sono insufficienti; vedi [Configurazione](configuration.md#punteggio-del-progetto))
 - `dataFreshness` e `collectionErrors[]`
 
 Enum normalizzati:

@@ -331,7 +331,7 @@ describe('sanitisation end to end', () => {
 describe('snapshot schema versions', () => {
   it('fails in a controlled way on an unsupported schemaVersion', async () => {
     const text = (await readFile('fixtures/snapshots/index.json', 'utf8')).replace(
-      '"schemaVersion": "1.2"',
+      '"schemaVersion": "1.3"',
       '"schemaVersion": "9.0"',
     );
     const r = validatePortfolio(text);

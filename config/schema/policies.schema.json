@@ -288,6 +288,101 @@
       },
       "additionalProperties": false
     },
+    "score": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "weights": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "delivery": {
+              "default": 25,
+              "type": "number",
+              "minimum": 0
+            },
+            "version": {
+              "default": 15,
+              "type": "number",
+              "minimum": 0
+            },
+            "security": {
+              "default": 30,
+              "type": "number",
+              "minimum": 0
+            },
+            "coverage": {
+              "default": 15,
+              "type": "number",
+              "minimum": 0
+            },
+            "governance": {
+              "default": 15,
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "points": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "green": {
+              "default": 100,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "amber": {
+              "default": 60,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "red": {
+              "default": 20,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "additionalProperties": false
+        },
+        "caps": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "red": {
+              "default": 49,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "amber": {
+              "default": 89,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "grey": {
+              "default": 89,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "additionalProperties": false
+        },
+        "minMeasuredRatio": {
+          "default": 0.5,
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
     "publication": {
       "type": "object",
       "properties": {
