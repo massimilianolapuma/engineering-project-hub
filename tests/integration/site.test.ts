@@ -199,6 +199,11 @@ describe('static site', () => {
     cell('data-threshold="securityStatusFileStaleDays"', fr.securityStatusFileStaleDays);
     cell('data-threshold="queuedThresholdMinutes"', policies.delivery.queuedThresholdMinutes);
     cell('data-threshold="greenThresholdPercent"', `${policies.coverage.greenThresholdPercent}%`);
+    // Snapshot staleness comes from the snapshot: said on the page. Fixtures and policies agree,
+    // so neither the mismatch nor the defaults note is shown.
+    expect(html).toContain(esc(h.staleSourceNote));
+    expect(html).not.toContain('data-policies-mismatch');
+    expect(html).not.toContain(esc(h.defaultsNote));
     // Link to the configuration docs in the page language.
     expect(html).toContain(
       v.startsWith('it') ? 'docs/it/configuration.md' : 'docs/configuration.md',

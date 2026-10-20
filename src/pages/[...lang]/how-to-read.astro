@@ -58,6 +58,8 @@ const confidence = f(h.confidence, {
 
 /** Snapshot staleness: the value the collector published (the banner uses it), else policy. */
 const staleHours = index?.run.policy.snapshotStaleHours ?? freshness.snapshotStaleHours;
+/** The snapshot was produced under other policies than the ones read at build time. */
+const policiesMismatch = staleHours !== freshness.snapshotStaleHours;
 const thresholds: {
   key: keyof typeof h.thresholds;
   value: string | number;
@@ -142,6 +144,11 @@ const SECTIONS = [
     <p class="htr-hero">{h.hero}</p>
     <p class="lead">{h.intro}</p>
     {source === 'defaults' && <p class="note">{h.defaultsNote}</p>}
+    {policiesMismatch && (
+      <p class="note" data-policies-mismatch>
+        {h.mismatchNote}
+      </p>
+    )}
   </header>
 
   <nav class="htr-toc" aria-label={h.onThisPage}>
@@ -372,6 +379,7 @@ const SECTIONS = [
         </tbody>
       </table>
     </div>
+    <p class="note">{h.staleSourceNote}</p>
   </section>
 
   <section class="htr-docs" aria-labelledby="docs-title">

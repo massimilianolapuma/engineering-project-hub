@@ -7,10 +7,12 @@ import { PoliciesSchema, type Policies } from '@model/index';
  * Build-time read of the health policies, used only to explain them on the "How to read"
  * page (weights, caps, thresholds). Health and score are still computed by the collector:
  * the site never re-evaluates anything. POLICIES_FILE points at the policies of a separate
- * configuration (e.g. a deploy repository); a missing or invalid file falls back to the
- * schema defaults, so the page never shows numbers that no policy produced.
+ * configuration (e.g. a deploy repository) and must then be readable and valid. Only when
+ * POLICIES_FILE is unset and the hub's own config/policies.yaml is missing does the page fall
+ * back to the schema defaults (and says so). An unreadable or invalid file fails the build,
+ * so the page never explains policies nobody configured.
  */
-const policiesFile = () => resolve(process.env.POLICIES_FILE ?? 'config/policies.yaml');
+const DEFAULT_FILE = 'config/policies.yaml';
 
 /** Every section empty: PoliciesSchema fills in its defaults. */
 const DEFAULTS_INPUT = {
@@ -27,18 +29,39 @@ const DEFAULTS_INPUT = {
 
 export interface SitePolicies {
   policies: Policies;
-  /** "file" when read from the policies file, "defaults" when it was missing or invalid. */
+  /** "file" when read from the policies file, "defaults" when the default file was missing. */
   source: 'file' | 'defaults';
 }
 
+const isMissing = (err: unknown) => (err as NodeJS.ErrnoException | null)?.code === 'ENOENT';
+
 export function loadSitePolicies(): SitePolicies {
-  const file = policiesFile();
+  const explicit = process.env.POLICIES_FILE;
+  const file = resolve(explicit || DEFAULT_FILE);
+  let text: string;
   try {
-    const parsed = PoliciesSchema.safeParse(parse(readFileSync(file, 'utf8')));
-    if (parsed.success) return { policies: parsed.data, source: 'file' };
-    console.warn(`[engineering-project-hub] invalid policies in ${file}: schema defaults shown`);
-  } catch {
-    console.warn(`[engineering-project-hub] policies not readable at ${file}: defaults shown`);
+    text = readFileSync(file, 'utf8');
+  } catch (err) {
+    if (!explicit && isMissing(err)) {
+      console.warn(`[engineering-project-hub] no policies at ${file}: schema defaults shown`);
+      return { policies: PoliciesSchema.parse(DEFAULTS_INPUT), source: 'defaults' };
+    }
+    throw new Error(`Policies not readable at ${file} (POLICIES_FILE): ${String(err)}`, {
+      cause: err,
+    });
   }
-  return { policies: PoliciesSchema.parse(DEFAULTS_INPUT), source: 'defaults' };
+  let raw: unknown;
+  try {
+    raw = parse(text);
+  } catch (err) {
+    throw new Error(`Policies at ${file} are not valid YAML: ${String(err)}`, { cause: err });
+  }
+  const parsed = PoliciesSchema.safeParse(raw);
+  if (!parsed.success) {
+    const issues = parsed.error.issues
+      .map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`)
+      .join('; ');
+    throw new Error(`Invalid policies in ${file}: ${issues}`);
+  }
+  return { policies: parsed.data, source: 'file' };
 }

@@ -660,7 +660,9 @@ export const it: Dict = {
     intro:
       'Ogni pagina dice prima una cosa, poi elenca i progetti dal peggiore, poi mostra il dettaglio su richiesta. Soglie e pesi qui sotto vengono dalle policy di salute configurate.',
     defaultsNote:
-      'Il file delle policy non era leggibile durante la build: sono mostrate le policy predefinite.',
+      'Nessun file delle policy trovato durante la build: sono mostrate le policy predefinite.',
+    mismatchNote:
+      'Lo snapshot è stato raccolto con una soglia di vecchiaia diversa da quella delle policy mostrate qui: gli altri valori potrebbero non coincidere con quelli che hanno prodotto questo snapshot.',
     onThisPage: 'In questa pagina',
     statesTitle: 'Stati di salute',
     statesIntro:
@@ -676,7 +678,7 @@ export const it: Dict = {
       'Critico in {dimensions} rende critico l’intero progetto; critico altrove vale come attenzione.',
     greyRequired: {
       grey: 'Una dimensione richiesta sconosciuta rende il progetto sconosciuto, a meno che un’altra dimensione sia critica o richieda attenzione.',
-      amber: 'Una dimensione richiesta sconosciuta fa richiedere attenzione al progetto.',
+      amber: 'Una dimensione richiesta sconosciuta porta il progetto in attenzione.',
     },
     symbolsTitle: 'Simboli dei controlli',
     symbolsIntro:
@@ -759,8 +761,10 @@ export const it: Dict = {
       queuedThresholdMinutes: 'Un’esecuzione in coda o in corso richiede attenzione dopo',
       greenThresholdPercent: 'La copertura sicurezza è sana da',
       redOnSeverities: 'Alert aperti che rendono critico il rischio sicurezza',
-      amberOnSeverities: 'Alert aperti che fanno richiedere attenzione al rischio sicurezza',
+      amberOnSeverities: 'Alert aperti che portano il rischio sicurezza in attenzione',
     },
+    staleSourceNote:
+      'La vecchiaia dello snapshot è il valore pubblicato dal collector con questo snapshot; gli altri valori vengono dalle policy lette durante la build del sito.',
     units: {
       hours: 'ore',
       days: 'giorni',

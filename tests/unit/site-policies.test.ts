@@ -1,13 +1,15 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadSitePolicies } from '../../src/lib/policies';
 
 /*
  * The "How to read" page renders weights, caps and thresholds from the parsed policies,
  * never from hard-coded numbers. POLICIES_FILE points the site build at the policies of a
- * separate configuration (deploy repository); without a readable file the schema defaults apply.
+ * separate configuration (deploy repository). Only a missing default file falls back to the
+ * schema defaults; an explicit POLICIES_FILE that cannot be read, or any invalid file, fails
+ * the build instead of explaining policies nobody configured.
  */
 let dir: string;
 beforeEach(async () => {
@@ -15,6 +17,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   delete process.env.POLICIES_FILE;
+  vi.restoreAllMocks();
   await rm(dir, { recursive: true, force: true });
 });
 
@@ -57,16 +60,36 @@ describe('loadSitePolicies', () => {
     expect(policies.freshness.workflowRunStaleDays).toBe(3);
   });
 
-  it('falls back to the schema defaults when the file is missing or invalid', async () => {
-    process.env.POLICIES_FILE = join(dir, 'missing.yaml');
+  it('falls back to the schema defaults only when the default file is missing', () => {
+    vi.spyOn(process, 'cwd').mockReturnValue(dir);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const missing = loadSitePolicies();
     expect(missing.source).toBe('defaults');
     expect(missing.policies.score.weights.security).toBe(30);
     expect(missing.policies.freshness.securityScanStaleDays).toBe(7);
+  });
 
+  it('fails when an explicit POLICIES_FILE cannot be read', () => {
+    process.env.POLICIES_FILE = join(dir, 'missing.yaml');
+    expect(() => loadSitePolicies()).toThrow(/not readable/);
+  });
+
+  it('fails when the policies file is invalid', async () => {
     const bad = join(dir, 'bad.yaml');
     await writeFile(bad, minimal('score: { bonus: 1 }'));
     process.env.POLICIES_FILE = bad;
-    expect(loadSitePolicies().source).toBe('defaults');
+    expect(() => loadSitePolicies()).toThrow(/Invalid policies/);
+
+    const broken = join(dir, 'broken.yaml');
+    await writeFile(broken, 'schemaVersion: [unclosed');
+    process.env.POLICIES_FILE = broken;
+    expect(() => loadSitePolicies()).toThrow(/not valid YAML/);
+  });
+
+  it('fails when the default file exists but is invalid', async () => {
+    await mkdir(join(dir, 'config'));
+    await writeFile(join(dir, 'config', 'policies.yaml'), minimal('score: { bonus: 1 }'));
+    vi.spyOn(process, 'cwd').mockReturnValue(dir);
+    expect(() => loadSitePolicies()).toThrow(/Invalid policies/);
   });
 });

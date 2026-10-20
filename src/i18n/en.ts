@@ -657,8 +657,9 @@ export const en = {
     hero: 'Four states, six symbols, one score: they mean the same on every page.',
     intro:
       'Each page says one thing first, then lists projects worst first, then shows detail on demand. Thresholds and weights below come from the configured health policies.',
-    defaultsNote:
-      'The policies file could not be read at build time: the default policies are shown.',
+    defaultsNote: 'No policies file was found at build time: the default policies are shown.',
+    mismatchNote:
+      'The snapshot was collected with a different staleness threshold than the policies shown here: the other values may not match the ones that produced this snapshot.',
     onThisPage: 'On this page',
     statesTitle: 'Health states',
     statesIntro:
@@ -758,6 +759,8 @@ export const en = {
       redOnSeverities: 'Open alerts that make security risk critical',
       amberOnSeverities: 'Open alerts that make security risk need attention',
     },
+    staleSourceNote:
+      'Snapshot staleness is the value the collector published with this snapshot; the other values come from the policies read when the site was built.',
     units: {
       hours: 'hours',
       days: 'days',
