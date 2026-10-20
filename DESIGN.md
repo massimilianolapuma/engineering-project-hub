@@ -313,13 +313,13 @@ The system is flat. Surfaces are separated by 1px hairlines and by the step from
 
 ## Shapes
 
-Radius is 4px for small marks (dimension bars, control symbols, focus ring), 8px for controls (inputs, buttons, nav items, count filters), 10px for cards, lists and tables, and 999px for pills. Borders are 1px; unknown outlines are 1.5px dashed. Status dots are 10px circles. Health shape icons (14px SVG on a 16px grid: circle with check, triangle with exclamation, octagon with ×, dashed square with a dash) remain inside pills and badges so status never depends on colour.
+Radius is 4px for small marks (dimension bars, control symbols, focus ring), 8px for controls (inputs, buttons, nav items, count filters), 10px for cards, lists and tables, and 999px for pills. Borders are 1px; unknown outlines are 1.5px dashed. Status dots are 10px circles (Unknown: a hollow ring). Health shape icons (14px SVG on a 16px grid: circle with check, triangle with exclamation, octagon with ×, dashed square with a dash) remain inside pills and badges so status never depends on colour.
 
 ## Components
 
 ### Status dot
 
-A 10px circle: filled vermilion, ochre or emerald, or a 1.5px dashed outline for Unknown. It has an accessible name and always sits next to text (a project name, a count, a pill). In forced-colours mode it gets a solid or dashed `CanvasText` border.
+A 10px circle: filled vermilion, ochre or emerald, or a hollow 2px `--unknown` ring for Unknown (at 10px a dashed circle reads as a loading spinner, so the dot is the one unknown mark that is not dashed). It has an accessible name and always sits next to text (a project name, a count, a pill). In forced-colours mode it gets a solid `CanvasText` border; the unknown ring stays hollow.
 
 ### Dimension bars
 

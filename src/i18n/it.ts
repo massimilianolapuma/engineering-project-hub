@@ -72,7 +72,7 @@ export const it: Dict = {
   },
   legend: {
     title: 'Legenda',
-    unknownDashed: 'Tratteggio: sconosciuto, mai zero',
+    unknownDashed: 'Vuoto o tratteggiato: sconosciuto, mai zero',
     howToRead: 'Come leggere',
     scoreHow: 'Come si calcola lo score',
   },
@@ -852,7 +852,7 @@ export const it: Dict = {
       amber:
         'Problemi che richiedono un seguito ma non bloccano, per esempio un componente indietro rispetto all’ultima release.',
       green: 'Ogni dimensione richiesta è sana secondo le policy configurate.',
-      grey: 'Non abbiamo potuto leggere abbastanza dati per decidere. Disegnato con un contorno tratteggiato: mai come zero, mai come sano.',
+      grey: 'Non abbiamo potuto leggere abbastanza dati per decidere. Disegnato con un contorno tratteggiato (un anello vuoto per il pallino di stato): mai come zero, mai come sano.',
     },
     criticalDimensions:
       'Critico in {dimensions} rende critico l’intero progetto; critico altrove vale come attenzione.',

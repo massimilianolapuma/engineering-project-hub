@@ -70,7 +70,7 @@ export const en = {
   },
   legend: {
     title: 'Legend',
-    unknownDashed: 'Dashed: unknown, never zero',
+    unknownDashed: 'Hollow or dashed: unknown, never zero',
     howToRead: 'How to read',
     scoreHow: 'How the score is computed',
   },
@@ -845,7 +845,7 @@ export const en = {
       amber:
         'Issues that need follow-up but do not block, for example a component behind its latest release.',
       green: 'Every required dimension is healthy under the configured policies.',
-      grey: 'We could not read enough data to decide. Drawn as a dashed outline: never as zero, never as healthy.',
+      grey: 'We could not read enough data to decide. Drawn as a dashed outline (a hollow ring for the small status dot): never as zero, never as healthy.',
     },
     criticalDimensions:
       'Critical in {dimensions} makes the whole project critical; critical elsewhere counts as attention.',
