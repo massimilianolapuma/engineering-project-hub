@@ -90,6 +90,56 @@ describe('static site', () => {
     expect(html).toContain('Details withheld');
   });
 
+  it('groups data quality by cause, with counts, stale sources and run details collapsed', async () => {
+    const html = await page('data-quality');
+    // Repository counts: in catalog / fully read / partly read / unreadable.
+    for (const [key, n] of [
+      ['total', 12],
+      ['full', 7],
+      ['partial', 3],
+      ['unreadable', 2],
+    ] as const)
+      expect(html).toMatch(new RegExp(`data-repo-count="${key}"[^>]*>\\s*<span[^>]*>${n}<`));
+    // What we could not read, grouped by classification (403: 4 sources, 404: 1 source).
+    expect(html).toContain('What we could not read, by cause');
+    expect(html).toMatch(/data-cause="not-authorised"[^>]*data-sources="4"/);
+    expect(html).toMatch(/data-cause="not-found"[^>]*data-sources="1"/);
+    expect(html.indexOf('data-cause="not-authorised"')).toBeLessThan(
+      html.indexOf('data-cause="not-found"'),
+    );
+    const notAuth = html.slice(
+      html.indexOf('data-cause="not-authorised"'),
+      html.indexOf('data-cause="not-found"'),
+    );
+    expect(notAuth).toContain('Project Beta');
+    expect(notAuth).toContain('Secret scanning');
+    for (const r of ['project-beta-coordinator', 'project-beta-api', 'project-beta-web'])
+      expect(notAuth).toContain(r);
+    expect(notAuth).toContain('project-gamma-service');
+    expect(html).toContain('we cannot tell which');
+    expect(html).toContain('read access');
+    // Stale sources with their age and last update date.
+    const stale = html.slice(html.indexOf('id="h-stale"'));
+    expect(stale).toContain('project-beta-helm');
+    expect(stale).toContain('Workflow runs');
+    expect(stale).toContain('20 days');
+    expect(stale).toContain('26 Dec 2025');
+    // Unmapped submodule with a link to the catalog.
+    const sub = html.slice(html.indexOf('id="h-submodules"'));
+    expect(sub).toContain('tools/legacy-scripts');
+    expect(sub).toMatch(/href="[^"]*\/catalog\/"/);
+    // Capabilities as pills (shape + text), run details collapsed last.
+    expect(html).toMatch(/pill pill--amber[\s\S]{0,400}Partial[\s\S]{0,200}Metadata/);
+    expect(html).toMatch(/<details class="dq-run"(?![^>]*\bopen\b)[^>]*>\s*<summary/);
+    expect(html.lastIndexOf('<section')).toBeLessThan(html.indexOf('<details class="dq-run"'));
+    expect(html).not.toContain('kpi__value');
+
+    const it = await page('it/data-quality');
+    expect(it).toMatch(/<h1[^>]*>Qualità dati<\/h1>/);
+    expect(it).toContain('Cosa non abbiamo potuto leggere, per causa');
+    expect(it).toContain('20 giorni');
+  });
+
   it('ships no inline script (CSP script-src self) and no secret patterns', async () => {
     const html = await page('');
     expect(html).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>/);
