@@ -93,6 +93,7 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
   const discoveryEl = $<HTMLElement>('[data-ce-discovery]');
   const kindEl = $<HTMLElement>('[data-ce-kind]');
   const mergeEl = $<HTMLElement>('[data-ce-merge]');
+  const proposalSummaryEl = $<HTMLElement>('[data-ce-proposal-summary]');
 
   /** The published catalog: baseline of the pending changes. */
   const published = toDraft(data.catalog);
@@ -349,13 +350,39 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
               'data-index': String(i),
               'aria-current': i === selected ? 'true' : undefined,
             },
-            h('span', { class: 'ce-project__name' }, p.name.trim() || S.untitled),
-            h('code', { class: 'sub' }, p.id.trim() || '—'),
+            h(
+              'span',
+              { class: 'ce-project__text' },
+              h('span', { class: 'ce-project__name' }, p.name.trim() || S.untitled),
+              h('code', { class: 'sub' }, p.id.trim() || '—'),
+            ),
+            h('span', { class: 'ce-project__badge', 'data-ce-badge': true }),
           ),
         ),
       ),
     );
     if (!draft.projects.length) projectsEl.append(h('li', { class: 'note' }, S.noProjects));
+    paintBadges(pendingChanges(published, draft));
+  }
+
+  /** Pending-change badge (New / Modified) next to each project of the side list. */
+  function paintBadges(changes: PendingChange[]) {
+    const kindAt = new Map(changes.map((ch) => [ch.index, ch.kind]));
+    for (const slot of projectsEl.querySelectorAll<HTMLElement>('[data-ce-badge]')) {
+      const index = Number(slot.closest<HTMLElement>('[data-index]')?.dataset.index);
+      const kind = kindAt.get(index);
+      if (slot.dataset.kind === (kind ?? '')) continue;
+      slot.dataset.kind = kind ?? '';
+      slot.replaceChildren(
+        kind
+          ? h(
+              'span',
+              { class: `pill ${kind === 'new' ? 'pill--green' : 'pill--amber'}` },
+              S.changeKind[kind],
+            )
+          : '',
+      );
+    }
   }
 
   function renderSuggestions() {
@@ -405,7 +432,11 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
       : S.title;
   }
 
-  /** Project type derived from the components (multi-repository, monorepo, single repository). */
+  /**
+   * Project type derived from the components (multi-repository, monorepo, single repository),
+   * shown as a read-only segmented control: the current type is marked, the others are listed
+   * so the choice is visible. It changes by adding or removing components.
+   */
   function updateKind() {
     const p = draft.projects[selected];
     if (!p) {
@@ -415,11 +446,24 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
     }
     const kind = projectKind(p);
     kindEl.hidden = false;
+    if (kindEl.dataset.kind === kind && kindEl.childElementCount) return;
     kindEl.dataset.kind = kind;
+    const kinds = ['multi', 'monorepo', 'single'] as const;
     kindEl.replaceChildren(
-      h('span', { class: 'ce-kind__label' }, `${S.projectType}: `),
-      h('span', { class: `pill ce-kind__pill ce-kind__pill--${kind}` }, S.projectKind[kind]),
-      h('span', { class: 'sub-inline' }, ` ${S.projectKindHelp[kind]}`),
+      h('span', { class: 'ce-kind__label', id: 'ce-kind-label' }, `${S.projectType}: `),
+      h(
+        'ul',
+        { class: 'ce-seg', 'aria-labelledby': 'ce-kind-label' },
+        ...kinds.map((k) =>
+          h(
+            'li',
+            { 'aria-current': k === kind ? 'true' : undefined },
+            h('span', { class: 'ce-seg__dot', 'aria-hidden': 'true' }),
+            S.projectKind[k],
+          ),
+        ),
+      ),
+      h('p', { class: 'ce-kind__help' }, `${S.projectKindHelp[kind]} ${S.projectKindDerived}`),
     );
   }
 
@@ -971,6 +1015,10 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
 
   function renderPending() {
     const changes = pendingChanges(published, draft);
+    paintBadges(changes);
+    proposalSummaryEl.textContent = changes.length
+      ? fill(S.proposalSummary, { count: changes.length })
+      : S.proposalNone;
     const rows = changes.map((change) => {
       const p = change.index === null ? null : draft.projects[change.index]!;
       const yaml = p ? projectToYaml(p) : '';
@@ -1176,7 +1224,6 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
     } else {
       status = [
         button(S.addAsProject, () => addProposal(pr), {
-          variant: 'primary',
           describedBy: repoId,
           small: true,
         }),

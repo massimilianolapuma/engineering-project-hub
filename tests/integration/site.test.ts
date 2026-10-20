@@ -136,6 +136,46 @@ describe('static site', () => {
     },
   );
 
+  it.each([
+    ['catalog', 'Edit the projects and propose the changes as pull requests', 'Proposal'],
+    ['it/catalog', 'Modifica i progetti e proponi le modifiche come pull request', 'Proposta'],
+  ])('lays out /%s as a side list, the form and a proposal box', async (v, headline, proposal) => {
+    const html = await page(v);
+    // One dominant sentence under the title.
+    expect(html).toMatch(new RegExp(`<p[^>]*class="ce-headline"[^>]*>${headline}</p>`));
+    // Side list first: projects (with "New project"), discovered repositories, suggestions;
+    // then the form, then the proposal box with validation, pending changes, the generated
+    // file and "Discard changes".
+    const order = [
+      'class="ce__side"',
+      'data-ce-projects',
+      'data-ce-new',
+      'data-ce-discovery',
+      'data-ce-suggestions',
+      'class="ce__main"',
+      'data-ce-form',
+    ].map((s) => html.indexOf(s));
+    expect(order.every((at) => at > -1)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    const boxAt = html.search(/<section[^>]*class="card ce-proposal-box"/);
+    expect(boxAt).toBeGreaterThan(order.at(-1)!);
+    const box = html.slice(boxAt);
+    expect(box).toMatch(new RegExp(`<h2[^>]*id="ce-h-proposal"[^>]*>${proposal}</h2>`));
+    for (const hook of [
+      'data-ce-validation',
+      'data-ce-pending',
+      'data-ce-yaml',
+      'data-ce-copy',
+      'data-ce-reset',
+    ])
+      expect(box).toContain(hook);
+    // The accent is reserved for "Propose on GitHub" (added by the editor per change): no
+    // static button is primary.
+    expect(html).not.toContain('btn--primary');
+    // How-to steps are detail on demand.
+    expect(box).toMatch(/<details[^>]*class="ce-howto"/);
+  });
+
   it('fails in a controlled way on an unsupported snapshot schemaVersion', async () => {
     const data = join(work, 'bad-data');
     await cp('fixtures/snapshots', data, { recursive: true });
