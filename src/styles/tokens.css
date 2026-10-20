@@ -1,156 +1,145 @@
 /*
- * Design tokens — "Survey Sheet" world: the portfolio as a surveyed map sheet. Sheet white,
- * linework ink, contour brown for the sheet frame and grid references, water blue for links
- * and focus, road red / ochre / woodland green for status, a 45° survey hatch for ground that
- * was not surveyed (Unknown, blind spots). Square corners, hairline rules, tabular figures.
- * Every text pair is checked for WCAG AA (scripts in tests/unit/tokens-contrast.test.ts).
+ * Design tokens — "Warm Graphite": warm neutral greys, one teal accent for links, focus and the
+ * primary action (never status), vermilion / ochre / emerald for status fills with darker
+ * *-text variants for text on their fixed tints. Unknown has no fill: a dashed --unknown outline.
+ * IBM Plex Sans for everything, IBM Plex Mono only for code, repository names and versions.
+ * Every text and graphic pair is checked for WCAG AA in tests/unit/tokens-contrast.test.ts.
  * Theme: follows prefers-color-scheme, overridable with [data-theme] (theme toggle).
  */
-@import '@fontsource/public-sans/latin-400.css';
-@import '@fontsource/public-sans/latin-500.css';
-@import '@fontsource/public-sans/latin-600.css';
-@import '@fontsource/public-sans/latin-700.css';
-@import '@fontsource/geist-mono/latin-400.css';
-@import '@fontsource/geist-mono/latin-500.css';
+@import '@fontsource/ibm-plex-sans/latin-400.css';
+@import '@fontsource/ibm-plex-sans/latin-500.css';
+@import '@fontsource/ibm-plex-sans/latin-600.css';
+@import '@fontsource/ibm-plex-sans/latin-700.css';
+@import '@fontsource/ibm-plex-mono/latin-400.css';
+@import '@fontsource/ibm-plex-mono/latin-500.css';
 
 :root {
   color-scheme: light;
-  --font-sans: 'Public Sans', system-ui, sans-serif;
-  --font-mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
-  /* light: sheet white, the page is the sheet */
-  --bg: #fdfdfb;
-  --surface: #fdfdfb;
-  --surface-2: #f2f3ef;
-  --surface-hover: #f6f7f3;
-  --border: #d5d7d0;
-  --border-strong: #a9aca3;
-  --border-faint: #e6e8e2;
-  --text: #1d1f21;
-  --text-muted: #45484b;
-  --text-tertiary: #585c5f;
-  --text-data: #26292b;
-  --frame: #7d4f24;
-  --primary: #1a5f9e;
-  --primary-ink: #ffffff;
-  --link: #1a5f9e;
-  --focus: #1a5f9e;
+  /* Neutrals */
+  --bg: #f6f5f3;
+  --surface: #fffefc;
+  --surface-2: #f6f5f3;
+  --border: #e7e5e1;
+  --border-strong: #928d86;
+  --text: #1c1917;
+  --text-muted: #57534e;
+  --unknown: #8f8a83;
 
-  --green: #36612a;
-  --amber: #855400;
-  --amber-icon: #855400;
-  --red: #a92d22;
-  --grey: #55595c;
-  --info: #1a5f9e;
-  --sev-high: #9a3f12;
-  --icon-ink: #ffffff;
-  --tint: 13%;
-  --hatch-strength: 62%;
-  --void-ground: #ecede8;
+  /* Accent: links, focus, primary action only */
+  --accent: oklch(0.52 0.09 195);
+  --on-accent: #ffffff;
+  --accent-tint: oklch(0.95 0.03 195);
 
-  --radius-sm: 2px;
-  --radius: 2px;
-  --radius-md: 3px;
-  --radius-lg: 3px;
-  --shadow: none;
+  /* Status: fills (dots, bars, graphics) / text on tints / fixed pill tints */
+  --red: oklch(0.6 0.19 35);
+  --red-text: oklch(0.48 0.16 35);
+  --red-tint: oklch(0.95 0.03 35);
+  --amber: oklch(0.66 0.15 72);
+  --amber-text: oklch(0.47 0.1 65);
+  --amber-tint: oklch(0.95 0.05 85);
+  --green: oklch(0.6 0.12 165);
+  --green-text: oklch(0.45 0.1 165);
+  --green-tint: oklch(0.95 0.03 165);
+
+  /* Shape and space */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-pill: 999px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 24px;
   --space-6: 32px;
+  --space-7: 40px;
+  --space-8: 48px;
+
+  /* Type scale (body 14px, smallest label 12px) */
   --fs-xs: 0.75rem;
   --fs-sm: 0.8125rem;
   --fs-md: 0.875rem;
   --fs-lg: 1.125rem;
-  --fs-xl: 1.5rem;
-  --tracking-ref: 0.08em;
+  --fs-xl: 1.375rem;
+  --status-col: 112px;
 }
 
-/* Dark: the same sheet read at night. */
+/* Dark: same hues, lifted for a warm near-black ground. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;
-    --bg: #171a18;
-    --surface: #171a18;
-    --surface-2: #1f2320;
-    --surface-hover: #1b1e1c;
-    --border: #2c312d;
-    --border-strong: #4c544c;
-    --border-faint: #222623;
-    --text: #ecede7;
-    --text-muted: #b3b6ae;
-    --text-tertiary: #9a9d95;
-    --text-data: #dfe0da;
-    --frame: #c89a6a;
-    --primary: #79b0e6;
-    --primary-ink: #101211;
-    --link: #79b0e6;
-    --focus: #79b0e6;
-    --green: #8fc77a;
-    --amber: #e3b35a;
-    --amber-icon: #e3b35a;
-    --red: #f08d80;
-    --grey: #a6a9a1;
-    --info: #79b0e6;
-    --sev-high: #f0a070;
-    --icon-ink: #101211;
-    --tint: 16%;
-    --hatch-strength: 34%;
-    --void-ground: #121412;
+    --bg: #151311;
+    --surface: #1c1a17;
+    --surface-2: #181614;
+    --border: #2c2925;
+    --border-strong: #746e66;
+    --text: #ece9e4;
+    --text-muted: #a8a29e;
+    --unknown: #7f786f;
+    --accent: oklch(0.74 0.1 195);
+    --on-accent: #151311;
+    --accent-tint: oklch(0.27 0.04 195);
+    --red: oklch(0.7 0.17 35);
+    --red-text: oklch(0.82 0.11 35);
+    --red-tint: oklch(0.27 0.05 35);
+    --amber: oklch(0.8 0.14 80);
+    --amber-text: oklch(0.86 0.1 82);
+    --amber-tint: oklch(0.29 0.05 80);
+    --green: oklch(0.72 0.12 165);
+    --green-text: oklch(0.82 0.09 165);
+    --green-tint: oklch(0.27 0.04 165);
   }
 }
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #171a18;
-  --surface: #171a18;
-  --surface-2: #1f2320;
-  --surface-hover: #1b1e1c;
-  --border: #2c312d;
-  --border-strong: #4c544c;
-  --border-faint: #222623;
-  --text: #ecede7;
-  --text-muted: #b3b6ae;
-  --text-tertiary: #9a9d95;
-  --text-data: #dfe0da;
-  --frame: #c89a6a;
-  --primary: #79b0e6;
-  --primary-ink: #101211;
-  --link: #79b0e6;
-  --focus: #79b0e6;
-  --green: #8fc77a;
-  --amber: #e3b35a;
-  --amber-icon: #e3b35a;
-  --red: #f08d80;
-  --grey: #a6a9a1;
-  --info: #79b0e6;
-  --sev-high: #f0a070;
-  --icon-ink: #101211;
-  --tint: 16%;
-  --hatch-strength: 34%;
-  --void-ground: #121412;
+  --bg: #151311;
+  --surface: #1c1a17;
+  --surface-2: #181614;
+  --border: #2c2925;
+  --border-strong: #746e66;
+  --text: #ece9e4;
+  --text-muted: #a8a29e;
+  --unknown: #7f786f;
+  --accent: oklch(0.74 0.1 195);
+  --on-accent: #151311;
+  --accent-tint: oklch(0.27 0.04 195);
+  --red: oklch(0.7 0.17 35);
+  --red-text: oklch(0.82 0.11 35);
+  --red-tint: oklch(0.27 0.05 35);
+  --amber: oklch(0.8 0.14 80);
+  --amber-text: oklch(0.86 0.1 82);
+  --amber-tint: oklch(0.29 0.05 80);
+  --green: oklch(0.72 0.12 165);
+  --green-text: oklch(0.82 0.09 165);
+  --green-tint: oklch(0.27 0.04 165);
 }
 
+/*
+ * Aliases kept while pages move to Warm Graphite (removed in the v0.5.0 cleanup task). They
+ * point at the tokens above, so both themes follow automatically.
+ */
 :root {
-  --red-bg: color-mix(in srgb, var(--red) var(--tint), var(--surface));
-  --amber-bg: color-mix(in srgb, var(--amber) var(--tint), var(--surface));
-  --green-bg: color-mix(in srgb, var(--green) var(--tint), var(--surface));
-  --grey-bg: color-mix(in srgb, var(--grey) var(--tint), var(--surface));
-  --info-bg: color-mix(in srgb, var(--info) var(--tint), var(--surface));
-  --accent-bg: color-mix(in srgb, var(--primary) 12%, var(--surface));
-  /* Survey hatch: ground that was not surveyed. Drawn, never left blank. The void (a whole
-     row with nothing measured) is the heaviest silhouette on the sheet; single unknown cells
-     and tiles use the light hatch so their text stays readable. */
-  --hatch: repeating-linear-gradient(
-    45deg,
-    color-mix(in srgb, var(--frame) 30%, transparent) 0 1px,
-    transparent 1px 7px
-  );
-  --hatch-void:
-    repeating-linear-gradient(
-      45deg,
-      color-mix(in srgb, var(--frame) var(--hatch-strength), transparent) 0 1.5px,
-      transparent 1.5px 6px
-    ),
-    var(--void-ground);
+  --link: var(--accent);
+  --focus: var(--accent);
+  --grey: var(--unknown);
+  --primary: var(--accent);
+  --primary-ink: var(--on-accent);
+  --icon-ink: var(--surface);
+  --info: var(--accent);
+  --info-bg: var(--accent-tint);
+  --accent-bg: var(--accent-tint);
+  --red-bg: var(--red-tint);
+  --amber-bg: var(--amber-tint);
+  --green-bg: var(--green-tint);
+  --grey-bg: var(--surface-2);
+  --amber-icon: var(--amber);
+  --sev-high: var(--amber-text);
+  --text-tertiary: var(--text-muted);
+  --text-data: var(--text);
+  --surface-hover: var(--surface-2);
+  --border-faint: var(--border);
+  --radius: var(--radius-md);
 }
