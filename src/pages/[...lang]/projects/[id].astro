@@ -1,19 +1,31 @@
 ---
+/**
+ * Project page: one question first ("why is it in this state?"), then the five dimensions,
+ * the environments path and the components; everything else is collapsed on demand.
+ */
+import type {
+  ComponentSnapshot,
+  Dimension,
+  HealthResult,
+  HealthStatus,
+  Reason,
+  SeverityCounts,
+  WorkflowStatus,
+} from '@model/index';
+import ControlSymbol from '../../../components/ControlSymbol.astro';
 import ErrorsTable from '../../../components/ErrorsTable.astro';
-import EffectiveVersion from '../../../components/EffectiveVersion.astro';
 import ExtLink from '../../../components/ExtLink.astro';
-import HealthTile from '../../../components/HealthTile.astro';
+import Legend from '../../../components/Legend.astro';
 import Pill from '../../../components/Pill.astro';
-import PinCell from '../../../components/PinCell.astro';
 import RelTime from '../../../components/RelTime.astro';
-import SeverityKpis from '../../../components/SeverityKpis.astro';
+import ScoreBadge from '../../../components/ScoreBadge.astro';
 import StatusBadge from '../../../components/StatusBadge.astro';
 import Base from '../../../layouts/Base.astro';
 import { loadSiteData } from '../../../lib/data';
-import { coverageParams, displayVersion, shortSha } from '../../../lib/format';
+import { displayVersion } from '../../../lib/format';
 import { pageContext } from '../../../lib/page';
 import { href, localeParams } from '../../../lib/routes';
-import { controlTone, driftTone, workflowTone } from '../../../lib/tones';
+import { driftTone, severityTone, workflowTone, type Tone } from '../../../lib/tones';
 
 export function getStaticPaths() {
   const data = loadSiteData();
@@ -27,390 +39,963 @@ export function getStaticPaths() {
 }
 const { locale, id } = Astro.props;
 const { i18n, data, index, alternates } = pageContext(locale, `projects/${id}`);
-const { d } = i18n;
-const s = data.ok ? data.data.projects.find((p) => p.project.id === id)! : null;
+const { d, f } = i18n;
+const s = data.ok ? (data.data.projects.find((p) => p.project.id === id) ?? null) : null;
 const staleHours = index?.run.policy.snapshotStaleHours ?? 24;
+
+const LEVEL_RANK: Record<Reason['level'], number> = { red: 0, amber: 1, grey: 2, info: 3 };
+const WHY_LIMIT = 5;
+const lower = (t: string) => t.toLocaleLowerCase(locale);
+
+/** The five dimensions, each with the section its card links to. */
+const dims: { dim: Dimension; anchor: string; health: HealthResult }[] = s
+  ? [
+      { dim: 'delivery', anchor: 'workflows', health: s.deliveryHealth },
+      { dim: 'version', anchor: 'environments', health: s.versionHealth },
+      { dim: 'security', anchor: 'security', health: s.securityHealth },
+      { dim: 'coverage', anchor: 'coverage', health: s.securityCoverage },
+      { dim: 'governance', anchor: 'errors', health: s.governanceHealth },
+    ]
+  : [];
+
+/** Run linked from a workflow reason (same repository and run number), if any. */
+const runUrl = (r: Reason): string | null => {
+  if (!s || typeof r.params.repository !== 'string' || !r.params.run) return null;
+  const w = s.workflows.find(
+    (x) =>
+      x.repository === r.params.repository &&
+      (x.lastCompletedRun?.runNumber === Number(r.params.run) ||
+        x.latestRun?.runNumber === Number(r.params.run)),
+  );
+  return w?.lastCompletedRun?.url ?? w?.latestRun?.url ?? null;
+};
+
+/** "Why it is …": every non-info reason of the dimensions, red first, then amber, then grey. */
+const issues = dims
+  .flatMap(({ dim, anchor, health }) =>
+    health.reasons.filter((r) => r.level !== 'info').map((r) => ({ dim, anchor, r })),
+  )
+  .sort((a, b) => LEVEL_RANK[a.r.level] - LEVEL_RANK[b.r.level]);
+const whyShown = issues.slice(0, WHY_LIMIT);
+const whyHidden = issues.length - whyShown.length;
+const errorClasses = s
+  ? [...new Set(s.collectionErrors.map((e) => d.errorClass[e.classification]))]
+  : [];
+const showCause =
+  !!s &&
+  s.collectionErrors.length > 0 &&
+  (s.overallHealth.status === 'grey' || s.score.value === null);
+
+/** One-line summary on a dimension card. */
+const topReason = (h: HealthResult) =>
+  [...h.reasons].sort((a, b) => LEVEL_RANK[a.level] - LEVEL_RANK[b.level])[0];
+const sum = (c: SeverityCounts | null, keys: (keyof SeverityCounts)[]) =>
+  keys.reduce((n, k) => n + (c?.[k] ?? 0), 0);
+function dimSummary(dim: Dimension, health: HealthResult): string {
+  if (!s) return '';
+  if (dim === 'security') {
+    const c = s.securityHealth.openCounts;
+    if (c.critical === null) return d.project.dimSecurityUnknown;
+    return f(d.project.dimSecurity, {
+      critical: c.critical ?? 0,
+      high: c.high ?? 0,
+      other: sum(c, ['medium', 'low', 'informational', 'unknown']),
+    });
+  }
+  if (dim === 'coverage' && s.securityCoverage.required > 0) {
+    const cov = s.securityCoverage;
+    const blind = cov.notAuthorised + cov.unknown;
+    const base = f(d.project.dimCoverage, { available: cov.available, required: cov.required });
+    return blind > 0 ? `${base} · ${f(d.project.dimBlind, { n: blind })}` : base;
+  }
+  const r = topReason(health);
+  return r ? i18n.reason(r) : d.common.unknownValue;
+}
+
+/** Workflow state as shown: a successful but stale run is "Stale", not "Success". */
+const WF_RANK: Record<string, number> = {
+  failure: 0,
+  cancelled: 0,
+  missing: 1,
+  'never-run': 1,
+  stale: 2,
+  'not-authorised': 3,
+  unknown: 3,
+  'in-progress': 4,
+  queued: 4,
+  success: 5,
+};
+const wfView = (w: WorkflowStatus): { key: string; tone: Tone; label: string } =>
+  w.stale && w.state === 'success'
+    ? { key: 'stale', tone: 'amber', label: d.common.stale }
+    : { key: w.state, tone: workflowTone(w.state), label: d.workflowState[w.state] };
+const workflows = s
+  ? [...s.workflows].sort(
+      (a, b) =>
+        WF_RANK[wfView(a).key]! - WF_RANK[wfView(b).key]! ||
+        Number(b.critical) - Number(a.critical),
+    )
+  : [];
+const wfHint = (() => {
+  const counts = new Map<string, { n: number; label: string }>();
+  for (const w of workflows) {
+    const v = wfView(w);
+    const c = counts.get(v.key) ?? { n: 0, label: v.label };
+    c.n += 1;
+    counts.set(v.key, c);
+  }
+  return [...counts.entries()]
+    .map(([key, { n, label }]) =>
+      key === 'success'
+        ? f(d.project.wfOk, { n })
+        : f(d.project.wfCount, { n, state: lower(label) }),
+    )
+    .join(' · ');
+})();
+
 const nameOf = (componentId: string) =>
   componentId === 'coordinator'
     ? d.common.coordinator
     : (s?.components.find((c) => c.id === componentId)?.name ?? componentId);
-const blocking = s
-  ? [
-      ...new Set(
-        s.workflows
-          .filter((w) => w.critical && (w.state === 'failure' || w.state === 'cancelled'))
-          .map((w) => nameOf(w.componentId)),
-      ),
-    ]
+
+/** Components table: worst critical workflow, open alerts and required controls per component. */
+const ciOf = (c: ComponentSnapshot) => {
+  const crit = workflows.filter((w) => w.componentId === c.id && w.critical);
+  return crit.length ? wfView(crit[0]!) : null;
+};
+const SEVERITIES = ['critical', 'high', 'medium', 'low', 'informational', 'unknown'] as const;
+const BLIND = new Set(['not-authorised', 'unknown', 'collection-failed']);
+const controlsOf = (c: ComponentSnapshot) =>
+  s?.securityControls.find((x) => x.componentId === c.id)?.controls ?? [];
+function alertsOf(c: ComponentSnapshot): { text: string | null; partial: boolean } {
+  const controls = controlsOf(c);
+  const read = controls.filter((x) => x.counts !== null);
+  const partial = controls.some((x) => x.required && BLIND.has(x.state));
+  if (read.length === 0) return { text: null, partial };
+  const parts = SEVERITIES.map((k) => ({
+    k,
+    n: read.reduce((t, x) => t + (x.counts?.[k] ?? 0), 0),
+  }))
+    .filter((x) => x.n > 0)
+    .map((x) => `${x.n} ${lower(d.severity[x.k])}`);
+  return { text: parts.length ? parts.join(' · ') : d.common.noOpenAlerts, partial };
+}
+const gapsOf = (c: ComponentSnapshot) =>
+  controlsOf(c).filter((x) => x.required && x.state !== 'enabled');
+const hasRequired = (c: ComponentSnapshot) => controlsOf(c).some((x) => x.required);
+
+/** Security: open critical and high alerts are listed; everything else is a count + GitHub. */
+const listed = s
+  ? s.securityFindings.filter(
+      (x) => x.status === 'open' && (x.severity === 'critical' || x.severity === 'high'),
+    )
   : [];
-const cov = s?.securityCoverage;
-const coordinatorRepo = s?.coordinator.repository.fullName.toLowerCase();
+const openCounts = s?.securityHealth.openCounts;
+const countsKnown = openCounts ? openCounts.critical !== null : false;
+const otherAlerts = openCounts ? Math.max(0, sum(openCounts, [...SEVERITIES]) - listed.length) : 0;
+const repos = s
+  ? [s.coordinator.repository, ...s.components.map((c) => c.repository)].filter(
+      (r, i, all) => r.status === 'ok' && all.findIndex((x) => x.fullName === r.fullName) === i,
+    )
+  : [];
+
+const coordRepo = s?.coordinator.repository;
 const kindLabel = !s
   ? ''
   : s.components.length === 0
     ? d.project.kindSingle
-    : s.components.every((c) => c.repository.fullName.toLowerCase() === coordinatorRepo)
+    : s.components.every(
+          (c) => c.repository.fullName.toLowerCase() === coordRepo?.fullName.toLowerCase(),
+        )
       ? d.project.kindMonorepo
       : d.project.kindMulti;
+const statusOf = (h: HealthResult): HealthStatus => h.status;
+/** Why-box reasons are never info (filtered above); info would read as healthy. */
+const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' : r.level);
 ---
 
 <Base i18n={i18n} title={s?.project.name ?? id} page={null} alternates={alternates} index={index}>
-  {s && cov && (
+  {s && coordRepo && (
     <>
-      <nav class="crumbs" aria-label="Breadcrumb">
-        <a href={href(locale, 'portfolio')}>← {d.project.backToPortfolio}</a>
+      <nav class="crumbs" aria-label={d.project.breadcrumb}>
+        <a href={href(locale, 'portfolio')}>{d.nav.portfolio}</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">{s.project.name}</span>
       </nav>
-      <header class="page-head page-head--project">
-        <div>
-          <h1>{s.project.name}</h1>
-          <p class="lead">{s.project.description}</p>
-          <dl class="meta-inline">
-            <div>
-              <dt>{d.project.kind}</dt>
-              <dd>{kindLabel}</dd>
-            </div>
-            <div>
-              <dt>{d.project.businessUnit}</dt>
-              <dd>{s.project.businessUnit}</dd>
-            </div>
-            <div>
-              <dt>{d.project.lifecycle}</dt>
-              <dd>{d.lifecycle[s.project.lifecycle]}</dd>
-            </div>
-            <div>
-              <dt>{d.common.updated}</dt>
-              <dd>
-                <RelTime iso={s.generatedAt} i18n={i18n} staleHours={staleHours} />
-              </dd>
-            </div>
-          </dl>
+
+      <header class="phead">
+        <div class="phead__main">
+          <div class="phead__title">
+            <h1>{s.project.name}</h1>
+            <StatusBadge
+              status={s.overallHealth.status}
+              i18n={i18n}
+              context={d.dimensions.overall}
+            />
+          </div>
+          <p class="phead__meta">
+            {s.project.businessUnit} · {d.lifecycle[s.project.lifecycle]} · {kindLabel} ·{' '}
+            {d.common.coordinator}{' '}
+            <ExtLink href={coordRepo.url} i18n={i18n}>
+              <code>{coordRepo.name}</code>
+            </ExtLink>
+          </p>
+          <p class="phead__desc">{s.project.description}</p>
         </div>
-        <StatusBadge
-          status={s.overallHealth.status}
-          i18n={i18n}
-          context={d.dimensions.overall}
-          size="lg"
-        />
+        <div class="phead__score">
+          <ScoreBadge score={s.score} locale={locale} size="header" />
+          <p class="phead__collected">
+            {d.project.collected}{' '}
+            <RelTime iso={s.generatedAt} i18n={i18n} staleHours={staleHours} />
+          </p>
+        </div>
       </header>
-      {blocking.length > 0 && (
-        <p class="callout callout--red" role="note">
-          <StatusBadge status="red" i18n={i18n} size="sm" />{' '}
-          {i18n.f(d.project.blocking, { component: blocking.join(', ') })}
-        </p>
-      )}
 
-      <section aria-labelledby="h-health">
-        <h2 id="h-health">{d.project.health}</h2>
-        <div class="tiles">
-          <HealthTile
-            title={d.dimensions.overall}
-            status={s.overallHealth.status}
-            reasons={s.overallHealth.reasons}
-            i18n={i18n}
-            emphasis
-          />
-          <HealthTile
-            title={d.dimensions.delivery}
-            status={s.deliveryHealth.status}
-            reasons={s.deliveryHealth.reasons}
-            i18n={i18n}
-          />
-          <HealthTile
-            title={d.dimensions.version}
-            status={s.versionHealth.status}
-            reasons={s.versionHealth.reasons}
-            i18n={i18n}
-          />
-          <HealthTile
-            title={d.dimensions.security}
-            status={s.securityHealth.status}
-            reasons={s.securityHealth.reasons}
-            i18n={i18n}
-          />
-          <HealthTile
-            title={d.dimensions.coverage}
-            status={cov.status}
-            reasons={cov.reasons}
-            i18n={i18n}
-          >
-            <p class="tile__metric">
-              {cov.percentage === null ? d.common.unknown : `${cov.percentage}%`}{' '}
-              <span class="sub">
-                {i18n.f(d.securityPage.requiredCount, {
-                  available: cov.available,
-                  required: cov.required,
-                })}
-              </span>
-            </p>
-          </HealthTile>
-          <HealthTile
-            title={d.dimensions.governance}
-            status={s.governanceHealth.status}
-            reasons={s.governanceHealth.reasons}
-            i18n={i18n}
-          />
-          <HealthTile
-            title={d.dimensions.freshness}
-            status={s.dataFreshness.status}
-            reasons={[]}
-            i18n={i18n}
-          >
-            <ul class="freshness-list">
-              {s.dataFreshness.staleSources.map((x) => (
-                <li>
-                  <code>{x.repository}</code> · {d.errorSource[x.source]} ·{' '}
-                  <RelTime iso={x.lastUpdatedAt} i18n={i18n} />
-                </li>
-              ))}
-            </ul>
-          </HealthTile>
-        </div>
-      </section>
-
-      <section aria-labelledby="h-coord" class="card">
-        <h2 id="h-coord">{d.common.coordinator}</h2>
-        <dl class="facts">
-          <div>
-            <dt>{d.common.repository}</dt>
-            <dd>
-              <ExtLink href={s.coordinator.repository.url} i18n={i18n}>
-                <code>{s.coordinator.repository.fullName}</code>
-              </ExtLink>
-            </dd>
-          </div>
-          <div>
-            <dt>{d.project.coordinatorVersion}</dt>
-            <dd>
-              <strong>{displayVersion(s.coordinator.version) ?? d.common.unknown}</strong>{' '}
-              <span class="sub">
-                {i18n.f(d.project.versionFrom, {
-                  source: d.versionSource[s.coordinator.versionSource],
-                })}
-              </span>
-            </dd>
-          </div>
-          <div>
-            <dt>{d.project.latestRelease}</dt>
-            <dd>
-              {s.coordinator.latestRelease ? (
-                <ExtLink
-                  href={s.coordinator.latestRelease.url}
-                  i18n={i18n}
-                  label={s.coordinator.latestRelease.tag}
-                />
-              ) : (
-                d.common.unknown
-              )}
-            </dd>
-          </div>
-          <div>
-            <dt>{d.project.latestCommit}</dt>
-            <dd>
-              {s.coordinator.repository.latestCommit ? (
-                <ExtLink href={s.coordinator.repository.latestCommit.url} i18n={i18n}>
-                  <code>{shortSha(s.coordinator.repository.latestCommit.sha)}</code>
-                </ExtLink>
-              ) : (
-                d.common.unknown
-              )}
-            </dd>
-          </div>
-          <div>
-            <dt>{d.project.manifest}</dt>
-            <dd>
-              <code>{s.coordinator.manifest.path}</code> ·{' '}
-              {d.manifestStatus[s.coordinator.manifest.status]}
-            </dd>
-          </div>
-        </dl>
-      </section>
-
-      <section aria-labelledby="h-components">
-        <h2 id="h-components">{d.project.components}</h2>
-        <div class="table-wrap">
-          <table class="table">
-            <thead>
-              <tr>
-                <th scope="col">{d.common.component}</th>
-                <th scope="col">{d.common.repository}</th>
-                <th scope="col">{d.versionsPage.effective}</th>
-                <th scope="col">{d.project.latestRelease}</th>
-                <th scope="col">{d.project.latestCommit}</th>
-                <th scope="col">{d.versionsPage.pinned}</th>
-                <th scope="col">{d.project.drift}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {s.components.map((c) => (
-                <tr>
-                  <th scope="row" data-label={d.common.component}>
-                    {c.name}
-                    <span class="sub">{d.componentType[c.type]}</span>
-                    {c.path && <code class="sub">{c.path}/</code>}
-                  </th>
-                  <td data-label={d.common.repository}>
-                    {c.repository.status === 'ok' ? (
-                      <ExtLink href={c.repository.url} i18n={i18n}>
-                        <code>{c.repository.fullName}</code>
-                      </ExtLink>
-                    ) : (
-                      <>
-                        <code>{c.repository.fullName}</code>{' '}
-                        <Pill
-                          tone="grey"
-                          label={
-                            c.repository.status === 'not-authorised'
-                              ? d.common.notAuthorised
-                              : d.common.collectionFailed
-                          }
-                        />
-                      </>
-                    )}
-                  </td>
-                  <td data-label={d.versionsPage.effective}>
-                    <EffectiveVersion c={c} i18n={i18n} />
-                  </td>
-                  <td data-label={d.project.latestRelease}>
-                    {c.latestRelease ? (
-                      <ExtLink href={c.latestRelease.url} i18n={i18n} label={c.latestRelease.tag} />
-                    ) : (
-                      <span class="muted">{d.common.unknown}</span>
-                    )}
-                  </td>
-                  <td data-label={d.project.latestCommit}>
-                    {c.repository.latestCommit ? (
-                      <ExtLink href={c.repository.latestCommit.url} i18n={i18n}>
-                        <code>{shortSha(c.repository.latestCommit.sha)}</code>
-                      </ExtLink>
-                    ) : (
-                      <span class="muted">{d.common.unknown}</span>
-                    )}
-                  </td>
-                  <td data-label={d.versionsPage.pinned}>
-                    <PinCell c={c} i18n={i18n} />
-                  </td>
-                  <td data-label={d.project.drift}>
-                    <Pill tone={driftTone(c.drift)} label={d.drift[c.drift]} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section aria-labelledby="h-wf">
-        <h2 id="h-wf">{d.project.workflows}</h2>
-        <div class="table-wrap">
-          <table class="table">
-            <thead>
-              <tr>
-                <th scope="col">{d.common.component}</th>
-                <th scope="col">Workflow</th>
-                <th scope="col">{d.common.status}</th>
-                <th scope="col">{d.common.branch}</th>
-                <th scope="col">{d.common.updated}</th>
-                <th scope="col">{d.workflowsPage.lastError}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {s.workflows.map((w) => (
-                <tr>
-                  <th scope="row" data-label={d.common.component}>
-                    {nameOf(w.componentId)}
-                  </th>
-                  <td data-label="Workflow">
-                    {w.name} <code class="sub">{w.file}</code>
-                    {w.critical && <span class="tag">{d.workflowsPage.critical}</span>}
-                  </td>
-                  <td data-label={d.common.status}>
-                    <Pill tone={workflowTone(w.state)} label={d.workflowState[w.state]} />
-                    {w.lastCompletedRun && (
-                      <ExtLink
-                        href={w.lastCompletedRun.url}
-                        i18n={i18n}
-                        label={i18n.f(d.common.run, { n: w.lastCompletedRun.runNumber })}
-                      />
-                    )}
-                  </td>
-                  <td data-label={d.common.branch}>
-                    {w.branch ? <code>{w.branch}</code> : d.common.unknownValue}
-                  </td>
-                  <td data-label={d.common.updated}>
-                    {w.lastCompletedRun ? (
-                      <RelTime iso={w.lastCompletedRun.updatedAt} i18n={i18n} />
-                    ) : (
-                      d.common.unknownValue
-                    )}
-                    {w.stale && <span class="stale-tag">{d.common.stale}</span>}
-                  </td>
-                  <td data-label={d.workflowsPage.lastError}>
-                    {w.lastError ?? d.common.unknownValue}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section aria-labelledby="h-env">
-        <h2 id="h-env">{d.project.environments}</h2>
-        <ol class="envs">
-          {s.environments.map((e) => (
-            <li class={`env env--${e.status}`}>
-              <span class="env__name">{e.name}</span>
-              <span class="env__version">{displayVersion(e.version) ?? d.common.unknown}</span>
-              <Pill tone={driftTone(e.status)} label={d.envStatus[e.status]} />
-            </li>
-          ))}
-        </ol>
-        <p class="note">{d.project.envBehindNote}</p>
-      </section>
-
-      <section aria-labelledby="h-sec" class="grid-2">
-        <div class="card">
-          <h2 id="h-sec">{d.project.security}</h2>
-          <SeverityKpis
-            counts={s.securityHealth.openCounts}
-            secrets={s.securityHealth.openSecretAlerts}
-            partial={!s.securityHealth.countsComplete}
-            i18n={i18n}
-          />
-          <p>
-            <a href={`${href(locale, 'security')}#${s.project.id}`}>{d.securityPage.findings} →</a>
-          </p>
-        </div>
-        <div class="card">
-          <h2>{d.project.coverage}</h2>
-          <p class="tile__metric">
-            {cov.percentage === null ? d.common.unknown : `${cov.percentage}%`}
-          </p>
-          <p class="sub">
-            {i18n.f(d.securityPage.coverageCounts, coverageParams(cov))} ·{' '}
-            <RelTime iso={cov.collectedAt} i18n={i18n} />
-          </p>
-          <ul class="controls">
-            {cov.perControl.map((c) => (
-              <li>
-                <span>
-                  {d.control[c.control]}{' '}
-                  <span class="sub">
-                    {c.required ? d.securityPage.required : d.securityPage.optional}
+      <section class="card why" aria-labelledby="h-why">
+        <h2 id="h-why">
+          {f(d.project.whyTitle, { status: d.project.whyStatus[s.overallHealth.status] })}
+        </h2>
+        {whyShown.length > 0 ? (
+          <ul class="why__list">
+            {whyShown.map(({ dim, anchor, r }) => {
+              const run = runUrl(r);
+              return (
+                <li class="why__item" data-level={r.level}>
+                  <span class="status-col">
+                    <Pill tone={levelStatus(r)} label={i18n.status(levelStatus(r))} />
                   </span>
-                </span>
-                <Pill tone={controlTone(c.state, c.required)} label={d.controlState[c.state]} />
+                  <span class="why__text">
+                    {i18n.reason(r)}.{' '}
+                    {run ? (
+                      <ExtLink href={run} i18n={i18n} label={d.project.openRun} />
+                    ) : (
+                      <a href={`#${anchor}`}>
+                        {d.project.seeSection}
+                        <span class="visually-hidden">: {i18n.dimension(dim)}</span>
+                      </a>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <ul class="why__list">
+            {s.overallHealth.reasons.map((r) => (
+              <li class="why__item" data-level={r.level}>
+                <span class="why__text">{i18n.reason(r)}</span>
               </li>
             ))}
           </ul>
-          <p class="note">{d.securityPage.coverageNote}</p>
-        </div>
+        )}
+        {whyHidden > 0 && <p class="why__more">{f(d.project.whyMore, { n: whyHidden })}</p>}
+        {showCause && (
+          <p class="why__cause">
+            {f(d.project.whyCause, {
+              count: s.collectionErrors.length,
+              classes: errorClasses.join(', '),
+            })}{' '}
+            <a href={href(locale, 'dataQuality')}>{d.project.seeDataQuality}</a>
+          </p>
+        )}
       </section>
 
-      <section aria-labelledby="h-err">
-        <h2 id="h-err">{d.project.errors}</h2>
-        <ErrorsTable errors={s.collectionErrors} i18n={i18n} caption={d.project.errors} />
+      <section class="dimcards" aria-label={d.project.dimensionCards}>
+        {dims.map(({ dim, anchor, health }) => (
+          <a class="card dimcard" href={`#${anchor}`} data-dimension={dim}>
+            <span class="dimcard__head">
+              <span class={`dimcard__dot dimcard__dot--${statusOf(health)}`} aria-hidden="true" />
+              <strong class="dimcard__name">{i18n.dimension(dim)}</strong>
+            </span>
+            <span class="dimcard__pill">
+              <Pill tone={statusOf(health)} label={i18n.status(statusOf(health))} />
+            </span>
+            <span class="dimcard__summary">{dimSummary(dim, health)}</span>
+          </a>
+        ))}
       </section>
+
+      <section id="environments" class="block" aria-labelledby="h-env">
+        <h2 id="h-env">{d.project.environments}</h2>
+        <p class="coordline">
+          {d.project.coordinatorVersion}{' '}
+          {s.coordinator.version ? (
+            <>
+              <strong class="mono">{displayVersion(s.coordinator.version)}</strong>{' '}
+              {f(d.project.versionFrom, { source: d.versionSource[s.coordinator.versionSource] })}
+            </>
+          ) : (
+            <strong>{lower(d.common.unknown)}</strong>
+          )}
+          {s.coordinator.latestRelease && (
+            <>
+              {' · '}
+              {d.project.latestRelease}{' '}
+              <ExtLink
+                href={s.coordinator.latestRelease.url}
+                i18n={i18n}
+                label={s.coordinator.latestRelease.tag}
+              />
+            </>
+          )}
+          {' · '}
+          {d.project.manifest} <code>{s.coordinator.manifest.path}</code>{' '}
+          {lower(d.manifestStatus[s.coordinator.manifest.status])}
+        </p>
+        {s.environments.length === 0 ? (
+          <p class="muted">{d.project.noEnvironments}</p>
+        ) : (
+          <ol class="envpath" aria-label={d.project.environmentsPath}>
+            {s.environments.map((e, i) => (
+              <li class="envpath__step" data-env={e.name} data-env-status={e.status}>
+                {i > 0 && (
+                  <span class="envpath__arrow" aria-hidden="true">
+                    →
+                  </span>
+                )}
+                <span class={`envpath__card envpath__card--${e.status}`}>
+                  <strong>{e.name}</strong>
+                  <span class="mono">{displayVersion(e.version) ?? d.common.unknown}</span>
+                  <Pill tone={driftTone(e.status)} label={d.envStatus[e.status]} />
+                  {(e.status === 'behind' || e.status === 'mismatch') && s.coordinator.version && (
+                    <span class="envpath__expected">
+                      {f(d.project.envExpected, {
+                        version: displayVersion(s.coordinator.version)!,
+                      })}
+                    </span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
+        <p class="note">{d.project.envBehindNote}</p>
+      </section>
+
+      <section class="block" aria-labelledby="h-components">
+        <h2 id="h-components">{d.project.components}</h2>
+        {s.components.length === 0 ? (
+          <p class="muted">{d.project.noComponents}</p>
+        ) : (
+          <div class="table-wrap">
+            <table class="table comps">
+              <caption class="visually-hidden">{d.project.componentsCaption}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{d.common.component}</th>
+                  <th scope="col">{d.common.version}</th>
+                  <th scope="col">{d.project.ci}</th>
+                  <th scope="col">{d.project.openAlerts}</th>
+                  <th scope="col">{d.project.coverageCol}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {s.components.map((c) => {
+                  const eff = displayVersion(c.effectiveVersion);
+                  const latest = c.latestRelease;
+                  const ci = ciOf(c);
+                  const alerts = alertsOf(c);
+                  const gaps = gapsOf(c);
+                  return (
+                    <tr data-component={c.id}>
+                      <th scope="row">
+                        <span class="comps__name">{c.name}</span>{' '}
+                        <span class="sub">{d.componentType[c.type]}</span>
+                        <span class="comps__repo">
+                          {c.repository.status === 'ok' ? (
+                            <ExtLink href={c.repository.url} i18n={i18n}>
+                              <code>{c.repository.name}</code>
+                            </ExtLink>
+                          ) : (
+                            <>
+                              <code>{c.repository.name}</code>{' '}
+                              <Pill
+                                tone="grey"
+                                label={
+                                  c.repository.status === 'not-authorised'
+                                    ? d.common.notAuthorised
+                                    : d.common.collectionFailed
+                                }
+                              />
+                            </>
+                          )}
+                        </span>
+                      </th>
+                      <td data-label={d.common.version}>
+                        <span class="cell">
+                          {eff ? (
+                            <span class="mono">{eff}</span>
+                          ) : (
+                            <span class="muted">{d.common.unknown}</span>
+                          )}
+                          {latest && displayVersion(latest.tag) !== eff && (
+                            <span class="muted">
+                              {' → '}
+                              <ExtLink
+                                href={latest.url}
+                                i18n={i18n}
+                                label={f(d.project.latest, {
+                                  version: displayVersion(latest.tag)!,
+                                })}
+                              />
+                            </span>
+                          )}
+                          {c.manifestConsistency === 'mismatch' && (
+                            <span class="comps__flag">
+                              <Pill
+                                tone="amber"
+                                label={d.consistency.mismatch}
+                                title={`${d.project.declared}: ${c.declaredVersion ?? d.common.unknownValue}`}
+                              />
+                            </span>
+                          )}
+                        </span>
+                      </td>
+                      <td data-label={d.project.ci}>
+                        {ci ? (
+                          <Pill tone={ci.tone} label={ci.label} />
+                        ) : (
+                          <span class="muted">{d.project.noCriticalWorkflows}</span>
+                        )}
+                      </td>
+                      <td data-label={d.project.openAlerts}>
+                        <span class="cell">
+                          {alerts.text ?? <span class="muted">{d.common.unknown}</span>}
+                          {alerts.partial && <span class="sub"> · {d.project.alertsPartial}</span>}
+                        </span>
+                      </td>
+                      <td data-label={d.project.coverageCol}>
+                        {!hasRequired(c) ? (
+                          <span class="muted">{d.project.noRequired}</span>
+                        ) : gaps.length === 0 ? (
+                          <ControlSymbol
+                            state="enabled"
+                            required
+                            locale={locale}
+                            label={d.project.allRequiredEnabled}
+                          />
+                        ) : (
+                          <span class="comps__gaps">
+                            {gaps.map((x) => (
+                              <ControlSymbol
+                                state={x.state}
+                                required={x.required}
+                                locale={locale}
+                                label={d.control[x.control]}
+                              />
+                            ))}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section class="block sections" aria-label={d.project.seeSection}>
+        <details id="workflows" class="fold">
+          <summary>
+            <span class="fold__title">{d.project.workflows}</span>
+            <span class="fold__hint">{wfHint || d.common.none}</span>
+          </summary>
+          <div class="fold__body">
+            <div class="table-wrap">
+              <table class="table">
+                <caption class="visually-hidden">{d.project.workflows}</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">{d.common.status}</th>
+                    <th scope="col">Workflow</th>
+                    <th scope="col">{d.common.component}</th>
+                    <th scope="col">{d.common.updated}</th>
+                    <th scope="col">{d.workflowsPage.lastError}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {workflows.map((w) => {
+                    const v = wfView(w);
+                    return (
+                      <tr>
+                        <td data-label={d.common.status}>
+                          <span class="status-col">
+                            <Pill tone={v.tone} label={v.label} />
+                          </span>
+                        </td>
+                        <th scope="row">
+                          {w.name} <code class="sub">{w.file}</code>
+                          {w.critical && <span class="tag">{d.workflowsPage.critical}</span>}
+                        </th>
+                        <td data-label={d.common.component}>
+                          <span class="cell">
+                            {nameOf(w.componentId)}
+                            <code class="sub comps__repo">{w.repository}</code>
+                          </span>
+                        </td>
+                        <td data-label={d.common.updated}>
+                          {w.lastCompletedRun ? (
+                            <span class="cell">
+                              <RelTime iso={w.lastCompletedRun.updatedAt} i18n={i18n} />{' '}
+                              <ExtLink
+                                href={w.lastCompletedRun.url}
+                                i18n={i18n}
+                                label={f(d.common.run, { n: w.lastCompletedRun.runNumber })}
+                              />
+                            </span>
+                          ) : (
+                            <span>{d.common.unknownValue}</span>
+                          )}
+                        </td>
+                        <td data-label={d.workflowsPage.lastError}>
+                          <span>{w.lastError ?? d.common.unknownValue}</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+
+        <details id="security" class="fold">
+          <summary>
+            <span class="fold__title">{d.project.securityTitle}</span>
+            <span class="fold__hint">{d.project.securityHint}</span>
+          </summary>
+          <div class="fold__body">
+            {!countsKnown && <p class="muted">{d.project.alertsUnknown}</p>}
+            {listed.length === 0 ? (
+              countsKnown && <p class="muted">{d.project.noCriticalHigh}</p>
+            ) : (
+              <ul class="alerts" aria-label={d.project.criticalHighCaption}>
+                {listed.map((x) => (
+                  <li class="alerts__item">
+                    <span class="status-col">
+                      <Pill tone={severityTone(x.severity)} label={d.severity[x.severity]} />
+                    </span>
+                    <span class="alerts__text">
+                      <span>
+                        {x.title && !x.repositoryPrivate ? x.title : d.common.privateWithheld}
+                      </span>
+                      <span class="sub">
+                        {d.findingSource[x.source]} · <code>{x.repository}</code>
+                      </span>
+                    </span>
+                    <ExtLink href={x.htmlUrl} i18n={i18n} label={d.project.openInGitHub} />
+                  </li>
+                ))}
+              </ul>
+            )}
+            {countsKnown && otherAlerts > 0 && (
+              <p>{f(d.project.otherAlertsOnGitHub, { n: otherAlerts })}</p>
+            )}
+            {!s.securityHealth.countsComplete && <p class="note">{d.common.partial}</p>}
+            <ul class="ghlinks">
+              {repos.map((r) => (
+                <li>
+                  <ExtLink href={`${r.url}/security`} i18n={i18n}>
+                    {d.project.openInGitHub}: <code>{r.name}</code>
+                  </ExtLink>
+                </li>
+              ))}
+            </ul>
+            <p>
+              <a href={`${href(locale, 'security')}#${s.project.id}`}>{d.nav.security} →</a>
+            </p>
+          </div>
+        </details>
+
+        <details id="coverage" class="fold">
+          <summary>
+            <span class="fold__title">{d.project.coveragePerControl}</span>
+            <span class="fold__hint">
+              {s.securityCoverage.required > 0
+                ? f(d.project.coverageHint, {
+                    available: s.securityCoverage.available,
+                    required: s.securityCoverage.required,
+                  })
+                : d.project.noRequired}
+            </span>
+          </summary>
+          <div class="fold__body">
+            <ul class="ctrls">
+              {s.securityCoverage.perControl.map((x) => (
+                <li class="ctrls__item">
+                  <ControlSymbol
+                    state={x.state}
+                    required={x.required}
+                    locale={locale}
+                    label={d.control[x.control]}
+                  />
+                  <span class="sub">
+                    {x.required ? d.securityPage.required : d.securityPage.optional} ·{' '}
+                    {d.controlState[x.state]}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p class="note">
+              {d.securityPage.coverageNote}{' '}
+              <RelTime iso={s.securityCoverage.collectedAt} i18n={i18n} />
+            </p>
+          </div>
+        </details>
+
+        <details id="errors" class="fold">
+          <summary>
+            <span class="fold__title">{d.project.errors}</span>
+            <span class="fold__hint">
+              {s.collectionErrors.length === 0
+                ? d.common.noErrors
+                : `${s.collectionErrors.length} · ${errorClasses.join(', ')}`}
+            </span>
+          </summary>
+          <div class="fold__body">
+            <ErrorsTable errors={s.collectionErrors} i18n={i18n} caption={d.project.errors} />
+            {s.dataFreshness.staleSources.length > 0 && (
+              <>
+                <h3>{d.project.staleSources}</h3>
+                <ul class="stale">
+                  {s.dataFreshness.staleSources.map((x) => (
+                    <li>
+                      <code>{x.repository}</code> · {d.errorSource[x.source]} ·{' '}
+                      <RelTime iso={x.lastUpdatedAt} i18n={i18n} />
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        </details>
+      </section>
+
+      <Legend i18n={i18n} />
     </>
   )}
 </Base>
+
+<script>
+  import '../../../scripts/project-details';
+</script>
+
+<style>
+  .crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    color: var(--text-muted);
+  }
+  .phead {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+  }
+  .phead__main {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    flex: 1 1 320px;
+  }
+  .phead__title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .phead__title h1 {
+    margin: 0;
+    font-size: var(--fs-xl);
+    line-height: 28px;
+    font-weight: 600;
+  }
+  .phead__meta,
+  .phead__desc,
+  .phead__collected {
+    margin: 0;
+    color: var(--text-muted);
+    overflow-wrap: anywhere;
+  }
+  .phead__score {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+  }
+  .phead__collected {
+    font-size: var(--fs-sm);
+  }
+
+  .why h2 {
+    margin: 0 0 var(--space-2);
+  }
+  .why__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .why__item {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+  }
+  .why__text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .why__more,
+  .why__cause {
+    margin: var(--space-3) 0 0;
+    color: var(--text-muted);
+  }
+  .why__cause {
+    color: var(--text);
+  }
+
+  .dimcards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+  }
+  .dimcard {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: var(--space-4);
+    color: var(--text);
+    font-weight: 400;
+    text-decoration: none;
+  }
+  .dimcard:hover {
+    border-color: var(--border-strong);
+  }
+  .dimcard__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .dimcard__pill {
+    display: flex;
+  }
+  .dimcard__name {
+    font-weight: 600;
+  }
+  .dimcard__summary {
+    color: var(--text-muted);
+    overflow-wrap: anywhere;
+  }
+  .dimcard__dot {
+    flex: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .dimcard__dot--red {
+    background: var(--red);
+  }
+  .dimcard__dot--amber {
+    background: var(--amber);
+  }
+  .dimcard__dot--green {
+    background: var(--green);
+  }
+  .dimcard__dot--grey {
+    border: 1.5px dashed var(--unknown);
+  }
+
+  .block h2 {
+    margin: 0 0 var(--space-3);
+  }
+  .coordline {
+    margin: 0 0 var(--space-3);
+    color: var(--text-muted);
+    overflow-wrap: anywhere;
+  }
+  .envpath {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: var(--space-3);
+    margin: 0 0 var(--space-3);
+    padding: 0;
+    list-style: none;
+  }
+  .envpath__step {
+    display: flex;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+  .envpath__arrow {
+    align-self: center;
+    color: var(--text-muted);
+  }
+  .envpath__card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+    min-width: 140px;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+  .envpath__card--unknown {
+    border: 1.5px dashed var(--unknown);
+  }
+  .envpath__expected {
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+  }
+
+  /* Wide screens: one row per component (scrolls inside its box if needed). Phones: the
+     global stacked-card table layout takes over, labelled by each cell's data-label. */
+  @media (min-width: 721px) {
+    .comps {
+      min-width: 720px;
+    }
+  }
+  .cell {
+    display: inline;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .comps__name {
+    font-weight: 600;
+  }
+  .comps__repo {
+    display: block;
+    font-weight: 400;
+  }
+  .comps__flag {
+    display: block;
+    margin-top: var(--space-1);
+  }
+  .comps__gaps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .sections {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  .fold {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    scroll-margin-top: var(--space-4);
+  }
+  .fold > summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-3);
+    min-height: 44px;
+    padding: var(--space-3) var(--space-4);
+    cursor: pointer;
+    list-style-position: inside;
+  }
+  .fold > summary::marker {
+    color: var(--text-muted);
+  }
+  .fold__title {
+    font-weight: 600;
+  }
+  .fold__hint {
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+  }
+  .fold__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: 0 var(--space-4) var(--space-4);
+    min-width: 0;
+  }
+  .fold__body p,
+  .fold__body h3 {
+    margin: 0;
+  }
+
+  .alerts,
+  .ctrls,
+  .ghlinks,
+  .stale {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .alerts__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-3);
+  }
+  .alerts__text {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 240px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .ghlinks {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+  }
+  .ctrls__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-3);
+  }
+  .stale li {
+    overflow-wrap: anywhere;
+  }
+
+  @media (max-width: 640px) {
+    .phead {
+      align-items: flex-start;
+    }
+    .phead__score {
+      align-items: flex-start;
+      text-align: left;
+    }
+    .phead__score :global(.score--header) {
+      align-items: flex-start;
+      text-align: left;
+    }
+    .envpath {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .envpath__step {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--space-2);
+    }
+    .envpath__arrow {
+      transform: rotate(90deg);
+      align-self: flex-start;
+      margin-left: var(--space-4);
+    }
+  }
+</style>

@@ -82,6 +82,99 @@ describe('static site', () => {
     );
   });
 
+  describe('project page', () => {
+    const between = (html: string, from: string, to: string) =>
+      html.slice(html.indexOf(from), html.indexOf(to, html.indexOf(from)));
+
+    it('shows the score with its confidence and explains why it is critical', async () => {
+      const html = await page('projects/project-beta');
+      const head = between(html, '<main', 'id="h-why"');
+      expect(head).toMatch(/class="score__value"[^>]*>38</);
+      expect(head).toContain('measured 5 of 5');
+      expect(head).toMatch(/badge badge--red/);
+      expect(html).toMatch(/<h2[^>]*id="h-why"[^>]*>Why it is Critical</);
+      const why = between(html, 'id="h-why"', '</section>');
+      // Red reasons come first, as sentences, with a link to the run.
+      expect(why).toContain('Continuous Integration failed on api (run #418)');
+      expect(why).toContain(
+        'href="https://github.com/example-org/project-beta-api/actions/runs/9012"',
+      );
+      expect(why.indexOf('data-level="red"')).toBeLessThan(why.indexOf('data-level="amber"'));
+    });
+
+    it('links the five dimension cards to their sections', async () => {
+      const html = await page('projects/project-beta');
+      const cards = [...html.matchAll(/<a[^>]*\bhref="#([\w-]+)"[^>]*\bdata-dimension="(\w+)"/g)];
+      expect(cards.map((m) => m[2])).toEqual([
+        'delivery',
+        'version',
+        'security',
+        'coverage',
+        'governance',
+      ]);
+      expect(cards.map((m) => m[1])).toEqual([
+        'workflows',
+        'environments',
+        'security',
+        'coverage',
+        'errors',
+      ]);
+      for (const id of ['workflows', 'environments', 'security', 'coverage', 'errors'])
+        expect(html).toMatch(new RegExp(`\\bid="${id}"`));
+    });
+
+    it('draws environments as a DEV → UAT → PROD path with PROD behind', async () => {
+      const html = await page('projects/project-beta');
+      const envs = [...html.matchAll(/data-env="(\w+)"[^>]*data-env-status="(\w+)"/g)];
+      expect(envs.map((m) => [m[1], m[2]])).toEqual([
+        ['DEV', 'aligned'],
+        ['UAT', 'aligned'],
+        ['PROD', 'behind'],
+      ]);
+      expect(between(html, 'data-env="PROD"', '</li>')).toContain('Behind');
+    });
+
+    it('collapses workflows, security, coverage and collection errors', async () => {
+      const html = await page('projects/project-beta');
+      for (const id of ['workflows', 'security', 'coverage', 'errors']) {
+        const tag = new RegExp(`<details[^>]*\\bid="${id}"[^>]*>`).exec(html);
+        expect(tag, id).not.toBeNull();
+        expect(tag![0]).not.toMatch(/\sopen[\s=>]/);
+      }
+    });
+
+    it('lists only critical and high alerts, and links to GitHub for the rest', async () => {
+      const beta = between(await page('projects/project-beta'), 'id="security"', '</details>');
+      expect(beta).toContain('Header injection in example-http-client');
+      expect(beta).toContain('Details withheld');
+      expect(beta).toContain('href="https://github.com/example-org/project-beta-api/security"');
+      const alpha = between(await page('projects/project-alpha'), 'id="security"', '</details>');
+      expect(alpha).toContain('Prototype pollution in example-lib');
+      expect(alpha).not.toContain('Missing rate limiting on public endpoint'); // medium
+      expect(alpha).not.toContain('Use of a weak cryptographic algorithm'); // fixed
+      expect(alpha).toContain('other open alert(s)');
+    });
+
+    it('shows insufficient data and its cause for an unreadable project', async () => {
+      const html = await page('projects/project-gamma');
+      const head = between(html, '<main', 'id="h-why"');
+      expect(head).toContain('insufficient data');
+      expect(head).toContain('score__value--none');
+      expect(head).not.toMatch(/class="score__value"[^>]*>\s*0\s*</);
+      const why = between(html, 'id="h-why"', '</section>');
+      expect(why).toContain('2 collection error(s)');
+      expect(why).toContain('Not found (404)');
+      expect(why).toMatch(/href="[^"]*data-quality\/"/);
+    });
+
+    it('renders the Italian project page in Italian', async () => {
+      const html = await page('it/projects/project-beta');
+      expect(html).toContain('Perché è critico');
+      expect(html).toContain('misurato 5 di 5');
+      expect(html).toContain('Ambienti');
+    });
+  });
+
   it('distinguishes alerts from coverage on the security view and withholds private details', async () => {
     const html = await page('security');
     expect(html).toContain('Coverage by repository and control');
