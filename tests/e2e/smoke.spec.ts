@@ -62,8 +62,32 @@ test('navigates the main views in both languages', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1, name: 'Qualità dati' })).toBeVisible();
 });
 
-test('project detail shows blocking component and coverage', async ({ page }) => {
+test('project detail explains why it is critical and cards open their section', async ({
+  page,
+}) => {
   await page.goto('/projects/project-beta/');
-  await expect(page.getByText('Blocking component: API service')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Security coverage' }).first()).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Why it is Critical' })).toBeVisible();
+  // The same reason is also the Delivery card's summary: scope to the why box (strict mode).
+  await expect(
+    page.locator('section.why').getByText('Continuous Integration failed on api (run #418)'),
+  ).toBeVisible();
+  await expect(page.getByText('measured 5 of 5')).toBeVisible();
+  const workflows = page.locator('details#workflows');
+  await expect(workflows).toHaveJSProperty('open', false);
+  await page.locator('a[data-dimension="delivery"]').click();
+  await expect(workflows).toHaveJSProperty('open', true);
+  await expect(page.locator('details#coverage')).toHaveJSProperty('open', false);
+  await page.locator('details#coverage > summary').click();
+  await expect(page.locator('details#coverage')).toHaveJSProperty('open', true);
+});
+
+test('project page has no horizontal scroll at phone width', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'phone layout only');
+  for (const id of ['project-beta', 'project-gamma']) {
+    await page.goto(`/projects/${id}/`);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(overflow, id).toBeLessThanOrEqual(0);
+  }
 });
