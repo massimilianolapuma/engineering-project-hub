@@ -401,7 +401,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     background: var(--green);
   }
   .count-btn__dot--grey {
-    border: 2px dashed var(--unknown);
+    border: 2px solid var(--unknown);
   }
 
   /* Filters: one inline row; lifecycle and severity under "More filters". */
@@ -449,12 +449,15 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
   }
   .portfolio__results {
     margin: 0 0 0 auto;
-    align-self: center;
+    align-self: flex-end;
+    display: flex;
+    align-items: center;
+    min-height: 40px;
     font-size: var(--fs-sm);
     color: var(--text-muted);
   }
   .portfolio__clear {
-    align-self: center;
+    align-self: flex-end;
   }
   .portfolio__clear[hidden] {
     display: none;
@@ -512,6 +515,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     display: inline-block;
     font-size: var(--fs-card);
     font-weight: 600;
+    white-space: nowrap;
   }
   .plist__bu {
     display: block;
@@ -605,6 +609,9 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
       grid-area: name;
       min-width: 0;
       overflow-wrap: anywhere;
+    }
+    .plist__link {
+      white-space: normal;
     }
     .plist__score {
       grid-area: score;
