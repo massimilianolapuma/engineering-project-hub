@@ -14,25 +14,38 @@ test('filters are keyboard accessible and narrow the list', async ({ page }) => 
   await page.keyboard.type('beta');
   await expect(page.locator('tr[data-project]:not([hidden])')).toHaveCount(1);
   await page.getByLabel('Search projects').fill('');
-  await page.getByLabel('Overall health').selectOption('grey');
+  await page.getByLabel('Status', { exact: true }).selectOption('grey');
   await expect(page.locator('tr[data-project]:not([hidden])')).toHaveCount(1);
   await expect(page.getByText('1 of 4 projects')).toBeVisible();
 });
 
-test('status counts filter the sheet and unsurveyed projects are hatched, not zero', async ({
+test('status counts filter the list and unknown projects show insufficient data, not zero', async ({
   page,
 }) => {
   await page.goto('/');
+  const rows = page.locator('tr[data-project]:not([hidden])');
+  // Default order: score, worst first; insufficient data right after red.
+  await expect(rows.first()).toHaveAttribute('data-score', '38');
+  await expect(rows.nth(1)).toHaveAttribute('data-score', '');
   const counts = page.getByRole('group', { name: 'Filter by overall status' });
-  await counts.getByRole('button', { name: /Critical/ }).click();
-  await expect(page.locator('tr[data-project]:not([hidden])')).toHaveCount(1);
-  await expect(counts.getByRole('button', { name: /Critical/ })).toHaveAttribute(
-    'aria-pressed',
-    'true',
+  const critical = counts.getByRole('button', { name: /Critical/ });
+  await critical.click();
+  await expect(rows).toHaveCount(1);
+  await expect(critical).toHaveAttribute('aria-pressed', 'true');
+  // Pressing the active count again clears the filter.
+  await critical.click();
+  await expect(critical).toHaveAttribute('aria-pressed', 'false');
+  await expect(rows).toHaveCount(4);
+  await expect(page.locator('tr[data-health="grey"]')).toContainText('insufficient data');
+});
+
+test('no horizontal scroll at phone width', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('tr[data-project]')).toHaveCount(4);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth,
   );
-  await counts.getByRole('button', { name: /Show all/ }).click();
-  await expect(page.locator('tr[data-project]:not([hidden])')).toHaveCount(4);
-  await expect(page.locator('tr[data-health="grey"] .sheet__band')).toContainText('Not surveyed');
+  expect(overflow).toBeLessThanOrEqual(0);
 });
 
 test('navigates the main views in both languages', async ({ page }) => {

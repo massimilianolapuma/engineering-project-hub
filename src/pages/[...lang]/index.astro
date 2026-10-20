@@ -1,17 +1,16 @@
 ---
-import type { HealthStatus, ProjectSnapshot, Reason } from '@model/index';
-import Count from '../../components/Count.astro';
+import type { Dimension, HealthResult, HealthStatus, ProjectSnapshot, Reason } from '@model/index';
+import DimensionBars from '../../components/DimensionBars.astro';
 import ErrorState from '../../components/ErrorState.astro';
 import Legend from '../../components/Legend.astro';
-import Pill from '../../components/Pill.astro';
-import RelTime from '../../components/RelTime.astro';
+import ScoreBadge from '../../components/ScoreBadge.astro';
 import StatusBadge from '../../components/StatusBadge.astro';
-import StatusIcon from '../../components/StatusIcon.astro';
+import StatusDot from '../../components/StatusDot.astro';
 import Base from '../../layouts/Base.astro';
 import { healthRank } from '../../lib/format';
 import { pageContext } from '../../lib/page';
 import { href, localeParams } from '../../lib/routes';
-import { controlTone } from '../../lib/tones';
+import { scoreSortKey } from '../../lib/score';
 
 export const getStaticPaths = localeParams;
 const { locale } = Astro.props;
@@ -22,104 +21,56 @@ type Project = (typeof projects)[number];
 const snapshots = new Map<string, ProjectSnapshot>(
   data.ok ? data.data.projects.map((p) => [p.project.id, p]) : [],
 );
-const staleHours = index?.run.policy.snapshotStaleHours ?? 24;
 const units = [...new Set(projects.map((p) => p.businessUnit))].sort();
 const lifecycles = [...new Set(projects.map((p) => p.lifecycle))];
 const tally = (s: HealthStatus) => projects.filter((p) => p.overall === s).length;
+const needAttention = tally('red') + tally('amber');
+/* Default order: score, worst first; "insufficient data" right after red; ties by name. */
 const sorted = [...projects].sort(
-  (a, b) => healthRank(a.overall) - healthRank(b.overall) || a.name.localeCompare(b.name),
+  (a, b) => scoreSortKey(a.score) - scoreSortKey(b.score) || a.name.localeCompare(b.name),
 );
 
-/* The sheet: grid letters A–F are the dimensions, row numbers the projects (worst first). */
-type Dim = 'overall' | 'delivery' | 'version' | 'security' | 'coverage' | 'governance';
-const DIMS: { key: Dim; ref: string }[] = [
-  { key: 'overall', ref: 'A' },
-  { key: 'delivery', ref: 'B' },
-  { key: 'version', ref: 'C' },
-  { key: 'security', ref: 'D' },
-  { key: 'coverage', ref: 'E' },
-  { key: 'governance', ref: 'F' },
-];
-const health = (s: ProjectSnapshot | undefined, k: Dim) => {
-  if (!s) return null;
-  return {
-    overall: s.overallHealth,
+const DIMS: Dimension[] = ['delivery', 'version', 'security', 'coverage', 'governance'];
+const statusOf = (p: Project, k: Dimension): HealthStatus =>
+  k === 'coverage' ? p.coverage.status : p[k];
+const healthOf = (s: ProjectSnapshot | undefined, k: Dimension): HealthResult | undefined =>
+  s &&
+  {
     delivery: s.deliveryHealth,
     version: s.versionHealth,
     security: s.securityHealth,
     coverage: s.securityCoverage,
     governance: s.governanceHealth,
   }[k];
-};
-/** The reason that explains the cell: one at the cell's own level first. */
+/** The reason that explains a dimension: one at the dimension's own level first. */
 const topReason = (status: HealthStatus, reasons: Reason[]): Reason | undefined =>
   reasons.find((r) => r.level === status) ?? reasons.find((r) => r.level !== 'info') ?? reasons[0];
-const statusOf = (p: Project, k: Dim): HealthStatus =>
-  k === 'coverage' ? p.coverage.status : p[k];
-const unsurveyed = (p: Project) => DIMS.every((x) => statusOf(p, x.key) === 'grey');
-/** Why a row could not be surveyed, from the repository-level collection errors. */
-const cause = (p: Project): string | null => {
-  const errs = snapshots.get(p.id)?.collectionErrors.filter((e) => e.source === 'repository') ?? [];
-  if (errs.length === 0) return null;
-  const byClass = new Map<string, number>();
-  for (const e of errs) byClass.set(e.classification, (byClass.get(e.classification) ?? 0) + 1);
-  const list = [...byClass]
-    .map(([c, n]) => `${n} ${d.errorClass[c as keyof typeof d.errorClass].toLowerCase()}`)
-    .join(', ');
-  return i18n.f(d.portfolio.causeRepos, { list });
-};
-const blind = (p: Project) => controlTone(p.secretScanning) === 'blind';
-
-/*
- * Sheet notes, keyed by grid reference: every Critical cell and every blind spot (the worst
- * Attention cell when nothing is Critical). A note adds what the cell cannot hold: the next
- * reasons, not the one already printed in the cell.
+/** Nothing about this project could be measured: every dimension is unknown. */
+const unmeasured = (p: Project) => DIMS.every((k) => statusOf(p, k) === 'grey');
+/**
+ * Main reason, one line: the top reason of each dimension at the project's worst level
+ * (critical before attention), at most two, in dimension order.
  */
-type Note = { p: Project; ref: string; cell: Dim; status: HealthStatus; text: string | null };
-const notes: Note[] = sorted.flatMap((p, i) => {
-  const row = i + 1;
-  if (p.overall === 'green') return [];
-  if (unsurveyed(p))
-    return [
-      {
-        p,
-        ref: `B${row}–F${row}`,
-        cell: 'overall' as Dim,
-        status: 'grey' as HealthStatus,
-        text: cause(p) ?? d.portfolio.notSurveyedBody,
-      },
-    ];
+const mainReason = (p: Project): string | null => {
   const s = snapshots.get(p.id);
-  const cells = DIMS.slice(1).map((x) => ({ ...x, status: statusOf(p, x.key) }));
-  const red = cells.filter((c) => c.status === 'red');
-  const targets = red.length
-    ? red
-    : [...cells].sort((a, b) => healthRank(a.status) - healthRank(b.status)).slice(0, 1);
-  const out: Note[] = targets.map((c) => {
-    const reasons = health(s, c.key)?.reasons ?? [];
-    const top = topReason(c.status, reasons);
-    const extra = reasons.filter((r) => r !== top && r.level !== 'info');
-    const text = extra[0]
-      ? `${i18n.reason(extra[0])}${extra.length > 1 ? ` ${i18n.f(d.portfolio.noteMore, { count: extra.length - 1 })}` : ''}`
-      : null;
-    return { p, ref: `${c.ref}${row}`, cell: c.key, status: c.status, text };
-  });
-  const blindText = `${d.control.secretScanning}: ${d.portfolio.blindSpot} (${d.controlState[p.secretScanning].toLowerCase()})`;
-  const dNote = out.find((n) => n.cell === 'security');
-  if (blind(p) && dNote) dNote.text = dNote.text ? `${dNote.text} · ${blindText}` : blindText;
-  else if (blind(p))
-    out.push({
-      p,
-      ref: `D${row}`,
-      cell: 'security',
-      status: 'amber',
-      text: `${d.control.secretScanning}: ${d.portfolio.blindSpot} (${d.controlState[p.secretScanning].toLowerCase()})`,
-    });
-  return out;
-});
-const surveyedAt = index
-  ? `${index.generatedAt.slice(0, 10)} ${index.generatedAt.slice(11, 16)} UTC`
-  : null;
+  const worst = Math.min(...DIMS.map((k) => healthRank(statusOf(p, k))));
+  const sentences = DIMS.filter((k) => healthRank(statusOf(p, k)) === worst)
+    .map((k) => healthOf(s, k))
+    .map((h) => (h ? topReason(h.status, h.reasons) : undefined))
+    .filter((r): r is Reason => r !== undefined)
+    .map((r) => i18n.reason(r));
+  const unique = [...new Set(sentences)].slice(0, 2);
+  return unique.length ? unique.join(' · ') : null;
+};
+/** Repository names, so the search also finds a project by one of its repositories. */
+const searchText = (p: Project) => {
+  const s = snapshots.get(p.id);
+  const repos = s
+    ? [s.coordinator.repository.fullName, ...s.components.map((c) => c.repository.fullName)]
+    : [];
+  return [p.name, ...new Set(repos)].join(' ').toLowerCase();
+};
+const collectedAt = index ? i18n.date(index.generatedAt) : null;
 ---
 
 <Base
@@ -133,350 +84,485 @@ const surveyedAt = index
   {!data.ok ? (
     <ErrorState error={data.error} i18n={i18n} />
   ) : (
-    <>
-      <header class="sheet-title">
-        <div class="sheet-title__text">
+    <div class="portfolio">
+      <header class="portfolio__head">
+        <div>
           <h1>{d.portfolio.title}</h1>
-          <p class="sheet-title__lead">{d.portfolio.intro}</p>
+          <p class="portfolio__lead">
+            {i18n.f(d.portfolio.lead, { n: needAttention, total: projects.length })}
+          </p>
         </div>
-        <div class="sheet-counts" role="group" aria-label={d.portfolio.countsLabel}>
-          <button type="button" class="sheet-count" data-health-filter="" aria-pressed="true">
-            <span class="sheet-count__value">{projects.length}</span>
-            <span>{d.portfolio.showAll}</span>
-          </button>
-          {(['red', 'grey', 'amber', 'green'] as const).map((s) => (
-            <button
-              type="button"
-              class={`sheet-count sheet-count--${s}`}
-              data-health-filter={s}
-              aria-pressed="false"
-            >
-              <span class="sheet-count__value">{tally(s)}</span>
-              <StatusIcon tone={s} />
+        <div class="counts" role="group" aria-label={d.portfolio.countsLabel}>
+          {(['red', 'amber', 'green', 'grey'] as const).map((s) => (
+            <button type="button" class="count-btn" data-health-filter={s} aria-pressed="false">
+              <span class={`count-btn__dot count-btn__dot--${s}`} aria-hidden="true" />
+              <span class="count-btn__value">{tally(s)}</span>
               <span>{i18n.status(s)}</span>
             </button>
           ))}
         </div>
       </header>
 
-      <div class="filters-row">
-        <form class="filters filters--sheet" data-portfolio-filters role="search">
-          <div class="field field--grow">
-            <label for="f-q">{d.portfolio.search}</label>
-            <input
-              id="f-q"
-              name="q"
-              type="search"
-              placeholder={d.portfolio.searchPlaceholder}
-              autocomplete="off"
-            />
-          </div>
-          <div class="field">
-            <label for="f-health">{d.portfolio.filterHealth}</label>
-            <select id="f-health" name="health">
-              <option value="">{d.portfolio.all}</option>
-              {(['red', 'amber', 'green', 'grey'] as const).map((s) => (
-                <option value={s}>{i18n.status(s)}</option>
-              ))}
-            </select>
-          </div>
-          <div class="field">
-            <label for="f-bu">{d.portfolio.filterBu}</label>
-            <select id="f-bu" name="bu">
-              <option value="">{d.portfolio.all}</option>
-              {units.map((u) => (
-                <option value={u}>{u}</option>
-              ))}
-            </select>
-          </div>
-          <div class="field">
-            <label for="f-sort">{d.portfolio.sort}</label>
-            <select id="f-sort" name="sort">
-              <option value="health">{d.portfolio.sortHealth}</option>
-              <option value="name">{d.portfolio.sortName}</option>
-              <option value="updated">{d.portfolio.sortUpdated}</option>
-              <option value="critical">{d.portfolio.sortCritical}</option>
-            </select>
-          </div>
-          <details class="filters__more">
-            <summary>{d.portfolio.moreFilters}</summary>
-            <div class="filters__more-body">
-              <div class="field">
-                <label for="f-lc">{d.portfolio.filterLifecycle}</label>
-                <select id="f-lc" name="lifecycle">
-                  <option value="">{d.portfolio.all}</option>
-                  {lifecycles.map((l) => (
-                    <option value={l}>{d.lifecycle[l]}</option>
-                  ))}
-                </select>
-              </div>
-              <div class="field">
-                <label for="f-sev">{d.portfolio.filterSeverity}</label>
-                <select id="f-sev" name="severity">
-                  <option value="">{d.portfolio.all}</option>
-                  <option value="critical">{d.portfolio.filterSeverityCritical}</option>
-                  <option value="high">{d.portfolio.filterSeverityHigh}</option>
-                </select>
-              </div>
+      <form class="portfolio__filters" data-portfolio-filters role="search">
+        <div class="field field--grow">
+          <label for="f-q">{d.portfolio.search}</label>
+          <input
+            id="f-q"
+            name="q"
+            type="search"
+            placeholder={d.portfolio.searchPlaceholder}
+            autocomplete="off"
+          />
+        </div>
+        <div class="field">
+          <label for="f-health">{d.portfolio.filterHealth}</label>
+          <select id="f-health" name="health">
+            <option value="">{d.portfolio.all}</option>
+            {(['red', 'amber', 'green', 'grey'] as const).map((s) => (
+              <option value={s}>{i18n.status(s)}</option>
+            ))}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-bu">{d.portfolio.filterBu}</label>
+          <select id="f-bu" name="bu">
+            <option value="">{d.portfolio.all}</option>
+            {units.map((u) => (
+              <option value={u}>{u}</option>
+            ))}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-sort">{d.portfolio.sort}</label>
+          <select id="f-sort" name="sort">
+            <option value="score" selected>
+              {d.portfolio.sortScore}
+            </option>
+            <option value="health">{d.portfolio.sortHealth}</option>
+            <option value="name">{d.portfolio.sortName}</option>
+            <option value="updated">{d.portfolio.sortUpdated}</option>
+            <option value="critical">{d.portfolio.sortCritical}</option>
+          </select>
+        </div>
+        <details class="portfolio__more">
+          <summary>{d.portfolio.moreFilters}</summary>
+          <div class="portfolio__more-body">
+            <div class="field">
+              <label for="f-lc">{d.portfolio.filterLifecycle}</label>
+              <select id="f-lc" name="lifecycle">
+                <option value="">{d.portfolio.all}</option>
+                {lifecycles.map((l) => (
+                  <option value={l}>{d.lifecycle[l]}</option>
+                ))}
+              </select>
             </div>
-          </details>
-        </form>
-        <p class="results" aria-live="polite" data-results data-template={d.portfolio.results}>
+            <div class="field">
+              <label for="f-sev">{d.portfolio.filterSeverity}</label>
+              <select id="f-sev" name="severity">
+                <option value="">{d.portfolio.all}</option>
+                <option value="critical">{d.portfolio.filterSeverityCritical}</option>
+                <option value="high">{d.portfolio.filterSeverityHigh}</option>
+              </select>
+            </div>
+          </div>
+        </details>
+        <p
+          class="portfolio__results"
+          aria-live="polite"
+          data-results
+          data-template={d.portfolio.results}
+        >
           {i18n.f(d.portfolio.results, { shown: projects.length, total: projects.length })}
+        </p>
+      </form>
+
+      <div class="plist">
+        <table class="plist__table" data-portfolio-table>
+          <caption class="visually-hidden">
+            {d.portfolio.tableCaption}. {d.portfolio.scoreHelp}
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" class="plist__c-dot">
+                <span class="visually-hidden">{d.portfolio.statusColumn}</span>
+              </th>
+              <th scope="col">{d.portfolio.colProject}</th>
+              <th scope="col" class="plist__c-score" title={d.portfolio.scoreHelp}>
+                {d.portfolio.scoreColumn}
+              </th>
+              <th scope="col" class="plist__c-dims">
+                <span class="visually-hidden">{d.portfolio.dimensionsColumn}</span>
+                <DimensionBars variant="header" locale={locale} />
+              </th>
+              <th scope="col">{d.portfolio.reasonColumn}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((p) => {
+              const none = unmeasured(p);
+              const reason = mainReason(p);
+              return (
+                <tr
+                  data-project
+                  data-name={p.name.toLowerCase()}
+                  data-search={searchText(p)}
+                  data-health={p.overall}
+                  data-rank={healthRank(p.overall)}
+                  data-score={p.score.value ?? ''}
+                  data-bu={p.businessUnit}
+                  data-lifecycle={p.lifecycle}
+                  data-critical={p.openCounts.critical ?? -1}
+                  data-high={p.openCounts.high ?? -1}
+                  data-updated={p.collectedAt}
+                >
+                  <td class="plist__dot">
+                    <StatusDot
+                      status={p.overall}
+                      label={`${d.dimensions.overall}: ${i18n.status(p.overall)}`}
+                    />
+                  </td>
+                  <th scope="row" class="plist__name">
+                    <a class="plist__link" href={href(locale, `projects/${p.id}`)}>
+                      {p.name}
+                    </a>
+                    <span class="plist__bu">{p.businessUnit}</span>
+                  </th>
+                  <td class="plist__score">
+                    <ScoreBadge score={p.score} locale={locale} />
+                  </td>
+                  <td class="plist__dims">
+                    <DimensionBars
+                      dims={DIMS.map((k) => ({ dimension: k, status: statusOf(p, k) }))}
+                      locale={locale}
+                    />
+                  </td>
+                  <td class="plist__reason">
+                    <div class="plist__why">
+                      <span class="status-col">
+                        <StatusBadge
+                          status={p.overall}
+                          i18n={i18n}
+                          context={d.dimensions.overall}
+                          size="sm"
+                        />
+                      </span>
+                      {none && p.collectionErrorCount > 0 ? (
+                        <span>
+                          {d.portfolio.noData}{' '}
+                          <a
+                            href={`${href(locale, 'dataQuality')}#${p.id}`}
+                            title={d.portfolio.reviewErrors}
+                          >
+                            {i18n.f(d.common.errors, { count: p.collectionErrorCount })}
+                          </a>
+                        </span>
+                      ) : (
+                        <span>
+                          {reason ?? d.common.unknown}
+                          {p.collectionErrorCount > 0 && (
+                            <>
+                              {' · '}
+                              <a
+                                href={`${href(locale, 'dataQuality')}#${p.id}`}
+                                title={d.portfolio.reviewErrors}
+                              >
+                                {i18n.f(d.common.errors, { count: p.collectionErrorCount })}
+                              </a>
+                            </>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <p class="plist__empty" hidden data-empty>
+          {d.portfolio.noResults}
         </p>
       </div>
 
-      <div class="sheet-layout">
-        <section class="sheet" aria-labelledby="sheet-title">
-          <h2 id="sheet-title" class="sheet__bar sheet-head">
-            {d.portfolio.sheetTitle}
-          </h2>
-          <div class="sheet__scroll">
-            <table class="table table--portfolio table--sheet" data-portfolio-table>
-              <caption class="visually-hidden">{d.portfolio.tableCaption}</caption>
-              <colgroup>
-                <col class="sheet__col-project" />
-                <col class="sheet__col-overall" />
-                {DIMS.slice(1).map(() => (
-                  <col />
-                ))}
-              </colgroup>
-              <thead>
-                <tr class="sheet__refs" aria-hidden="true">
-                  <td />
-                  {DIMS.map((x) => (
-                    <td>{x.ref}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <th scope="col">{d.portfolio.colProject}</th>
-                  {DIMS.map((x) => (
-                    <th scope="col" class={x.key === 'overall' ? 'sheet__overall' : undefined}>
-                      {d.dimensions[x.key]}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((p, i) => {
-                  const s = snapshots.get(p.id);
-                  const row = i + 1;
-                  const why = cause(p);
-                  return (
-                    <tr
-                      data-project
-                      data-name={p.name.toLowerCase()}
-                      data-health={p.overall}
-                      data-rank={healthRank(p.overall)}
-                      data-bu={p.businessUnit}
-                      data-lifecycle={p.lifecycle}
-                      data-critical={p.openCounts.critical ?? -1}
-                      data-high={p.openCounts.high ?? -1}
-                      data-updated={p.collectedAt}
-                      class={`sheet__row sheet__row--${p.overall}`}
-                    >
-                      <th scope="row" data-label={d.portfolio.colProject}>
-                        <span class="sheet__rowref" aria-hidden="true">
-                          {row}
-                        </span>
-                        <a class="project-link" href={href(locale, `projects/${p.id}`)}>
-                          {p.name}
-                        </a>
-                        <span class="sub">
-                          {p.businessUnit} · {d.lifecycle[p.lifecycle]}
-                        </span>
-                        <span class="sub">
-                          <RelTime iso={p.collectedAt} i18n={i18n} staleHours={staleHours} />
-                        </span>
-                        {p.collectionErrorCount > 0 && (
-                          <a href={`${href(locale, 'dataQuality')}#${p.id}`} class="errors-link">
-                            {i18n.f(d.common.errors, { count: p.collectionErrorCount })}
-                          </a>
-                        )}
-                      </th>
-                      {unsurveyed(p) ? (
-                        <>
-                          <td
-                            class="sheet__cell sheet__cell--void sheet__overall"
-                            id={`cell-${p.id}-overall`}
-                            data-label={d.dimensions.overall}
-                          >
-                            <span class="sheet__plate">
-                              <span class="sheet__cellhead">
-                                <StatusBadge
-                                  status="grey"
-                                  i18n={i18n}
-                                  context={d.dimensions.overall}
-                                />
-                                <span class="sheet__cellref" aria-hidden="true">
-                                  A{row}
-                                </span>
-                              </span>
-                              <span class="sheet__reason">{d.portfolio.notSurveyed}</span>
-                            </span>
-                          </td>
-                          <td class="sheet__band" colspan={DIMS.length - 1}>
-                            <div class="sheet__band-label">
-                              <strong>{d.portfolio.notSurveyed}</strong>
-                              <span>{why ?? d.portfolio.notSurveyedBody}</span>
-                              <span class="sheet__counts">
-                                {d.portfolio.openAlertsUnknown}:{' '}
-                                <span class="nowrap">
-                                  <Count
-                                    value={p.openCounts.critical}
-                                    partial={!p.countsComplete}
-                                    i18n={i18n}
-                                  />{' '}
-                                  {d.portfolio.colCritical.toLowerCase()}
-                                </span>{' '}
-                                ·{' '}
-                                <span class="nowrap">
-                                  <Count
-                                    value={p.openCounts.high}
-                                    partial={!p.countsComplete}
-                                    i18n={i18n}
-                                  />{' '}
-                                  {d.portfolio.colHigh.toLowerCase()}
-                                </span>
-                              </span>
-                              <a href={`${href(locale, 'dataQuality')}#${p.id}`}>
-                                {d.portfolio.reviewErrors}
-                              </a>
-                            </div>
-                          </td>
-                        </>
-                      ) : (
-                        DIMS.map((x) => {
-                          const st = statusOf(p, x.key);
-                          const h = health(s, x.key);
-                          const r = h ? topReason(st, h.reasons) : undefined;
-                          return (
-                            <td
-                              class:list={[
-                                'sheet__cell',
-                                `sheet__cell--${st}`,
-                                x.key === 'overall' && 'sheet__overall',
-                              ]}
-                              id={`cell-${p.id}-${x.key}`}
-                              data-label={d.dimensions[x.key]}
-                            >
-                              <span class="sheet__cellhead">
-                                <StatusBadge
-                                  status={st}
-                                  i18n={i18n}
-                                  context={d.dimensions[x.key]}
-                                  size={x.key === 'overall' ? 'md' : 'sm'}
-                                />
-                                <span class="sheet__cellref" aria-hidden="true">
-                                  {x.ref}
-                                  {row}
-                                </span>
-                              </span>
-                              {x.key === 'coverage' && (
-                                <span class="sheet__metric">
-                                  {p.coverage.percentage === null
-                                    ? d.common.unknown
-                                    : `${p.coverage.percentage}%`}{' '}
-                                  ·{' '}
-                                  <span
-                                    title={i18n.f(d.securityPage.requiredCount, {
-                                      available: p.coverage.available,
-                                      required: p.coverage.required,
-                                    })}
-                                  >
-                                    {p.coverage.available}/{p.coverage.required}
-                                  </span>
-                                </span>
-                              )}
-                              {x.key === 'security' && (
-                                <span class="sheet__metric">
-                                  <span class="nowrap">
-                                    <Count
-                                      value={p.openCounts.critical}
-                                      partial={!p.countsComplete}
-                                      i18n={i18n}
-                                      emphasis="red"
-                                    />{' '}
-                                    {d.portfolio.colCritical.toLowerCase()}
-                                  </span>{' '}
-                                  ·{' '}
-                                  <span class="nowrap">
-                                    <Count
-                                      value={p.openCounts.high}
-                                      partial={!p.countsComplete}
-                                      i18n={i18n}
-                                      emphasis="amber"
-                                    />{' '}
-                                    {d.portfolio.colHigh.toLowerCase()}
-                                  </span>
-                                </span>
-                              )}
-                              {r && <span class="sheet__reason">{i18n.reason(r)}</span>}
-                              {x.key === 'security' &&
-                                p.secretScanning !== 'enabled' &&
-                                p.secretScanning !== 'stale' && (
-                                  <Pill
-                                    tone={controlTone(p.secretScanning)}
-                                    label={
-                                      blind(p)
-                                        ? d.portfolio.secretsBlind
-                                        : `${d.control.secretScanning} — ${d.controlState[p.secretScanning]}`
-                                    }
-                                    title={`${d.control.secretScanning} — ${d.controlState[p.secretScanning]}`}
-                                  />
-                                )}
-                            </td>
-                          );
-                        })
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <p class="sheet__bar sheet__foot">
-            <span>{i18n.f(d.portfolio.gridKey, { count: projects.length })}</span>
-            <span>
-              {surveyedAt && i18n.f(d.portfolio.surveyedAt, { date: surveyedAt })}
-              {index?.run.dataSource === 'mock' && ` · ${d.portfolio.synthetic}`}
-            </span>
-          </p>
-          <p class="empty" hidden data-empty>
-            {d.portfolio.noResults}
-          </p>
-        </section>
+      <Legend i18n={i18n} />
 
-        <div class="sheet-margin">
-          <section class="sheet-notes" aria-labelledby="notes-title">
-            <h2 id="notes-title" class="sheet-head">
-              {d.portfolio.notesTitle}
-            </h2>
-            {notes.length === 0 ? (
-              <p class="sub">{d.portfolio.noNotes}</p>
-            ) : (
-              <ol class="sheet-notes__list">
-                {notes.map((n) => (
-                  <li class={`sheet-note sheet-note--${n.status}`}>
-                    <a class="sheet-note__ref" href={`#cell-${n.p.id}-${n.cell}`}>
-                      {n.ref}
-                    </a>
-                    <span>
-                      <a href={href(locale, `projects/${n.p.id}`)}>{n.p.name}</a>
-                      <span class="sub">{n.text ?? d.portfolio.openProject}</span>
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </section>
-          <Legend i18n={i18n} />
-        </div>
-      </div>
-    </>
+      <p class="portfolio__foot">
+        {collectedAt && <span>{i18n.f(d.portfolio.collectedAt, { date: collectedAt })}</span>}
+        {index?.run.dataSource === 'mock' && <span>{d.portfolio.synthetic}</span>}
+      </p>
+    </div>
   )}
 </Base>
 
 <script>
   import '../../scripts/portfolio-filters';
 </script>
+
+<style>
+  .portfolio {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+  .portfolio__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+  .portfolio__head h1 {
+    margin: 0;
+  }
+  .portfolio__lead {
+    margin: 6px 0 0;
+    font-size: 1.0625rem;
+    line-height: 24px;
+    font-weight: 600;
+  }
+
+  /* Status counts: shortcuts for the status filter; pressing the active one clears it. */
+  .counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .count-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+  }
+  .count-btn:hover {
+    border-color: var(--border-strong);
+  }
+  .count-btn[aria-pressed='true'] {
+    border-color: var(--text);
+    background: var(--surface-2);
+    box-shadow: inset 0 0 0 1px var(--text);
+  }
+  .count-btn__value {
+    font-size: 1rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .count-btn__dot {
+    flex: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .count-btn__dot--red {
+    background: var(--red);
+  }
+  .count-btn__dot--amber {
+    background: var(--amber);
+  }
+  .count-btn__dot--green {
+    background: var(--green);
+  }
+  .count-btn__dot--grey {
+    border: 1.5px dashed var(--unknown);
+  }
+
+  /* Filters: one inline row; lifecycle and severity under "More filters". */
+  .portfolio__filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-3);
+  }
+  .portfolio__more {
+    align-self: flex-end;
+    font-size: var(--fs-sm);
+  }
+  .portfolio__more summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text);
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .portfolio__more[open] {
+    flex-basis: 100%;
+  }
+  .portfolio__more-body {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+  }
+  .portfolio__results {
+    margin: 0 0 0 auto;
+    align-self: center;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+  }
+
+  /* The list: one row per project, worst first. */
+  .plist {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow-x: auto;
+  }
+  .plist__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+  .plist__table thead th {
+    padding: 10px var(--space-4);
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: left;
+    white-space: nowrap;
+  }
+  .plist__table td,
+  .plist__table tbody th {
+    padding: 14px var(--space-4);
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: middle;
+  }
+  .plist__table tbody tr:last-child > * {
+    border-bottom: 0;
+  }
+  .plist__table tbody tr:hover {
+    background: var(--surface-2);
+  }
+  .plist__c-dot {
+    width: 44px;
+  }
+  .plist__c-score {
+    width: 150px;
+  }
+  .plist__c-dims {
+    width: 212px;
+  }
+  .plist__name {
+    min-width: 180px;
+    font-weight: 400;
+  }
+  .plist__link {
+    display: inline-block;
+    font-size: 0.9375rem;
+    font-weight: 600;
+  }
+  .plist__bu {
+    display: block;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+  }
+  /* Pill in a fixed-width column so every reason sentence starts at the same x. */
+  .plist__why {
+    display: grid;
+    grid-template-columns: var(--status-col) minmax(0, 1fr);
+    align-items: center;
+    column-gap: var(--space-3);
+    min-width: 280px;
+  }
+  .plist__empty {
+    margin: 0;
+    padding: var(--space-4);
+    color: var(--text-muted);
+  }
+
+  .portfolio__foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    margin: 0;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border);
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+  }
+
+  /*
+   * Phone and narrow tablet: each row wraps — status, name and score on line one, the
+   * dimension bars then the reason below. No horizontal page scroll.
+   */
+  @media (max-width: 760px) {
+    .plist {
+      overflow-x: visible;
+    }
+    .plist__table,
+    .plist__table tbody {
+      display: block;
+    }
+    .plist__table thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+    .plist__table tbody tr {
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr) auto;
+      grid-template-areas:
+        'dot name score'
+        'dims dims dims'
+        'reason reason reason';
+      align-items: center;
+      gap: var(--space-2) var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--border);
+    }
+    .plist__table tbody tr:last-child {
+      border-bottom: 0;
+    }
+    .plist__table tbody tr[hidden] {
+      display: none;
+    }
+    .plist__table td,
+    .plist__table tbody th {
+      padding: 0;
+      border: 0;
+    }
+    .plist__dot {
+      grid-area: dot;
+    }
+    .plist__name {
+      grid-area: name;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .plist__score {
+      grid-area: score;
+    }
+    .plist__score :global(.score) {
+      align-items: flex-end;
+      text-align: right;
+    }
+    .plist__dims {
+      grid-area: dims;
+    }
+    .plist__reason {
+      grid-area: reason;
+      min-width: 0;
+    }
+    .plist__why {
+      min-width: 0;
+    }
+    .portfolio__results {
+      margin-left: 0;
+      flex-basis: 100%;
+    }
+  }
+</style>
