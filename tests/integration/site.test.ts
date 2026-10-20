@@ -297,6 +297,70 @@ describe('static site', () => {
     });
   });
 
+  it('shows only critical workflows that need attention, worst project first', async () => {
+    const html = await page('workflows');
+    const card = (id: string) => {
+      const start = html.indexOf(`data-project="${id}"`);
+      expect(start, id).toBeGreaterThan(-1);
+      return html.slice(html.lastIndexOf('<article', start), html.indexOf('</article>', start));
+    };
+    // Summary sentence and read-only note.
+    expect(html).toContain('1 critical workflow failed · 1 missing · 1 stale · 1 not visible');
+    expect(html).toContain('The portal reads runs; it never triggers them.');
+    // The v0.4.0 per-component matrix is gone.
+    expect(html).not.toContain('table--matrix');
+    // Worst first: Beta (red), Gamma (unknown), then the healthy ones by score.
+    const order = ['project-beta', 'project-gamma', 'project-alpha', 'platform'].map((id) =>
+      html.indexOf(`data-project="${id}"`),
+    );
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+
+    const beta = card('project-beta');
+    const rows = beta.match(/<li class="wf-row[^"]*"[^>]*>[\s\S]*?<\/li>/g) ?? [];
+    expect(rows).toHaveLength(3);
+    const [failed, missing, stale] = rows as [string, string, string];
+    for (const row of rows)
+      expect(row).toMatch(/class="status-col[^"]*"[^>]*>\s*<span class="pill/);
+    expect(failed).toContain('data-issue="failed"');
+    expect(failed).toContain('ci-main.yml');
+    expect(failed).toContain('example-org/project-beta-api');
+    expect(failed).toContain(
+      'href="https://github.com/example-org/project-beta-api/actions/runs/9012"',
+    );
+    expect(missing).toContain('data-issue="missing"');
+    expect(missing).toContain('rel-release.yml');
+    expect(missing).toContain('example-org/project-beta-web');
+    expect(stale).toContain('data-issue="stale"');
+    expect(stale).toContain('cd.yml');
+    expect(stale).toContain('example-org/project-beta-helm');
+    expect(stale).toContain('20 days before this collection');
+    expect(beta).toMatch(/<details[^>]*>\s*<summary[^>]*>[^<]*3 critical workflows succeeded/);
+    expect(beta).toContain('6 critical workflows · 3 to check');
+
+    for (const [id, n] of [
+      ['project-alpha', 8],
+      ['platform', 2],
+    ] as const) {
+      const c = card(id);
+      expect(c).toContain(`${n} critical workflows, all succeeded`);
+      expect(c).not.toContain('wf-row');
+      expect(c).toContain(`/projects/${id}/#workflows`);
+    }
+
+    const gamma = card('project-gamma');
+    expect(gamma).toContain('wf-card--unknown');
+    expect(gamma).toContain('data-issue="not-visible"');
+    expect(gamma).toContain('Not visible');
+    expect(gamma).toContain('Not authorised (403)');
+
+    const it = await page('it/workflows');
+    expect(it).toContain('Il portale legge le run, non le avvia mai.');
+    expect(it).toContain(
+      '1 workflow critico fallito · 1 mancante · 1 non aggiornato · 1 non visibile',
+    );
+    expect(it).toContain('Non visibile');
+  });
+
   it('distinguishes alerts from coverage on the security view and withholds private details', async () => {
     const html = await page('security');
     expect(html).toContain('Coverage by repository and control');
