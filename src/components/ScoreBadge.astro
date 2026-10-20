@@ -1,0 +1,73 @@
+---
+/**
+ * Project score (0–100) with its confidence ("measured 4 of 5"), always visible as text so it
+ * is readable without hover. Without enough measured dimensions there is no number: an em
+ * dash and "insufficient data", never 0.
+ */
+import type { ProjectScore } from '@model/index';
+import { useI18n, type Locale } from '../i18n';
+interface Props {
+  score: ProjectScore;
+  locale: Locale;
+  /** `row`: portfolio list cell. `header`: project page header, larger, with "/ 100". */
+  size?: 'row' | 'header';
+}
+const { score, locale, size = 'row' } = Astro.props;
+const { d, f } = useI18n(locale);
+const measured = f(d.score.measured, { m: score.measured, r: score.required });
+const hasValue = score.value !== null;
+---
+
+<div class={`score score--${size}`}>
+  <div class="score__line">
+    <span class="visually-hidden">{d.score.label}: </span>
+    {hasValue ? (
+      <span class="score__value">{score.value}</span>
+    ) : (
+      <span class="score__value score__value--none" aria-hidden="true">
+        —
+      </span>
+    )}
+    {hasValue && size === 'header' && <span class="score__out">{` ${d.score.outOf}`}</span>}
+  </div>
+  <div class="score__conf">{hasValue ? measured : `${d.score.insufficient} · ${measured}`}</div>
+</div>
+
+<style>
+  .score {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .score__value {
+    font-weight: 700;
+    color: var(--text);
+  }
+  .score__value--none {
+    color: var(--text-muted);
+  }
+  .score__out,
+  .score__conf {
+    color: var(--text-muted);
+  }
+  .score--row .score__value {
+    font-size: 1.125rem;
+    line-height: 24px;
+  }
+  .score--row .score__conf {
+    font-size: 0.75rem;
+    line-height: 16px;
+  }
+  .score--header {
+    align-items: flex-end;
+    text-align: right;
+  }
+  .score--header .score__value {
+    font-size: 1.75rem;
+    line-height: 34px;
+  }
+  .score--header .score__conf {
+    font-size: 0.8125rem;
+  }
+</style>

@@ -1,0 +1,94 @@
+---
+/**
+ * The five health dimensions as 32×10 bars (4px gap). Each bar has an accessible name
+ * ("Security risk: Critical"); unknown is a dashed outline, never a fill. Bars are a compact
+ * summary: the row's pill and reason carry the status as text.
+ *
+ * `variant="header"` renders the short dimension labels aligned with the bars, for a table
+ * header ("labels once in the header"), each with its full name.
+ */
+import { DimensionSchema, type Dimension, type HealthStatus } from '@model/index';
+import { useI18n, type Locale } from '../i18n';
+interface Props {
+  dims?: { dimension: Dimension; status: HealthStatus }[];
+  locale: Locale;
+  variant?: 'bars' | 'header';
+}
+const { dims = [], locale, variant = 'bars' } = Astro.props;
+const i18n = useI18n(locale);
+const { d } = i18n;
+---
+
+{variant === 'header' ? (
+  <span class="dimbars dimbars--header">
+    {DimensionSchema.options.map((dim) => (
+      <abbr class="dimbars__label" title={i18n.dimension(dim)}>
+        <span aria-hidden="true">{d.dimensionBars.short[dim]}</span>
+        <span class="visually-hidden">{i18n.dimension(dim)}</span>
+      </abbr>
+    ))}
+  </span>
+) : (
+  <span class="dimbars" role="group" aria-label={d.dimensionBars.label}>
+    {dims.map(({ dimension, status }) => {
+      const label = `${i18n.dimension(dimension)}: ${i18n.status(status)}`;
+      return (
+        <span
+          class={`dimbars__bar dimbars__bar--${status}`}
+          role="img"
+          aria-label={label}
+          title={label}
+          data-dimension={dimension}
+          data-status={status}
+        />
+      );
+    })}
+  </span>
+)}
+
+<style>
+  .dimbars {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    vertical-align: middle;
+  }
+  .dimbars__bar {
+    display: block;
+    flex: none;
+    width: 32px;
+    height: 10px;
+    border-radius: var(--radius-sm);
+  }
+  .dimbars__bar--red {
+    background: var(--red);
+  }
+  .dimbars__bar--amber {
+    background: var(--amber);
+  }
+  .dimbars__bar--green {
+    background: var(--green);
+  }
+  .dimbars__bar--grey {
+    background: transparent;
+    border: 1.5px dashed var(--unknown);
+  }
+  .dimbars__label {
+    width: 32px;
+    flex: none;
+    text-align: center;
+    text-decoration: none;
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: help;
+  }
+  @media (forced-colors: active) {
+    .dimbars__bar {
+      border: 1.5px solid CanvasText;
+    }
+    .dimbars__bar--grey {
+      border-style: dashed;
+    }
+  }
+</style>

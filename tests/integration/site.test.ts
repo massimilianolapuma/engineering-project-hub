@@ -44,7 +44,8 @@ const VIEWS = [
 describe('static site', () => {
   it.each(VIEWS.flatMap((v) => [v, `it/${v}`.replace(/\/$/, '')]))('renders /%s', async (v) => {
     const html = await page(v);
-    expect(html).toContain('class="legend"');
+    // Every page links to "How to read" from the header (the per-page legend strip is gone).
+    expect(html).toMatch(/<a class="utility-link"[^>]*href="[^"]*how-to-read\/"/);
     expect(html).toMatch(/<main id="main"/);
     expect(html).not.toMatch(/>(undefined|NaN|null|\[object Object\])</);
   });

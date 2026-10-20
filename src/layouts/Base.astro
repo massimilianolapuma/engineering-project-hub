@@ -3,7 +3,7 @@ import type { PortfolioIndex } from '@model/index';
 import Legend from '../components/Legend.astro';
 import RelTime from '../components/RelTime.astro';
 import { LOCALES, type I18n, type Locale } from '../i18n';
-import { href, type PageKey } from '../lib/routes';
+import { NAV, href, type PageKey } from '../lib/routes';
 import '../styles/tokens.css';
 import '../styles/global.css';
 
@@ -14,12 +14,14 @@ interface Props {
   /** Path of this page in every locale, for the language switcher and hreflang. */
   alternates: Record<Locale, string>;
   index: PortfolioIndex | null;
-  /** The legend strip under the header; the portfolio draws its legend in the sheet margin. */
-  legend?: boolean;
+  /**
+   * Optional one-line legend appended at the end of the main content. Off by default: each
+   * page places its own `<Legend>` under its list (the full explanation is "How to read").
+   */
+  legend?: 'status' | 'symbols' | false;
 }
-const { i18n, title, page, alternates, index, legend = true } = Astro.props;
+const { i18n, title, page, alternates, index, legend = false } = Astro.props;
 const { d, locale } = i18n;
-const nav: PageKey[] = ['portfolio', 'workflows', 'versions', 'security', 'dataQuality', 'catalog'];
 const run = index?.run;
 const staleHours = run?.policy.snapshotStaleHours ?? 24;
 ---
@@ -67,7 +69,7 @@ const staleHours = run?.policy.snapshotStaleHours ?? 24;
         </a>
         <nav class="mainnav" aria-label={d.nav.main}>
           <ul>
-            {nav.map((k) => (
+            {NAV.map((k) => (
               <li>
                 <a href={href(locale, k)} aria-current={page === k ? 'page' : undefined}>
                   {d.nav[k]}
@@ -77,6 +79,13 @@ const staleHours = run?.policy.snapshotStaleHours ?? 24;
           </ul>
         </nav>
         <div class="topbar__tools">
+          <a
+            class="utility-link"
+            href={href(locale, 'howToRead')}
+            aria-current={page === 'howToRead' ? 'page' : undefined}
+          >
+            {d.nav.howToRead}
+          </a>
           <button
             type="button"
             class="theme-toggle"
@@ -131,11 +140,11 @@ const staleHours = run?.policy.snapshotStaleHours ?? 24;
           {i18n.f(d.common.staleBanner, { hours: staleHours })}
         </div>
       )}
-      {legend && <Legend i18n={i18n} />}
     </header>
     <div class="layout">
       <main id="main" tabindex="-1">
         <slot />
+        {legend && <Legend i18n={i18n} kind={legend} />}
       </main>
     </div>
     <footer class="footer">
@@ -149,3 +158,24 @@ const staleHours = run?.policy.snapshotStaleHours ?? 24;
     </script>
   </body>
 </html>
+
+<style>
+  /* Main nav takes the free space; utilities (How to read, theme, language) sit at the end. */
+  .mainnav {
+    flex: 1 1 auto;
+  }
+  .utility-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-md);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+  }
+  .utility-link[aria-current='page'] {
+    color: var(--text);
+    background: var(--surface-2);
+    text-decoration: none;
+  }
+</style>
