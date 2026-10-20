@@ -4,7 +4,8 @@ test('portfolio lists projects with separate health dimensions and a legend', as
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1, name: 'Portfolio' })).toBeVisible();
   await expect(page.locator('tr[data-project]')).toHaveCount(4);
-  await expect(page.getByRole('heading', { name: 'Legend' })).toBeVisible();
+  await expect(page.getByRole('complementary', { name: 'Legend' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'How to read' })).toBeVisible();
 });
 
 test('filters are keyboard accessible and narrow the list', async ({ page }) => {
@@ -36,7 +37,7 @@ test('status counts filter the sheet and unsurveyed projects are hatched, not ze
 
 test('navigates the main views in both languages', async ({ page }) => {
   await page.goto('/');
-  for (const name of ['Workflows', 'Versions', 'Security', 'Data quality']) {
+  for (const name of ['Security', 'Versions', 'Workflows', 'Data quality']) {
     await page
       .getByRole('navigation', { name: 'Main navigation' })
       .getByRole('link', { name })
