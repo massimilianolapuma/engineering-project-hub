@@ -70,6 +70,101 @@ describe('versions view model', () => {
       behind: 2,
       mismatch: 1,
       unknown: 1,
+      otherCheck: 0,
+    });
+  });
+
+  it('counts projects to check that no other headline count covers', () => {
+    // Alpha without its environment behind: only drift and an untagged pin are left.
+    const quiet = {
+      ...alpha,
+      environments: alpha.environments.map((e) => ({ ...e, status: 'aligned' as const })),
+    };
+    expect(versionsLead([beta, quiet])).toEqual({
+      behind: 1,
+      mismatch: 1,
+      unknown: 0,
+      otherCheck: 1,
+    });
+  });
+
+  it('never counts a component whose latest release is unknown as aligned', () => {
+    const [first, ...rest] = platform.components;
+    const noRelease = { ...first!, latestRelease: null, drift: 'unknown' as const };
+    expect(componentIssues(noRelease).map((i) => i.kind)).toEqual(['latestUnknown']);
+    const card = versionCard({ ...platform, components: [noRelease, ...rest] });
+    expect(card.aligned.map((c) => c.name)).not.toContain(noRelease.name);
+    expect(card.kind).not.toBe('aligned');
+    expect(card.rows).toHaveLength(1);
+  });
+
+  it('lists an unresolvable mapped submodule with the level its reason carries', () => {
+    const web = beta.components.find((c) => c.name === 'Web console')!;
+    const broken = {
+      ...web.submodule!,
+      sha: null,
+      status: 'unresolvable' as const,
+    };
+    const unknownPin = {
+      status: 'unknown' as const,
+      tag: null,
+      version: null,
+      comparedTo: null,
+      aheadBy: null,
+      behindBy: null,
+    };
+    const s: ProjectSnapshot = {
+      ...beta,
+      versionHealth: {
+        status: 'red',
+        reasons: [
+          ...beta.versionHealth.reasons,
+          {
+            code: 'submodule-unresolvable',
+            level: 'red',
+            params: { path: broken.path, component: web.id },
+          },
+        ],
+      },
+      coordinator: {
+        ...beta.coordinator,
+        submodules: beta.coordinator.submodules.map((x) => (x.path === broken.path ? broken : x)),
+      },
+      components: beta.components.map((c) =>
+        c.id === web.id ? { ...c, submodule: broken, pin: unknownPin } : c,
+      ),
+    };
+    const card = versionCard(s);
+    expect(card.kind).toBe('check');
+    const row = card.rows.find((r) => r.kind === 'component' && r.component.id === web.id);
+    // The unresolved submodule replaces the 'pin not verified' line it would cause.
+    expect(row?.kind === 'component' && row.issues).toEqual([
+      { kind: 'submodule', status: 'unresolvable', path: broken.path, level: 'red' },
+    ]);
+    expect(card.rows.some((r) => r.kind === 'unmapped')).toBe(true);
+    expect(card.aligned.map((c) => c.id)).not.toContain(web.id);
+  });
+
+  it('lists an unresolved submodule that no component row carries', () => {
+    const orphan = {
+      path: 'libs/shared',
+      repository: 'example-org/shared',
+      sha: null,
+      componentId: 'shared',
+      association: 'configured-path' as const,
+      status: 'unknown' as const,
+    };
+    const s: ProjectSnapshot = {
+      ...beta,
+      coordinator: { ...beta.coordinator, submodules: [...beta.coordinator.submodules, orphan] },
+    };
+    const last = versionCard(s).rows.at(-1)!;
+    expect(last.kind).toBe('submodule');
+    expect(last.kind === 'submodule' && last.issue).toEqual({
+      kind: 'submodule',
+      status: 'unknown',
+      path: 'libs/shared',
+      level: 'grey',
     });
   });
 

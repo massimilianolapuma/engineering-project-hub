@@ -39,6 +39,10 @@ const leadParts = [
   counts.behind > 0 && plural(counts.behind, v.lead.behind),
   counts.mismatch > 0 && plural(counts.mismatch, v.lead.mismatch),
   counts.unknown > 0 && plural(counts.unknown, v.lead.unknown),
+  // Projects to check that neither count above covers (only drift, an untagged pin, ...).
+  counts.otherCheck > 0 &&
+    (counts.behind > 0 || counts.mismatch > 0 || counts.unknown > 0) &&
+    plural(counts.otherCheck, v.lead.otherCheck),
 ].filter((x): x is string => Boolean(x));
 const lead =
   projects.length === 0
@@ -65,7 +69,12 @@ function issuePill(issue: VersionIssue): { tone: Tone; label: string } {
         ? { tone: 'grey', label: v.issue.pinUnknown }
         : { tone: 'amber', label: v.issue.pin };
     case 'unknown':
+    case 'latestUnknown':
       return { tone: 'grey', label: v.issue.unknown };
+    case 'submodule':
+      return issue.status === 'unknown'
+        ? { tone: 'grey', label: v.issue.unknown }
+        : { tone: issue.level === 'info' ? 'amber' : issue.level, label: v.issue.unresolvable };
   }
 }
 function issueSentence(issue: VersionIssue): string {
@@ -85,6 +94,13 @@ function issueSentence(issue: VersionIssue): string {
           });
     case 'unknown':
       return v.unknownSentence;
+    case 'latestUnknown':
+      return f(v.latestUnknownSentence, { current: ver(issue.current) });
+    case 'submodule':
+      return f(
+        issue.status === 'unknown' ? v.submoduleUnknownSentence : v.submoduleUnresolvableSentence,
+        { path: issue.path },
+      );
   }
 }
 
@@ -317,7 +333,9 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
                                   </td>
                                   <td class="mono" data-label={v.colSubmodule}>
                                     {shortSha(row.submodule.sha) ?? (
-                                      <span class="muted">{v.present}</span>
+                                      <span class="muted">
+                                        {row.kind === 'unmapped' ? v.present : unknownText}
+                                      </span>
                                     )}
                                   </td>
                                   <td data-label={v.colLatest}>
@@ -328,15 +346,27 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
                                   </td>
                                   <td class="vcheck__what" data-label={v.colWhat}>
                                     <ul class="vissues">
-                                      <li class="vissue" data-issue="unmapped">
-                                        <span class="status-col">
-                                          <Pill tone="amber" label={v.issue.unmapped} />
-                                        </span>
-                                        <span>
-                                          {v.unmappedSentence}{' '}
-                                          <a href={href(locale, 'catalog')}>{v.addToCatalog}</a>
-                                        </span>
-                                      </li>
+                                      {row.kind === 'unmapped' ? (
+                                        <li class="vissue" data-issue="unmapped">
+                                          <span class="status-col">
+                                            <Pill tone="amber" label={v.issue.unmapped} />
+                                          </span>
+                                          <span>
+                                            {v.unmappedSentence}{' '}
+                                            <a href={href(locale, 'catalog')}>{v.addToCatalog}</a>
+                                          </span>
+                                        </li>
+                                      ) : (
+                                        <li class="vissue" data-issue={row.issue.kind}>
+                                          <span class="status-col">
+                                            <Pill
+                                              tone={issuePill(row.issue).tone}
+                                              label={issuePill(row.issue).label}
+                                            />
+                                          </span>
+                                          <span>{issueSentence(row.issue)}</span>
+                                        </li>
+                                      )}
                                     </ul>
                                   </td>
                                 </tr>

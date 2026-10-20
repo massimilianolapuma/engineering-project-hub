@@ -407,6 +407,10 @@ export const en = {
         one: '1 project has something to check',
         other: '{n} projects have something to check',
       },
+      otherCheck: {
+        one: '1 more project has something to check',
+        other: '{n} more projects have something to check',
+      },
       none: 'All versions are aligned',
       empty: 'No projects to show yet',
     },
@@ -425,12 +429,19 @@ export const en = {
       pinUnknown: 'Not verified',
       unknown: 'Unknown',
       unmapped: 'Unmapped',
+      unresolvable: 'Unresolved',
     },
     mismatchSentence: 'The manifest declares {declared} but the coordinator still pins {pinned}.',
     driftSentence: 'In use: {current}; the latest release is {latest}.',
     pinSentence: 'The coordinator pins an untagged commit ({sha}): +{ahead} / −{behind} vs {base}.',
     pinUnknownSentence: 'We could not verify which release the pinned commit ({sha}) belongs to.',
     unknownSentence: 'The current version could not be read.',
+    latestUnknownSentence:
+      'In use: {current}; the latest release could not be read, so it is not known whether it is up to date.',
+    submoduleUnresolvableSentence:
+      'The coordinator cannot resolve the submodule {path}, so the version it pins is unknown.',
+    submoduleUnknownSentence:
+      'The submodule {path} could not be read, so the version it pins is unknown.',
     unmappedSentence: 'It is in .gitmodules but not in the catalog.',
     addToCatalog: 'Add it to the catalog',
     submoduleKind: 'submodule',

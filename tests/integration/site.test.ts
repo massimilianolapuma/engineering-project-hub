@@ -159,6 +159,7 @@ describe('static site', () => {
       expect(html).toContain('Da verificare');
       expect(html).toContain('2 componenti allineati');
       expect(html).toContain('Discorde');
+      expect(html).toContain('Non ultima');
       expect(html).toContain('Non censito');
     });
   });
