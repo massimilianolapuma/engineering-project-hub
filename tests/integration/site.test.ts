@@ -1,9 +1,14 @@
+import { readFileSync } from 'node:fs';
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { build } from 'astro';
+import { parse } from 'yaml';
+import { PoliciesSchema } from '@model/index';
 import { scan } from '../../scripts/scan-output';
+import { en } from '../../src/i18n/en';
+import { it as itDict } from '../../src/i18n/it';
 
 /*
  * Builds the real Astro site from the golden mock snapshots (no backend, no network) and
@@ -18,6 +23,14 @@ async function buildSite(dataDir: string, outDir: string) {
   await build({ root: process.cwd(), outDir, logLevel: 'error', vite: { logLevel: 'error' } });
 }
 const page = (p: string) => readFile(join(dist, p, 'index.html'), 'utf8');
+/** Text as Astro escapes it in HTML. */
+const esc = (s: string) =>
+  s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
 beforeAll(async () => {
   work = await mkdtemp(join(tmpdir(), 'eph-site-'));
@@ -36,6 +49,7 @@ const VIEWS = [
   'security',
   'data-quality',
   'catalog',
+  'how-to-read',
   'projects/project-alpha',
   'projects/project-beta',
   'projects/project-gamma',
@@ -135,6 +149,63 @@ describe('static site', () => {
       expect(findings).toEqual([]);
     },
   );
+
+  it.each([
+    ['how-to-read', en],
+    ['it/how-to-read', itDict],
+  ] as const)('explains states, symbols, unknowns, score and thresholds on /%s', async (v, d) => {
+    const html = await page(v);
+    const policies = PoliciesSchema.parse(parse(readFileSync('config/policies.yaml', 'utf8')));
+    const h = d.howToRead;
+    expect(html).toMatch(new RegExp(`<h1[^>]*>${esc(h.title)}</h1>`));
+    // Four states, each a dot with its label (text + shape, never colour alone).
+    for (const s of ['red', 'amber', 'green', 'grey'] as const) {
+      expect(html).toMatch(new RegExp(`data-state-row="${s}"[\\s\\S]*?class="dot dot--${s}"`));
+      expect(html).toContain(esc(d.status[s]));
+    }
+    // Six control symbols with their meanings.
+    for (const key of ['ok', 'gap', 'stale', 'failed', 'blind', 'na'] as const) {
+      expect(html).toMatch(new RegExp(`data-symbol="${key}"[\\s\\S]*?class="sym sym--`));
+      expect(html).toContain(esc(d.symbols[key]));
+      expect(html).toContain(esc(h.symbolsHelp[key]));
+    }
+    // Unknown, not authorised, not configured and not applicable are four different things.
+    for (const t of ['unknown', 'not-authorised', 'not-configured', 'not-applicable'] as const) {
+      expect(html).toContain(`data-term="${t}"`);
+      expect(html).toContain(esc(d.controlState[t]));
+    }
+    // Score formula: weights, points, caps and minimum measured ratio from the policies.
+    const { weights, points, caps, minMeasuredRatio } = policies.score;
+    expect(weights).toEqual({
+      delivery: 25,
+      version: 15,
+      security: 30,
+      coverage: 15,
+      governance: 15,
+    });
+    expect(caps).toEqual({ red: 49, amber: 89, grey: 89 });
+    expect(minMeasuredRatio).toBe(0.5);
+    const cell = (attr: string, value: number | string) =>
+      expect(html).toMatch(new RegExp(`${attr}[^>]*>\\s*${value}\\s*<`));
+    for (const [dim, w] of Object.entries(weights)) cell(`data-weight="${dim}"`, w);
+    for (const [st, p] of Object.entries(points)) cell(`data-points="${st}"`, p);
+    for (const [st, c] of Object.entries(caps)) cell(`data-cap="${st}"`, c);
+    cell('data-min-measured', `${minMeasuredRatio * 100}%`);
+    // Thresholds summarised from policies.yaml.
+    const fr = policies.freshness;
+    cell('data-threshold="snapshotStaleHours"', fr.snapshotStaleHours);
+    cell('data-threshold="workflowRunStaleDays"', fr.workflowRunStaleDays);
+    cell('data-threshold="securityScanStaleDays"', fr.securityScanStaleDays);
+    cell('data-threshold="securityStatusFileStaleDays"', fr.securityStatusFileStaleDays);
+    cell('data-threshold="queuedThresholdMinutes"', policies.delivery.queuedThresholdMinutes);
+    cell('data-threshold="greenThresholdPercent"', `${policies.coverage.greenThresholdPercent}%`);
+    // Link to the configuration docs in the page language.
+    expect(html).toContain(
+      v.startsWith('it') ? 'docs/it/configuration.md' : 'docs/configuration.md',
+    );
+    const { findings } = await scan([join(dist, v)]);
+    expect(findings).toEqual([]);
+  });
 
   it('fails in a controlled way on an unsupported snapshot schemaVersion', async () => {
     const data = join(work, 'bad-data');

@@ -1,0 +1,523 @@
+---
+/*
+ * "How to read": the full explanation behind the one-line legends of every page. States,
+ * control symbols, the four kinds of "we do not know", the score formula and the thresholds.
+ * Every number comes from the parsed policies (loadSitePolicies), never from this file.
+ */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import type { ControlState, Dimension, HealthStatus, Severity } from '@model/index';
+import ControlSymbol from '../../components/ControlSymbol.astro';
+import ExtLink from '../../components/ExtLink.astro';
+import StatusDot from '../../components/StatusDot.astro';
+import Base from '../../layouts/Base.astro';
+import { githubRepoFromUrl } from '../../lib/catalog-editor-core';
+import { pageContext } from '../../lib/page';
+import { loadSitePolicies } from '../../lib/policies';
+import { localeParams } from '../../lib/routes';
+
+export const getStaticPaths = localeParams;
+const { locale } = Astro.props;
+const { i18n, index, alternates } = pageContext(locale, 'howToRead');
+const { d, f } = i18n;
+const h = d.howToRead;
+const { policies, source } = loadSitePolicies();
+const { score, freshness } = policies;
+
+const STATES: HealthStatus[] = ['red', 'amber', 'green', 'grey'];
+const DIMENSIONS: Dimension[] = ['delivery', 'version', 'security', 'coverage', 'governance'];
+const required = new Set<Dimension>(policies.overall.requiredDimensions);
+
+/** The six symbols, each shown through a control state that produces it. */
+const SYMBOLS: { key: keyof typeof h.symbolsHelp; state: ControlState; required: boolean }[] = [
+  { key: 'ok', state: 'enabled', required: true },
+  { key: 'gap', state: 'not-configured', required: true },
+  { key: 'stale', state: 'stale', required: true },
+  { key: 'failed', state: 'failed', required: true },
+  { key: 'blind', state: 'unknown', required: true },
+  { key: 'na', state: 'not-applicable', required: false },
+];
+const TERMS: { key: keyof typeof h.terms; required: boolean }[] = [
+  { key: 'unknown', required: true },
+  { key: 'not-authorised', required: true },
+  { key: 'not-configured', required: true },
+  { key: 'not-applicable', required: false },
+];
+
+const list = (items: string[]) => (items.length ? items.join(', ') : h.none);
+const severities = (s: Severity[]) => list(s.map((v) => d.severity[v]));
+const percent = (n: number) => `${Math.round(n * 100)}%`;
+
+const criticalDims = f(h.criticalDimensions, {
+  dimensions: list(policies.overall.criticalDimensions.map((x) => i18n.dimension(x))),
+});
+const reqCount = policies.overall.requiredDimensions.length;
+const confidence = f(h.confidence, {
+  example: f(d.score.measured, { m: Math.max(reqCount - 1, 0), r: reqCount }),
+});
+
+/** Snapshot staleness: the value the collector published (the banner uses it), else policy. */
+const staleHours = index?.run.policy.snapshotStaleHours ?? freshness.snapshotStaleHours;
+const thresholds: {
+  key: keyof typeof h.thresholds;
+  value: string | number;
+  unit?: string;
+  numeric: boolean;
+}[] = [
+  { key: 'snapshotStaleHours', value: staleHours, unit: h.units.hours, numeric: true },
+  {
+    key: 'workflowRunStaleDays',
+    value: freshness.workflowRunStaleDays,
+    unit: h.units.days,
+    numeric: true,
+  },
+  {
+    key: 'securityScanStaleDays',
+    value: freshness.securityScanStaleDays,
+    unit: h.units.days,
+    numeric: true,
+  },
+  {
+    key: 'securityStatusFileStaleDays',
+    value: freshness.securityStatusFileStaleDays,
+    unit: h.units.days,
+    numeric: true,
+  },
+  {
+    key: 'queuedThresholdMinutes',
+    value: policies.delivery.queuedThresholdMinutes,
+    unit: h.units.minutes,
+    numeric: true,
+  },
+  {
+    key: 'greenThresholdPercent',
+    value: `${policies.coverage.greenThresholdPercent}%`,
+    numeric: true,
+  },
+  {
+    key: 'redOnSeverities',
+    value: severities(policies.security.redOnSeverities),
+    numeric: false,
+  },
+  {
+    key: 'amberOnSeverities',
+    value: severities(policies.security.amberOnSeverities),
+    numeric: false,
+  },
+];
+
+/* Configuration reference in the page language, in the hub's own public repository. */
+function docsUrl(): string | null {
+  let url: string | undefined;
+  try {
+    const pkg = JSON.parse(readFileSync(resolve('package.json'), 'utf8')) as {
+      repository?: string | { url?: string };
+    };
+    url = typeof pkg.repository === 'string' ? pkg.repository : pkg.repository?.url;
+  } catch {
+    url = undefined;
+  }
+  const repo = githubRepoFromUrl(url);
+  if (!repo) return null;
+  const path =
+    locale === 'it'
+      ? 'docs/it/configuration.md#configpoliciesyaml-policy-di-salute'
+      : 'docs/configuration.md#configpoliciesyaml-health-policies';
+  return `https://github.com/${repo}/blob/main/${path}`;
+}
+const docs = docsUrl();
+
+const SECTIONS = [
+  ['states', h.statesTitle],
+  ['symbols', h.symbolsTitle],
+  ['unknowns', h.termsTitle],
+  ['score', h.scoreTitle],
+  ['thresholds', h.thresholdsTitle],
+] as const;
+---
+
+<Base i18n={i18n} title={h.title} page="howToRead" alternates={alternates} index={index}>
+  <header class="page-head htr-head">
+    <h1>{h.title}</h1>
+    <p class="htr-hero">{h.hero}</p>
+    <p class="lead">{h.intro}</p>
+    {source === 'defaults' && <p class="note">{h.defaultsNote}</p>}
+  </header>
+
+  <nav class="htr-toc" aria-label={h.onThisPage}>
+    <ul>
+      {SECTIONS.map(([id, label]) => (
+        <li>
+          <a href={`#${id}`}>{label}</a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+
+  <section class="card htr-section" id="states" aria-labelledby="states-title">
+    <h2 id="states-title">{h.statesTitle}</h2>
+    <p class="muted">{h.statesIntro}</p>
+    <ul class="htr-rows">
+      {STATES.map((s) => (
+        <li class="htr-row" data-state-row={s}>
+          <span class="htr-key">
+            <span aria-hidden="true" class="htr-dot">
+              <StatusDot status={s} label={i18n.status(s)} />
+            </span>
+            <strong>{i18n.status(s)}</strong>
+          </span>
+          <span>{h.states[s]}</span>
+        </li>
+      ))}
+    </ul>
+    <p class="htr-rule">{criticalDims}</p>
+    <p class="htr-rule">{h.greyRequired[policies.overall.greyRequiredDimension]}</p>
+  </section>
+
+  <section class="card htr-section" id="symbols" aria-labelledby="symbols-title">
+    <h2 id="symbols-title">{h.symbolsTitle}</h2>
+    <p class="muted">{h.symbolsIntro}</p>
+    <ul class="htr-rows">
+      {SYMBOLS.map((s) => (
+        <li class="htr-row" data-symbol={s.key}>
+          <span class="htr-key">
+            <span aria-hidden="true">
+              <ControlSymbol state={s.state} required={s.required} locale={locale} />
+            </span>
+            <strong>{d.symbols[s.key]}</strong>
+          </span>
+          <span>{h.symbolsHelp[s.key]}</span>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="card htr-section" id="unknowns" aria-labelledby="unknowns-title">
+    <h2 id="unknowns-title">{h.termsTitle}</h2>
+    <p class="muted">{h.termsIntro}</p>
+    <dl class="htr-terms">
+      {TERMS.map((t) => (
+        <div class="htr-term" data-term={t.key}>
+          <dt class="htr-key">
+            <span aria-hidden="true">
+              <ControlSymbol state={t.key} required={t.required} locale={locale} />
+            </span>
+            <strong>{d.controlState[t.key]}</strong>
+          </dt>
+          <dd>
+            <p>{h.terms[t.key]}</p>
+            <p class="muted">{h.termEffects[t.key]}</p>
+          </dd>
+        </div>
+      ))}
+    </dl>
+  </section>
+
+  <section class="card htr-section" id="score" aria-labelledby="score-title">
+    <h2 id="score-title">{h.scoreTitle}</h2>
+    <p class="muted">{h.scoreIntro}</p>
+    <p class="htr-formula">
+      <code>{h.formula}</code>
+    </p>
+    <p class="note">{h.formulaNote}</p>
+
+    <h3>{h.weightsTitle}</h3>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{h.colDimension}</th>
+            <th scope="col">{h.colChecks}</th>
+            <th scope="col" class="num">
+              {h.colWeight}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {DIMENSIONS.map((dim) => (
+            <tr>
+              <th scope="row">{i18n.dimension(dim)}</th>
+              <td data-label={h.colChecks}>
+                <span>
+                  {h.checks[dim]}
+                  {!required.has(dim) && <span class="note htr-block">{h.notRequired}</span>}
+                </span>
+              </td>
+              <td data-label={h.colWeight} class="num tabular" data-weight={dim}>
+                {score.weights[dim]}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="htr-pair">
+      <div>
+        <h3>{h.pointsTitle}</h3>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">{h.colState}</th>
+                <th scope="col" class="num">
+                  {h.colPoints}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {(['green', 'amber', 'red'] as const).map((s) => (
+                <tr>
+                  <th scope="row">
+                    <span class="htr-key htr-key--inline">
+                      <span aria-hidden="true" class="htr-dot">
+                        <StatusDot status={s} label={i18n.status(s)} />
+                      </span>
+                      {i18n.status(s)}
+                    </span>
+                  </th>
+                  <td data-label={h.colPoints} class="num tabular" data-points={s}>
+                    {score.points[s]}
+                  </td>
+                </tr>
+              ))}
+              <tr>
+                <th scope="row">
+                  <span class="htr-key htr-key--inline">
+                    <span aria-hidden="true" class="htr-dot">
+                      <StatusDot status="grey" label={i18n.status('grey')} />
+                    </span>
+                    {i18n.status('grey')}
+                  </span>
+                </th>
+                <td data-label={h.colPoints} class="num">
+                  <span class="muted">{h.notMeasured}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <h3>{h.capsTitle}</h3>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">{h.colState}</th>
+                <th scope="col" class="num">
+                  {h.colCap}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {(['red', 'amber', 'grey'] as const).map((s) => (
+                <tr>
+                  <th scope="row">
+                    <span class="htr-key htr-key--inline">
+                      <span aria-hidden="true" class="htr-dot">
+                        <StatusDot status={s} label={i18n.status(s)} />
+                      </span>
+                      {i18n.status(s)}
+                    </span>
+                  </th>
+                  <td data-label={h.colCap} class="num tabular" data-cap={s}>
+                    {score.caps[s]}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p class="note">{h.capsNote}</p>
+      </div>
+    </div>
+
+    <h3>{h.confidenceTitle}</h3>
+    <p>{confidence}</p>
+    <p class="htr-measure">
+      <span>{h.minMeasured}</span>
+      <strong class="tabular" data-min-measured>
+        {percent(score.minMeasuredRatio)}
+      </strong>
+    </p>
+    <p>{f(h.insufficient, { label: d.score.insufficient })}</p>
+  </section>
+
+  <section class="card htr-section" id="thresholds" aria-labelledby="thresholds-title">
+    <h2 id="thresholds-title">{h.thresholdsTitle}</h2>
+    <p class="muted">{h.thresholdsIntro}</p>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{h.colRule}</th>
+            <th scope="col">{h.colValue}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {thresholds.map((t) => (
+            <tr>
+              <th scope="row">{h.thresholds[t.key]}</th>
+              <td data-label={h.colValue}>
+                <span>
+                  <strong class:list={[{ tabular: t.numeric }]} data-threshold={t.key}>
+                    {t.value}
+                  </strong>
+                  {t.unit && ` ${t.unit}`}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="htr-docs" aria-labelledby="docs-title">
+    <h2 id="docs-title">{h.docsTitle}</h2>
+    <p>
+      {h.docsText} {docs && <ExtLink href={docs} i18n={i18n} label={h.docsLink} />}
+    </p>
+  </section>
+</Base>
+
+<style>
+  .htr-hero {
+    margin: 6px 0 0;
+    font-size: 1.0625rem;
+    line-height: 24px;
+    font-weight: 600;
+    max-width: 70ch;
+  }
+  .htr-head .lead {
+    margin: var(--space-1) 0 0;
+  }
+  .htr-toc ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-2);
+    margin: 0 0 var(--space-5);
+    padding: 0;
+    list-style: none;
+  }
+  .htr-toc a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    font-size: var(--fs-sm);
+    text-decoration: none;
+  }
+  .htr-toc a:hover {
+    border-color: var(--border-strong);
+  }
+  .htr-section {
+    scroll-margin-top: var(--space-4);
+  }
+  .htr-section > p {
+    max-width: 75ch;
+  }
+  .htr-section h3 {
+    margin: var(--space-5) 0 var(--space-2);
+    font-size: var(--fs-md);
+  }
+  /* Key (symbol or dot + label) in a fixed-width column, so every explanation starts at the same x. */
+  .htr-rows {
+    margin: var(--space-3) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .htr-row,
+  .htr-term {
+    display: grid;
+    grid-template-columns: minmax(var(--status-col), 14rem) minmax(0, 1fr);
+    gap: var(--space-1) var(--space-4);
+    align-items: start;
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+  }
+  .htr-row:first-child,
+  .htr-term:first-child {
+    border-top: 0;
+  }
+  .htr-key {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 24px;
+  }
+  .htr-key--inline {
+    font-weight: 600;
+  }
+  .htr-dot {
+    display: inline-flex;
+    justify-content: center;
+    width: 24px;
+  }
+  .htr-rule {
+    margin: var(--space-3) 0 0;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--border);
+  }
+  .htr-terms {
+    margin: var(--space-3) 0 0;
+  }
+  .htr-term dd {
+    margin: 0;
+  }
+  .htr-term dd p {
+    margin: 0;
+  }
+  .htr-term dd p + p {
+    margin-top: var(--space-1);
+  }
+  .htr-formula {
+    margin: var(--space-4) 0 var(--space-1);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-2);
+    overflow-x: auto;
+  }
+  .htr-formula code {
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    white-space: pre-wrap;
+  }
+  .htr-block {
+    display: block;
+  }
+  .htr-pair {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+    gap: 0 var(--space-5);
+  }
+  .htr-measure {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-3);
+    padding: var(--space-2) 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .htr-measure strong {
+    font-size: var(--fs-lg);
+  }
+  .htr-docs {
+    margin-top: var(--space-5);
+  }
+  .htr-docs h2 {
+    font-size: var(--fs-md);
+  }
+  @media (max-width: 720px) {
+    .htr-row,
+    .htr-term {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

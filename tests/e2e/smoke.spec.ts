@@ -47,6 +47,11 @@ test('navigates the main views in both languages', async ({ page }) => {
   await page.getByRole('link', { name: /^IT/ }).click();
   await expect(page.locator('html')).toHaveAttribute('lang', 'it');
   await expect(page.getByRole('heading', { level: 1, name: 'Qualità dati' })).toBeVisible();
+  // "How to read" is a header utility link, outside the main navigation.
+  await page.getByRole('banner').getByRole('link', { name: 'Come leggere', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Come leggere' })).toBeVisible();
+  await page.getByRole('link', { name: /^EN/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'How to read' })).toBeVisible();
 });
 
 test('project detail shows blocking component and coverage', async ({ page }) => {

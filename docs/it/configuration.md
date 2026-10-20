@@ -416,12 +416,13 @@ corrisponde.
 
 ## Variabili d'ambiente
 
-| Variabile                                                   | Dove                             | Scopo                                                      |
-| ----------------------------------------------------------- | -------------------------------- | ---------------------------------------------------------- |
-| `DATA_SOURCE`                                               | variabile di repository / env    | `mock` (predefinito) o `github`                            |
-| `GH_APP_ID`, `GH_APP_PRIVATE_KEY`, `GH_APP_INSTALLATION_ID` | Actions secrets                  | Autenticazione tramite GitHub App (consigliata)            |
-| `GH_READ_TOKEN`                                             | Actions secret                   | PAT fine-grained di fallback                               |
-| `GITHUB_TOKEN`                                              | automatico                       | Ultimo fallback (solo repository corrente)                 |
-| `GITHUB_API_URL`                                            | automatico / env                 | URL base dell'API (GitHub Enterprise Server)               |
-| `SITE_URL`, `BASE_PATH`                                     | impostate dal workflow di deploy | `site` e `base` di Astro (da configure-pages)              |
-| `SNAPSHOT_DIR`                                              | locale / test                    | Directory alternativa degli snapshot per la build del sito |
+| Variabile                                                   | Dove                             | Scopo                                                                                                                            |
+| ----------------------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `DATA_SOURCE`                                               | variabile di repository / env    | `mock` (predefinito) o `github`                                                                                                  |
+| `GH_APP_ID`, `GH_APP_PRIVATE_KEY`, `GH_APP_INSTALLATION_ID` | Actions secrets                  | Autenticazione tramite GitHub App (consigliata)                                                                                  |
+| `GH_READ_TOKEN`                                             | Actions secret                   | PAT fine-grained di fallback                                                                                                     |
+| `GITHUB_TOKEN`                                              | automatico                       | Ultimo fallback (solo repository corrente)                                                                                       |
+| `GITHUB_API_URL`                                            | automatico / env                 | URL base dell'API (GitHub Enterprise Server)                                                                                     |
+| `SITE_URL`, `BASE_PATH`                                     | impostate dal workflow di deploy | `site` e `base` di Astro (da configure-pages)                                                                                    |
+| `SNAPSHOT_DIR`                                              | locale / test                    | Directory alternativa degli snapshot per la build del sito                                                                       |
+| `POLICIES_FILE`                                             | build del sito                   | Policy spiegate nella pagina "Come leggere" (predefinito `config/policies.yaml`; valori predefiniti dello schema se illeggibile) |
