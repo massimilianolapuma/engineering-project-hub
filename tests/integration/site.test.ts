@@ -90,6 +90,72 @@ describe('static site', () => {
     expect(html).toContain('Details withheld');
   });
 
+  describe('versions page', () => {
+    const card = (html: string, id: string) => {
+      const start = html.indexOf(`data-project="${id}"`);
+      expect(start, id).toBeGreaterThan(-1);
+      return html.slice(start, html.indexOf('</article>', start));
+    };
+
+    it('leads with one sentence and orders projects worst first', async () => {
+      const html = await page('versions');
+      expect(html).toContain(
+        '2 projects have an environment behind · 1 declared version does not match · 1 project we cannot read',
+      );
+      const order = [...html.matchAll(/<article[^>]*data-project="([^"]+)"/g)].map((m) => m[1]);
+      expect(order).toEqual(['project-beta', 'project-alpha', 'project-gamma', 'platform']);
+      // The old full component and submodule tables are gone.
+      expect(html).not.toContain('Manifest vs submodule');
+    });
+
+    it('shows Beta environments as a path with PROD behind and a "To check" table', async () => {
+      const beta = card(await page('versions'), 'project-beta');
+      expect(beta).toMatch(
+        /data-env="DEV"[^>]*data-env-status="aligned"[\s\S]*data-env="UAT"[\s\S]*data-env="PROD"[^>]*data-env-status="behind"/,
+      );
+      expect(beta).toContain('Coordinator');
+      expect(beta).toContain('from release manifest');
+      expect(beta).toContain('To check');
+      const table = beta.slice(beta.indexOf('<table'), beta.indexOf('</table>'));
+      expect(table).toContain('API service');
+      expect(table).toContain('Mismatch');
+      expect(table).toContain('The manifest declares 3.2.0 but the coordinator still pins 3.1.0.');
+      expect(table).toContain('tools/legacy-scripts');
+      expect(table).toContain('Unmapped');
+      expect(table).toMatch(/href="[^"]*\/catalog\/"/);
+      // Aligned components are collapsed, not listed among the problems.
+      expect(table).not.toContain('Web console');
+      const details = beta.slice(beta.indexOf('<details'), beta.indexOf('</details>'));
+      expect(details).toContain('2 aligned components');
+      expect(details).toContain('Web console');
+      expect(details).toContain('Helm deployment');
+    });
+
+    it('collapses Platform to a single line and shows Gamma as a dashed card with its cause', async () => {
+      const html = await page('versions');
+      const platform = card(html, 'platform');
+      expect(platform).toContain('data-card="aligned"');
+      expect(platform).not.toContain('<table');
+      expect(platform).not.toContain('<details');
+      expect(platform).toMatch(/DEV and PROD on[\s\S]*2026\.10\.1/);
+      expect(platform).toContain('3 aligned components');
+      const gamma = card(html, 'project-gamma');
+      expect(gamma).toContain('data-card="unknown"');
+      expect(gamma).toContain('Versions not readable');
+      expect(gamma).toContain('Not found (404)');
+      expect(gamma).toContain('Not authorised (401/403)');
+      expect(gamma).toMatch(/href="[^"]*\/data-quality\/"/);
+      expect(gamma).not.toContain('<table');
+    });
+
+    it('is in Italian on /it/versions', async () => {
+      const html = await page('it/versions');
+      expect(html).toContain('2 progetti hanno un ambiente indietro');
+      expect(html).toContain('Da verificare');
+      expect(html).toContain('2 componenti allineati');
+    });
+  });
+
   it('ships no inline script (CSP script-src self) and no secret patterns', async () => {
     const html = await page('');
     expect(html).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>/);
