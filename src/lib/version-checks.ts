@@ -32,15 +32,25 @@ export interface VersionCard {
   sameEnvVersion: string | null;
 }
 
+/** Version without a leading `v`, so `v3.2.0` and `3.2.0` compare equal. */
+const bare = (x: string | null | undefined) => x?.replace(/^v/i, '') ?? null;
+
 export function componentIssues(c: ComponentSnapshot): VersionIssue[] {
   const issues: VersionIssue[] = [];
-  if (c.manifestConsistency === 'mismatch')
+  const mismatch = c.manifestConsistency === 'mismatch';
+  if (mismatch)
     issues.push({
       kind: 'mismatch',
       declared: c.declaredVersion,
       pinned: c.pin?.version ?? c.effectiveVersion,
     });
-  if (c.drift === 'drift')
+  // Say one thing first: when the mismatch already shows the gap to the latest release
+  // (the manifest declares it, the coordinator still pins the older one), drift repeats it.
+  const driftRepeatsMismatch =
+    mismatch &&
+    c.declaredVersion !== null &&
+    bare(c.declaredVersion) === bare(c.latestRelease?.tag);
+  if (c.drift === 'drift' && !driftRepeatsMismatch)
     issues.push({
       kind: 'drift',
       current: c.effectiveVersion,
@@ -98,6 +108,7 @@ export function versionsLead(projects: ProjectSnapshot[]) {
  * (insufficient data ranks right after red, as on the portfolio), then name.
  */
 export function compareVersionCards(a: ProjectSnapshot, b: ProjectSnapshot): number {
+  // Same rule as scoreSortKey in src/lib/score.ts (Task 4); switch to it once that lands.
   const key = (s: ProjectSnapshot) => s.score.value ?? 49.5;
   return (
     healthRank(a.versionHealth.status) - healthRank(b.versionHealth.status) ||

@@ -408,6 +408,7 @@ export const en = {
         other: '{n} projects have something to check',
       },
       none: 'All versions are aligned',
+      empty: 'No projects to show yet',
     },
     coordinator: 'Coordinator',
     toCheck: 'To check',
@@ -420,7 +421,7 @@ export const en = {
     issue: {
       mismatch: 'Mismatch',
       drift: 'Not latest',
-      pin: 'Untagged commit',
+      pin: 'Untagged',
       pinUnknown: 'Not verified',
       unknown: 'Unknown',
       unmapped: 'Unmapped',

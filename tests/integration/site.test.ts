@@ -120,6 +120,11 @@ describe('static site', () => {
       expect(table).toContain('API service');
       expect(table).toContain('Mismatch');
       expect(table).toContain('The manifest declares 3.2.0 but the coordinator still pins 3.1.0.');
+      // The drift line would repeat the mismatch, so it is not shown.
+      expect(table).not.toContain('In use: 3.1.0');
+      // Stacked rows on phones keep their column labels.
+      for (const label of ['Manifest', 'Submodule', 'Latest release', 'What is happening'])
+        expect(table).toContain(`data-label="${label}"`);
       expect(table).toContain('tools/legacy-scripts');
       expect(table).toContain('Unmapped');
       expect(table).toMatch(/href="[^"]*\/catalog\/"/);
@@ -153,6 +158,8 @@ describe('static site', () => {
       expect(html).toContain('2 progetti hanno un ambiente indietro');
       expect(html).toContain('Da verificare');
       expect(html).toContain('2 componenti allineati');
+      expect(html).toContain('Discorde');
+      expect(html).toContain('Non censito');
     });
   });
 

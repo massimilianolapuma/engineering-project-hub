@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { ProjectSnapshotSchema, type ProjectSnapshot } from '@model/index';
 import {
   compareVersionCards,
+  componentIssues,
   plural,
   versionCard,
   versionsLead,
@@ -26,12 +27,18 @@ describe('versions view model', () => {
       card.rows.map((r) => (r.kind === 'component' ? r.component.name : r.submodule.path)),
     ).toEqual(['API service', 'tools/legacy-scripts']);
     const api = card.rows[0]!;
-    expect(api.kind === 'component' && api.issues.map((i) => i.kind)).toEqual([
-      'mismatch',
-      'drift',
-    ]);
+    // Drift would repeat the mismatch (manifest already declares the latest release).
+    expect(api.kind === 'component' && api.issues.map((i) => i.kind)).toEqual(['mismatch']);
     expect(card.rows[1]!.kind).toBe('unmapped');
     expect(card.aligned.map((c) => c.name)).toEqual(['Web console', 'Helm deployment']);
+  });
+
+  it('keeps drift next to a mismatch when the manifest does not declare the latest release', () => {
+    const api = beta.components.find((c) => c.name === 'API service')!;
+    expect(api.manifestConsistency).toBe('mismatch');
+    expect(api.drift).toBe('drift');
+    const newer = { ...api, latestRelease: { ...api.latestRelease!, tag: 'v3.3.0' } };
+    expect(componentIssues(newer).map((i) => i.kind)).toEqual(['mismatch', 'drift']);
   });
 
   it('flags an untagged pin and a component behind its latest release', () => {

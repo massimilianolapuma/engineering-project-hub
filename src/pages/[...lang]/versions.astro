@@ -41,11 +41,13 @@ const leadParts = [
   counts.unknown > 0 && plural(counts.unknown, v.lead.unknown),
 ].filter((x): x is string => Boolean(x));
 const lead =
-  leadParts.length > 0
-    ? leadParts.join(' · ')
-    : toCheck > 0
-      ? plural(toCheck, v.lead.check)
-      : v.lead.none;
+  projects.length === 0
+    ? v.lead.empty
+    : leadParts.length > 0
+      ? leadParts.join(' · ')
+      : toCheck > 0
+        ? plural(toCheck, v.lead.check)
+        : v.lead.none;
 
 const listFmt = new Intl.ListFormat(locale, { type: 'conjunction' });
 const unknownText = d.common.unknownValue;
@@ -71,15 +73,15 @@ function issueSentence(issue: VersionIssue): string {
     case 'mismatch':
       return f(v.mismatchSentence, { declared: ver(issue.declared), pinned: ver(issue.pinned) });
     case 'drift':
-      return f(v.driftSentence, { current: ver(issue.current), latest: issue.latest ?? '' });
+      return f(v.driftSentence, { current: ver(issue.current), latest: ver(issue.latest) });
     case 'pin':
       return issue.pin.status === 'unknown'
-        ? f(v.pinUnknownSentence, { sha: shortSha(issue.sha) ?? '' })
+        ? f(v.pinUnknownSentence, { sha: shortSha(issue.sha) ?? unknownText })
         : f(v.pinSentence, {
-            sha: shortSha(issue.sha) ?? '',
-            ahead: issue.pin.aheadBy ?? '',
-            behind: issue.pin.behindBy ?? '',
-            base: issue.pin.comparedTo ?? '',
+            sha: shortSha(issue.sha) ?? unknownText,
+            ahead: issue.pin.aheadBy ?? unknownText,
+            behind: issue.pin.behindBy ?? unknownText,
+            base: issue.pin.comparedTo ?? unknownText,
           });
     case 'unknown':
       return v.unknownSentence;
@@ -136,7 +138,7 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
               <Pill
                 tone={tone}
                 label={statusLabel(s)}
-                title={`${d.dimensions.version}: ${i18n.statusDesc(tone)}`}
+                title={`${d.dimensions.version} · ${i18n.statusDesc(tone)}`}
               />
               {card.kind === 'aligned' ? (
                 <span class="vcard__meta muted">
@@ -221,6 +223,13 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
                       ))}
                     </ol>
                   )}
+                  {card.rows.length === 0 && s.versionHealth.reasons.length > 0 && (
+                    <ul class="vcauses vcard__reasons">
+                      {s.versionHealth.reasons.map((r) => (
+                        <li>{i18n.reason(r)}</li>
+                      ))}
+                    </ul>
+                  )}
                   {card.rows.length > 0 && (
                     <section class="vcheck" aria-labelledby={`chk-${s.project.id}`}>
                       <h3 id={`chk-${s.project.id}`} class="vcheck__title">
@@ -247,12 +256,12 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
                                       {row.component.repository.name}
                                     </span>
                                   </th>
-                                  <td class="mono">
+                                  <td class="mono" data-label={v.colManifest}>
                                     {displayVersion(row.component.declaredVersion) ?? (
                                       <span class="muted">{unknownText}</span>
                                     )}
                                   </td>
-                                  <td class="mono">
+                                  <td class="mono" data-label={v.colSubmodule}>
                                     {row.component.submodule ? (
                                       (displayVersion(row.component.pin?.version) ??
                                       shortSha(row.component.submodule.sha) ?? (
@@ -267,7 +276,7 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
                                       </span>
                                     )}
                                   </td>
-                                  <td class="mono">
+                                  <td class="mono" data-label={v.colLatest}>
                                     {row.component.latestRelease ? (
                                       <ExtLink
                                         href={row.component.latestRelease.url}
@@ -278,7 +287,7 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
                                       <span class="muted">{unknownText}</span>
                                     )}
                                   </td>
-                                  <td>
+                                  <td class="vcheck__what" data-label={v.colWhat}>
                                     <ul class="vissues">
                                       {row.issues.map((issue) => {
                                         const p = issuePill(issue);
@@ -300,24 +309,24 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
                                     <span class="mono">{row.submodule.path}</span>
                                     <span class="sub vcheck__repo">{v.submoduleKind}</span>
                                   </th>
-                                  <td>
+                                  <td data-label={v.colManifest}>
                                     <span class="muted" title={d.common.notApplicable}>
                                       <span aria-hidden="true">–</span>
                                       <span class="visually-hidden">{d.common.notApplicable}</span>
                                     </span>
                                   </td>
-                                  <td class="mono">
+                                  <td class="mono" data-label={v.colSubmodule}>
                                     {shortSha(row.submodule.sha) ?? (
                                       <span class="muted">{v.present}</span>
                                     )}
                                   </td>
-                                  <td>
+                                  <td data-label={v.colLatest}>
                                     <span class="muted" title={d.common.notApplicable}>
                                       <span aria-hidden="true">–</span>
                                       <span class="visually-hidden">{d.common.notApplicable}</span>
                                     </span>
                                   </td>
-                                  <td>
+                                  <td class="vcheck__what" data-label={v.colWhat}>
                                     <ul class="vissues">
                                       <li class="vissue" data-issue="unmapped">
                                         <span class="status-col">
@@ -477,13 +486,19 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
     font-size: var(--fs-md);
     font-weight: 600;
   }
-  /* A bordered list inside the card; it scrolls in its own container on narrow screens. */
+  /* A bordered table inside the card. Above 720px it scrolls inside its own container when the
+     card is narrower than the table; below, the global rule stacks each row into a labelled card. */
   .vcheck__wrap {
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
   }
-  .vcheck__table {
-    min-width: 720px;
+  @media (min-width: 721px) {
+    .vcheck__table {
+      min-width: 720px;
+    }
+    .vcheck__table .vcheck__what {
+      min-width: 300px;
+    }
   }
   .vcheck__repo {
     display: block;
@@ -497,11 +512,16 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
     padding: 0;
     list-style: none;
   }
+  /* Pill in the fixed status column; the sentence wraps in its own column to the right. */
   .vissue {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: baseline;
-    gap: var(--space-1) var(--space-2);
+    gap: var(--space-2);
+  }
+  .vissue > span:last-child {
+    flex: 1 1 auto;
+    min-width: 0;
   }
   .valigned {
     border-top: 1px solid var(--border);
@@ -517,6 +537,24 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
   .valigned__list {
     margin: var(--space-1) 0 0;
     padding-left: 1.25rem;
+  }
+  @media (max-width: 720px) {
+    /* Each row is already its own bordered card: no outer frame. */
+    .vcheck__wrap {
+      border: 0;
+    }
+    /* The issues need the full row width: label above them instead of beside. */
+    /* Labels in the sans face, also beside monospace values. */
+    .vcheck__table td[data-label]::before {
+      font-family: var(--font-sans);
+    }
+    .vcheck__table td.vcheck__what {
+      display: block;
+    }
+    .vcheck__table td.vcheck__what::before {
+      display: block;
+      margin-bottom: var(--space-1);
+    }
   }
   @media (max-width: 640px) {
     .vcard__meta {
