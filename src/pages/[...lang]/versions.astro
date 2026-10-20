@@ -1,185 +1,595 @@
 ---
+/*
+ * Versions: one headline sentence, then one card per project, worst first. Each card shows the
+ * coordinator version, the environments as a DEV → … → PROD path and a "To check" table with
+ * only the problems, each explained in a sentence. Aligned components are collapsed; a fully
+ * aligned project is a single line; an unreadable project is a dashed card with its cause.
+ */
+import type { ProjectSnapshot } from '@model/index';
 import ErrorState from '../../components/ErrorState.astro';
 import ExtLink from '../../components/ExtLink.astro';
-import EffectiveVersion from '../../components/EffectiveVersion.astro';
+import Legend from '../../components/Legend.astro';
 import Pill from '../../components/Pill.astro';
-import PinCell from '../../components/PinCell.astro';
-import ReasonList from '../../components/ReasonList.astro';
-import StatusBadge from '../../components/StatusBadge.astro';
+import StatusDot from '../../components/StatusDot.astro';
 import Base from '../../layouts/Base.astro';
 import { displayVersion, shortSha } from '../../lib/format';
 import { pageContext } from '../../lib/page';
 import { href, localeParams } from '../../lib/routes';
-import { driftTone } from '../../lib/tones';
+import { driftTone, type Tone } from '../../lib/tones';
+import {
+  compareVersionCards,
+  plural,
+  versionCard,
+  versionsLead,
+  type VersionIssue,
+} from '../../lib/version-checks';
 
 export const getStaticPaths = localeParams;
 const { locale } = Astro.props;
 const { i18n, data, index, alternates } = pageContext(locale, 'versions');
-const { d } = i18n;
+const { d, f } = i18n;
+const v = d.versionsPage;
+
+const projects = data.ok ? [...data.data.projects].sort(compareVersionCards) : [];
+const cards = projects.map((s) => ({ s, card: versionCard(s) }));
+
+const counts = versionsLead(projects);
+const toCheck = cards.filter((c) => c.card.kind === 'check').length;
+const leadParts = [
+  counts.behind > 0 && plural(counts.behind, v.lead.behind),
+  counts.mismatch > 0 && plural(counts.mismatch, v.lead.mismatch),
+  counts.unknown > 0 && plural(counts.unknown, v.lead.unknown),
+  // Projects to check that neither count above covers (only drift, an untagged pin, ...).
+  counts.otherCheck > 0 &&
+    (counts.behind > 0 || counts.mismatch > 0 || counts.unknown > 0) &&
+    plural(counts.otherCheck, v.lead.otherCheck),
+].filter((x): x is string => Boolean(x));
+const lead =
+  projects.length === 0
+    ? v.lead.empty
+    : leadParts.length > 0
+      ? leadParts.join(' · ')
+      : toCheck > 0
+        ? plural(toCheck, v.lead.check)
+        : v.lead.none;
+
+const listFmt = new Intl.ListFormat(locale, { type: 'conjunction' });
+const unknownText = d.common.unknownValue;
+const ver = (x: string | null | undefined) => displayVersion(x) ?? unknownText;
+
+/** Pill tone and label of an issue; the sentence below explains it. */
+function issuePill(issue: VersionIssue): { tone: Tone; label: string } {
+  switch (issue.kind) {
+    case 'mismatch':
+      return { tone: 'amber', label: v.issue.mismatch };
+    case 'drift':
+      return { tone: 'amber', label: v.issue.drift };
+    case 'pin':
+      return issue.pin.status === 'unknown'
+        ? { tone: 'grey', label: v.issue.pinUnknown }
+        : { tone: 'amber', label: v.issue.pin };
+    case 'unknown':
+    case 'latestUnknown':
+      return { tone: 'grey', label: v.issue.unknown };
+    case 'submodule':
+      return issue.status === 'unknown'
+        ? { tone: 'grey', label: v.issue.unknown }
+        : { tone: issue.level === 'info' ? 'amber' : issue.level, label: v.issue.unresolvable };
+  }
+}
+function issueSentence(issue: VersionIssue): string {
+  switch (issue.kind) {
+    case 'mismatch':
+      return f(v.mismatchSentence, { declared: ver(issue.declared), pinned: ver(issue.pinned) });
+    case 'drift':
+      return f(v.driftSentence, { current: ver(issue.current), latest: ver(issue.latest) });
+    case 'pin':
+      return issue.pin.status === 'unknown'
+        ? f(v.pinUnknownSentence, { sha: shortSha(issue.sha) ?? unknownText })
+        : f(v.pinSentence, {
+            sha: shortSha(issue.sha) ?? unknownText,
+            ahead: issue.pin.aheadBy ?? unknownText,
+            behind: issue.pin.behindBy ?? unknownText,
+            base: issue.pin.comparedTo ?? unknownText,
+          });
+    case 'unknown':
+      return v.unknownSentence;
+    case 'latestUnknown':
+      return f(v.latestUnknownSentence, { current: ver(issue.current) });
+    case 'submodule':
+      return f(
+        issue.status === 'unknown' ? v.submoduleUnknownSentence : v.submoduleUnresolvableSentence,
+        { path: issue.path },
+      );
+  }
+}
+
+const VERSION_SOURCES = new Set([
+  'repository',
+  'branch',
+  'release',
+  'tag',
+  'manifest',
+  'gitmodules',
+  'submodule',
+]);
+/** Why the versions of an unreadable project are unknown: its version-related collection errors. */
+function causes(s: ProjectSnapshot) {
+  const name = (id: string | null | undefined) =>
+    id === 'coordinator'
+      ? v.coordinator
+      : (s.components.find((c) => c.id === id)?.name ?? id ?? d.common.repository);
+  return s.collectionErrors
+    .filter((e) => VERSION_SOURCES.has(e.source))
+    .map((e) => ({
+      who: name(e.componentId),
+      repository: e.repository,
+      cause: d.errorClass[e.classification],
+    }));
+}
+const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
 ---
 
-<Base
-  i18n={i18n}
-  title={d.versionsPage.title}
-  page="versions"
-  alternates={alternates}
-  index={index}
->
+<Base i18n={i18n} title={v.title} page="versions" alternates={alternates} index={index}>
   {!data.ok && <ErrorState error={data.error} i18n={i18n} />}
   {data.ok && (
     <>
       <header class="page-head">
-        <h1>{d.versionsPage.title}</h1>
-        <p class="lead">{d.versionsPage.intro}</p>
+        <h1>{v.title}</h1>
+        <p class="vlead">{lead}</p>
       </header>
-      {data.data.projects.map((s) => (
-        <section class="card" id={s.project.id} aria-labelledby={`v-${s.project.id}`}>
-          <h2 id={`v-${s.project.id}`}>
-            <a href={href(locale, `projects/${s.project.id}`)}>{s.project.name}</a>{' '}
-            <StatusBadge
-              status={s.versionHealth.status}
-              i18n={i18n}
-              context={d.dimensions.version}
-              size="sm"
-              labelled
-            />
-          </h2>
-          <p>
-            {d.project.coordinatorVersion}:{' '}
-            <strong>{displayVersion(s.coordinator.version) ?? d.common.unknown}</strong>{' '}
-            <span class="sub">
-              {i18n.f(d.project.versionFrom, {
-                source: d.versionSource[s.coordinator.versionSource],
-              })}
-            </span>
-          </p>
-          <div class="table-wrap">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th scope="col">{d.common.component}</th>
-                  <th scope="col">{d.versionsPage.effective}</th>
-                  <th scope="col">{d.project.declared}</th>
-                  <th scope="col">{d.versionsPage.pinned}</th>
-                  <th scope="col">{d.project.latestRelease}</th>
-                  <th scope="col">{d.versionsPage.manifestVsSubmodule}</th>
-                  <th scope="col">{d.project.drift}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {s.components.map((c) => (
-                  <tr>
-                    <th scope="row" data-label={d.common.component}>
-                      {c.name}
-                    </th>
-                    <td data-label={d.versionsPage.effective}>
-                      <EffectiveVersion c={c} i18n={i18n} />
-                    </td>
-                    <td data-label={d.project.declared}>
-                      {displayVersion(c.declaredVersion) ?? (
-                        <span class="muted">{d.common.unknown}</span>
-                      )}
-                    </td>
-                    <td data-label={d.versionsPage.pinned}>
-                      <PinCell c={c} i18n={i18n} />
-                    </td>
-                    <td data-label={d.project.latestRelease}>
-                      {c.latestRelease ? (
-                        <ExtLink
-                          href={c.latestRelease.url}
-                          i18n={i18n}
-                          label={c.latestRelease.tag}
-                        />
-                      ) : (
-                        <span class="muted">{d.common.unknown}</span>
-                      )}
-                      {c.latestRelease?.prerelease && <span class="tag">pre-release</span>}
-                    </td>
-                    <td data-label={d.versionsPage.manifestVsSubmodule}>
-                      <Pill
-                        tone={
-                          c.manifestConsistency === 'consistent'
-                            ? 'green'
-                            : c.manifestConsistency === 'mismatch'
-                              ? 'amber'
-                              : 'grey'
-                        }
-                        label={d.consistency[c.manifestConsistency]}
-                      />
-                    </td>
-                    <td data-label={d.project.drift}>
-                      <Pill tone={driftTone(c.drift)} label={d.drift[c.drift]} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <h3>{d.project.environments}</h3>
-          <ol class="envs">
-            {s.environments.map((e) => (
-              <li class={`env env--${e.status}`}>
-                <span class="env__name">{e.name}</span>
-                <span class="env__version">{displayVersion(e.version) ?? d.common.unknown}</span>
-                <Pill tone={driftTone(e.status)} label={d.envStatus[e.status]} />
-              </li>
-            ))}
-          </ol>
-          {s.coordinator.submodules.length > 0 && (
-            <>
-              <h3>{d.versionsPage.submodules}</h3>
-              <div class="table-wrap">
-                <table class="table">
-                  <thead>
-                    <tr>
-                      <th scope="col">{d.versionsPage.path}</th>
-                      <th scope="col">{d.common.repository}</th>
-                      <th scope="col">SHA</th>
-                      <th scope="col">{d.versionsPage.association}</th>
-                      <th scope="col">{d.common.status}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {s.coordinator.submodules.map((m) => (
-                      <tr>
-                        <th scope="row" data-label={d.versionsPage.path}>
-                          <code>{m.path}</code>
-                        </th>
-                        <td data-label={d.common.repository}>
-                          {m.repository ? <code>{m.repository}</code> : d.common.unknownValue}
-                        </td>
-                        <td data-label="SHA">
-                          {m.sha ? <code>{shortSha(m.sha)}</code> : d.common.unknownValue}
-                        </td>
-                        <td data-label={d.versionsPage.association}>
-                          <Pill
-                            tone={m.association === 'unmapped' ? 'amber' : 'green'}
-                            label={d.association[m.association]}
-                          />
-                        </td>
-                        <td data-label={d.common.status}>
-                          <Pill
-                            tone={
-                              m.status === 'resolved'
-                                ? 'green'
-                                : m.status === 'unresolvable'
-                                  ? 'red'
-                                  : 'grey'
-                            }
-                            label={d.submoduleStatus[m.status]}
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-          <h3>{d.versionsPage.consistency}</h3>
-          <ReasonList reasons={s.versionHealth.reasons} i18n={i18n} />
-        </section>
-      ))}
+
+      <div class="vcards">
+        {cards.map(({ s, card }) => {
+          const tone = s.versionHealth.status;
+          const projectHref = href(locale, `projects/${s.project.id}`);
+          const head = (
+            <div class="vcard__head">
+              <span aria-hidden="true" class="vcard__dot">
+                <StatusDot status={tone} label={statusLabel(s)} />
+              </span>
+              <h2 class="vcard__title" id={`v-${s.project.id}`}>
+                <a href={projectHref}>{s.project.name}</a>
+              </h2>
+              <Pill
+                tone={tone}
+                label={statusLabel(s)}
+                title={`${d.dimensions.version} · ${i18n.statusDesc(tone)}`}
+              />
+              {card.kind === 'aligned' ? (
+                <span class="vcard__meta muted">
+                  {card.sameEnvVersion ? (
+                    <>
+                      {f(v.envsOn, {
+                        envs: listFmt.format(s.environments.map((e) => e.name)),
+                      })}{' '}
+                      <span class="mono">{displayVersion(card.sameEnvVersion)}</span> ·{' '}
+                    </>
+                  ) : (
+                    <>
+                      {v.coordinator} <span class="mono">{ver(s.coordinator.version)}</span> ·{' '}
+                    </>
+                  )}
+                  {plural(card.aligned.length, v.alignedCollapsed)}
+                </span>
+              ) : (
+                card.kind === 'check' && (
+                  <span class="vcard__meta muted">
+                    {v.coordinator} <span class="mono">{ver(s.coordinator.version)}</span> ·{' '}
+                    {f(d.project.versionFrom, {
+                      source: d.versionSource[s.coordinator.versionSource],
+                    })}
+                  </span>
+                )
+              )}
+            </div>
+          );
+          return (
+            <article
+              class:list={['vcard', `vcard--${card.kind}`]}
+              id={s.project.id}
+              data-project={s.project.id}
+              data-card={card.kind}
+              data-health={tone}
+              aria-labelledby={`v-${s.project.id}`}
+            >
+              {head}
+              {card.kind === 'unknown' && (
+                <div class="vcard__cause">
+                  <p>
+                    <strong>{v.unknownCause}</strong>
+                  </p>
+                  {causes(s).length > 0 ? (
+                    <ul class="vcauses">
+                      {causes(s).map((c) => (
+                        <li>
+                          {c.who} (<span class="mono">{c.repository}</span>): {c.cause}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <ul class="vcauses">
+                      {s.versionHealth.reasons.map((r) => (
+                        <li>{i18n.reason(r)}</li>
+                      ))}
+                    </ul>
+                  )}
+                  <a class="vcard__link" href={href(locale, 'dataQuality')}>
+                    {v.seeDataQuality}
+                  </a>
+                </div>
+              )}
+              {card.kind === 'check' && (
+                <>
+                  {s.environments.length > 0 && (
+                    <ol class="vpath" aria-label={d.project.environments}>
+                      {s.environments.map((e, i) => (
+                        <li class="vpath__step" data-env={e.name} data-env-status={e.status}>
+                          {i > 0 && (
+                            <span class="vpath__arrow" aria-hidden="true">
+                              →
+                            </span>
+                          )}
+                          <span class:list={['vpath__env', `vpath__env--${e.status}`]}>
+                            <strong>{e.name}</strong>
+                            <span class="mono">{ver(e.version)}</span>
+                            <Pill tone={driftTone(e.status)} label={d.envStatus[e.status]} />
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                  {card.rows.length === 0 && s.versionHealth.reasons.length > 0 && (
+                    <ul class="vcauses vcard__reasons">
+                      {s.versionHealth.reasons.map((r) => (
+                        <li>{i18n.reason(r)}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {card.rows.length > 0 && (
+                    <section class="vcheck" aria-labelledby={`chk-${s.project.id}`}>
+                      <h3 id={`chk-${s.project.id}`} class="vcheck__title">
+                        {v.toCheck}
+                      </h3>
+                      <div class="table-wrap vcheck__wrap">
+                        <table class="table vcheck__table">
+                          <thead>
+                            <tr>
+                              <th scope="col">{d.common.component}</th>
+                              <th scope="col">{v.colManifest}</th>
+                              <th scope="col">{v.colSubmodule}</th>
+                              <th scope="col">{v.colLatest}</th>
+                              <th scope="col">{v.colWhat}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {card.rows.map((row) =>
+                              row.kind === 'component' ? (
+                                <tr>
+                                  <th scope="row">
+                                    {row.component.name}
+                                    <span class="sub mono vcheck__repo">
+                                      {row.component.repository.name}
+                                    </span>
+                                  </th>
+                                  <td class="mono" data-label={v.colManifest}>
+                                    {displayVersion(row.component.declaredVersion) ?? (
+                                      <span class="muted">{unknownText}</span>
+                                    )}
+                                  </td>
+                                  <td class="mono" data-label={v.colSubmodule}>
+                                    {row.component.submodule ? (
+                                      (displayVersion(row.component.pin?.version) ??
+                                      shortSha(row.component.submodule.sha) ?? (
+                                        <span class="muted">{unknownText}</span>
+                                      ))
+                                    ) : (
+                                      <span class="muted" title={d.common.notApplicable}>
+                                        <span aria-hidden="true">–</span>
+                                        <span class="visually-hidden">
+                                          {d.common.notApplicable}
+                                        </span>
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td class="mono" data-label={v.colLatest}>
+                                    {row.component.latestRelease ? (
+                                      <ExtLink
+                                        href={row.component.latestRelease.url}
+                                        i18n={i18n}
+                                        label={row.component.latestRelease.tag}
+                                      />
+                                    ) : (
+                                      <span class="muted">{unknownText}</span>
+                                    )}
+                                  </td>
+                                  <td class="vcheck__what" data-label={v.colWhat}>
+                                    <ul class="vissues">
+                                      {row.issues.map((issue) => {
+                                        const p = issuePill(issue);
+                                        return (
+                                          <li class="vissue" data-issue={issue.kind}>
+                                            <span class="status-col">
+                                              <Pill tone={p.tone} label={p.label} />
+                                            </span>
+                                            <span>{issueSentence(issue)}</span>
+                                          </li>
+                                        );
+                                      })}
+                                    </ul>
+                                  </td>
+                                </tr>
+                              ) : (
+                                <tr>
+                                  <th scope="row">
+                                    <span class="mono">{row.submodule.path}</span>
+                                    <span class="sub vcheck__repo">{v.submoduleKind}</span>
+                                  </th>
+                                  <td data-label={v.colManifest}>
+                                    <span class="muted" title={d.common.notApplicable}>
+                                      <span aria-hidden="true">–</span>
+                                      <span class="visually-hidden">{d.common.notApplicable}</span>
+                                    </span>
+                                  </td>
+                                  <td class="mono" data-label={v.colSubmodule}>
+                                    {shortSha(row.submodule.sha) ?? (
+                                      <span class="muted">
+                                        {row.kind === 'unmapped' ? v.present : unknownText}
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td data-label={v.colLatest}>
+                                    <span class="muted" title={d.common.notApplicable}>
+                                      <span aria-hidden="true">–</span>
+                                      <span class="visually-hidden">{d.common.notApplicable}</span>
+                                    </span>
+                                  </td>
+                                  <td class="vcheck__what" data-label={v.colWhat}>
+                                    <ul class="vissues">
+                                      {row.kind === 'unmapped' ? (
+                                        <li class="vissue" data-issue="unmapped">
+                                          <span class="status-col">
+                                            <Pill tone="amber" label={v.issue.unmapped} />
+                                          </span>
+                                          <span>
+                                            {v.unmappedSentence}{' '}
+                                            <a href={href(locale, 'catalog')}>{v.addToCatalog}</a>
+                                          </span>
+                                        </li>
+                                      ) : (
+                                        <li class="vissue" data-issue={row.issue.kind}>
+                                          <span class="status-col">
+                                            <Pill
+                                              tone={issuePill(row.issue).tone}
+                                              label={issuePill(row.issue).label}
+                                            />
+                                          </span>
+                                          <span>{issueSentence(row.issue)}</span>
+                                        </li>
+                                      )}
+                                    </ul>
+                                  </td>
+                                </tr>
+                              ),
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </section>
+                  )}
+                  {card.aligned.length > 0 && (
+                    <details class="valigned">
+                      <summary>{plural(card.aligned.length, v.alignedCollapsed)}</summary>
+                      <ul class="valigned__list">
+                        {card.aligned.map((c) => (
+                          <li>
+                            <span>{c.name}</span>{' '}
+                            <span class="mono">{ver(c.effectiveVersion)}</span>{' '}
+                            <span class="sub">
+                              {f(d.project.versionFrom, {
+                                source: d.versionSource[c.effectiveVersionSource],
+                              })}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+                </>
+              )}
+            </article>
+          );
+        })}
+      </div>
+
+      <Legend i18n={i18n} />
     </>
   )}
 </Base>
+
+<style>
+  .vlead {
+    margin: 6px 0 0;
+    font-size: 1.0625rem;
+    line-height: 24px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .vcards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+  }
+  .vcard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+  }
+  .vcard--aligned,
+  .vcard--unknown {
+    gap: var(--space-2);
+  }
+  /* Unknown is a dashed outline, never calmer than a gap and never a fill. */
+  .vcard--unknown {
+    border-style: dashed;
+    border-color: var(--unknown);
+  }
+  .vcard__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) 10px;
+  }
+  .vcard__dot {
+    display: inline-flex;
+  }
+  .vcard__title {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 22px;
+    font-weight: 600;
+  }
+  .vcard__title a {
+    color: var(--text);
+  }
+  .vcard__meta {
+    margin-left: auto;
+  }
+  .vcard__cause p {
+    margin: 0;
+  }
+  .vcauses {
+    margin: var(--space-1) 0 var(--space-2);
+    padding-left: 1.25rem;
+  }
+  .vcard__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+  }
+  .vpath {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .vpath__step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .vpath__arrow {
+    color: var(--text-muted);
+  }
+  .vpath__env {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+    min-width: 130px;
+    padding: 10px 14px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+  .vpath__env--unknown {
+    border-style: dashed;
+    border-color: var(--unknown);
+  }
+  .vcheck {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+  }
+  .vcheck__title {
+    margin: 0;
+    font-size: var(--fs-md);
+    font-weight: 600;
+  }
+  /* A bordered table inside the card. Above 720px it scrolls inside its own container when the
+     card is narrower than the table; below, the global rule stacks each row into a labelled card. */
+  .vcheck__wrap {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+  @media (min-width: 721px) {
+    .vcheck__table {
+      min-width: 720px;
+    }
+    .vcheck__table .vcheck__what {
+      min-width: 300px;
+    }
+  }
+  .vcheck__repo {
+    display: block;
+    font-weight: 400;
+  }
+  .vissues {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  /* Pill in the fixed status column; the sentence wraps in its own column to the right. */
+  .vissue {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+  .vissue > span:last-child {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .valigned {
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+  .valigned summary {
+    padding: 10px 0;
+    min-height: 40px;
+    box-sizing: border-box;
+    cursor: pointer;
+    color: var(--text-muted);
+  }
+  .valigned__list {
+    margin: var(--space-1) 0 0;
+    padding-left: 1.25rem;
+  }
+  @media (max-width: 720px) {
+    /* Each row is already its own bordered card: no outer frame. */
+    .vcheck__wrap {
+      border: 0;
+    }
+    /* The issues need the full row width: label above them instead of beside. */
+    /* Labels in the sans face, also beside monospace values. */
+    .vcheck__table td[data-label]::before {
+      font-family: var(--font-sans);
+    }
+    .vcheck__table td.vcheck__what {
+      display: block;
+    }
+    .vcheck__table td.vcheck__what::before {
+      display: block;
+      margin-bottom: var(--space-1);
+    }
+  }
+  @media (max-width: 640px) {
+    .vcard__meta {
+      margin-left: 0;
+      flex-basis: 100%;
+    }
+  }
+</style>

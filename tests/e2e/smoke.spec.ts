@@ -96,3 +96,19 @@ test('project page has no horizontal scroll at phone width', async ({ page, isMo
     expect(overflow, id).toBeLessThanOrEqual(0);
   }
 });
+
+test('versions page does not scroll sideways at phone width', async ({ page }) => {
+  for (const path of ['/versions/', '/it/versions/']) {
+    await page.setViewportSize({ width: 375, height: 800 });
+    await page.goto(path);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow, path).toBeLessThanOrEqual(0);
+    // Status labels fit their pill, never cut off.
+    const clipped = await page
+      .locator('.vissue .status-col > .pill')
+      .evaluateAll((pills) => pills.filter((p) => p.scrollWidth > p.clientWidth).length);
+    expect(clipped, path).toBe(0);
+  }
+});

@@ -453,6 +453,63 @@ export const it: Dict = {
     configuredSource: 'versionSource: {source}',
     manifestVsSubmodule: 'Manifest vs submodule',
     pinDetail: '+{ahead} / −{behind} rispetto a {base}',
+    lead: {
+      behind: {
+        one: '1 progetto ha un ambiente indietro',
+        other: '{n} progetti hanno un ambiente indietro',
+      },
+      mismatch: {
+        one: '1 versione dichiarata non corrisponde',
+        other: '{n} versioni dichiarate non corrispondono',
+      },
+      unknown: { one: '1 progetto non leggibile', other: '{n} progetti non leggibili' },
+      check: {
+        one: '1 progetto ha qualcosa da verificare',
+        other: '{n} progetti hanno qualcosa da verificare',
+      },
+      otherCheck: {
+        one: 'Un altro progetto ha qualcosa da verificare',
+        other: 'Altri {n} progetti hanno qualcosa da verificare',
+      },
+      none: 'Tutte le versioni sono allineate',
+      empty: 'Ancora nessun progetto da mostrare',
+    },
+    coordinator: 'Coordinatore',
+    toCheck: 'Da verificare',
+    colManifest: 'Manifest',
+    colSubmodule: 'Submodule',
+    colLatest: 'Ultima release',
+    colWhat: 'Cosa succede',
+    alignedCollapsed: { one: '1 componente allineato', other: '{n} componenti allineati' },
+    envsOn: '{envs} su',
+    issue: {
+      mismatch: 'Discorde',
+      drift: 'Non ultima',
+      pin: 'Senza tag',
+      pinUnknown: 'Incerto',
+      unknown: 'Sconosciuta',
+      unmapped: 'Non censito',
+      unresolvable: 'Non risolto',
+    },
+    mismatchSentence: 'Il manifest dichiara {declared} ma il coordinatore punta ancora a {pinned}.',
+    driftSentence: "In uso {current}; l'ultima release è {latest}.",
+    pinSentence:
+      'Il coordinatore punta a un commit senza tag ({sha}): +{ahead} / −{behind} rispetto a {base}.',
+    pinUnknownSentence:
+      'Non abbiamo potuto verificare a quale release corrisponde il commit puntato ({sha}).',
+    unknownSentence: 'Non è stato possibile leggere la versione attuale.',
+    latestUnknownSentence:
+      "In uso: {current}; non è stato possibile leggere l'ultima release, quindi non si sa se è aggiornata.",
+    submoduleUnresolvableSentence:
+      'Il coordinatore non riesce a risolvere il submodule {path}, quindi la versione puntata è sconosciuta.',
+    submoduleUnknownSentence:
+      'Non è stato possibile leggere il submodule {path}, quindi la versione puntata è sconosciuta.',
+    unmappedSentence: 'È nel .gitmodules ma non nel catalogo.',
+    addToCatalog: 'Aggiungilo al catalogo',
+    submoduleKind: 'submodule',
+    present: 'presente',
+    unknownCause: 'Versioni non leggibili',
+    seeDataQuality: 'Vedi in Qualità dati',
   },
   securityPage: {
     title: 'Sicurezza',
