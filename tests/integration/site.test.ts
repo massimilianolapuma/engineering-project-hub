@@ -23,6 +23,8 @@ async function buildSite(dataDir: string, outDir: string) {
   await build({ root: process.cwd(), outDir, logLevel: 'error', vite: { logLevel: 'error' } });
 }
 const page = (p: string) => readFile(join(dist, p, 'index.html'), 'utf8');
+/** Text nodes of an HTML fragment, joined (for assertions on built markup, not sanitization). */
+const textOf = (html: string) => html.split(/<[^>]*>/).join('');
 /** Text as Astro escapes it in HTML. */
 const esc = (s: string) =>
   s
@@ -470,7 +472,7 @@ describe('static site', () => {
     // Counts are incomplete, so each known total is a lower bound: "≥ n", read as "at least n".
     const values = [
       ...totals.matchAll(/data-severity="(\w+)"[^>]*>([\s\S]*?)<\/span>\s*<span class="muted"/g),
-    ].map(([, k, v]) => `${k}=${v!.replace(/<[^>]+>/g, '').trim()}`);
+    ].map(([, k, v]) => `${k}=${textOf(v!).trim()}`);
     expect(values).toEqual([
       'critical=≥at least 1',
       'high=≥at least 4',
