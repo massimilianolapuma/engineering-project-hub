@@ -1,39 +1,13 @@
-import type { ControlState, HealthStatus, Severity, WorkflowState } from '@model/index';
+import type { HealthStatus, Severity, WorkflowState } from '@model/index';
 
 /**
- * Visual tone of a status icon: the four health states, neutral info / muted, and `blind`:
- * a required control the collector could not see (not authorised / unknown). A blind spot is
- * a risk in its own right, so it must never look calmer than an optional gap.
+ * Visual tone of a status icon or pill: the four health states plus neutral info / muted.
+ * Security controls use the symbols in `symbols.ts`, not these tones.
  */
-export type Tone = HealthStatus | 'info' | 'muted' | 'blind';
+export type Tone = HealthStatus | 'info' | 'muted';
 
 /** Severity has its own scale: it is never rendered with the health tones or icons. */
 export type SeverityTone = 'sev-critical' | 'sev-high' | 'sev-medium' | 'sev-low' | 'sev-unknown';
-
-/**
- * Tone of a security control. Salience follows requiredness: a missing optional control is
- * informational (muted), a required one is a gap (amber), and a required control the collector
- * cannot see is a blind spot. `required` defaults to true so callers without the flag never
- * understate a gap.
- */
-export const controlTone = (s: ControlState, required = true): Tone => {
-  switch (s) {
-    case 'enabled':
-      return 'green';
-    case 'failed':
-      return 'red';
-    case 'not-applicable':
-      return 'muted';
-    case 'not-configured':
-    case 'configured-not-run':
-    case 'stale':
-      return required ? 'amber' : 'muted';
-    case 'not-authorised':
-    case 'unknown':
-    case 'collection-failed':
-      return required ? 'blind' : 'grey';
-  }
-};
 
 export const workflowTone = (s: WorkflowState): Tone =>
   ({

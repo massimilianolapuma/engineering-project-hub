@@ -31,6 +31,7 @@ Every dimension is shown separately with its reasons, and what is not known is a
 - Read-only by design: no writes to repositories, alerts or workflows; no remediation, no dismissals, no workflow triggers.
 - Static site, no runtime backend, no database, no GitHub API calls and no tokens in the browser.
 - Health states: green (Healthy), amber (Attention), red (Critical), grey (Unknown). Overall never hides the dimensions that compose it.
+- Project score (0–100) for ranking and comparing projects, computed by the collector from the measured dimensions and capped by the overall status (a critical project always ranks below an attention one); it shows its confidence ("measured n of m"), excludes unreadable dimensions instead of counting them as zero, and is replaced by "insufficient data" when fewer than half are measured. It sits next to the status and never replaces the dimensions.
 - 403 is not "no alerts"; 404 is not "scanner disabled" without context; zero findings is not "scanner unavailable"; an old scan is not current state.
 - Secret scanning values are never published, only the secret type.
 - Bilingual UI and docs: English (default, `/`) and Italian (`/it/`).

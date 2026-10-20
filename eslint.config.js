@@ -8,6 +8,9 @@ export default tseslint.config(
   {
     ignores: [
       'dist/',
+      '.claude/',
+      '.superpowers/',
+      '.playwright-mcp/',
       '.e2e-dist/',
       'config.local/',
       '.astro/',

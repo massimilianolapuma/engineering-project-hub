@@ -22,6 +22,10 @@ export function format(template: string, params: Record<string, string | number>
 export function useI18n(locale: Locale) {
   const d = DICTIONARIES[locale];
   const numberFmt = new Intl.NumberFormat(locale === 'it' ? 'it-IT' : 'en-GB');
+  const secondsFmt = new Intl.NumberFormat(locale === 'it' ? 'it-IT' : 'en-GB', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
   const dateFmt = new Intl.DateTimeFormat(locale === 'it' ? 'it-IT' : 'en-GB', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -49,9 +53,16 @@ export function useI18n(locale: Locale) {
       if (typeof params.control === 'string' && params.control in d.control) {
         params.control = d.control[params.control as keyof Dict['control']];
       }
-      return format(d.reasons[r.code], params);
+      // Singular wording when the reason counts exactly one thing ("1 open critical alert").
+      const one = (d.reasonsOne as Partial<Record<string, string>>)[r.code];
+      return format(params.count === 1 && one ? one : d.reasons[r.code], params);
     },
     number: (n: number) => numberFmt.format(n),
+    /** Collection error count with singular/plural wording. */
+    errors: (count: number) =>
+      format(count === 1 ? d.common.errorsOne : d.common.errors, { count }),
+    /** A duration in seconds with one decimal, in the locale's number format ("12,3 s"). */
+    seconds: (ms: number) => `${secondsFmt.format(ms / 1000)} s`,
     /** Absolute UTC date; the client script adds a relative "x ago" label. */
     date: (iso: string | null | undefined) =>
       iso ? `${dateFmt.format(new Date(iso))} UTC` : d.common.unknown,

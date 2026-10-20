@@ -49,6 +49,17 @@ overall:
   requiredDimensions: [delivery, version, security, coverage, governance]
   greyRequiredDimension: grey
 
+# Project score (0–100), used to rank and compare projects. Optional: the defaults below apply
+# when the block is omitted. Weighted mean of the points of the measured required dimensions
+# (grey = not measured, never counted as 0), capped by the overall status. A dimension grey
+# only because there is nothing to measure (e.g. no critical workflows) is not applicable and
+# leaves both measured and required. Below minMeasuredRatio measured: no number.
+# score:
+#   weights: { delivery: 25, version: 15, security: 30, coverage: 15, governance: 15 }
+#   points: { green: 100, amber: 60, red: 20 }
+#   caps: { red: 49, amber: 89, grey: 89 } # overall red ≤ 49; amber / grey ≤ 89
+#   minMeasuredRatio: 0.5
+
 publication:
   # public: titles and rule ids of findings in private/internal repositories are withheld.
   # restricted: use only when the site is served behind access control.

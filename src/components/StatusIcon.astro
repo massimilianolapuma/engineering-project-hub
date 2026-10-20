@@ -30,7 +30,7 @@ const level = bars[tone] ?? 0;
       <path
         d="M4.6 8.3l2.2 2.2 4.6-4.8"
         fill="none"
-        stroke="var(--icon-ink)"
+        stroke="var(--surface)"
         stroke-width="1.8"
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -40,8 +40,8 @@ const level = bars[tone] ?? 0;
   {tone === 'amber' && (
     <>
       <path d="M8 1.2l7 12.6H1z" fill="currentColor" />
-      <path d="M8 5.6v4" stroke="var(--icon-ink)" stroke-width="1.8" stroke-linecap="round" />
-      <circle cx="8" cy="11.9" r="1" fill="var(--icon-ink)" />
+      <path d="M8 5.6v4" stroke="var(--surface)" stroke-width="1.8" stroke-linecap="round" />
+      <circle cx="8" cy="11.9" r="1" fill="var(--surface)" />
     </>
   )}
   {tone === 'red' && (
@@ -49,7 +49,7 @@ const level = bars[tone] ?? 0;
       <path d="M5.1 1h5.8L15 5.1v5.8L10.9 15H5.1L1 10.9V5.1z" fill="currentColor" />
       <path
         d="M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8"
-        stroke="var(--icon-ink)"
+        stroke="var(--surface)"
         stroke-width="1.8"
         stroke-linecap="round"
       />
@@ -85,25 +85,6 @@ const level = bars[tone] ?? 0;
   )}
   {tone === 'muted' && (
     <path d="M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-  )}
-  {tone === 'blind' && (
-    <>
-      <rect
-        x="1.5"
-        y="1.5"
-        width="13"
-        height="13"
-        rx="2"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.8"
-      />
-      <path
-        d="M1.5 9.5l8-8M5.5 14.5l9-9M1.5 14.5L14.5 1.5"
-        stroke="currentColor"
-        stroke-width="1.2"
-      />
-    </>
   )}
   {tone.startsWith('sev-') && (
     <>

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.2",
+  "schemaVersion": "1.3",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-beta",
@@ -1214,6 +1214,11 @@
         }
       }
     ]
+  },
+  "score": {
+    "value": 38,
+    "measured": 5,
+    "required": 5
   },
   "dataFreshness": {
     "status": "amber",

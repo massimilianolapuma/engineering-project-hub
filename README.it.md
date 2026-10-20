@@ -47,6 +47,8 @@ database.
 - Qual è lo stato complessivo di ogni progetto, e **perché**: ogni dimensione di salute è
   mostrata separatamente e lo stato complessivo non viene mai mostrato senza le dimensioni
   che lo determinano.
+- Quale progetto richiede attenzione per primo: un **punteggio** da 0 a 100, coerente con
+  lo stato, ordina i progetti e dice quante dimensioni è stato davvero possibile misurare.
 - Quali repository e componenti compongono un progetto, e quale componente blocca la
   pipeline.
 - La versione del coordinator, le versioni dichiarate dei componenti, le ultime release e
@@ -61,24 +63,36 @@ database.
 ## Viste
 
 Ogni vista è disponibile in **inglese** (`/`) e in **italiano** (`/it/`), in modalità chiara
-e scura, con navigazione da tastiera e una legenda sempre visibile.
+e scura, con navigazione da tastiera. Ogni pagina si apre con una frase che dice cosa
+conta, poi l'elenco ordinato dal peggiore, e lascia il dettaglio a un clic di distanza. Una
+legenda di una riga sotto ogni elenco di stati porta alla pagina **Come leggere**.
 
-| Vista                  | Path              | Contenuto                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| ---------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Portfolio**          | `/`               | Un foglio di rilievo: progetti (righe 1–n, dal peggiore) × Complessivo, Delivery, Versioni, Rischio sicurezza, Copertura e Governance (colonne A–F). Ogni cella è colorata in base allo stato con il motivo principale; i progetti senza alcuna dimensione misurata sono una fascia tratteggiata "Non rilevato". Legenda a margine e note al foglio con riferimento di griglia (es. B1). I contatori di stato fanno da filtro; ricerca, filtri per business unit, lifecycle e alert, ordinamento. |
-| **Dettaglio progetto** | `/projects/<id>/` | Informazioni generali, coordinator (versione e relativa fonte, ultima release, ultimo commit, manifest), riquadri di salute con i motivi, componenti (repository, versione dichiarata, ultima release, commit, SHA del submodule, drift), workflow, ambienti, riepilogo sicurezza, copertura, errori di raccolta.                                                                                                                                                                                 |
-| **Workflow**           | `/workflows/`     | Matrice con i componenti come righe e i workflow monitorati come colonne. Ogni cella mostra stato, conclusione, branch, orario, link all'esecuzione, indicatore di dato non aggiornato e l'ultimo job/step fallito (mai i log).                                                                                                                                                                                                                                                                   |
-| **Versioni**           | `/versions/`      | Versione del coordinator, versioni dei componenti dichiarate rispetto a quelle rilasciate, SHA dei submodule e relative associazioni, versioni degli ambienti, drift e motivi di coerenza.                                                                                                                                                                                                                                                                                                        |
-| **Sicurezza**          | `/security/`      | KPI Critical / High / Medium / Low / secret, suddivisioni per categoria, severità, fonte, stato e repository, una matrice di copertura (repository × controllo), scansioni incomplete e non aggiornate, errori di autorizzazione e l'elenco sanitizzato dei finding.                                                                                                                                                                                                                              |
-| **Qualità dati**       | `/data-quality/`  | Metadati dell'esecuzione del collector, modalità di autenticazione, capability dell'API, repository OK / con errori / non disponibili, sorgenti non accessibili, sorgenti non aggiornate, submodule non risolti ed errori di raccolta classificati.                                                                                                                                                                                                                                               |
+| Vista                  | Path              | Contenuto                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ---------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Portfolio**          | `/`               | Una frase ("3 progetti su 4 richiedono attenzione") e contatori di stato che fanno da filtro. Un elenco compatto, dal peggiore: pallino di stato, progetto, punteggio con confidenza ("misurato 4 di 5"), cinque barre per dimensione (Delivery, Versioni, Sicurezza, Copertura, Governance) e il motivo principale. Ricerca, stato, business unit e ordinamento in linea; lifecycle e severità sotto "Altri filtri". |
+| **Dettaglio progetto** | `/projects/<id>/` | Intestazione con stato, punteggio e confidenza; "Perché è critico / richiede attenzione" in frasi, prima i motivi rossi; cinque schede per dimensione; ambienti come percorso DEV → UAT → PROD; tabella dei componenti (versione e drift, CI, alert, simboli di copertura); sezioni richiudibili Workflow, Sicurezza (alert critical e high elencati), Copertura ed Errori di raccolta.                               |
+| **Sicurezza**          | `/security/`      | Una frase di sintesi, i totali per severità del portfolio (segnati come incompleti se un progetto è in parte illeggibile) e una scheda per progetto, dal peggiore: copertura dei controlli obbligatori, conteggi per severità, punti ciechi indicati come chip, simboli dei controlli e link a GitHub. La matrice di copertura è una sezione secondaria, chiusa.                                                      |
+| **Versioni**           | `/versions/`      | Una frase di sintesi e una scheda per progetto, dal peggiore: versione del coordinator e relativa fonte, percorso degli ambienti e una tabella "Da verificare" con i soli problemi (manifest, submodule e ultima release a confronto, submodule non mappati), ciascuno spiegato in una frase; i componenti allineati sono raccolti in una riga.                                                                       |
+| **Workflow**           | `/workflows/`     | Solo i workflow critici del catalogo. Per progetto, dal peggiore, le righe che richiedono attenzione (fallito, mancante, non aggiornato, non visibile) con workflow, repository, cosa è successo e link all'esecuzione; le esecuzioni riuscite sono raccolte in un conteggio. Il portale legge le esecuzioni, non le avvia mai.                                                                                       |
+| **Qualità dati**       | `/data-quality/`  | Conteggi dei repository (nel catalogo, letti per intero, letti in parte, illeggibili), cosa non è stato possibile leggere raggruppato per causa (403, 404) con come risolvere, sorgenti non aggiornate con la loro età, submodule non mappati, capability di raccolta e dettagli dell'esecuzione.                                                                                                                     |
+| **Catalogo**           | `/catalog/`       | Editor del catalogo: progetti, repository scoperti, un modulo per dati generali, tipo di progetto, componenti, ambienti, workflow e controlli di sicurezza, e un riquadro della proposta che valida la modifica e la propone come pull request su GitHub (o scarica lo YAML). Il sito non salva nulla.                                                                                                                |
+| **Come leggere**       | `/how-to-read/`   | Cosa significa ogni stato, i sei simboli dei controlli, la differenza tra sconosciuto, non autorizzato, non configurato e non applicabile, la formula del punteggio con i suoi limiti e le soglie di `policies.yaml`.                                                                                                                                                                                                 |
 
 Stati: 🔴 **Critical** (Critico), 🟠 **Attention** (Attenzione), 🟢 **Healthy** (Sano) e
-⬜ **Unknown** (Sconosciuto). Ciascuno è mostrato con un colore, un'icona di forma distinta,
-un testo e una descrizione accessibile. I dati sconosciuti sono mostrati come
-**"—" / Unknown (Sconosciuto), mai come 0**. Il sito usa anche le etichette "Not configured"
-(Non configurato), "Not authorised" (Non autorizzato), "No open alerts" (Nessun alert
-aperto, mostrata solo quando la raccolta è riuscita) e "Collection failed" (Raccolta
-fallita).
+⬜ **Unknown** (Sconosciuto). Ciascuno è mostrato con un colore, una forma distinta, un
+testo e una descrizione accessibile; lo stato sconosciuto è un contorno tratteggiato, mai
+un riempimento. I dati sconosciuti sono mostrati come **"—" / Unknown (Sconosciuto), mai
+come 0**. Il sito usa anche le etichette "Not configured" (Non configurato), "Not
+authorised" (Non autorizzato), "Not applicable" (Non applicabile), "No open alerts"
+(Nessun alert aperto, mostrata solo quando la raccolta è riuscita) e "Collection failed"
+(Raccolta fallita). Simboli dei controlli: ✓ attivo · ! obbligatorio ma non configurato ·
+⧖ scansione non aggiornata · ✕ fallito · ? non visibile · – non richiesto.
+
+Il **punteggio** (0–100) è calcolato dal collector sulle dimensioni misurate (pesi e punti
+in `config/policies.yaml`) ed è limitato dallo stato, così un progetto critico è sempre
+sotto uno in attenzione. Le dimensioni che non è stato possibile leggere sono escluse, mai
+contate come zero; se ne è misurata meno della metà, il sito mostra "dati insufficienti" al
+posto del numero. Vedi [Configurazione](docs/it/configuration.md#punteggio-del-progetto).
 
 ## Architettura
 
@@ -308,6 +322,8 @@ Comandi locali:
 
 - **Unit**: validazione di catalogo e policy, normalizzazione di severità e stati,
   evaluator di delivery, sicurezza, copertura, versioni, governance e stato complessivo,
+  punteggio del progetto (pesi, limiti, sconosciuto escluso, dati insufficienti), contrasto
+  dei token nel tema chiaro e scuro,
   parsing di `.gitmodules`, associazione tra repository e componenti, drift di versione,
   sanitizer (canary `ghp_exampleSecretValue`, `github_pat_exampleSecretValue`,
   `Bearer example-token`, `PRIVATE KEY`, `password=example`), classificazione degli errori
@@ -319,8 +335,9 @@ Comandi locali:
   supportato. Una build Astro reale verifica ogni vista in EN e IT, i link a GitHub, che un
   valore sconosciuto non sia mai mostrato come 0, che non ci siano script inline e che non
   compaiano pattern di secret.
-- **E2E** (Playwright, desktop e mobile): portfolio, filtri da tastiera, navigazione in
-  entrambe le lingue e dettaglio progetto.
+- **E2E** (Playwright, desktop e mobile): filtri e ordinamento del portfolio, la riga
+  sconosciuta, navigazione in entrambe le lingue, sezioni del dettaglio progetto, focus da
+  tastiera e assenza di scroll orizzontale alla larghezza di un telefono.
 
 ## Risoluzione dei problemi
 
@@ -360,7 +377,8 @@ Comandi locali:
 
 Sono predisposti ma non implementati: discovery tramite custom properties e topic;
 provider Harbor, SonarQube, Trivy, Checkov, ZAP, SBOM (CycloneDX/SPDX), Cosign e Argo CD;
-notifiche Azure DevOps, Jira e Microsoft Teams; Prometheus/Grafana; storico e trend;
+notifiche Azure DevOps, Jira e Microsoft Teams; Prometheus/Grafana; storico e trend, con
+una vista "Cosa è cambiato dall'ultima raccolta";
 eccezioni di sicurezza con scadenza; policy-as-code; scorecard dei repository; controlli
 sulle versioni dei reusable workflow, sulle action fissate a SHA e sulla branch
 protection / sui ruleset; SLA di remediation; export CSV; una vista executive sanitizzata.

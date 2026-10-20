@@ -1,0 +1,17 @@
+---
+/**
+ * A value we could not read, shown as a dash. The dash is hidden from assistive technology and
+ * replaced by the word "unknown", so an unknown count is never silent and never read as a dash.
+ */
+import type { I18n } from '../i18n';
+interface Props {
+  i18n: I18n;
+  class?: string;
+}
+const { i18n, class: className } = Astro.props;
+---
+
+<span class:list={['unknown-value', className]}>
+  <span aria-hidden="true">{i18n.d.common.unknownValue}</span>
+  <span class="visually-hidden">{i18n.d.common.unknown}</span>
+</span>

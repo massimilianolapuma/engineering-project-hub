@@ -60,10 +60,10 @@ const editorStrings = jsonForScript({
   {!catalog.ok && <ErrorState error={catalog.error} i18n={i18n} />}
   {catalog.ok && (
     <>
-      <header class="page-head">
+      <header class="page-head ce-head">
         <h1>{c.title}</h1>
-        <p class="lead">{c.intro}</p>
-        <p class="note">{c.readOnly}</p>
+        <p class="ce-headline">{c.headline}</p>
+        <p class="ce-readonly">{c.readOnly}</p>
       </header>
       <script is:inline type="application/json" id="catalog-data" set:html={editorData} />
       <script is:inline type="application/json" id="catalog-i18n" set:html={editorStrings} />
@@ -72,28 +72,23 @@ const editorStrings = jsonForScript({
       </noscript>
       <div class="ce" data-catalog-editor>
         <div class="ce__side">
-          <section class="card ce-panel" aria-labelledby="ce-h-projects">
-            <h2 id="ce-h-projects" class="h3">
+          <section class="card ce-panel ce-panel--projects" aria-labelledby="ce-h-projects">
+            <h2 id="ce-h-projects" class="ce-panel__title">
               {c.projects}
             </h2>
             <ul class="ce-projects" data-ce-projects></ul>
-            <div class="ce-actions">
-              <button type="button" class="btn btn--primary" data-ce-new>
-                {c.newProject}
-              </button>
-              <button type="button" class="btn" data-ce-reset>
-                {c.reset}
-              </button>
-            </div>
+            <button type="button" class="btn btn--ghost ce-new" data-ce-new>
+              {c.newProject}
+            </button>
           </section>
           <section class="card ce-panel" aria-labelledby="ce-h-discovery">
-            <h2 id="ce-h-discovery" class="h3">
+            <h2 id="ce-h-discovery" class="ce-panel__title">
               {c.discovery}
             </h2>
             <div data-ce-discovery></div>
           </section>
           <section class="card ce-panel" aria-labelledby="ce-h-suggestions">
-            <h2 id="ce-h-suggestions" class="h3">
+            <h2 id="ce-h-suggestions" class="ce-panel__title">
               {c.suggestions}
             </h2>
             <p class="note">{c.suggestionsIntro}</p>
@@ -102,77 +97,109 @@ const editorStrings = jsonForScript({
           </section>
         </div>
 
-        <form class="ce__form" data-ce-form aria-labelledby="ce-h-form" novalidate>
-          <h2 id="ce-h-form" class="ce__title" data-ce-form-title>
-            {c.title}
-          </h2>
-          <p class="ce-kind" data-ce-kind></p>
-          <div data-ce-merge></div>
-          <div data-ce-form-body></div>
-        </form>
+        <div class="ce__main">
+          <form class="ce__form" data-ce-form aria-labelledby="ce-h-form" novalidate>
+            <h2 id="ce-h-form" class="ce__title" data-ce-form-title>
+              {c.title}
+            </h2>
+            <div class="ce-kind" data-ce-kind></div>
+            <div data-ce-merge></div>
+            <div class="ce-form-body" data-ce-form-body></div>
+          </form>
 
-        <div class="ce__output">
-          <section class="card ce-panel" aria-labelledby="ce-h-validation">
-            <h2 id="ce-h-validation" class="h3">
-              {c.validation}
-            </h2>
-            <div class="ce-validation" aria-live="polite" data-ce-validation></div>
-          </section>
-          <section class="card ce-panel" aria-labelledby="ce-h-pending">
-            <h2 id="ce-h-pending" class="h3">
-              {c.pending}
-            </h2>
-            <p class="ce-flow">{c.flowNote}</p>
-            <p class="note">{c.pendingIntro}</p>
-            <div data-ce-pending></div>
-            <p class="ce-status" role="status" data-ce-pending-status></p>
-          </section>
-          <section class="card ce-panel" aria-labelledby="ce-h-output">
-            <h2 id="ce-h-output" class="h3">
-              <label for="ce-yaml">{c.output}</label>
-            </h2>
-            <p class="note" id="ce-yaml-help">
-              {c.outputHelp} <code data-ce-file></code>
-            </p>
-            <textarea
-              id="ce-yaml"
-              class="ce-yaml"
-              readonly
-              rows="22"
-              wrap="off"
-              spellcheck="false"
-              aria-describedby="ce-yaml-help"
-              data-ce-yaml
-            ></textarea>
-            <div class="ce-actions">
-              <button type="button" class="btn btn--primary" data-ce-copy>
-                {c.copy}
-              </button>
-              <button type="button" class="btn" data-ce-download>
-                {c.download.replace('{file}', 'project.yaml')}
+          {/* Compact proposal status, kept in view while editing (sticky on wide screens and
+              while an undo is offered); the full proposal box follows. */}
+          <div class="ce-dock" role="region" aria-label={c.dockLabel} data-ce-dock>
+            <div class="ce-dock__undo" data-ce-undo hidden>
+              <span data-ce-undo-text></span>
+              <button type="button" class="btn btn--sm" data-ce-undo-btn>
+                {c.undo}
               </button>
             </div>
-            <p class="ce-status" role="status" data-ce-status></p>
-            <div class="ce-legacy">
-              <button
-                type="button"
-                class="btn btn--ghost"
-                data-ce-download-all
-                aria-describedby="ce-legacy-help"
-              >
-                {c.downloadAll}
-              </button>
-              <p class="note" id="ce-legacy-help">
-                {c.downloadAllHelp}
+            <div class="ce-dock__status">
+              <span class="pill" data-ce-dock-valid></span>
+              <span class="ce-dock__count" data-ce-dock-count></span>
+              <a class="ce-dock__go" href="#ce-h-proposal">
+                {c.dockReview}
+              </a>
+            </div>
+          </div>
+
+          <section class="card ce-proposal-box" aria-labelledby="ce-h-proposal">
+            <div class="ce-proposal-box__head">
+              <h2 id="ce-h-proposal">{c.proposal}</h2>
+              <span class="ce-proposal-box__summary" data-ce-proposal-summary></span>
+            </div>
+            <section class="ce-part ce-part--validation" aria-labelledby="ce-h-validation">
+              <h3 id="ce-h-validation" class="visually-hidden">
+                {c.validation}
+              </h3>
+              <div class="ce-validation" aria-live="polite" data-ce-validation></div>
+            </section>
+            <section class="ce-part" aria-labelledby="ce-h-pending">
+              <h3 id="ce-h-pending" class="ce-part__title">
+                {c.pending}
+              </h3>
+              <p class="note">{c.pendingIntro}</p>
+              <div data-ce-pending></div>
+              <p class="ce-status" role="status" data-ce-pending-status></p>
+              <div class="ce-actions">
+                <button type="button" class="btn btn--ghost" data-ce-reset>
+                  {c.reset}
+                </button>
+              </div>
+            </section>
+            <section class="ce-part" aria-labelledby="ce-h-output">
+              <h3 id="ce-h-output" class="ce-part__title">
+                <label for="ce-yaml">{c.output}</label>
+              </h3>
+              <p class="note" id="ce-yaml-help">
+                {c.outputHelp} <code data-ce-file></code>
               </p>
-            </div>
-            <h3 class="h3">{c.howTo}</h3>
-            <ol class="ce-steps">
-              <li>{c.step1}</li>
-              <li>{githubRepo ? c.step2 : c.step2Manual}</li>
-              {githubRepo && <li>{c.step3}</li>}
-              <li>{c.step4}</li>
-            </ol>
+              <textarea
+                id="ce-yaml"
+                class="ce-yaml"
+                readonly
+                rows="16"
+                wrap="off"
+                spellcheck="false"
+                aria-describedby="ce-yaml-help"
+                data-ce-yaml
+              ></textarea>
+              <div class="ce-actions">
+                <button type="button" class="btn" data-ce-copy>
+                  {c.copy}
+                </button>
+                <button type="button" class="btn" data-ce-download>
+                  {c.download.replace('{file}', 'project.yaml')}
+                </button>
+              </div>
+              <p class="ce-status" role="status" data-ce-status></p>
+              <div class="ce-legacy">
+                <button
+                  type="button"
+                  class="btn btn--ghost"
+                  data-ce-download-all
+                  aria-describedby="ce-legacy-help"
+                >
+                  {c.downloadAll}
+                </button>
+                <p class="note" id="ce-legacy-help">
+                  {c.downloadAllHelp}
+                </p>
+              </div>
+            </section>
+            <details class="ce-howto disclosure">
+              <summary>{c.howTo}</summary>
+              <p class="note">{c.intro}</p>
+              <p class="note">{c.flowNote}</p>
+              <ol class="ce-steps">
+                <li>{c.step1}</li>
+                <li>{githubRepo ? c.step2 : c.step2Manual}</li>
+                {githubRepo && <li>{c.step3}</li>}
+                <li>{c.step4}</li>
+              </ol>
+            </details>
           </section>
         </div>
       </div>
@@ -183,3 +210,481 @@ const editorStrings = jsonForScript({
 <script>
   import '../../scripts/catalog-editor';
 </script>
+
+<style>
+  /*
+   * Catalog editor in Warm Graphite. The editor script builds most of the form in the browser,
+   * so its nodes are styled through :global() under the scoped .ce root. The accent is kept for
+   * "Propose on GitHub" (one per pending change); every other action is secondary.
+   */
+  .ce-head {
+    margin-bottom: var(--space-5);
+  }
+  .ce-head h1 {
+    margin: 0;
+    font-size: var(--fs-xl);
+    line-height: 28px;
+    font-weight: 600;
+  }
+  .ce-headline {
+    margin: 6px 0 0;
+    max-width: 70ch;
+    font-size: var(--fs-lead);
+    line-height: 24px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .ce-readonly {
+    margin: var(--space-1) 0 0;
+    max-width: 75ch;
+    color: var(--text-muted);
+  }
+
+  /* Layout: side list + main column (form, then the proposal box). One column on phones. */
+  .ce {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
+    align-items: start;
+  }
+  @media (min-width: 900px) {
+    .ce {
+      grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+    }
+  }
+  .ce__side,
+  .ce__main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  .ce-panel {
+    margin: 0;
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .ce-panel .note {
+    margin: 0;
+  }
+  .ce-panel--projects {
+    padding: var(--space-3);
+    gap: var(--space-1);
+  }
+  .ce-panel__title {
+    margin: 0;
+    font-size: var(--fs-card);
+    line-height: 22px;
+    font-weight: 600;
+  }
+  .ce-panel--projects .ce-panel__title {
+    padding: var(--space-1) var(--space-3) var(--space-2);
+  }
+  .ce-new {
+    margin-top: var(--space-2);
+  }
+
+  /* Projects: name + id, pending badge on the right. */
+  .ce :global(.ce-projects) {
+    gap: 2px;
+  }
+  .ce :global(.ce-project) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+  }
+  .ce :global(.ce-project[aria-current='true']) {
+    background: var(--surface-2);
+    border-color: var(--border-strong);
+  }
+  .ce :global(.ce-project[aria-current='true'] .ce-project__name) {
+    font-weight: 700;
+  }
+  .ce :global(.ce-project__text) {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .ce :global(.ce-project__name) {
+    font-size: var(--fs-md);
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+  .ce :global(.ce-project__badge) {
+    flex: none;
+  }
+
+  /* Form: title, project type, then one bordered box per group of fields. */
+  .ce__form,
+  .ce-form-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-width: 0;
+  }
+  .ce__title {
+    margin: 0;
+    font-size: var(--fs-lead);
+    line-height: 24px;
+    font-weight: 600;
+  }
+  .ce :global(.ce-section),
+  .ce-kind {
+    margin: 0;
+    padding: 14px var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+  .ce :global(.ce-section > h3) {
+    margin: 0 0 var(--space-3);
+    font-size: var(--fs-card);
+    line-height: 22px;
+    font-weight: 600;
+  }
+  .ce :global(.ce-section > .note) {
+    margin: 0 0 var(--space-3);
+  }
+  .ce :global(.ce-field > label) {
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+  }
+  .ce :global(.ce-hint) {
+    font-size: var(--fs-sm);
+  }
+
+  /* Components, environments, workflows: rows separated by a rule, not nested boxes. */
+  .ce :global(.ce-row) {
+    margin: 0;
+    padding: var(--space-3) 0;
+    border: 0;
+    border-top: 1px solid var(--border);
+    border-radius: 0;
+  }
+  .ce :global(.ce-row > legend) {
+    float: left;
+    width: 100%;
+    margin: 0 0 var(--space-2);
+    padding: 0;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+  }
+  .ce :global(.ce-row > legend + *) {
+    clear: both;
+  }
+
+  /* Project type: derived from the components, shown as a segmented, read-only indicator. */
+  .ce-kind {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+    font-size: var(--fs-md);
+  }
+  .ce-kind[hidden] {
+    display: none;
+  }
+  .ce :global(.ce-kind__label) {
+    font-size: var(--fs-card);
+    line-height: 22px;
+    font-weight: 600;
+  }
+  .ce :global(.ce-seg) {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .ce :global(.ce-seg > li) {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .ce :global(.ce-seg > li[aria-current='true']) {
+    border-color: var(--text);
+    box-shadow: inset 0 0 0 1px var(--text);
+    color: var(--text);
+    font-weight: 600;
+  }
+  /* Radio-like mark: a ring, filled with a dot for the current type (shape, not colour). */
+  .ce :global(.ce-seg__dot) {
+    position: relative;
+    width: 14px;
+    height: 14px;
+    flex: none;
+    border: 1.5px solid var(--border-strong);
+    border-radius: 50%;
+  }
+  .ce :global([aria-current='true'] > .ce-seg__dot) {
+    border-color: var(--text);
+  }
+  .ce :global([aria-current='true'] > .ce-seg__dot::after) {
+    content: '';
+    position: absolute;
+    inset: 2.5px;
+    border-radius: 50%;
+    background: var(--text);
+  }
+  .ce :global(.ce-kind__help) {
+    margin: 0;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+  }
+
+  /* Actions: secondary by default, ≥40px; the accent primary (Propose on GitHub) is ≥44px. */
+  .ce :global(.btn) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    min-height: 40px;
+    padding: 6px var(--space-4);
+    font-size: var(--fs-md);
+    color: var(--text);
+    background: var(--surface);
+    border-color: var(--border-strong);
+    border-radius: var(--radius-md);
+  }
+  .ce :global(.btn:hover) {
+    background: var(--surface-2);
+    border-color: var(--text);
+  }
+  .ce :global(.btn--primary),
+  .ce :global(.btn--primary:hover) {
+    min-height: 44px;
+    padding: 6px 18px;
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+  }
+  .ce :global(.btn--ghost) {
+    background: transparent;
+  }
+  .ce :global(.btn--danger) {
+    color: var(--red-text);
+    border-color: var(--red);
+  }
+  .ce :global(.btn--sm) {
+    min-height: 40px;
+    padding: 6px var(--space-3);
+    font-size: var(--fs-sm);
+  }
+  .ce :global(.ce-actions) {
+    gap: var(--space-2);
+  }
+
+  /* Discovered repositories and suggestions: compact rows, no tinted boxes. */
+  .ce :global(.ce-group) {
+    margin: var(--space-2) 0 0;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+  .ce :global(.ce-proposals),
+  .ce :global(.ce-suggestions) {
+    gap: 0;
+    margin: 0;
+  }
+  .ce :global(.ce-proposal),
+  .ce :global(.ce-suggestion) {
+    gap: var(--space-1);
+    padding: var(--space-2) 0;
+    border: 0;
+    border-top: 1px solid var(--border);
+    border-radius: 0;
+    background: transparent;
+  }
+  .ce :global(.ce-proposal:first-child),
+  .ce :global(.ce-suggestion:first-child) {
+    border-top: 0;
+  }
+  .ce :global(.ce-proposal__status) {
+    font-size: var(--fs-sm);
+  }
+  .ce :global(.ce-kind__pill) {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text);
+  }
+  .ce :global(.ce-merge) {
+    border-color: var(--border-strong);
+  }
+
+  /* Proposal dock: one line, sticky at the bottom of the form column on wide screens. */
+  .ce-dock {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: var(--space-4) 0;
+    padding: var(--space-2) var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    z-index: 2;
+  }
+  .ce-dock:has(.ce-dock__undo:not([hidden])) {
+    position: sticky;
+    bottom: var(--space-3);
+  }
+  @media (min-width: 1024px) {
+    .ce-dock {
+      position: sticky;
+      bottom: var(--space-3);
+    }
+  }
+  .ce-dock__undo,
+  .ce-dock__status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+  }
+  .ce-dock__undo[hidden] {
+    display: none;
+  }
+  .ce-dock__undo {
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+  .ce-dock__count {
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .ce-dock__go {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    margin-left: auto;
+  }
+
+  /* Proposal box: validation pill, pending changes with their GitHub action, generated file. */
+  .ce-proposal-box {
+    margin: 0;
+    padding: var(--space-4) 20px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  .ce-proposal-box__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-3);
+  }
+  .ce-proposal-box__head h2 {
+    margin: 0;
+    font-size: var(--fs-lead);
+    line-height: 24px;
+    font-weight: 600;
+  }
+  .ce-proposal-box__summary {
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .ce-part {
+    min-width: 0;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border);
+  }
+  .ce-part--validation {
+    padding-top: 0;
+    border-top: 0;
+  }
+  .ce-part__title {
+    margin: 0 0 var(--space-2);
+    font-size: var(--fs-card);
+    line-height: 22px;
+    font-weight: 600;
+  }
+  .ce-part .note {
+    margin: 0 0 var(--space-3);
+  }
+  .ce :global(.ce-summary) {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 var(--space-2);
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    font-size: var(--fs-xs);
+    line-height: 16px;
+    font-weight: 600;
+  }
+  .ce :global(.ce-summary--ok) {
+    background: var(--green-tint);
+    color: var(--green-text);
+  }
+  .ce :global(.ce-summary--bad) {
+    background: var(--red-tint);
+    color: var(--red-text);
+  }
+  .ce :global(.ce-issue) {
+    border-color: transparent;
+  }
+  .ce :global(.ce-pending) {
+    gap: 0;
+  }
+  .ce :global(.ce-change) {
+    gap: var(--space-2);
+    padding: var(--space-3) 0;
+    border: 0;
+    border-top: 1px solid var(--border);
+    border-radius: 0;
+    background: transparent;
+  }
+  .ce :global(.ce-change:first-child) {
+    border-top: 0;
+    padding-top: 0;
+  }
+  /* The change kind sits in a fixed-width column so the project names align. */
+  .ce :global(.ce-change__head > .badge) {
+    flex: none;
+    width: var(--status-col);
+  }
+  .ce :global(.ce-change__name) {
+    font-size: var(--fs-md);
+  }
+  .ce-yaml {
+    min-height: 200px;
+  }
+  .ce-legacy {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--border);
+  }
+  .ce-howto {
+    border-top: 1px solid var(--border);
+    padding-top: var(--space-2);
+  }
+  .ce-howto > summary {
+    min-height: 40px;
+    padding: 10px 0;
+    line-height: 20px;
+    box-sizing: border-box;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .ce-howto[open] > summary {
+    margin-bottom: var(--space-2);
+  }
+  .ce-howto .note {
+    margin: 0 0 var(--space-3);
+    max-width: 75ch;
+  }
+</style>

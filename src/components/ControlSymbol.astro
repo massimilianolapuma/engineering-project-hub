@@ -1,0 +1,86 @@
+---
+/**
+ * Control symbol (✓ ! ⧖ ✕ ? –) in a 24px box, with the same meaning on every page. The glyph
+ * carries the meaning and has an accessible name; colour is secondary. With `label`, the
+ * control name follows the symbol as visible text.
+ */
+import type { ControlState } from '@model/index';
+import { useI18n, type Locale } from '../i18n';
+import { GLYPH_KEY, controlSymbol } from '../lib/symbols';
+interface Props {
+  state: ControlState;
+  required: boolean;
+  locale: Locale;
+  /** Visible text after the symbol, e.g. the control name. */
+  label?: string;
+}
+const { state, required, locale, label } = Astro.props;
+const { d, f } = useI18n(locale);
+const { glyph, tone } = controlSymbol(state, required);
+const meaning = d.symbols[GLYPH_KEY[glyph]];
+/** The meaning alone when it already says the state; otherwise add the precise state. */
+const selfExplaining =
+  state === 'enabled' ||
+  state === 'failed' ||
+  (required && (state === 'stale' || state === 'not-configured'));
+const name = selfExplaining
+  ? meaning
+  : f(d.symbols.withState, { meaning, state: d.controlState[state] });
+---
+
+<span class="ctl" data-state={state} data-required={required ? 'true' : 'false'}>
+  <span class={`sym sym--${tone}`} role="img" aria-label={name} title={name}>
+    {glyph}
+  </span>
+  {label && <span class="ctl__label">{label}</span>}
+</span>
+
+<style>
+  .ctl {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .sym {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    line-height: 1;
+    cursor: default;
+  }
+  .sym--green {
+    background: var(--green-tint);
+    color: var(--green-text);
+  }
+  .sym--amber {
+    background: var(--amber-tint);
+    color: var(--amber-text);
+  }
+  .sym--red {
+    background: var(--red-tint);
+    color: var(--red-text);
+  }
+  .sym--unknown {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1.5px dashed var(--unknown);
+  }
+  .sym--muted {
+    background: transparent;
+    color: var(--text-muted);
+  }
+  @media (forced-colors: active) {
+    .sym {
+      border: 1px solid CanvasText;
+    }
+    .sym--unknown {
+      border-style: dashed;
+    }
+  }
+</style>

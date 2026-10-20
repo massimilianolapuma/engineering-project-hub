@@ -2,6 +2,7 @@
 import type { CollectionError } from '@model/index';
 import type { I18n } from '../i18n';
 import Pill from './Pill.astro';
+import UnknownValue from './UnknownValue.astro';
 interface Props {
   errors: CollectionError[];
   i18n: I18n;
@@ -17,33 +18,45 @@ const tone = (c: CollectionError['classification']) =>
   <p class="muted">{d.common.noErrors}</p>
 ) : (
   <div class="table-wrap">
-    <table class="table">
+    <table role="table" class="table">
       <caption class="visually-hidden">{caption}</caption>
-      <thead>
-        <tr>
-          <th scope="col">{d.common.repository}</th>
-          <th scope="col">{d.dataQualityPage.source}</th>
-          <th scope="col">{d.dataQualityPage.classification}</th>
-          <th scope="col" class="num">
+      <thead role="rowgroup">
+        <tr role="row">
+          <th role="columnheader" scope="col">
+            {d.common.repository}
+          </th>
+          <th role="columnheader" scope="col">
+            {d.dataQualityPage.source}
+          </th>
+          <th role="columnheader" scope="col">
+            {d.dataQualityPage.classification}
+          </th>
+          <th role="columnheader" scope="col" class="num">
             {d.dataQualityPage.http}
           </th>
-          <th scope="col">{d.dataQualityPage.detail}</th>
+          <th role="columnheader" scope="col">
+            {d.dataQualityPage.detail}
+          </th>
         </tr>
       </thead>
-      <tbody>
+      <tbody role="rowgroup">
         {errors.map((e) => (
-          <tr>
-            <td data-label={d.common.repository}>
+          <tr role="row">
+            <td role="cell" data-label={d.common.repository}>
               <code>{e.repository}</code>
             </td>
-            <td data-label={d.dataQualityPage.source}>{d.errorSource[e.source]}</td>
-            <td data-label={d.dataQualityPage.classification}>
+            <td role="cell" data-label={d.dataQualityPage.source}>
+              {d.errorSource[e.source]}
+            </td>
+            <td role="cell" data-label={d.dataQualityPage.classification}>
               <Pill tone={tone(e.classification)} label={d.errorClass[e.classification]} />
             </td>
-            <td class="num" data-label={d.dataQualityPage.http}>
-              {e.httpStatus ?? d.common.unknownValue}
+            <td role="cell" class="num" data-label={d.dataQualityPage.http}>
+              {e.httpStatus ?? <UnknownValue i18n={i18n} />}
             </td>
-            <td data-label={d.dataQualityPage.detail}>{e.detail ?? d.common.unknownValue}</td>
+            <td role="cell" data-label={d.dataQualityPage.detail}>
+              {e.detail ?? <UnknownValue i18n={i18n} />}
+            </td>
           </tr>
         ))}
       </tbody>

@@ -1,48 +1,337 @@
 ---
-import { CapabilitySchema } from '@model/index';
+import {
+  CapabilitySchema,
+  ErrorClassificationSchema,
+  type Availability,
+  type CollectionError,
+  type ErrorClassification,
+} from '@model/index';
 import ErrorState from '../../components/ErrorState.astro';
 import ErrorsTable from '../../components/ErrorsTable.astro';
+import ExtLink from '../../components/ExtLink.astro';
 import Pill from '../../components/Pill.astro';
-import RelTime from '../../components/RelTime.astro';
-import StatusBadge from '../../components/StatusBadge.astro';
 import Base from '../../layouts/Base.astro';
+import { healthRank } from '../../lib/format';
 import { pageContext } from '../../lib/page';
 import { href, localeParams } from '../../lib/routes';
+import type { Tone } from '../../lib/tones';
 
 export const getStaticPaths = localeParams;
 const { locale } = Astro.props;
 const { i18n, data, index, alternates } = pageContext(locale, 'dataQuality');
-const { d } = i18n;
+const { d, f } = i18n;
 const q = d.dataQualityPage;
-const availTone = (a: string) =>
+
+const PERMISSIONS_GUIDE =
+  'https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps';
+const DAY_MS = 86_400_000;
+
+/** Singular / plural pick for "{count} …" templates. */
+const plural = (n: number, one: string, other: string) =>
+  f(n === 1 ? one : other, { count: i18n.number(n) });
+/** "owner/name" → "name": the organisation is the same for every row. */
+const repoName = (full: string) => full.slice(full.indexOf('/') + 1);
+const dayFmt = new Intl.DateTimeFormat(locale === 'it' ? 'it-IT' : 'en-GB', {
+  dateStyle: 'medium',
+  timeZone: 'UTC',
+});
+const day = (iso: string) => dayFmt.format(new Date(iso));
+
+/** Projects worst first (red, amber, unknown, healthy), then by name. */
+const projects = data.ok
+  ? [...data.data.projects].sort(
+      (a, b) =>
+        healthRank(a.overallHealth.status) - healthRank(b.overallHealth.status) ||
+        a.project.name.localeCompare(b.project.name),
+    )
+  : [];
+
+/* What we could not read, grouped by classification, then by project and source. */
+interface CauseRow {
+  projectId: string;
+  projectName: string;
+  source: CollectionError['source'];
+  repositories: string[];
+}
+const causes = ErrorClassificationSchema.options
+  .map((classification, order) => {
+    const rows: CauseRow[] = [];
+    /* A repository shared by two projects is one source: same key as the collector. */
+    const keys = new Set<string>();
+    for (const p of projects) {
+      for (const e of p.collectionErrors.filter((x) => x.classification === classification)) {
+        keys.add(`${e.repository}|${e.source}|${e.classification}`);
+        const row = rows.find((r) => r.projectId === p.project.id && r.source === e.source);
+        if (row) {
+          if (!row.repositories.includes(e.repository)) row.repositories.push(e.repository);
+        } else
+          rows.push({
+            projectId: p.project.id,
+            projectName: p.project.name,
+            source: e.source,
+            repositories: [e.repository],
+          });
+      }
+    }
+    return { classification, order, sources: keys.size, rows };
+  })
+  .filter((c) => c.sources > 0)
+  .sort((a, b) => b.sources - a.sources || a.order - b.order);
+const causeTone = (c: ErrorClassification): Tone =>
+  c === 'error' || c === 'rate-limited' ? 'red' : c === 'not-configured' ? 'amber' : 'grey';
+const unreadable = causes.reduce((n, c) => n + c.sources, 0);
+/* A 404 means a missing repository only when the repository itself was not found. */
+const causeWhy = (c: (typeof causes)[number]) =>
+  c.classification === 'not-found' && c.rows.some((r) => r.source !== 'repository')
+    ? q.notFoundAny
+    : q.causeWhy[c.classification];
+const unreadableProjects = projects.filter((p) => p.collectionErrors.length > 0).length;
+const accessCauses = causes.some(
+  (c) => c.classification === 'not-authorised' || c.classification === 'not-found',
+);
+
+/* Stale sources, with their age at collection time (unknown when the source has no date). */
+const stale = projects.flatMap((p) =>
+  p.dataFreshness.staleSources.map((s) => ({
+    project: p.project,
+    repository: s.repository,
+    source: s.source,
+    lastUpdatedAt: s.lastUpdatedAt,
+    days: s.lastUpdatedAt
+      ? Math.max(
+          0,
+          Math.floor(
+            (Date.parse(p.dataFreshness.collectedAt) - Date.parse(s.lastUpdatedAt)) / DAY_MS,
+          ),
+        )
+      : null,
+  })),
+);
+
+/* Submodules the catalog does not map, or whose pin cannot be resolved. */
+const submodules = projects.flatMap((p) =>
+  p.coordinator.submodules
+    .filter((m) => m.association === 'unmapped' || m.status !== 'resolved')
+    .map((m) => ({ project: p.project, ...m })),
+);
+const [beforeFile, afterFile] = q.unmappedSentence.split('{file}');
+const [beforeDate, afterDate] = q.lastUpdate.split('{date}');
+
+/* Deep links (/data-quality/#<project-id>) land on the project's first row, always visible. */
+const anchored = new Set<string>();
+const anchor = (projectId: string) => {
+  if (anchored.has(projectId)) return undefined;
+  anchored.add(projectId);
+  return projectId;
+};
+
+/* Collection capabilities, worst first. */
+const AVAIL_RANK: Record<Availability, number> = {
+  'not-authorised': 0,
+  unknown: 1,
+  partial: 2,
+  available: 3,
+  'not-used': 4,
+};
+const availTone = (a: Availability): Tone =>
   a === 'available' ? 'green' : a === 'partial' ? 'amber' : a === 'not-used' ? 'muted' : 'grey';
+const capabilities = index
+  ? CapabilitySchema.options
+      .map((c, order) => ({ c, order, a: index.run.capabilities[c] }))
+      .sort((x, y) => AVAIL_RANK[x.a] - AVAIL_RANK[y.a] || x.order - y.order)
+  : [];
+
+const lead = [
+  unreadable > 0 &&
+    `${plural(unreadable, q.unreadableOne, q.unreadableOther)} ${plural(
+      unreadableProjects,
+      q.inProjectsOne,
+      q.inProjectsOther,
+    )}`,
+  stale.length > 0 && plural(stale.length, q.staleOne, q.staleOther),
+]
+  .filter(Boolean)
+  .join(' · ');
 ---
 
 <Base i18n={i18n} title={q.title} page="dataQuality" alternates={alternates} index={index}>
   {!data.ok && <ErrorState error={data.error} i18n={i18n} />}
   {data.ok && index && (
-    <>
-      <header class="page-head">
+    <div class="dq">
+      <header class="page-head dq-head">
         <h1>{q.title}</h1>
-        <p class="lead">{q.intro}</p>
+        <p class="dq-lead">{lead || q.leadClean}</p>
+        <p class="muted dq-intro">{q.intro}</p>
       </header>
-      <section class="grid-2">
-        <div class="card">
+
+      <section aria-label={q.repoCounts}>
+        <ul class="dq-counts">
+          <li class="dq-count" data-repo-count="total">
+            <span class="dq-count__value">{i18n.number(index.run.repositories.total)}</span>
+            <span class="muted">{q.reposTotal}</span>
+          </li>
+          <li class="dq-count dq-count--green" data-repo-count="full">
+            <span class="dq-count__value">{i18n.number(index.run.repositories.ok)}</span>
+            <span class="muted">{q.reposFull}</span>
+          </li>
+          <li class="dq-count dq-count--amber" data-repo-count="partial">
+            <span class="dq-count__value">{i18n.number(index.run.repositories.withErrors)}</span>
+            <span class="muted">{q.reposPartial}</span>
+          </li>
+          <li class="dq-count dq-count--unknown" data-repo-count="unreadable">
+            <span class="dq-count__value">{i18n.number(index.run.repositories.unavailable)}</span>
+            <span class="muted">{q.reposUnreadable}</span>
+          </li>
+        </ul>
+      </section>
+
+      <section class="card dq-card" aria-labelledby="h-cause">
+        <h2 id="h-cause">{q.byCause}</h2>
+        {causes.length === 0 ? (
+          <p class="muted">{q.noUnreadable}</p>
+        ) : (
+          <>
+            {causes.map((c) => (
+              <div class="dq-cause" data-cause={c.classification} data-sources={c.sources}>
+                <p class="dq-cause__head">
+                  <Pill tone={causeTone(c.classification)} label={d.errorClass[c.classification]} />
+                  <span class="muted">
+                    {plural(c.sources, q.sourcesOne, q.sourcesOther)} · {causeWhy(c)}
+                  </span>
+                </p>
+                <ul class="dq-rows">
+                  {c.rows.map((r) => (
+                    <li class="dq-row" id={anchor(r.projectId)}>
+                      <span>
+                        <a class="dq-project" href={href(locale, `projects/${r.projectId}`)}>
+                          {r.projectName}
+                        </a>
+                      </span>
+                      <span>{d.errorSource[r.source]}</span>
+                      <span class="mono dq-repos">{r.repositories.map(repoName).join(', ')}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            {accessCauses && (
+              <p class="muted dq-fix">
+                {q.howToFix}{' '}
+                <ExtLink href={PERMISSIONS_GUIDE} i18n={i18n} label={q.permissionsGuide} />
+              </p>
+            )}
+          </>
+        )}
+      </section>
+
+      <section class="card dq-card" aria-labelledby="h-stale">
+        <h2 id="h-stale">{q.stale}</h2>
+        {stale.length === 0 ? (
+          <p class="muted">{q.noStale}</p>
+        ) : (
+          <ul class="dq-rows">
+            {stale.map((s) => (
+              <li class="dq-row" id={anchor(s.project.id)}>
+                <span>
+                  <a class="dq-project" href={href(locale, `projects/${s.project.id}`)}>
+                    {s.project.name}
+                  </a>{' '}
+                  · <span class="mono">{repoName(s.repository)}</span>
+                </span>
+                <span>{d.errorSource[s.source]}</span>
+                <span class="dq-status">
+                  {s.days !== null && s.lastUpdatedAt ? (
+                    <>
+                      <span class="status-col">
+                        <Pill tone="amber" label={plural(s.days, q.ageOne, q.ageOther)} />
+                      </span>
+                      <span>
+                        {beforeDate}
+                        <time datetime={s.lastUpdatedAt}>{day(s.lastUpdatedAt)}</time>
+                        {afterDate}
+                      </span>
+                    </>
+                  ) : (
+                    <span class="status-col">
+                      <Pill tone="grey" label={d.common.unknown} />
+                    </span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section class="card dq-card" aria-labelledby="h-submodules">
+        <h2 id="h-submodules">{q.submodules}</h2>
+        {submodules.length === 0 ? (
+          <p class="muted">{q.noSubmodules}</p>
+        ) : (
+          <ul class="dq-rows">
+            {submodules.map((m) => (
+              <li class="dq-row" id={anchor(m.project.id)}>
+                <span>
+                  <a class="dq-project" href={href(locale, `projects/${m.project.id}`)}>
+                    {m.project.name}
+                  </a>
+                </span>
+                <span class="mono">{m.path}</span>
+                <span class="dq-status">
+                  {m.association === 'unmapped' ? (
+                    <span>
+                      {beforeFile}
+                      <code>.gitmodules</code>
+                      {afterFile} <a href={href(locale, 'catalog')}>{q.addToCatalog}</a>
+                    </span>
+                  ) : (
+                    <>
+                      <span class="status-col">
+                        <Pill
+                          tone={m.status === 'unresolvable' ? 'red' : 'grey'}
+                          label={d.submoduleStatus[m.status]}
+                        />
+                      </span>
+                      <span>{q.unresolvedSentence}</span>
+                    </>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section class="card dq-card" aria-labelledby="h-cap">
+        <h2 id="h-cap">{q.capabilities}</h2>
+        <ul class="dq-caps">
+          {capabilities.map(({ c, a }) => (
+            <li class="dq-cap">
+              <Pill tone={availTone(a)} label={d.availability[a]} />
+              <span>{d.capability[c]}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <details class="dq-run disclosure">
+        <summary>
+          {f(q.runSummary, {
+            date: i18n.date(index.run.startedAt),
+            source: index.run.dataSource === 'mock' ? d.common.sourceMock : d.common.sourceGithub,
+            version: index.run.collectorVersion,
+          })}
+        </summary>
+        <div class="dq-run__body">
           <h2 class="h3">{q.run}</h2>
           <dl class="facts">
             <div>
               <dt>{q.started}</dt>
-              <dd>
-                <RelTime
-                  iso={index.run.startedAt}
-                  i18n={i18n}
-                  staleHours={index.run.policy.snapshotStaleHours}
-                />
-              </dd>
+              <dd>{i18n.date(index.run.startedAt)}</dd>
             </div>
             <div>
               <dt>{q.duration}</dt>
-              <dd>{(index.run.durationMs / 1000).toFixed(1)} s</dd>
+              <dd>{i18n.seconds(index.run.durationMs)}</dd>
             </div>
             <div>
               <dt>{d.common.source}</dt>
@@ -69,126 +358,185 @@ const availTone = (a: string) =>
             <div>
               <dt>{q.config}</dt>
               <dd>
-                <Pill tone={index.run.configValid ? 'green' : 'red'} label={q.configValid} />
+                <Pill
+                  tone={index.run.configValid ? 'green' : 'red'}
+                  label={index.run.configValid ? q.configValid : q.configInvalid}
+                />
               </dd>
             </div>
           </dl>
-        </div>
-        <div class="card">
-          <h2 class="h3">{q.repositories}</h2>
-          <ul class="kpis kpis--small">
-            <li class="kpi">
-              <span class="kpi__value">{index.run.repositories.total}</span>
-              <span class="kpi__label">{d.common.total}</span>
-            </li>
-            <li class="kpi kpi--green">
-              <span class="kpi__value">{index.run.repositories.ok}</span>
-              <span class="kpi__label">{q.reposOk}</span>
-            </li>
-            <li class="kpi kpi--amber">
-              <span class="kpi__value">{index.run.repositories.withErrors}</span>
-              <span class="kpi__label">{q.reposErrors}</span>
-            </li>
-            <li class="kpi kpi--grey">
-              <span class="kpi__value">{index.run.repositories.unavailable}</span>
-              <span class="kpi__label">{q.reposUnavailable}</span>
-            </li>
-          </ul>
-          <h2 class="h3">{q.capabilities}</h2>
-          <ul class="controls">
-            {CapabilitySchema.options.map((c) => (
-              <li>
-                <span>{d.capability[c]}</span>
-                <Pill
-                  tone={availTone(index.run.capabilities[c])}
-                  label={d.availability[index.run.capabilities[c]]}
+          {projects
+            .filter((p) => p.collectionErrors.length > 0)
+            .map((p) => (
+              <>
+                <h3>
+                  {q.errors} ·{' '}
+                  <a href={href(locale, `projects/${p.project.id}`)}>{p.project.name}</a>
+                </h3>
+                <ErrorsTable
+                  errors={p.collectionErrors}
+                  i18n={i18n}
+                  caption={`${q.errors} — ${p.project.name}`}
                 />
-              </li>
+              </>
             ))}
-          </ul>
         </div>
-      </section>
-
-      <section class="card" aria-labelledby="h-inacc">
-        <h2 id="h-inacc" class="h3">
-          {q.inaccessible}
-        </h2>
-        {index.run.inaccessibleSources.length === 0 ? (
-          <p class="muted">{d.common.none}</p>
-        ) : (
-          <ul class="plain">
-            {index.run.inaccessibleSources.map((x) => (
-              <li>
-                <code>{x.repository}</code> · {d.errorSource[x.source]}{' '}
-                <Pill tone="grey" label={d.errorClass[x.classification]} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section class="grid-2">
-        <div class="card">
-          <h2 class="h3">{q.staleSnapshots}</h2>
-          <ul class="plain">
-            {data.data.projects.flatMap((p) =>
-              p.dataFreshness.staleSources.map((x) => (
-                <li>
-                  <a href={href(locale, `projects/${p.project.id}`)}>{p.project.name}</a> ·{' '}
-                  <code>{x.repository}</code> · {d.errorSource[x.source]} ·{' '}
-                  <RelTime iso={x.lastUpdatedAt} i18n={i18n} />
-                </li>
-              )),
-            )}
-          </ul>
-        </div>
-        <div class="card">
-          <h2 class="h3">{q.unresolved}</h2>
-          <ul class="plain">
-            {data.data.projects.flatMap((p) =>
-              p.coordinator.submodules
-                .filter((m) => m.association === 'unmapped' || m.status !== 'resolved')
-                .map((m) => (
-                  <li>
-                    <a href={href(locale, `projects/${p.project.id}`)}>{p.project.name}</a> ·{' '}
-                    <code>{m.path}</code>{' '}
-                    <Pill
-                      tone={m.status === 'unresolvable' ? 'red' : 'amber'}
-                      label={
-                        m.association === 'unmapped'
-                          ? d.association.unmapped
-                          : d.submoduleStatus[m.status]
-                      }
-                    />
-                  </li>
-                )),
-            )}
-          </ul>
-        </div>
-      </section>
-
-      <section aria-labelledby="h-errors">
-        <h2 id="h-errors">{q.errors}</h2>
-        {data.data.projects.map((p) => (
-          <div class="card" id={p.project.id}>
-            <h3>
-              <a href={href(locale, `projects/${p.project.id}`)}>{p.project.name}</a>{' '}
-              <StatusBadge
-                status={p.dataFreshness.status}
-                i18n={i18n}
-                context={d.dimensions.freshness}
-                size="sm"
-                labelled
-              />
-            </h3>
-            <ErrorsTable
-              errors={p.collectionErrors}
-              i18n={i18n}
-              caption={`${q.errors} — ${p.project.name}`}
-            />
-          </div>
-        ))}
-      </section>
-    </>
+      </details>
+    </div>
   )}
 </Base>
+
+<style>
+  .dq {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  .dq > section,
+  .dq > .card {
+    margin: 0;
+  }
+  .dq-head {
+    margin-bottom: var(--space-2);
+  }
+  .dq-head h1 {
+    margin: 0;
+  }
+  .dq-lead {
+    margin: 6px 0 0;
+    font-size: var(--fs-lead);
+    line-height: 24px;
+    font-weight: 600;
+  }
+  .dq-intro {
+    margin: var(--space-1) 0 0;
+  }
+  .dq-counts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .dq-count {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+  }
+  .dq-count__value {
+    font-size: var(--fs-score);
+    line-height: 34px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .dq-count--green .dq-count__value {
+    color: var(--green-text);
+  }
+  .dq-count--amber .dq-count__value {
+    color: var(--amber-text);
+  }
+  /* Unreadable is unknown: dashed outline, never a fill and never calmer than a gap. */
+  .dq-count--unknown {
+    border: 1.5px dashed var(--unknown);
+  }
+  .dq-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: 0;
+  }
+  .dq-card h2 {
+    margin: 0;
+    font-size: var(--fs-card);
+    line-height: 22px;
+  }
+  .dq-card > p {
+    margin: 0;
+  }
+  .dq-cause__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) 10px;
+    margin: 0 0 var(--space-1);
+  }
+  .dq-rows {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .dq-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.6fr);
+    gap: var(--space-3);
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+    align-items: start;
+  }
+  .dq-row:first-child {
+    border-top: 0;
+  }
+  .dq-row[id] {
+    scroll-margin-top: var(--space-6);
+  }
+  .dq-row:target {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+  .dq-project {
+    font-weight: 600;
+  }
+  .dq-repos {
+    overflow-wrap: anywhere;
+  }
+  .dq-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-2);
+  }
+  .dq-fix {
+    font-size: var(--fs-sm);
+  }
+  .dq-caps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .dq-cap {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .dq-run {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+  .dq-run summary {
+    cursor: pointer;
+    min-height: 44px;
+    padding: 12px var(--space-4);
+    font-weight: 600;
+  }
+  .dq-run__body {
+    padding: 0 var(--space-4) var(--space-4);
+  }
+  .dq-run__body h3 {
+    margin-top: var(--space-5);
+  }
+  @media (max-width: 640px) {
+    .dq-row {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-1);
+    }
+  }
+</style>

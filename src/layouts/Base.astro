@@ -3,7 +3,7 @@ import type { PortfolioIndex } from '@model/index';
 import Legend from '../components/Legend.astro';
 import RelTime from '../components/RelTime.astro';
 import { LOCALES, type I18n, type Locale } from '../i18n';
-import { href, type PageKey } from '../lib/routes';
+import { NAV, href, type PageKey } from '../lib/routes';
 import '../styles/tokens.css';
 import '../styles/global.css';
 
@@ -14,14 +14,17 @@ interface Props {
   /** Path of this page in every locale, for the language switcher and hreflang. */
   alternates: Record<Locale, string>;
   index: PortfolioIndex | null;
-  /** The legend strip under the header; the portfolio draws its legend in the sheet margin. */
-  legend?: boolean;
+  /**
+   * Optional one-line legend appended at the end of the main content. Off by default: each
+   * page places its own `<Legend>` under its list (the full explanation is "How to read").
+   */
+  legend?: 'status' | 'symbols' | false;
 }
-const { i18n, title, page, alternates, index, legend = true } = Astro.props;
+const { i18n, title, page, alternates, index, legend = false } = Astro.props;
 const { d, locale } = i18n;
-const nav: PageKey[] = ['portfolio', 'workflows', 'versions', 'security', 'dataQuality', 'catalog'];
 const run = index?.run;
 const staleHours = run?.policy.snapshotStaleHours ?? 24;
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 ---
 
 <!doctype html>
@@ -30,19 +33,20 @@ const staleHours = run?.policy.snapshotStaleHours ?? 24;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f6f5f3" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#151311" media="(prefers-color-scheme: dark)" />
     <meta name="robots" content="noindex, nofollow" />
     <meta name="referrer" content="no-referrer" />
+    <!-- frame-ancestors is ignored in a <meta> CSP: it is sent as a header (public/_headers). -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'"
     />
+    <!-- Restores the saved theme before first paint (blocking, external: CSP script-src 'self'). -->
+    <script is:inline src={`${base}theme-init.js`}></script>
     <title>{`${title} · ${d.meta.appName}`}</title>
     <meta name="description" content={d.meta.tagline} />
-    <link
-      rel="icon"
-      href={`${import.meta.env.BASE_URL.replace(/\/?$/, '/')}favicon.svg`}
-      type="image/svg+xml"
-    />
+    <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
     {LOCALES.map((l) => (
       <link rel="alternate" hreflang={l} href={alternates[l]} />
     ))}
@@ -67,7 +71,7 @@ const staleHours = run?.policy.snapshotStaleHours ?? 24;
         </a>
         <nav class="mainnav" aria-label={d.nav.main}>
           <ul>
-            {nav.map((k) => (
+            {NAV.map((k) => (
               <li>
                 <a href={href(locale, k)} aria-current={page === k ? 'page' : undefined}>
                   {d.nav[k]}
@@ -77,6 +81,13 @@ const staleHours = run?.policy.snapshotStaleHours ?? 24;
           </ul>
         </nav>
         <div class="topbar__tools">
+          <a
+            class="utility-link"
+            href={href(locale, 'howToRead')}
+            aria-current={page === 'howToRead' ? 'page' : undefined}
+          >
+            {d.nav.howToRead}
+          </a>
           <button
             type="button"
             class="theme-toggle"
@@ -131,11 +142,11 @@ const staleHours = run?.policy.snapshotStaleHours ?? 24;
           {i18n.f(d.common.staleBanner, { hours: staleHours })}
         </div>
       )}
-      {legend && <Legend i18n={i18n} />}
     </header>
     <div class="layout">
       <main id="main" tabindex="-1">
         <slot />
+        {legend && <Legend i18n={i18n} kind={legend} />}
       </main>
     </div>
     <footer class="footer">
@@ -146,6 +157,43 @@ const staleHours = run?.policy.snapshotStaleHours ?? 24;
     <script>
       import '../scripts/relative-time';
       import '../scripts/theme-toggle';
+      import '../scripts/main-nav';
     </script>
   </body>
 </html>
+
+<style>
+  /* Main nav takes the free space; utilities (How to read, theme, language) sit at the end. */
+  .mainnav {
+    flex: 1 1 auto;
+  }
+  /*
+   * Phones: the main nav is one row under the brand and tools that scrolls sideways inside
+   * itself, never the page. The padding keeps the focus ring clear of the scroll edge.
+   */
+  @media (max-width: 720px) {
+    .mainnav {
+      order: 3;
+      flex: 1 1 100%;
+      min-width: 0;
+      margin: 0 calc(-1 * var(--space-1));
+      padding: var(--space-1);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+  }
+  .utility-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-md);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+  }
+  .utility-link[aria-current='page'] {
+    color: var(--text);
+    background: var(--surface-2);
+    text-decoration: none;
+  }
+</style>

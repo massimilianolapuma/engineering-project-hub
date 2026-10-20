@@ -14,3 +14,7 @@ CONTRIBUTING.md
 config/schema/
 .e2e-dist/
 .impeccable/
+# Local agent/tool folders
+.claude/
+.superpowers/
+.playwright-mcp/

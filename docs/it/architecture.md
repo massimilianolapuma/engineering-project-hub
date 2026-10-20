@@ -121,7 +121,7 @@ flowchart TB
 - `projects[]`: un `ProjectSummary` per ciascun progetto. Contiene lo stato di ogni
   dimensione, il riepilogo della copertura, i conteggi degli elementi aperti
   (`null` = sconosciuto), lo stato del secret scanning, i workflow critici falliti, i
-  conteggi degli errori e i submodule non risolti.
+  conteggi degli errori, i submodule non risolti e lo `score` del progetto.
 
 `projects/<id>.json` (`ProjectSnapshot`) contiene questi campi:
 
@@ -131,6 +131,8 @@ flowchart TB
   controllo)
 - `deliveryHealth`, `versionHealth`, `securityHealth` (con conteggi e suddivisioni),
   `securityCoverage`, `governanceHealth` e `overallHealth`
+- `score`: `{ value, measured, required }`, calcolato dal collector (`value` è `null`
+  quando i dati sono insufficienti; vedi [Configurazione](configuration.md#punteggio-del-progetto))
 - `dataFreshness` e `collectionErrors[]`
 
 Enum normalizzati:
@@ -225,7 +227,9 @@ Altre decisioni:
 - L'i18n usa le route `[...lang]`: EN su `/`, IT su `/it/`. I dizionari tipizzati devono
   avere chiavi identiche, vincolo imposto da `Dict` e verificato dai test. Gli snapshot
   restano indipendenti dalla lingua: i motivi sono codici più parametri.
-- Design token in CSS nativo (tema scuro e chiaro, contrasto WCAG AA). La UI è stata
-  validata con mockup hi-fi prima dell'implementazione. I font sono Geist self-hosted (OFL).
+- Design token in CSS nativo ("Warm Graphite", tema chiaro e scuro, contrasto WCAG AA
+  verificato da un test unitario), descritti in [`DESIGN.md`](../../DESIGN.md). La UI è
+  stata validata con mockup hi-fi prima dell'implementazione. I font sono IBM Plex Sans e
+  IBM Plex Mono self-hosted (OFL) tramite `@fontsource`.
 - TypeScript è fissato alla 6.0 per compatibilità con il tooling (typescript-eslint,
   `@astrojs/check`).

@@ -17,7 +17,8 @@
 #             code ever runs next to the credentials. Other commits are refused.
 #   collect — the ONLY job with GitHub read credentials (GitHub App / PAT):
 #             validate config → collect → validate snapshots → artifact
-#   build   — no secrets, no write permission: npm ci → astro build → SBOM →
+#   build   — no secrets, no write permission: caller's policies.yaml (read
+#             only, explained on "How to read") → npm ci → astro build → SBOM →
 #             secret scan → artifact "site"
 #   deploy  — only the Cloudflare token: wrangler pages deploy (no hub code)
 #
@@ -232,6 +233,15 @@ jobs:
           path: hub
           persist-credentials: false
 
+      # Only policies.yaml: the "How to read" page explains the policies the collector used.
+      - name: Checkout policies (calling repository)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: deploy
+          sparse-checkout: ${{ inputs.config-path }}/policies.yaml
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -254,6 +264,8 @@ jobs:
           SITE_URL: ${{ inputs.site-url }}
           BASE_PATH: /
           CATALOG_REPOSITORY: ${{ inputs.catalog-repository != '' && inputs.catalog-repository || github.repository }}
+          # Same policies.yaml the Collect step read (required there, so it always exists).
+          POLICIES_FILE: ${{ github.workspace }}/deploy/${{ inputs.config-path }}/policies.yaml
         run: npm run build:site
 
       - name: Generate SBOM (CycloneDX)

@@ -45,6 +45,8 @@ The browser never calls the GitHub API, and the site has no backend and no datab
 
 - What is the overall state of each project, and **why**: every health dimension is shown
   separately, and the overall state is never shown without the dimensions behind it.
+- Which project needs attention first: a **score** from 0 to 100, consistent with the
+  status, ranks the projects, and says how many dimensions it could actually measure.
 - Which repositories and components make up a project, and which component blocks the
   pipeline.
 - The coordinator version, the declared component versions, the latest releases and
@@ -59,22 +61,34 @@ The browser never calls the GitHub API, and the site has no backend and no datab
 ## Views
 
 Every view is available in **English** (`/`) and **Italian** (`/it/`), in light and dark
-mode, with keyboard navigation and a legend that is always shown.
+mode, with keyboard navigation. Each page opens with one sentence that says what matters,
+then the list sorted worst first, and keeps the detail one click away. A one-line legend
+under each status list links to the **How to read** page.
 
-| View               | Path              | Content                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| ------------------ | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Portfolio**      | `/`               | A survey sheet: projects (rows 1–n, worst first) × Overall, Delivery, Version, Security risk, Coverage and Governance (columns A–F). Each cell is tinted by status with its main reason; projects with no measured dimension are a hatched "Not surveyed" band. Margin legend and sheet notes keyed by grid reference (e.g. B1). Status counts act as filters; search, business unit, lifecycle and alert filters, sorting. |
-| **Project detail** | `/projects/<id>/` | General info, coordinator (version and source, latest release, latest commit, manifest), health tiles with reasons, components (repository, declared version, latest release, commit, submodule SHA, drift), workflows, environments, security summary, coverage, collection errors.                                                                                                                                        |
-| **Workflows**      | `/workflows/`     | Matrix with components as rows and tracked workflows as columns. Each cell shows the state, conclusion, branch, time, link to the run, stale flag and the last failed job/step (never logs).                                                                                                                                                                                                                                |
-| **Versions**       | `/versions/`      | Coordinator version, declared versus released component versions, submodule SHAs and associations, environment versions, drift and consistency reasons.                                                                                                                                                                                                                                                                     |
-| **Security**       | `/security/`      | Critical / High / Medium / Low / secret KPIs, breakdowns by category, severity, source, status and repository, a coverage matrix (repository × control), incomplete and stale scans, authorisation errors, and the sanitised findings list.                                                                                                                                                                                 |
-| **Data quality**   | `/data-quality/`  | Collector run metadata, authentication mode, API capabilities, repositories OK / with errors / unavailable, inaccessible sources, stale sources, unresolved submodules, and classified collection errors.                                                                                                                                                                                                                   |
+| View               | Path              | Content                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------ | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Portfolio**      | `/`               | One sentence ("3 of 4 projects need attention") and status counts that act as filters. A compact list, worst first: status dot, project, score with confidence ("measured 4 of 5"), five dimension bars (Delivery, Versions, Security, Coverage, Governance) and the main reason. Search, status, business unit and sort inline; lifecycle and severity under "More filters". |
+| **Project detail** | `/projects/<id>/` | Header with status, score and confidence; "Why it is critical / needs attention" in sentences, red reasons first; five dimension cards; environments as a DEV → UAT → PROD path; components table (version and drift, CI, alerts, coverage symbols); collapsible Workflows, Security (critical and high alerts listed), Coverage and Collection errors.                       |
+| **Security**       | `/security/`      | A summary sentence, portfolio severity totals (marked incomplete when a project is partly unreadable) and one card per project, worst first: coverage of required controls, severity counts, blind spots named as chips, control symbols and links to GitHub. The coverage matrix is a secondary, collapsed section.                                                          |
+| **Versions**       | `/versions/`      | A summary sentence and one card per project, worst first: coordinator version and its source, environments path, and a "To check" table with only the problems (manifest vs submodule vs latest release, unmapped submodules), each explained in a sentence; aligned components collapse into one line.                                                                       |
+| **Workflows**      | `/workflows/`     | Catalog-critical workflows only. Per project, worst first, the rows that need attention (failed, missing, stale, not visible) with workflow, repository, what happened and a link to the run; successful runs collapse into a count. The portal reads runs, it never triggers them.                                                                                           |
+| **Data quality**   | `/data-quality/`  | Repository counts (in catalog, fully read, partly read, unreadable), what could not be read grouped by cause (403, 404) with how to fix it, stale sources with their age, unmapped submodules, collection capabilities and run details.                                                                                                                                       |
+| **Catalog**        | `/catalog/`       | Catalog editor: projects, discovered repositories, a form for general data, project type, components, environments, workflows and security controls, and a proposal box that validates the change and proposes it as a pull request on GitHub (or downloads the YAML). Nothing is saved by the site.                                                                          |
+| **How to read**    | `/how-to-read/`   | What each state means, the six control symbols, unknown vs not authorised vs not configured vs not applicable, the score formula with its caps, and the thresholds from `policies.yaml`.                                                                                                                                                                                      |
 
 Statuses: 🔴 **Critical**, 🟠 **Attention**, 🟢 **Healthy** and ⬜ **Unknown**. Each one is
-shown with a colour, a distinct shape icon, text and an accessible description.
-Unknown data is shown as **"—" / Unknown, never as 0**. The site also uses the labels "Not configured",
-"Not authorised", "No open alerts" (only shown when collection succeeded) and "Collection
-failed".
+shown with a colour, a distinct shape, text and an accessible description; Unknown is drawn
+as a dashed outline, never as a fill. Unknown data is shown as **"—" / Unknown, never as 0**.
+The site also uses the labels "Not configured", "Not authorised", "Not applicable", "No
+open alerts" (only shown when collection succeeded) and "Collection failed". Control
+symbols: ✓ enabled · ! required but not configured · ⧖ stale scan · ✕ failed · ? not
+visible · – not required.
+
+The **score** (0–100) is computed by the collector from the measured dimensions (weights
+and points in `config/policies.yaml`) and capped by the status, so a critical project
+always ranks below an attention one. Dimensions that could not be read are excluded, never
+counted as zero; when fewer than half are measured the site shows "insufficient data"
+instead of a number. See [Configuration](docs/configuration.md#project-score).
 
 ## Architecture
 
@@ -295,7 +309,8 @@ Local commands:
 ## Tests
 
 - **Unit**: catalog and policy validation, severity and status normalisation, delivery,
-  security, coverage, version, governance and overall evaluators, `.gitmodules` parsing,
+  security, coverage, version, governance and overall evaluators, the project score
+  (weights, caps, unknown excluded, insufficient data), token contrast in light and dark, `.gitmodules` parsing,
   repository and component association, version drift, sanitiser (canaries
   `ghp_exampleSecretValue`, `github_pat_exampleSecretValue`, `Bearer example-token`,
   `PRIVATE KEY`, `password=example`), GitHub error classification (403, 404 and rate
@@ -306,8 +321,9 @@ Local commands:
   the allowlist (unknown fields rejected), and an unsupported `schemaVersion`. A real Astro
   build checks every view in EN and IT, the links to GitHub, that unknown is never shown
   as 0, that there are no inline scripts, and that no secret patterns appear.
-- **E2E** (Playwright, desktop and mobile): portfolio, keyboard filters, navigation in both
-  languages, and project detail.
+- **E2E** (Playwright, desktop and mobile): portfolio filters and sort, the unknown row,
+  navigation in both languages, project detail sections, keyboard focus and no horizontal
+  scroll at phone width.
 
 ## Troubleshooting
 
@@ -346,7 +362,7 @@ Local commands:
 These are prepared for but not implemented: discovery through custom properties and topics;
 Harbor, SonarQube, Trivy, Checkov, ZAP, SBOM (CycloneDX/SPDX), Cosign and Argo CD
 providers; Azure DevOps, Jira and Microsoft Teams notifications; Prometheus/Grafana;
-history and trends; security exceptions with expiry; policy-as-code; repository
+history and trends, including a "What changed since last collection" view; security exceptions with expiry; policy-as-code; repository
 scorecards; checks for reusable workflow versions, actions pinned to SHA and branch
 protection / rulesets; remediation SLAs; CSV export; and a sanitised executive view.
 Extension points are `SourceProvider` and `ControlProvider` in

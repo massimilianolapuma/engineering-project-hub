@@ -1,138 +1,333 @@
 ---
+/*
+ * Workflows: only the catalog-critical workflows. One summary sentence, then one card per
+ * project (worst delivery first) listing the problem rows only; successes are collapsed into a
+ * count and all-green projects are a single line. The portal reads runs, never triggers them.
+ */
+import type { WorkflowStatus } from '@model/index';
 import ErrorState from '../../components/ErrorState.astro';
 import ExtLink from '../../components/ExtLink.astro';
-import Pill from '../../components/Pill.astro';
-import RelTime from '../../components/RelTime.astro';
-import StatusBadge from '../../components/StatusBadge.astro';
+import Legend from '../../components/Legend.astro';
+import StatusDot from '../../components/StatusDot.astro';
 import Base from '../../layouts/Base.astro';
 import { pageContext } from '../../lib/page';
 import { href, localeParams } from '../../lib/routes';
-import { workflowTone } from '../../lib/tones';
+import {
+  ISSUE_TONE,
+  WORKFLOW_ISSUES,
+  countIssues,
+  daysBetween,
+  plural,
+  sortProjectsForWorkflows,
+  summariseWorkflows,
+  type WorkflowIssue,
+} from '../../lib/workflows';
 
 export const getStaticPaths = localeParams;
 const { locale } = Astro.props;
 const { i18n, data, index, alternates } = pageContext(locale, 'workflows');
 const { d } = i18n;
+const t = d.workflowsPage;
+
+const projects = data.ok ? sortProjectsForWorkflows(data.data.projects) : [];
+const counts = countIssues(projects);
+const anyCritical = projects.some((p) => p.workflows.some((w) => w.critical));
+
+/** "1 critical workflow failed · 1 missing · 1 stale": the noun only once, worst first. */
+const leadParts = WORKFLOW_ISSUES.filter((k) => counts[k] > 0).map((k, i) => {
+  const n = counts[k];
+  const issue = plural(t.issueWord[k], n);
+  return i === 0 ? plural(t.leadFirst, n, { issue }) : i18n.f(t.leadNext, { n, issue });
+});
+const lead = !anyCritical ? t.leadNone : leadParts.length ? leadParts.join(' · ') : t.leadAllOk;
+
+/** Text around the `{branch}` placeholder, so the branch name can be set in monospace. */
+const runOn = (n: number) => i18n.f(t.runOn, { n, branch: '\u0000' }).split('\u0000');
+
+const run = (w: WorkflowStatus) => w.lastCompletedRun ?? w.latestRun;
+const detailKind = (issue: WorkflowIssue, w: WorkflowStatus) =>
+  issue === 'not-visible' ? (w.state === 'not-authorised' ? 'auth' : 'unknown') : issue;
 ---
 
-<Base
-  i18n={i18n}
-  title={d.workflowsPage.title}
-  page="workflows"
-  alternates={alternates}
-  index={index}
->
+<Base i18n={i18n} title={t.title} page="workflows" alternates={alternates} index={index}>
   {!data.ok && <ErrorState error={data.error} i18n={i18n} />}
   {data.ok && (
     <>
-      <header class="page-head">
-        <h1>{d.workflowsPage.title}</h1>
-        <p class="lead">{d.workflowsPage.intro}</p>
+      <header class="page-head wf-head">
+        <h1>{t.title}</h1>
+        <p class="wf-lead">{lead}</p>
+        <p class="muted wf-intro">
+          {t.intro} {t.readOnlyNote}
+        </p>
       </header>
-      {data.data.projects.map((s) => {
-        const tracked = [...new Map(s.workflows.map((w) => [w.workflowId, w])).values()];
-        const rows = ['coordinator', ...s.components.map((c) => c.id)].filter((id) =>
-          s.workflows.some((w) => w.componentId === id),
-        );
-        const name = (id: string) =>
-          id === 'coordinator'
-            ? d.common.coordinator
-            : (s.components.find((c) => c.id === id)?.name ?? id);
-        return (
-          <section class="card" id={s.project.id} aria-labelledby={`wf-${s.project.id}`}>
-            <h2 id={`wf-${s.project.id}`}>
-              <a href={href(locale, `projects/${s.project.id}`)}>{s.project.name}</a>{' '}
-              <StatusBadge
-                status={s.deliveryHealth.status}
-                i18n={i18n}
-                context={d.dimensions.delivery}
-                size="sm"
-                labelled
-              />
-            </h2>
-            {rows.length === 0 ? (
-              <p class="muted">{d.common.dataUnavailable}</p>
-            ) : (
-              <div class="table-wrap">
-                <table class="table table--matrix">
-                  <caption class="visually-hidden">
-                    {i18n.f(d.workflowsPage.matrixCaption, { project: s.project.name })}
-                  </caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">{d.common.component}</th>
-                      {tracked.map((t) => (
-                        <th scope="col">
-                          {t.name}
-                          <code class="sub">{t.file}</code>
-                          {t.critical && <span class="tag">{d.workflowsPage.critical}</span>}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((id) => (
-                      <tr>
-                        <th scope="row">
-                          {name(id)}
-                          <code class="sub">
-                            {s.workflows.find((w) => w.componentId === id)?.repository}
-                          </code>
-                        </th>
-                        {tracked.map((t) => {
-                          const w = s.workflows.find(
-                            (x) => x.componentId === id && x.workflowId === t.workflowId,
-                          );
-                          if (!w)
-                            return (
-                              <td data-label={t.name} class="muted">
-                                {d.workflowsPage.notTracked}
-                              </td>
-                            );
-                          const r = w.lastCompletedRun ?? w.latestRun;
-                          return (
-                            <td data-label={t.name} class={`cell cell--${w.state}`}>
-                              <Pill tone={workflowTone(w.state)} label={d.workflowState[w.state]} />
-                              {r && (
-                                <span class="cell__meta">
-                                  <ExtLink
-                                    href={r.url}
-                                    i18n={i18n}
-                                    label={i18n.f(d.common.run, { n: r.runNumber })}
-                                  />{' '}
-                                  · <code>{r.branch ?? w.branch}</code> · {r.conclusion ?? r.status}
-                                  <br />
-                                  <RelTime iso={r.updatedAt} i18n={i18n} />
-                                  {w.stale && <span class="stale-tag">{d.common.stale}</span>}
+      <div class="wf-list">
+        {projects.map((s) => {
+          const id = s.project.id;
+          const sum = summariseWorkflows(s);
+          const status = s.deliveryHealth.status;
+          const notApplicable = sum.critical.length === 0;
+          const line = notApplicable || sum.issues.length === 0;
+          const unknown = !notApplicable && status === 'grey';
+          const projectHref = href(locale, `projects/${id}`);
+          const statusLabel = `${d.dimensions.delivery}: ${i18n.status(status)}`;
+          const total = plural(t.criticalCount, sum.critical.length);
+          const meta = notApplicable
+            ? t.noCritical
+            : line
+              ? `${total}, ${plural(t.allSucceeded, sum.critical.length)}`
+              : `${total} · ${i18n.f(t.toCheck, { n: sum.issues.length })}`;
+          return (
+            <article
+              class:list={[
+                'card',
+                'wf-card',
+                line && 'wf-card--line',
+                unknown && 'wf-card--unknown',
+              ]}
+              data-project={id}
+              data-delivery={status}
+              aria-labelledby={`wf-${id}`}
+            >
+              <div class="wf-card__head">
+                {!notApplicable && <StatusDot status={status} label={statusLabel} />}
+                <h2 id={`wf-${id}`}>
+                  <a href={projectHref}>{s.project.name}</a>
+                </h2>
+                {notApplicable ? (
+                  <span class="pill pill--muted">{d.common.notApplicable}</span>
+                ) : (
+                  <span class={`pill pill--${status}`} title={statusLabel}>
+                    {i18n.status(status)}
+                    <span class="visually-hidden"> ({d.dimensions.delivery})</span>
+                  </span>
+                )}
+                <span class="wf-card__meta muted">
+                  {meta}
+                  {line && !notApplicable && (
+                    <>
+                      {' · '}
+                      <a href={`${projectHref}#workflows`}>{t.seeList}</a>
+                    </>
+                  )}
+                </span>
+              </div>
+              {sum.issues.length > 0 && (
+                <ul
+                  class="wf-rows"
+                  aria-label={i18n.f(t.problemsLabel, { project: s.project.name })}
+                >
+                  {sum.issues.map(({ workflow: w, issue }) => {
+                    const r = run(w);
+                    const kind = detailKind(issue, w);
+                    return (
+                      <li class="wf-row" data-issue={issue}>
+                        <span class="status-col">
+                          <span class={`pill pill--${ISSUE_TONE[issue]}`}>{t.issue[issue]}</span>
+                        </span>
+                        <span class="wf-row__name">
+                          <strong>{w.name}</strong>
+                          <code class="sub">{w.file}</code>
+                        </span>
+                        <code class="wf-row__repo">{w.repository}</code>
+                        <span class="wf-row__what">
+                          {(kind === 'failed' || kind === 'cancelled') && r && (
+                            <>
+                              {runOn(r.runNumber)[0]}
+                              <code>{r.branch ?? w.branch ?? d.common.unknownValue}</code>
+                              {runOn(r.runNumber)[1]} · <ExtLink href={r.url} i18n={i18n} />
+                              {w.stale && <span class="stale-tag">{d.common.stale}</span>}
+                              {w.lastError && (
+                                <span class="sub">
+                                  {t.lastError}: {w.lastError}
                                 </span>
                               )}
-                              {w.activeRun && w.activeRun !== r && (
-                                <span class="cell__meta">
-                                  {d.workflowsPage.active}:{' '}
+                            </>
+                          )}
+                          {(kind === 'failed' || kind === 'cancelled') && !r && t.runningDetail}
+                          {kind === 'missing' && t.missingFile}
+                          {kind === 'never-run' &&
+                            i18n.f(t.neverRunDetail, { branch: w.branch ?? '' })}
+                          {kind === 'stale' && r && (
+                            <>
+                              {plural(
+                                t.staleDetail,
+                                daysBetween(r.updatedAt, s.dataFreshness.collectedAt),
+                              )}{' '}
+                              · <ExtLink href={r.url} i18n={i18n} />
+                            </>
+                          )}
+                          {kind === 'auth' && t.notAuthorisedDetail}
+                          {kind === 'unknown' && t.unknownDetail}
+                          {kind === 'running' && (
+                            <>
+                              {t.runningDetail}
+                              {w.activeRun && (
+                                <>
+                                  {' '}
                                   <ExtLink
                                     href={w.activeRun.url}
                                     i18n={i18n}
                                     label={i18n.f(d.common.run, { n: w.activeRun.runNumber })}
                                   />
-                                </span>
+                                </>
                               )}
-                              {w.lastError && (
-                                <span class="cell__error">
-                                  {d.workflowsPage.lastError}: {w.lastError}
-                                </span>
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
+                            </>
+                          )}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              {sum.issues.length > 0 && sum.ok.length > 0 && (
+                <details class="wf-ok disclosure">
+                  <summary>{plural(t.okCollapsed, sum.ok.length)}</summary>
+                  <ul class="wf-ok__list">
+                    {sum.ok.map((w) => (
+                      <li>
+                        <strong>{w.name}</strong> <code>{w.file}</code> ·{' '}
+                        <code>{w.repository}</code>
+                        {run(w) && (
+                          <>
+                            {' '}
+                            ·{' '}
+                            <ExtLink
+                              href={run(w)?.url}
+                              i18n={i18n}
+                              label={i18n.f(d.common.run, { n: run(w)?.runNumber ?? '' })}
+                            />
+                          </>
+                        )}
+                      </li>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-        );
-      })}
+                  </ul>
+                </details>
+              )}
+            </article>
+          );
+        })}
+      </div>
+
+      <Legend i18n={i18n} />
     </>
   )}
 </Base>
+
+<style>
+  .wf-head h1 {
+    margin-bottom: var(--space-1);
+  }
+  .wf-lead {
+    margin: 0;
+    font-size: var(--fs-lead);
+    line-height: 1.45;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .wf-intro {
+    margin: var(--space-1) 0 0;
+    max-width: 70ch;
+  }
+  .wf-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  .wf-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-bottom: 0;
+  }
+  .wf-card--unknown {
+    border-style: dashed;
+    border-color: var(--unknown);
+  }
+  .wf-card__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) 10px;
+  }
+  .wf-card:not(.wf-card--line) .wf-card__head {
+    margin-bottom: var(--space-2);
+  }
+  .wf-card__head h2 {
+    margin: 0;
+    font-size: var(--fs-card);
+    line-height: 22px;
+    font-weight: 600;
+  }
+  .wf-card__head h2 a {
+    color: var(--text);
+  }
+  .wf-card__meta {
+    margin-left: auto;
+  }
+  .wf-rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .wf-row {
+    display: grid;
+    grid-template-columns:
+      var(--status-col) minmax(0, 1.4fr) minmax(0, 1fr)
+      minmax(0, 1.2fr);
+    gap: var(--space-3);
+    align-items: center;
+    padding: var(--space-3) 0;
+    border-top: 1px solid var(--border);
+  }
+  .wf-row:first-child {
+    border-top: 0;
+  }
+  .wf-row__repo {
+    font-size: var(--fs-sm);
+  }
+  .wf-row__name code.sub {
+    font-size: var(--fs-xs);
+  }
+  .wf-ok {
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+  .wf-ok summary {
+    color: var(--text-muted);
+    min-height: 40px;
+    padding: 10px 0;
+  }
+  .wf-ok__list {
+    margin: var(--space-2) 0 0;
+    padding-left: var(--space-5);
+    color: var(--text-muted);
+  }
+  .wf-ok__list li + li {
+    margin-top: var(--space-1);
+  }
+  /* Phone and narrow tablet: pill + name on line one, repository and what happened below. */
+  @media (max-width: 760px) {
+    .wf-row {
+      grid-template-columns: var(--status-col) minmax(0, 1fr);
+      gap: var(--space-1) var(--space-3);
+    }
+    .wf-row__repo,
+    .wf-row__what {
+      grid-column: 2;
+    }
+    .wf-card__meta {
+      margin-left: 0;
+      flex-basis: 100%;
+    }
+  }
+  /* Narrow phones: one column, the pill on its own line above the text (still left-aligned). */
+  @media (max-width: 480px) {
+    .wf-row {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .wf-row__repo,
+    .wf-row__what {
+      grid-column: 1;
+    }
+  }
+</style>

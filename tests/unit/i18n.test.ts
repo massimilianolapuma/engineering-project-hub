@@ -35,4 +35,18 @@ describe('i18n', () => {
       i.reason({ code: 'dimension-red', level: 'red', params: { dimension: 'security' } }),
     ).toBe('Rischio sicurezza è critico');
   });
+  it('uses singular wording for a count of one', () => {
+    const alert = (count: number) =>
+      ({ code: 'open-critical-alerts', level: 'red', params: { count } }) as const;
+    expect(useI18n('it').reason(alert(1))).toBe('1 alert critico aperto');
+    expect(useI18n('it').reason(alert(3))).toBe('3 alert critici aperti');
+    expect(useI18n('en').reason(alert(1))).toBe('1 open critical alert');
+    expect(useI18n('en').reason(alert(2))).toBe('2 open critical alerts');
+    expect(useI18n('en').errors(1)).toBe('1 collection error');
+    expect(useI18n('it').errors(3)).toBe('3 errori di raccolta');
+  });
+  it('formats durations with the locale decimal separator', () => {
+    expect(useI18n('it').seconds(12_340)).toBe('12,3 s');
+    expect(useI18n('en').seconds(12_340)).toBe('12.3 s');
+  });
 });

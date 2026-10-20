@@ -93,6 +93,12 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
   const discoveryEl = $<HTMLElement>('[data-ce-discovery]');
   const kindEl = $<HTMLElement>('[data-ce-kind]');
   const mergeEl = $<HTMLElement>('[data-ce-merge]');
+  const proposalSummaryEl = $<HTMLElement>('[data-ce-proposal-summary]');
+  const dockValidEl = $<HTMLElement>('[data-ce-dock-valid]');
+  const dockCountEl = $<HTMLElement>('[data-ce-dock-count]');
+  const undoEl = $<HTMLElement>('[data-ce-undo]');
+  const undoTextEl = $<HTMLElement>('[data-ce-undo-text]');
+  const undoBtn = $<HTMLButtonElement>('[data-ce-undo-btn]');
 
   /** The published catalog: baseline of the pending changes. */
   const published = toDraft(data.catalog);
@@ -108,6 +114,10 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
   let pendingSignature: string | null = null;
   let discoverySignature: string | null = null;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  /** The last removal, offered as "Undo" for a few seconds. */
+  let undoAction: (() => void) | null = null;
+  let undoTimer: ReturnType<typeof setTimeout> | undefined;
+  const UNDO_MS = 10_000;
 
   function init() {
     draft = toDraft(data.catalog);
@@ -118,6 +128,35 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
     }
     selected = 0;
     merge = null;
+    clearUndo();
+  }
+
+  /* ---------- Undo for removals (nothing is saved, so a slip must be reversible) ---------- */
+
+  function clearUndo() {
+    clearTimeout(undoTimer);
+    undoAction = null;
+    if (undoEl) undoEl.hidden = true;
+  }
+
+  function offerUndo(message: string, restore: () => void) {
+    clearTimeout(undoTimer);
+    undoAction = restore;
+    undoTextEl.textContent = message;
+    undoEl.hidden = false;
+    undoTimer = setTimeout(clearUndo, UNDO_MS);
+    announce(message);
+  }
+
+  /** Removes `list[index]` and offers to put it back at the same place. */
+  function removeWithUndo<T>(list: T[], index: number, message: string, after: () => void) {
+    const [item] = list.splice(index, 1);
+    after();
+    if (item === undefined) return;
+    offerUndo(message, () => {
+      list.splice(Math.min(index, list.length), 0, item);
+      after();
+    });
   }
 
   /* ---------- DOM helpers (no innerHTML) ---------- */
@@ -349,13 +388,39 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
               'data-index': String(i),
               'aria-current': i === selected ? 'true' : undefined,
             },
-            h('span', { class: 'ce-project__name' }, p.name.trim() || S.untitled),
-            h('code', { class: 'sub' }, p.id.trim() || '—'),
+            h(
+              'span',
+              { class: 'ce-project__text' },
+              h('span', { class: 'ce-project__name' }, p.name.trim() || S.untitled),
+              h('code', { class: 'sub' }, p.id.trim() || '—'),
+            ),
+            h('span', { class: 'ce-project__badge', 'data-ce-badge': true }),
           ),
         ),
       ),
     );
     if (!draft.projects.length) projectsEl.append(h('li', { class: 'note' }, S.noProjects));
+    paintBadges(pendingChanges(published, draft));
+  }
+
+  /** Pending-change badge (New / Modified) next to each project of the side list. */
+  function paintBadges(changes: PendingChange[]) {
+    const kindAt = new Map(changes.map((ch) => [ch.index, ch.kind]));
+    for (const slot of projectsEl.querySelectorAll<HTMLElement>('[data-ce-badge]')) {
+      const index = Number(slot.closest<HTMLElement>('[data-index]')?.dataset.index);
+      const kind = kindAt.get(index);
+      if (slot.dataset.kind === (kind ?? '')) continue;
+      slot.dataset.kind = kind ?? '';
+      slot.replaceChildren(
+        kind
+          ? h(
+              'span',
+              { class: `pill ${kind === 'new' ? 'pill--green' : 'pill--amber'}` },
+              S.changeKind[kind],
+            )
+          : '',
+      );
+    }
   }
 
   function renderSuggestions() {
@@ -405,7 +470,11 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
       : S.title;
   }
 
-  /** Project type derived from the components (multi-repository, monorepo, single repository). */
+  /**
+   * Project type derived from the components (multi-repository, monorepo, single repository),
+   * shown as a read-only segmented control: the current type is marked, the others are listed
+   * so the choice is visible. It changes by adding or removing components.
+   */
   function updateKind() {
     const p = draft.projects[selected];
     if (!p) {
@@ -415,11 +484,24 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
     }
     const kind = projectKind(p);
     kindEl.hidden = false;
+    if (kindEl.dataset.kind === kind && kindEl.childElementCount) return;
     kindEl.dataset.kind = kind;
+    const kinds = ['multi', 'monorepo', 'single'] as const;
     kindEl.replaceChildren(
-      h('span', { class: 'ce-kind__label' }, `${S.projectType}: `),
-      h('span', { class: `pill ce-kind__pill ce-kind__pill--${kind}` }, S.projectKind[kind]),
-      h('span', { class: 'sub-inline' }, ` ${S.projectKindHelp[kind]}`),
+      h('span', { class: 'ce-kind__label', id: 'ce-kind-label' }, `${S.projectType}: `),
+      h(
+        'ul',
+        { class: 'ce-seg', 'aria-labelledby': 'ce-kind-label' },
+        ...kinds.map((k) =>
+          h(
+            'li',
+            { 'aria-current': k === kind ? 'true' : undefined },
+            h('span', { class: 'ce-seg__dot', 'aria-hidden': 'true' }),
+            S.projectKind[k],
+          ),
+        ),
+      ),
+      h('p', { class: 'ce-kind__help' }, `${S.projectKindHelp[kind]} ${S.projectKindDerived}`),
     );
   }
 
@@ -663,10 +745,10 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
           { class: 'ce-actions' },
           button(
             fill(S.removeComponent, { n }),
-            () => {
-              p.components.splice(j, 1);
-              rerender('add-component');
-            },
+            () =>
+              removeWithUndo(p.components, j, fill(S.componentRemoved, { n }), () =>
+                rerender('add-component'),
+              ),
             { variant: 'ghost' },
           ),
         ),
@@ -715,10 +797,10 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
           { class: 'ce-actions' },
           button(
             fill(S.removeEnvironment, { n }),
-            () => {
-              p.environments.splice(j, 1);
-              rerender('add-environment');
-            },
+            () =>
+              removeWithUndo(p.environments, j, fill(S.environmentRemoved, { n }), () =>
+                rerender('add-environment'),
+              ),
             { variant: 'ghost' },
           ),
         ),
@@ -787,10 +869,10 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
           { class: 'ce-actions' },
           button(
             fill(S.removeWorkflow, { n }),
-            () => {
-              p.trackedWorkflows.splice(j, 1);
-              rerender('add-workflow');
-            },
+            () =>
+              removeWithUndo(p.trackedWorkflows, j, fill(S.workflowRemoved, { n }), () =>
+                rerender('add-workflow'),
+              ),
             { variant: 'ghost' },
           ),
         ),
@@ -869,6 +951,8 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
     if (signature === lastSignature) return;
     lastSignature = signature;
     if (!issues.length) {
+      dockValidEl.className = 'pill pill--green';
+      dockValidEl.textContent = `✓ ${S.dockValid}`;
       validationEl.replaceChildren(
         h(
           'p',
@@ -879,12 +963,14 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
       );
       return;
     }
+    dockValidEl.className = 'pill pill--red';
+    dockValidEl.textContent = `✕ ${fill(S.dockInvalid, { count: issues.length })}`;
     validationEl.replaceChildren(
       h(
         'p',
         { class: 'ce-summary ce-summary--bad' },
         h('span', { 'aria-hidden': 'true' }, '✕ '),
-        fill(S.invalid, { count: issues.length }),
+        fill(issues.length === 1 ? S.invalidOne : S.invalid, { count: issues.length }),
       ),
       h(
         'ul',
@@ -971,6 +1057,13 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
 
   function renderPending() {
     const changes = pendingChanges(published, draft);
+    paintBadges(changes);
+    proposalSummaryEl.textContent = changes.length
+      ? fill(changes.length === 1 ? S.proposalSummaryOne : S.proposalSummary, {
+          count: changes.length,
+        })
+      : S.proposalNone;
+    dockCountEl.textContent = proposalSummaryEl.textContent;
     const rows = changes.map((change) => {
       const p = change.index === null ? null : draft.projects[change.index]!;
       const yaml = p ? projectToYaml(p) : '';
@@ -1176,7 +1269,6 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
     } else {
       status = [
         button(S.addAsProject, () => addProposal(pr), {
-          variant: 'primary',
           describedBy: repoId,
           small: true,
         }),
@@ -1388,8 +1480,26 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
       projectsEl.querySelector<HTMLElement>('[aria-current="true"]') ??
       root.querySelector<HTMLElement>('[data-ce-new]')
     )?.focus();
-    announce(fill(S.projectRemoved, { name: p.name.trim() || p.id.trim() || S.untitled }));
+    offerUndo(fill(S.projectRemoved, { name: p.name.trim() || p.id.trim() || S.untitled }), () => {
+      draft.projects.splice(Math.min(i, draft.projects.length), 0, p);
+      selected = draft.projects.indexOf(p);
+      renderAll();
+    });
   }
+
+  undoBtn.addEventListener('click', () => {
+    const restore = undoAction;
+    clearUndo();
+    if (!restore) return;
+    restore();
+    announce(S.restored);
+  });
+
+  // Nothing is saved: warn before leaving the page with changes that were not proposed.
+  window.addEventListener('beforeunload', (e) => {
+    if (pendingChanges(published, draft).length === 0) return;
+    e.preventDefault();
+  });
 
   projectsEl.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-index]');
@@ -1408,6 +1518,7 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
   });
 
   $<HTMLButtonElement>('[data-ce-reset]').addEventListener('click', () => {
+    if (pendingChanges(published, draft).length > 0 && !window.confirm(S.resetConfirm)) return;
     init();
     renderAll();
     announce(S.resetDone);
