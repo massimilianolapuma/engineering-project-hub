@@ -167,6 +167,55 @@ describe('static site', () => {
       expect(why).toMatch(/href="[^"]*data-quality\/"/);
     });
 
+    it('shows a newer release only when the collector reports drift', async () => {
+      // Platform tags are prefixed (web-v2.0.1) and every component is aligned.
+      const platform = between(await page('projects/platform'), 'id="h-components"', '</section>');
+      expect(platform).not.toContain('latest web-v2.0.1');
+      expect(platform).not.toContain('latest api-v1.8.0');
+      expect(platform).not.toContain('latest worker-v0.4.0');
+      const beta = between(await page('projects/project-beta'), 'data-component="api"', '</tr>');
+      expect(beta).toContain('latest 3.2.0');
+    });
+
+    it('reads monorepo components from the shared repository', async () => {
+      const comps = between(await page('projects/platform'), 'id="h-components"', '</section>');
+      const rows = [...comps.matchAll(/<tr data-component="(\w+)"[\s\S]*?<\/tr>/g)];
+      expect(rows.map((m) => m[1])).toEqual(['web', 'api', 'worker']);
+      for (const [row, idRow] of rows) {
+        expect(row, idRow).not.toContain('None required');
+        expect(row, idRow).not.toContain('Unknown');
+        expect(row, idRow).not.toContain('No critical workflow');
+        expect(row, idRow).toContain('1 high · 1 medium · 1 low');
+        expect(row, idRow).toContain('shared repository');
+        expect(row, idRow).toContain('All required enabled');
+        expect(row, idRow).toContain('Success');
+      }
+    });
+
+    it('never shows unreadable coverage or alert counts as zero or complete', async () => {
+      const gamma = await page('projects/project-gamma');
+      const hint = between(gamma, 'id="coverage"', '</summary>');
+      expect(hint).toContain('3 not visible');
+      for (const m of gamma.matchAll(/0 of 3 required enabled/g)) {
+        const line = gamma.slice(m.index! - 40, m.index! + 60);
+        expect(line).toContain('not visible');
+      }
+      const security = between(gamma, 'id="security"', '</details>');
+      expect(security).toContain('Alert counts unknown');
+      expect(security).not.toContain('Partial: some sources could not be read');
+      // Beta: secret scanning is not authorised, so the card's counts are a lower bound.
+      const beta = await page('projects/project-beta');
+      const card = between(beta, 'data-dimension="security"', '</a>');
+      expect(card).toContain('1 critical · 2 high · 4 other · partial');
+      expect(between(beta, 'data-dimension="coverage"', '</a>')).toContain('1 not visible');
+    });
+
+    it('uses the singular for one blind control and one term for coordinator in Italian', async () => {
+      const html = await page('it/projects/project-beta');
+      expect(between(html, 'data-dimension="coverage"', '</a>')).toContain('1 non visibile');
+      expect(html).not.toContain('coordinatore');
+    });
+
     it('renders the Italian project page in Italian', async () => {
       const html = await page('it/projects/project-beta');
       expect(html).toContain('Perché è critico');

@@ -91,22 +91,34 @@ const topReason = (h: HealthResult) =>
   [...h.reasons].sort((a, b) => LEVEL_RANK[a.level] - LEVEL_RANK[b.level])[0];
 const sum = (c: SeverityCounts | null, keys: (keyof SeverityCounts)[]) =>
   keys.reduce((n, k) => n + (c?.[k] ?? 0), 0);
+/**
+ * Coverage line that never shows unknown as zero: controls that could not be read are named
+ * ("n not visible"), and lead the line when nothing at all could be confirmed as enabled.
+ */
+function coverageLine(template: string): string {
+  if (!s) return '';
+  const cov = s.securityCoverage;
+  const blind = cov.notAuthorised + cov.unknown;
+  const base = f(template, { available: cov.available, required: cov.required });
+  if (blind === 0) return base;
+  const blindText = f(blind === 1 ? d.project.dimBlindOne : d.project.dimBlind, { n: blind });
+  return cov.available === 0 ? `${blindText} · ${base}` : `${base} · ${blindText}`;
+}
 function dimSummary(dim: Dimension, health: HealthResult): string {
   if (!s) return '';
   if (dim === 'security') {
     const c = s.securityHealth.openCounts;
     if (c.critical === null) return d.project.dimSecurityUnknown;
-    return f(d.project.dimSecurity, {
+    const counts = f(d.project.dimSecurity, {
       critical: c.critical ?? 0,
       high: c.high ?? 0,
       other: sum(c, ['medium', 'low', 'informational', 'unknown']),
     });
+    // Some sources unreadable: the counts are a lower bound, say so on the card too.
+    return s.securityHealth.countsComplete ? counts : `${counts} · ${d.project.alertsPartial}`;
   }
   if (dim === 'coverage' && s.securityCoverage.required > 0) {
-    const cov = s.securityCoverage;
-    const blind = cov.notAuthorised + cov.unknown;
-    const base = f(d.project.dimCoverage, { available: cov.available, required: cov.required });
-    return blind > 0 ? `${base} · ${f(d.project.dimBlind, { n: blind })}` : base;
+    return coverageLine(d.project.dimCoverage);
   }
   const r = topReason(health);
   return r ? i18n.reason(r) : d.common.unknownValue;
@@ -158,15 +170,34 @@ const nameOf = (componentId: string) =>
     ? d.common.coordinator
     : (s?.components.find((c) => c.id === componentId)?.name ?? componentId);
 
-/** Components table: worst critical workflow, open alerts and required controls per component. */
+/**
+ * Components table: worst critical workflow, open alerts and required controls per component.
+ * A component that lives in the coordinator repository (monorepo) has no entries of its own:
+ * its workflows and controls are the shared repository's, recorded under the coordinator.
+ */
+const sameRepo = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
+const sharesCoordinatorRepo = (c: ComponentSnapshot) =>
+  !!s && sameRepo(c.repository.fullName, s.coordinator.repository.fullName);
+const ofComponent = <T extends { componentId: string; repository: string }>(
+  items: T[],
+  c: ComponentSnapshot,
+): { items: T[]; shared: boolean } => {
+  const own = items.filter((x) => x.componentId === c.id);
+  if (own.length > 0 || !sharesCoordinatorRepo(c)) return { items: own, shared: false };
+  const shared = items.filter(
+    (x) => x.componentId === 'coordinator' && sameRepo(x.repository, c.repository.fullName),
+  );
+  return { items: shared, shared: shared.length > 0 };
+};
 const ciOf = (c: ComponentSnapshot) => {
-  const crit = workflows.filter((w) => w.componentId === c.id && w.critical);
+  const crit = ofComponent(workflows, c).items.filter((w) => w.critical);
   return crit.length ? wfView(crit[0]!) : null;
 };
 const SEVERITIES = ['critical', 'high', 'medium', 'low', 'informational', 'unknown'] as const;
 const BLIND = new Set(['not-authorised', 'unknown', 'collection-failed']);
-const controlsOf = (c: ComponentSnapshot) =>
-  s?.securityControls.find((x) => x.componentId === c.id)?.controls ?? [];
+const controlsEntry = (c: ComponentSnapshot) => ofComponent(s?.securityControls ?? [], c);
+const controlsOf = (c: ComponentSnapshot) => controlsEntry(c).items[0]?.controls ?? [];
+const sharedControls = (c: ComponentSnapshot) => controlsEntry(c).shared;
 function alertsOf(c: ComponentSnapshot): { text: string | null; partial: boolean } {
   const controls = controlsOf(c);
   const read = controls.filter((x) => x.counts !== null);
@@ -252,9 +283,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
       </header>
 
       <section class="card why" aria-labelledby="h-why">
-        <h2 id="h-why">
-          {f(d.project.whyTitle, { status: d.project.whyStatus[s.overallHealth.status] })}
-        </h2>
+        <h2 id="h-why">{d.project.whyTitle[s.overallHealth.status]}</h2>
         {whyShown.length > 0 ? (
           <ul class="why__list">
             {whyShown.map(({ dim, anchor, r }) => {
@@ -428,7 +457,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
                           ) : (
                             <span class="muted">{d.common.unknown}</span>
                           )}
-                          {latest && displayVersion(latest.tag) !== eff && (
+                          {latest && c.drift === 'drift' && (
                             <span class="muted">
                               {' → '}
                               <ExtLink
@@ -462,6 +491,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
                         <span class="cell">
                           {alerts.text ?? <span class="muted">{d.common.unknown}</span>}
                           {alerts.partial && <span class="sub"> · {d.project.alertsPartial}</span>}
+                          {sharedControls(c) && <span class="sub"> · {d.project.sharedRepo}</span>}
                         </span>
                       </td>
                       <td data-label={d.project.coverageCol}>
@@ -509,7 +539,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
                 <thead>
                   <tr>
                     <th scope="col">{d.common.status}</th>
-                    <th scope="col">Workflow</th>
+                    <th scope="col">{d.project.workflowCol}</th>
                     <th scope="col">{d.common.component}</th>
                     <th scope="col">{d.common.updated}</th>
                     <th scope="col">{d.workflowsPage.lastError}</th>
@@ -593,7 +623,9 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
             {countsKnown && otherAlerts > 0 && (
               <p>{f(d.project.otherAlertsOnGitHub, { n: otherAlerts })}</p>
             )}
-            {!s.securityHealth.countsComplete && <p class="note">{d.common.partial}</p>}
+            {countsKnown && !s.securityHealth.countsComplete && (
+              <p class="note">{d.common.partial}</p>
+            )}
             <ul class="ghlinks">
               {repos.map((r) => (
                 <li>
@@ -614,10 +646,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
             <span class="fold__title">{d.project.coveragePerControl}</span>
             <span class="fold__hint">
               {s.securityCoverage.required > 0
-                ? f(d.project.coverageHint, {
-                    available: s.securityCoverage.available,
-                    required: s.securityCoverage.required,
-                  })
+                ? coverageLine(d.project.coverageHint)
                 : d.project.noRequired}
             </span>
           </summary>
@@ -900,6 +929,8 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
     border-radius: var(--radius-lg);
     scroll-margin-top: var(--space-4);
   }
+  /* The summary is a flex row, which drops the native disclosure marker: draw an explicit
+     chevron (CSS content, so not announced) that turns when the section is open. */
   .fold > summary {
     display: flex;
     flex-wrap: wrap;
@@ -908,10 +939,26 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
     min-height: 44px;
     padding: var(--space-3) var(--space-4);
     cursor: pointer;
-    list-style-position: inside;
+    list-style: none;
   }
-  .fold > summary::marker {
+  .fold > summary::-webkit-details-marker {
+    display: none;
+  }
+  .fold > summary::before {
+    content: '▸';
+    content: '▸' / '';
+    display: inline-block;
+    width: 1ch;
     color: var(--text-muted);
+    transition: transform 0.15s ease;
+  }
+  .fold[open] > summary::before {
+    transform: rotate(90deg);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fold > summary::before {
+      transition: none;
+    }
   }
   .fold__title {
     font-weight: 600;

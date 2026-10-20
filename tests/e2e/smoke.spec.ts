@@ -54,7 +54,10 @@ test('project detail explains why it is critical and cards open their section', 
 }) => {
   await page.goto('/projects/project-beta/');
   await expect(page.getByRole('heading', { level: 2, name: 'Why it is Critical' })).toBeVisible();
-  await expect(page.getByText('Continuous Integration failed on api (run #418)')).toBeVisible();
+  // The same reason is also the Delivery card's summary: scope to the why box (strict mode).
+  await expect(
+    page.locator('section.why').getByText('Continuous Integration failed on api (run #418)'),
+  ).toBeVisible();
   await expect(page.getByText('measured 5 of 5')).toBeVisible();
   const workflows = page.locator('details#workflows');
   await expect(workflows).toHaveJSProperty('open', false);
