@@ -305,6 +305,38 @@ describe('static site', () => {
     expect(html).toContain('Details withheld');
   });
 
+  it('shows security per project, worst first, with blind spots and no full alert table', async () => {
+    const html = await page('security');
+    // Portfolio severity totals: critical 1, high 4, medium 7, low 5 (Gamma unknown, not 0).
+    const totals = /<section[^>]*data-security-totals[\s\S]*?<\/section>/.exec(html)?.[0] ?? '';
+    const values = [...totals.matchAll(/data-severity="(\w+)"[^>]*>\s*([^<\s]+)\s*</g)].map(
+      ([, k, v]) => `${k}=${v}`,
+    );
+    expect(values).toEqual(['critical=1', 'high=4', 'medium=7', 'low=5']);
+    expect(totals).toContain('Incomplete counts');
+    // One card per project, in the portfolio order (score, insufficient data right after red).
+    const order = [...html.matchAll(/<article[^>]*data-project="([\w-]+)"/g)].map((m) => m[1]);
+    expect(order).toEqual(['project-beta', 'project-gamma', 'project-alpha', 'platform']);
+    const card = (id: string) => {
+      const start = html.lastIndexOf('<article', html.indexOf(`data-project="${id}"`));
+      return html.slice(start, html.indexOf('</article>', start));
+    };
+    expect(card('project-beta')).toContain('Coverage: 2 of 4 required');
+    expect(card('project-beta')).toContain('Not authorised (403)');
+    expect(card('project-beta')).toMatch(/data-state="stale"[\s\S]*?⧖[\s\S]*?Container scanning/);
+    expect(card('project-gamma')).toContain('does not mean zero alerts');
+    expect(card('project-gamma')).toMatch(/class="[^"]*card--unknown/);
+    expect(card('project-gamma')).not.toMatch(/data-count[^>]*>\s*0\s*</);
+    // No full findings table; the portfolio coverage matrix is a closed, secondary section.
+    expect(html).not.toContain('table--findings');
+    expect(html).toMatch(
+      /<details(?![^>]*\bopen\b)[^>]*>\s*<summary[^>]*>[\s\S]*?Coverage by repository and control[\s\S]*?<table/,
+    );
+    const it = await page('it/security');
+    expect(it).toContain('Copertura: 2 di 4 richiesti');
+    expect(it).toContain('Non significa zero alert.');
+  });
+
   it('ships no inline script (CSP script-src self) and no secret patterns', async () => {
     const html = await page('');
     expect(html).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>/);
