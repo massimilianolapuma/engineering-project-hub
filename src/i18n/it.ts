@@ -295,6 +295,11 @@ export const it: Dict = {
     noData: 'Nessun dato:',
     reviewErrors: 'Controlla accessi ed errori di raccolta',
     moreFilters: 'Altri filtri',
+    filters: 'Filtri',
+    unknownHidden: {
+      one: '{n} progetto con conteggi sconosciuti non mostrato',
+      other: '{n} progetti con conteggi sconosciuti non mostrati',
+    },
     countsLabel: 'Filtra per stato complessivo',
     collected: 'Rilevato',
     collectedAt: 'Raccolto il {date}',
@@ -328,7 +333,9 @@ export const it: Dict = {
       green: 'Perché è in salute',
       grey: 'Perché è sconosciuto',
     },
-    whyMore: '+{n} altri: vedi le sezioni qui sotto',
+    whyMore: 'Mostra altri {n} motivi',
+    whyMoreOne: 'Mostra un altro motivo',
+    allUnknown: 'Tutte le {n} dimensioni sconosciute',
     whyCause: '{count} errori di raccolta: {classes}.',
     whyCauseOne: '{count} errore di raccolta: {classes}.',
     openRun: 'Apri la run',
@@ -514,6 +521,7 @@ export const it: Dict = {
     seeDataQuality: 'Vedi in Qualità dati',
   },
   securityPage: {
+    atLeast: 'almeno',
     title: 'Sicurezza',
     intro:
       'Alert aperti e copertura sono domande distinte: zero alert non significa sicuro se la copertura non è confermata.',
@@ -837,6 +845,8 @@ export const it: Dict = {
     statesTitle: 'Stati di salute',
     statesIntro:
       'Ogni progetto e ogni dimensione ha uno di quattro stati. Lo stato è sempre scritto accanto al suo pallino: il colore non è mai l’unico segnale.',
+    barsNote:
+      'Nel Portfolio ogni progetto ha cinque barre, una per dimensione. L’altezza ripete lo stato, così il colore non è mai l’unico segnale: critico è una barra a tutta altezza, attenzione a due terzi, sano a un terzo; sconosciuto è un contorno tratteggiato a tutta altezza, senza riempimento.',
     states: {
       red: 'Un problema bloccante, per esempio un alert critico aperto o un workflow critico fallito.',
       amber:

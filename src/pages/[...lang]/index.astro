@@ -104,66 +104,76 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
       </header>
 
       <form class="portfolio__filters" data-portfolio-filters role="search">
-        <div class="field field--grow">
-          <label for="f-q">{d.portfolio.search}</label>
-          <input
-            id="f-q"
-            name="q"
-            type="search"
-            placeholder={d.portfolio.searchPlaceholder}
-            autocomplete="off"
-          />
-        </div>
-        <div class="field">
-          <label for="f-health">{d.portfolio.filterHealth}</label>
-          <select id="f-health" name="health">
-            <option value="">{d.portfolio.all}</option>
-            {(['red', 'amber', 'green', 'grey'] as const).map((s) => (
-              <option value={s}>{i18n.status(s)}</option>
-            ))}
-          </select>
-        </div>
-        <div class="field">
-          <label for="f-bu">{d.portfolio.filterBu}</label>
-          <select id="f-bu" name="bu">
-            <option value="">{d.portfolio.all}</option>
-            {units.map((u) => (
-              <option value={u}>{u}</option>
-            ))}
-          </select>
-        </div>
-        <div class="field">
-          <label for="f-sort">{d.portfolio.sort}</label>
-          <select id="f-sort" name="sort">
-            <option value="score" selected>
-              {d.portfolio.sortScore}
-            </option>
-            <option value="health">{d.portfolio.sortHealth}</option>
-            <option value="name">{d.portfolio.sortName}</option>
-            <option value="updated">{d.portfolio.sortUpdated}</option>
-            <option value="critical">{d.portfolio.sortCritical}</option>
-          </select>
-        </div>
-        <details class="portfolio__more disclosure">
-          <summary>{d.portfolio.moreFilters}</summary>
-          <div class="portfolio__more-body">
+        {/*
+          Desktop: one inline row (the summary is hidden and the box stays open). Phones: one
+          "Filters" disclosure, closed unless a filter comes from the URL, so the list starts
+          higher. Open in the HTML so the fields show before the script runs on desktop.
+        */}
+        <details class="portfolio__filterbox disclosure" data-filterbox open>
+          <summary>{d.portfolio.filters}</summary>
+          <div class="portfolio__filterbody">
+            <div class="field field--grow">
+              <label for="f-q">{d.portfolio.search}</label>
+              <input
+                id="f-q"
+                name="q"
+                type="search"
+                placeholder={d.portfolio.searchPlaceholder}
+                autocomplete="off"
+              />
+            </div>
             <div class="field">
-              <label for="f-lc">{d.portfolio.filterLifecycle}</label>
-              <select id="f-lc" name="lifecycle">
+              <label for="f-health">{d.portfolio.filterHealth}</label>
+              <select id="f-health" name="health">
                 <option value="">{d.portfolio.all}</option>
-                {lifecycles.map((l) => (
-                  <option value={l}>{d.lifecycle[l]}</option>
+                {(['red', 'amber', 'green', 'grey'] as const).map((s) => (
+                  <option value={s}>{i18n.status(s)}</option>
                 ))}
               </select>
             </div>
             <div class="field">
-              <label for="f-sev">{d.portfolio.filterSeverity}</label>
-              <select id="f-sev" name="severity">
+              <label for="f-bu">{d.portfolio.filterBu}</label>
+              <select id="f-bu" name="bu">
                 <option value="">{d.portfolio.all}</option>
-                <option value="critical">{d.portfolio.filterSeverityCritical}</option>
-                <option value="high">{d.portfolio.filterSeverityHigh}</option>
+                {units.map((u) => (
+                  <option value={u}>{u}</option>
+                ))}
               </select>
             </div>
+            <div class="field">
+              <label for="f-sort">{d.portfolio.sort}</label>
+              <select id="f-sort" name="sort">
+                <option value="score" selected>
+                  {d.portfolio.sortScore}
+                </option>
+                <option value="health">{d.portfolio.sortHealth}</option>
+                <option value="name">{d.portfolio.sortName}</option>
+                <option value="updated">{d.portfolio.sortUpdated}</option>
+                <option value="critical">{d.portfolio.sortCritical}</option>
+              </select>
+            </div>
+            <details class="portfolio__more disclosure" data-more-filters>
+              <summary>{d.portfolio.moreFilters}</summary>
+              <div class="portfolio__more-body">
+                <div class="field">
+                  <label for="f-lc">{d.portfolio.filterLifecycle}</label>
+                  <select id="f-lc" name="lifecycle">
+                    <option value="">{d.portfolio.all}</option>
+                    {lifecycles.map((l) => (
+                      <option value={l}>{d.lifecycle[l]}</option>
+                    ))}
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="f-sev">{d.portfolio.filterSeverity}</label>
+                  <select id="f-sev" name="severity">
+                    <option value="">{d.portfolio.all}</option>
+                    <option value="critical">{d.portfolio.filterSeverityCritical}</option>
+                    <option value="high">{d.portfolio.filterSeverityHigh}</option>
+                  </select>
+                </div>
+              </div>
+            </details>
           </div>
         </details>
         <p
@@ -171,6 +181,8 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
           aria-live="polite"
           data-results
           data-template={d.portfolio.results}
+          data-unknown-one={d.portfolio.unknownHidden.one}
+          data-unknown-other={d.portfolio.unknownHidden.other}
         >
           {i18n.f(d.portfolio.results, { shown: projects.length, total: projects.length })}
         </p>
@@ -399,6 +411,19 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     align-items: flex-end;
     gap: var(--space-3);
   }
+  .portfolio__filterbox {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .portfolio__filterbox > summary {
+    display: none;
+  }
+  .portfolio__filterbody {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-3);
+  }
   .portfolio__more {
     align-self: flex-end;
     font-size: var(--fs-sm);
@@ -611,6 +636,50 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     .portfolio__results {
       margin-left: 0;
       flex-basis: 100%;
+    }
+  }
+
+  /*
+   * Phones: the filter fields fold into one "Filters" disclosure (closed unless a filter is
+   * set), with the results line beside it, so the first project shows sooner.
+   */
+  @media (max-width: 720px) {
+    .portfolio__filters {
+      align-items: center;
+    }
+    .portfolio__filterbox {
+      flex: 0 0 auto;
+    }
+    .portfolio__filterbox[open] {
+      flex-basis: 100%;
+    }
+    .portfolio__filterbox > summary {
+      display: inline-flex;
+      align-items: center;
+      min-height: 40px;
+      padding: 0 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      color: var(--text);
+      font-size: var(--fs-sm);
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .portfolio__filterbody {
+      margin-top: var(--space-3);
+    }
+    .portfolio__results {
+      flex: 1 1 12rem;
+    }
+  }
+
+  /* Narrow phones: the pill goes on its own line above the reason, left-aligned. */
+  @media (max-width: 480px) {
+    .plist__why {
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: start;
+      row-gap: var(--space-1);
     }
   }
 </style>

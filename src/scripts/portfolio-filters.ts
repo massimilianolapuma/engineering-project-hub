@@ -3,6 +3,7 @@
  * The filter state lives in the URL query (?q=&health=&bu=&sort=&lifecycle=&severity=), so a
  * filtered view can be shared and survives a reload; the list is filtered on load too.
  */
+import { resultsLine, severityMatch } from '../lib/portfolio-filters-core';
 import { scoreSortKey } from '../lib/score';
 
 const form = document.querySelector<HTMLFormElement>('[data-portfolio-filters]');
@@ -30,7 +31,10 @@ if (form && tbody) {
   // The status counts above the list are shortcuts for the status filter.
   const counts = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-health-filter]'));
   const clearButtons = Array.from(document.querySelectorAll<HTMLElement>('[data-clear-filters]'));
-  const more = form.querySelector<HTMLDetailsElement>('details');
+  const more = form.querySelector<HTMLDetailsElement>('[data-more-filters]');
+  // Phones: the fields sit in one "Filters" disclosure, closed unless a filter is set.
+  const filterbox = form.querySelector<HTMLDetailsElement>('[data-filterbox]');
+  const phone = window.matchMedia('(max-width: 720px)');
   const healthSelect = field('health') as HTMLSelectElement | null;
 
   /** Sets a field only to a value it can hold (a select ignores unknown options). */
@@ -60,19 +64,20 @@ if (form && tbody) {
     const severity = value('severity');
     const sort = value('sort');
     let shown = 0;
+    // Hidden only because their open-alert counts are unknown: never dropped silently.
+    let unknownHidden = 0;
     for (const r of rows) {
       const d = r.dataset;
-      const critical = Number(d.critical);
-      const high = Number(d.high);
-      const ok =
+      const others =
         (!q || (d.search ?? d.name ?? '').includes(q)) &&
         (!health || d.health === health) &&
         (!bu || d.bu === bu) &&
-        (!lifecycle || d.lifecycle === lifecycle) &&
-        (severity !== 'critical' || critical > 0) &&
-        (severity !== 'high' || critical > 0 || high > 0);
+        (!lifecycle || d.lifecycle === lifecycle);
+      const sev = severityMatch(severity, Number(d.critical), Number(d.high));
+      const ok = others && sev === 'match';
       r.hidden = !ok;
       if (ok) shown++;
+      else if (others && sev === 'unknown') unknownHidden++;
     }
     const key = (r: HTMLTableRowElement): number => {
       const d = r.dataset;
@@ -97,9 +102,13 @@ if (form && tbody) {
       .sort((a, b) => key(a) - key(b) || (a.dataset.name ?? '').localeCompare(b.dataset.name ?? ''))
       .forEach((r) => tbody.appendChild(r));
     if (results)
-      results.textContent = (results.dataset.template ?? '')
-        .replace('{shown}', String(shown))
-        .replace('{total}', String(rows.length));
+      results.textContent = resultsLine(
+        results.dataset.template ?? '',
+        shown,
+        rows.length,
+        unknownHidden,
+        { one: results.dataset.unknownOne ?? '', other: results.dataset.unknownOther ?? '' },
+      );
     if (empty) empty.hidden = shown > 0;
     const filtered = !!(q || health || bu || lifecycle || severity);
     // The button in the filter row; the one in the empty message shows with that message.
@@ -117,6 +126,14 @@ if (form && tbody) {
       if (v !== null) setField(n, v);
     }
     if (more && (value('lifecycle') || value('severity'))) more.open = true;
+    syncFilterbox();
+  };
+
+  /** Any field away from its "no filter" value (the sort too: it lives in the same box). */
+  const anySet = () => NAMES.some((n) => (n === 'q' ? value(n).trim() : value(n)) !== FIELDS[n]);
+  /** Desktop: always open (its summary is hidden). Phone: open only when a filter is set. */
+  const syncFilterbox = () => {
+    if (filterbox) filterbox.open = !phone.matches || anySet();
   };
 
   const clear = () => {
@@ -139,6 +156,7 @@ if (form && tbody) {
   form.addEventListener('submit', (e) => e.preventDefault());
   // Back/forward cache and form restoration: filter what the controls show.
   window.addEventListener('pageshow', apply);
+  phone.addEventListener('change', syncFilterbox);
   readUrl();
   apply();
 }

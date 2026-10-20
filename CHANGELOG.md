@@ -15,12 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Visual system "Warm Graphite" on every page: warm neutral greys, one teal accent for links, focus and the primary action, vermilion / ochre / emerald status fills with fixed pill tints, Unknown as a dashed outline; light and dark palettes checked for WCAG AA by a unit test. Each page opens with one sentence, then the list worst first, detail on demand.
-- Portfolio as a compact list: status dot, score with confidence, five dimension bars and the main reason; projects with insufficient data sort right after the critical ones.
-- Project page: why-box with reasons as sentences, five dimension cards, environments as a DEV → UAT → PROD path, collapsible detail sections. Security grouped per project with blind spots; Versions, Workflows and Data quality list only what needs attention; Catalog editor restyled.
+- Portfolio as a compact list: status dot, score with confidence, five dimension bars and the main reason; projects with insufficient data sort right after the critical ones. The bars encode the state by height as well as colour (critical full, attention two thirds, healthy one third, unknown a full-height dashed outline). The open-alerts filter says how many projects it hid because their counts are unknown. On phones the filters fold into one "Filters" disclosure and the main nav is a single row that scrolls inside itself.
+- Project page: why-box with reasons as sentences (the rest behind "Show N more"; an unreadable project leads with the cause and one "All 5 dimensions unknown" line), five dimension cards, environments as a DEV → UAT → PROD path, collapsible detail sections. Security grouped per project with blind spots, the shared health badge and severity pills, and totals marked "≥" when counts are incomplete; Versions, Workflows and Data quality list only what needs attention; Catalog editor restyled.
 - Navigation order: Portfolio, Security, Versions, Workflows, Data quality, Catalog; "How to read" as a header utility link.
 - Snapshot `schemaVersion` 1.3: `score` on project snapshots and portfolio summaries. Older snapshots are not read: they are regenerated on every run.
 - Fonts: IBM Plex Sans and IBM Plex Mono (self-hosted via `@fontsource`) replace Public Sans and Geist Mono.
 - `DESIGN.md`, `.impeccable/design.json` and the Portfolio surface brief describe Warm Graphite.
+
+### Fixed
+
+- The `<meta>` Content-Security-Policy no longer lists `frame-ancestors`, which browsers ignore there and report as a console error; clickjacking protection stays in the HTTP headers of `public/_headers`.
 
 ### Removed
 

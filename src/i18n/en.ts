@@ -293,6 +293,11 @@ export const en = {
     noData: 'No data:',
     reviewErrors: 'Review access and collection errors',
     moreFilters: 'More filters',
+    filters: 'Filters',
+    unknownHidden: {
+      one: '{n} project with unknown counts not shown',
+      other: '{n} projects with unknown counts not shown',
+    },
     countsLabel: 'Filter by overall status',
     collected: 'Collected',
     collectedAt: 'Collected {date}',
@@ -326,7 +331,9 @@ export const en = {
       green: 'Why it is Healthy',
       grey: 'Why it is Unknown',
     },
-    whyMore: '+{n} more: see the sections below',
+    whyMore: 'Show {n} more reasons',
+    whyMoreOne: 'Show 1 more reason',
+    allUnknown: 'All {n} dimensions unknown',
     whyCause: '{count} collection errors: {classes}.',
     whyCauseOne: '{count} collection error: {classes}.',
     openRun: 'Open the run',
@@ -510,6 +517,7 @@ export const en = {
     seeDataQuality: 'See in Data quality',
   },
   securityPage: {
+    atLeast: 'at least',
     title: 'Security',
     intro:
       'Open alerts and coverage are separate questions: zero alerts does not mean secure unless coverage is confirmed.',
@@ -830,6 +838,8 @@ export const en = {
     statesTitle: 'Health states',
     statesIntro:
       'Every project and every dimension has one of four states. The state is always written next to its dot: colour is never the only sign.',
+    barsNote:
+      'On the Portfolio, each project has five dimension bars. Their height repeats the state, so colour is never the only sign: critical is a full-height bar, attention two thirds, healthy one third; unknown is a full-height dashed outline with no fill.',
     states: {
       red: 'A blocking issue, for example an open critical alert or a failed critical workflow.',
       amber:

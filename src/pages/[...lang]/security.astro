@@ -10,13 +10,16 @@ import ControlSymbol from '../../components/ControlSymbol.astro';
 import ErrorState from '../../components/ErrorState.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import Legend from '../../components/Legend.astro';
+import Pill from '../../components/Pill.astro';
 import RelTime from '../../components/RelTime.astro';
+import StatusBadge from '../../components/StatusBadge.astro';
 import StatusDot from '../../components/StatusDot.astro';
 import UnknownValue from '../../components/UnknownValue.astro';
 import Base from '../../layouts/Base.astro';
 import { pageContext } from '../../lib/page';
 import { href, localeParams } from '../../lib/routes';
 import { scoreSortKey } from '../../lib/score';
+import { severityTone } from '../../lib/tones';
 
 export const getStaticPaths = localeParams;
 const { locale } = Astro.props;
@@ -41,6 +44,8 @@ const total = (k: SeverityKey) => {
 };
 const totals = SEVERITY_KEYS.map((k) => [k, total(k)] as const);
 const incomplete = projects.filter((p) => !p.securityHealth.countsComplete);
+/** Some project could not be fully read: every known total is a lower bound ("≥ n"). */
+const lowerBound = incomplete.length > 0;
 
 const BLIND: readonly ControlState[] = ['not-authorised', 'unknown', 'collection-failed'];
 const isBlind = (s: ControlState) => BLIND.includes(s);
@@ -100,7 +105,6 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
   cid === 'coordinator'
     ? d.common.coordinator
     : (p.components.find((c) => c.id === cid)?.name ?? cid);
-const pillTone = (s: ProjectSnapshot['securityHealth']['status']) => (s === 'grey' ? 'unknown' : s);
 ---
 
 <Base i18n={i18n} title={t.title} page="security" alternates={alternates} index={index}>
@@ -128,7 +132,17 @@ const pillTone = (s: ProjectSnapshot['securityHealth']['status']) => (s === 'gre
                 ]}
                 data-severity={k}
               >
-                {n === null ? <UnknownValue i18n={i18n} /> : i18n.number(n)}
+                {n === null ? (
+                  <UnknownValue i18n={i18n} />
+                ) : lowerBound ? (
+                  <>
+                    <span aria-hidden="true">≥</span>
+                    <span class="visually-hidden">{t.atLeast} </span>
+                    {i18n.number(n)}
+                  </>
+                ) : (
+                  i18n.number(n)
+                )}
               </span>
               <span class="muted">{d.severity[k]}</span>
             </li>
@@ -165,10 +179,12 @@ const pillTone = (s: ProjectSnapshot['securityHealth']['status']) => (s === 'gre
                 <h3 id={`h-${p.project.id}`} class="sec-card__title">
                   <a href={projectHref}>{p.project.name}</a>
                 </h3>
-                <span class={`pill pill--${pillTone(h.status)}`}>
-                  <span class="visually-hidden">{d.dimensions.security}: </span>
-                  {i18n.status(h.status)}
-                </span>
+                <StatusBadge
+                  status={h.status}
+                  i18n={i18n}
+                  context={d.dimensions.security}
+                  size="sm"
+                />
                 {!grey && (
                   <span class="muted sec-card__coverage">
                     {f(t.coverageOf, { available: cov.available, required: cov.required })}
@@ -212,9 +228,10 @@ const pillTone = (s: ProjectSnapshot['securityHealth']['status']) => (s === 'gre
                       .filter((c) => isBlind(c.state))
                       .map((c) => (
                         <li>
-                          <span class="pill pill--unknown">
-                            {f(t.alertsNotVisible, { control: d.control[c.control] })}
-                          </span>
+                          <Pill
+                            tone="grey"
+                            label={f(t.alertsNotVisible, { control: d.control[c.control] })}
+                          />
                         </li>
                       ))}
                   </ul>
@@ -226,7 +243,7 @@ const pillTone = (s: ProjectSnapshot['securityHealth']['status']) => (s === 'gre
                         {criticalFindings(p).map((x) => (
                           <li>
                             <span class="status-col">
-                              <span class="pill pill--sev-critical">{d.severity.critical}</span>
+                              <Pill tone={severityTone('critical')} label={d.severity.critical} />
                             </span>
                             <span class="sec-crit__text">
                               {x.title ?? <span class="muted">{d.common.privateWithheld}</span>}{' '}

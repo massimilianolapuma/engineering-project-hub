@@ -86,6 +86,56 @@ describe('static site', () => {
     expect(row).not.toMatch(/>\s*0\s*</);
   });
 
+  it('encodes each dimension bar by height as well as colour (WCAG 1.4.1)', async () => {
+    const html = await page('');
+    const bars = [
+      ...html.matchAll(/class="dimbars__bar dimbars__bar--(\w+) dimbars__bar--h(\d)"[^>]*>/g),
+    ];
+    expect(bars.length).toBe(4 * 5);
+    // Worse is taller: critical full height, attention 2/3, healthy 1/3; unknown full height,
+    // dashed outline, no fill.
+    const HEIGHT: Record<string, string> = { red: '3', amber: '2', green: '1', grey: '3' };
+    for (const [tag, status, h] of bars) {
+      expect(h, status).toBe(HEIGHT[status!]);
+      expect(tag).toContain(`data-height="${HEIGHT[status!]}"`);
+      expect(tag).toMatch(/role="img"[^>]*aria-label="[^"]+: [^"]+"/);
+    }
+    expect(new Set(bars.map((m) => m[1]))).toEqual(new Set(['red', 'amber', 'green', 'grey']));
+    // "How to read" explains the encoding, with a sample hidden from assistive technology.
+    const htr = await page('how-to-read');
+    const note = /<p[^>]*data-bars-note[^>]*>[\s\S]*?<\/p>/.exec(htr)?.[0] ?? '';
+    expect(note).toContain(
+      'critical is a full-height bar, attention two thirds, healthy one third',
+    );
+    expect(note).toMatch(/class="dimbars dimbars--bars"[^>]*aria-hidden="true"/);
+    expect(note).not.toContain('role="img"');
+    expect(await page('it/how-to-read')).toContain('attenzione a due terzi, sano a un terzo');
+  });
+
+  it('puts the filters in one disclosure and names projects hidden for unknown counts', async () => {
+    const html = await page('');
+    expect(html).toMatch(
+      /<details class="portfolio__filterbox disclosure"[^>]*data-filterbox[^>]*open[^>]*>\s*<summary[^>]*>Filters</,
+    );
+    const box = html.slice(html.indexOf('data-filterbox'), html.indexOf('data-results'));
+    for (const name of ['q', 'health', 'bu', 'sort', 'lifecycle', 'severity'])
+      expect(box, name).toContain(`name="${name}"`);
+    const results = /<p[^>]*data-results[^>]*>/.exec(html)?.[0] ?? '';
+    expect(results).toContain('data-unknown-one="{n} project with unknown counts not shown"');
+    expect(results).toContain('data-unknown-other="{n} projects with unknown counts not shown"');
+    const it = /<p[^>]*data-results[^>]*>/.exec(await page('it'))?.[0] ?? '';
+    expect(it).toContain('data-unknown-one="{n} progetto con conteggi sconosciuti non mostrato"');
+    expect(it).toContain('data-unknown-other="{n} progetti con conteggi sconosciuti non mostrati"');
+  });
+
+  it('keeps frame-ancestors out of the meta CSP (ignored there; sent as a header)', async () => {
+    const html = await page('');
+    const csp = /<meta http-equiv="Content-Security-Policy" content="([^"]+)"/.exec(html)?.[1];
+    expect(csp).toContain("script-src 'self'");
+    expect(csp).not.toContain('frame-ancestors');
+    expect(readFileSync('public/_headers', 'utf8')).toContain("frame-ancestors 'none'");
+  });
+
   it('lists the portfolio by score, worst first, with insufficient data right after red', async () => {
     const html = await page('');
     expect(html).toContain('3 of 4 projects need attention');
@@ -153,14 +203,15 @@ describe('static site', () => {
         'coverage',
         'governance',
       ]);
+      // Governance checks repository standards (standard workflows): not collection errors.
       expect(cards.map((m) => m[1])).toEqual([
         'workflows',
         'environments',
         'security',
         'coverage',
-        'errors',
+        'workflows',
       ]);
-      for (const id of ['workflows', 'environments', 'security', 'coverage', 'errors'])
+      for (const id of ['workflows', 'environments', 'security', 'coverage'])
         expect(html).toMatch(new RegExp(`\\bid="${id}"`));
     });
 
@@ -220,6 +271,35 @@ describe('static site', () => {
       expect(why).toContain('2 collection errors');
       expect(why).toContain('Not found (404)');
       expect(why).toMatch(/href="[^"]*data-quality\/"/);
+    });
+
+    it('leads with the cause and folds identical unknown rows when nothing is measured', async () => {
+      const why = between(await page('projects/project-gamma'), 'id="h-why"', '</section>');
+      // The cause comes first, then one line instead of a row per unknown dimension.
+      expect(why.indexOf('data-why-cause')).toBeGreaterThan(-1);
+      expect(why.indexOf('data-why-cause')).toBeLessThan(why.indexOf('data-all-unknown'));
+      const visible = why.slice(0, why.indexOf('data-why-more'));
+      expect(visible.match(/class="why__item"/g)).toHaveLength(1);
+      expect(between(visible, 'data-all-unknown', '</li>')).toContain('All 5 dimensions unknown');
+      // The single reasons stay one click away, never silently dropped.
+      expect(why).toMatch(
+        /<details class="why__more disclosure"[^>]*>\s*<summary[^>]*>Show 7 more reasons</,
+      );
+      expect(why).toContain('Repository not accessible');
+      const it = between(await page('it/projects/project-gamma'), 'id="h-why"', '</section>');
+      expect(it).toContain('Tutte le 5 dimensioni sconosciute');
+      expect(it).toContain('Mostra altri 7 motivi');
+    });
+
+    it('lists the reasons beyond the first five in a disclosure inside the why box', async () => {
+      const why = between(await page('projects/project-beta'), 'id="h-why"', '</section>');
+      const shown = why.slice(0, why.indexOf('data-why-more'));
+      expect(shown.match(/class="why__item"/g)).toHaveLength(5);
+      expect(shown).not.toContain('data-all-unknown');
+      const more = between(why, 'data-why-more', '</details>');
+      expect(more).toMatch(/<summary[^>]*>Show \d+ more reasons</);
+      expect(more).toContain('2 open high alerts');
+      expect(why).not.toContain('see the sections below');
     });
 
     it('shows a newer release only when the collector reports drift', async () => {
@@ -387,11 +467,21 @@ describe('static site', () => {
     const html = await page('security');
     // Portfolio severity totals: critical 1, high 4, medium 7, low 5 (Gamma unknown, not 0).
     const totals = /<section[^>]*data-security-totals[\s\S]*?<\/section>/.exec(html)?.[0] ?? '';
-    const values = [...totals.matchAll(/data-severity="(\w+)"[^>]*>\s*([^<\s]+)\s*</g)].map(
-      ([, k, v]) => `${k}=${v}`,
+    // Counts are incomplete, so each known total is a lower bound: "≥ n", read as "at least n".
+    const values = [
+      ...totals.matchAll(/data-severity="(\w+)"[^>]*>([\s\S]*?)<\/span>\s*<span class="muted"/g),
+    ].map(([, k, v]) => `${k}=${v!.replace(/<[^>]+>/g, '').trim()}`);
+    expect(values).toEqual([
+      'critical=≥at least 1',
+      'high=≥at least 4',
+      'medium=≥at least 7',
+      'low=≥at least 5',
+    ]);
+    expect(totals).toMatch(
+      /<span aria-hidden="true"[^>]*>≥<\/span>\s*<span class="visually-hidden"[^>]*>at least </,
     );
-    expect(values).toEqual(['critical=1', 'high=4', 'medium=7', 'low=5']);
     expect(totals).toContain('Incomplete counts');
+    expect(await page('it/security')).toMatch(/<span class="visually-hidden"[^>]*>almeno </);
     // One card per project, in the portfolio order (score, insufficient data right after red).
     const order = [...html.matchAll(/<article[^>]*data-project="([\w-]+)"/g)].map((m) => m[1]);
     expect(order).toEqual(['project-beta', 'project-gamma', 'project-alpha', 'platform']);
@@ -402,6 +492,18 @@ describe('static site', () => {
     expect(card('project-beta')).toContain('Coverage: 2 of 4 required');
     expect(card('project-beta')).toContain('Not authorised (403)');
     expect(card('project-beta')).toMatch(/data-state="stale"[\s\S]*?⧖[\s\S]*?Container scanning/);
+    // Health is the shared status badge (health shape), alert severity the severity pill
+    // (rising bars) and a blind spot the dashed unknown pill: three looks, never confused.
+    expect(card('project-beta')).toMatch(
+      /class="badge badge--red badge--sm"[^>]*>\s*<svg class="icon icon--red"/,
+    );
+    expect(card('project-beta')).toMatch(
+      /class="pill pill--sev-critical"[^>]*>\s*<svg class="icon icon--sev-critical"/,
+    );
+    expect(card('project-beta')).toMatch(
+      /class="pill pill--grey"[^>]*>\s*<svg class="icon icon--grey"[\s\S]*?Secret scanning alerts not visible/,
+    );
+    expect(html).not.toMatch(/class="pill pill--(unknown|red|amber|green)"/);
     expect(card('project-gamma')).toContain('does not mean zero alerts');
     expect(card('project-gamma')).toMatch(/class="[^"]*card--unknown/);
     expect(card('project-gamma')).not.toMatch(/data-count[^>]*>\s*0\s*</);

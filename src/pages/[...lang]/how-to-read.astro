@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { ControlState, Dimension, HealthStatus, Severity } from '@model/index';
 import ControlSymbol from '../../components/ControlSymbol.astro';
+import DimensionBars from '../../components/DimensionBars.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import StatusDot from '../../components/StatusDot.astro';
 import Base from '../../layouts/Base.astro';
@@ -177,6 +178,19 @@ const SECTIONS = [
         </li>
       ))}
     </ul>
+    <p class="htr-rule htr-bars" data-bars-note>
+      <span class="htr-bars__sample">
+        <DimensionBars
+          dims={(['red', 'amber', 'green', 'grey'] as const).map((status, i) => ({
+            dimension: DIMENSIONS[i]!,
+            status,
+          }))}
+          locale={locale}
+          decorative
+        />
+      </span>
+      <span>{h.barsNote}</span>
+    </p>
     <p class="htr-rule">{criticalDims}</p>
     <p class="htr-rule">{h.greyRequired[policies.overall.greyRequiredDimension]}</p>
   </section>
@@ -490,6 +504,15 @@ const SECTIONS = [
     margin: var(--space-3) 0 0;
     padding-top: var(--space-3);
     border-top: 1px solid var(--border);
+  }
+  .htr-bars {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+  }
+  .htr-bars > span:last-child {
+    flex: 1 1 24ch;
   }
   .htr-terms {
     margin: var(--space-3) 0 0;

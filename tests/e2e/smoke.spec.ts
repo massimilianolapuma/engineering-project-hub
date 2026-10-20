@@ -8,8 +8,13 @@ test('portfolio lists projects with separate health dimensions and a legend', as
   await expect(page.getByRole('link', { name: 'How to read' })).toBeVisible();
 });
 
-test('filters are keyboard accessible and narrow the list', async ({ page }) => {
+test('filters are keyboard accessible and narrow the list', async ({ page, isMobile }) => {
   await page.goto('/');
+  if (isMobile) {
+    // Phones: the fields sit in one "Filters" disclosure, closed until opened.
+    await page.locator('[data-filterbox] > summary').focus();
+    await page.keyboard.press('Enter');
+  }
   await page.getByLabel('Search projects').focus();
   await page.keyboard.type('beta');
   await expect(page.locator('tr[data-project]:not([hidden])')).toHaveCount(1);
@@ -172,4 +177,56 @@ test('versions page does not scroll sideways at phone width', async ({ page }) =
       .evaluateAll((pills) => pills.filter((p) => p.scrollWidth > p.clientWidth).length);
     expect(clipped, path).toBe(0);
   }
+});
+
+test('the open-alerts filter says how many projects it hid for unknown counts', async ({
+  page,
+}) => {
+  await page.goto('/?severity=critical');
+  await expect(page.locator('tr[data-project]:not([hidden])')).toHaveCount(1);
+  await expect(page.locator('[data-results]')).toHaveText(
+    '1 of 4 projects · 1 project with unknown counts not shown',
+  );
+  await page.goto('/it/?severity=high');
+  await expect(page.locator('[data-results]')).toContainText(
+    '1 progetto con conteggi sconosciuti non mostrato',
+  );
+});
+
+test('phone: filters fold into one disclosure and the nav scrolls inside itself', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 800 });
+  await page.goto('/');
+  const box = page.locator('details[data-filterbox]');
+  await expect(box).toHaveJSProperty('open', false);
+  await expect(page.getByLabel('Search projects')).toBeHidden();
+  // The first project starts within the first screen (was ~765px; the fixtures are old, so
+  // this includes the ~70px stale-data banner).
+  const first = (await page.locator('tr[data-project]').first().boundingBox())!;
+  expect(first.y).toBeLessThan(600);
+  // One nav row that scrolls inside itself; the page never scrolls sideways.
+  const nav = await page.evaluate(() => {
+    const ul = document.querySelector<HTMLElement>('.mainnav ul')!;
+    const links = [...ul.querySelectorAll('a')].map((a) => a.getBoundingClientRect().top);
+    const el = document.querySelector<HTMLElement>('.mainnav')!;
+    return {
+      rows: new Set(links.map((t) => Math.round(t))).size,
+      scrolls: el.scrollWidth > el.clientWidth,
+      page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
+  });
+  expect(nav).toEqual({ rows: 1, scrolls: true, page: 0 });
+  // On a page further along, the current link is scrolled into view inside the nav.
+  await page.goto('/catalog/');
+  const current = (await page.locator('.mainnav a[aria-current="page"]').boundingBox())!;
+  expect(current.x + current.width).toBeLessThanOrEqual(375);
+  // A filter in the URL opens the box, so the active filter is visible.
+  await page.goto('/?bu=Payments');
+  await expect(box).toHaveJSProperty('open', true);
+  // Desktop keeps the inline row: the box is open and its summary hidden.
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  await expect(box).toHaveJSProperty('open', true);
+  await expect(box.locator('> summary')).toBeHidden();
 });

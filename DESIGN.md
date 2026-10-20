@@ -118,7 +118,7 @@ components:
     size: '10px'
     rounded: '50%'
   dimension-bars:
-    size: '32px x 10px'
+    size: '32px x 12px box; bar height 12 / 8 / 4px'
     gap: '4px'
     rounded: '{rounded.sm}'
   status-pill-critical:
@@ -200,7 +200,7 @@ components:
 
 Warm Graphite is a reading instrument for a weekly portfolio review. Each page says one thing first (a single sentence such as "3 of 4 projects need attention"), then shows the list sorted worst first, and keeps the detail one click away. Character comes from restraint and precision: warm neutral greys, generous padding, hairline borders, one teal accent, and status colours used only where a status is.
 
-Status is a small, exact mark rather than a painted area: a 10px dot, five 32×10px dimension bars, a pill on a fixed tint, a 24px control symbol. Vermilion, ochre and emerald fill those marks; darker `*-text` variants carry any text on their tints. Unknown is never a fill and never calm: it is a dashed outline in a dedicated stroke colour, with the cause named in words. A project score (0–100) sits next to the status dot with its confidence ("measured 4 of 5") always visible; when data is insufficient there is an em dash, never a 0.
+Status is a small, exact mark rather than a painted area: a 10px dot, five 32px dimension bars whose height repeats the state, a pill on a fixed tint, a 24px control symbol. Vermilion, ochre and emerald fill those marks; darker `*-text` variants carry any text on their tints. Unknown is never a fill and never calm: it is a dashed outline in a dedicated stroke colour, with the cause named in words. A project score (0–100) sits next to the status dot with its confidence ("measured 4 of 5") always visible; when data is insufficient there is an em dash, never a 0.
 
 Light and dark themes share hues and character; dark lifts the fills and inverts the tints onto a warm near-black. Both follow `prefers-color-scheme` and can be overridden with `[data-theme]`. Every text and graphic pair, including the fixed pill tints, is held to WCAG 2.2 AA by `tests/unit/tokens-contrast.test.ts`. Tokens live in `src/styles/tokens.css`; shared base styles in `src/styles/global.css`; page-specific styles in each page's scoped `<style>`.
 
@@ -298,7 +298,8 @@ Spacing follows a 4px base: 4 / 8 / 12 / 16 / 24 / 32 / 40 / 48. Cells are at le
 ### Responsive behaviour
 
 - **≤760px:** portfolio and workflow rows wrap into two lines (name, status and score first; bars and reason second). The page never scrolls horizontally.
-- **≤720px:** generic tables become stacked label/value cards; side gutters drop to 16px.
+- **≤720px:** generic tables become stacked label/value cards; side gutters drop to 16px. The main nav is one row that scrolls sideways inside itself (the current link is scrolled into view); the Portfolio filter fields fold into one "Filters" disclosure, closed unless a filter is set in the URL, with the results line beside it.
+- **≤480px:** a pill placed before text (Portfolio reason, project why box) moves onto its own line above the text, left-aligned.
 - **≤640px:** the project header, the environments path (arrows turn downward), security cards and data-quality rows stack vertically.
 - Tables that cannot wrap scroll inside their own container.
 
@@ -322,7 +323,7 @@ A 10px circle: filled vermilion, ochre or emerald, or a 1.5px dashed outline for
 
 ### Dimension bars
 
-Five 32×10px bars with a 4px gap and 4px corners, in a fixed order: Delivery, Versions, Security, Coverage, Governance. Each bar has an accessible name ("Security risk: Critical"); the short labels appear once in the list header as abbreviations with their full names. Unknown is a dashed outline.
+Five 32px bars with a 4px gap and 4px corners, bottom-aligned in a 12px box, in a fixed order: Delivery, Versions, Security, Coverage, Governance. Height repeats the state so colour is never the only carrier (WCAG 1.4.1): the worse, the taller: critical 12px (full), attention 8px (two thirds), healthy 4px (one third). Unknown keeps the full 12px as a dashed outline with no fill. In forced-colours mode the bars stay solid `CanvasText` so their heights still read. Each bar has an accessible name ("Security risk: Critical"); the short labels appear once in the list header as abbreviations with their full names. "How to read" explains the encoding.
 
 ### Score
 

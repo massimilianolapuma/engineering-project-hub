@@ -55,7 +55,8 @@ const dims: { dim: Dimension; anchor: string; health: HealthResult }[] = s
       { dim: 'version', anchor: 'environments', health: s.versionHealth },
       { dim: 'security', anchor: 'security', health: s.securityHealth },
       { dim: 'coverage', anchor: 'coverage', health: s.securityCoverage },
-      { dim: 'governance', anchor: 'errors', health: s.governanceHealth },
+      // Governance checks repository standards, chiefly the standard workflows.
+      { dim: 'governance', anchor: 'workflows', health: s.governanceHealth },
     ]
   : [];
 
@@ -72,13 +73,12 @@ const runUrl = (r: Reason): string | null => {
 };
 
 /** "Why it is …": every non-info reason of the dimensions, red first, then amber, then grey. */
-const issues = dims
+type Issue = { dim: Dimension; anchor: string; r: Reason };
+const issues: Issue[] = dims
   .flatMap(({ dim, anchor, health }) =>
     health.reasons.filter((r) => r.level !== 'info').map((r) => ({ dim, anchor, r })),
   )
   .sort((a, b) => LEVEL_RANK[a.r.level] - LEVEL_RANK[b.r.level]);
-const whyShown = issues.slice(0, WHY_LIMIT);
-const whyHidden = issues.length - whyShown.length;
 const errorClasses = s
   ? [...new Set(s.collectionErrors.map((e) => d.errorClass[e.classification]))]
   : [];
@@ -86,6 +86,13 @@ const showCause =
   !!s &&
   s.collectionErrors.length > 0 &&
   (s.overallHealth.status === 'grey' || s.score.value === null);
+/**
+ * Nothing could be measured (e.g. a project whose repositories could not be read): the cause
+ * leads, and the identical "Unknown" rows fold into one line; the reasons stay one click away.
+ */
+const allUnknown = showCause && dims.every(({ health }) => health.status === 'grey');
+const whyShown = allUnknown ? [] : issues.slice(0, WHY_LIMIT);
+const whyHidden = issues.slice(whyShown.length);
 
 /** One-line summary on a dimension card. */
 const topReason = (h: HealthResult) =>
@@ -304,49 +311,72 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
 
       <section class="card why" aria-labelledby="h-why">
         <h2 id="h-why">{d.project.whyTitle[s.overallHealth.status]}</h2>
-        {whyShown.length > 0 ? (
-          <ul class="why__list">
-            {whyShown.map(({ dim, anchor, r }) => {
-              const run = runUrl(r);
-              return (
-                <li class="why__item" data-level={r.level}>
-                  <span class="status-col">
-                    <Pill tone={levelStatus(r)} label={i18n.status(levelStatus(r))} />
-                  </span>
-                  <span class="why__text">
-                    {i18n.reason(r)}.{' '}
-                    {run ? (
-                      <ExtLink href={run} i18n={i18n} label={d.project.openRun} />
-                    ) : (
-                      <a href={`#${anchor}`}>
-                        {d.project.seeSection}
-                        <span class="visually-hidden">: {i18n.dimension(dim)}</span>
-                      </a>
-                    )}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <ul class="why__list">
-            {s.overallHealth.reasons.map((r) => (
+        {(() => {
+          const item = ({ dim, anchor, r }: Issue) => {
+            const run = runUrl(r);
+            return (
               <li class="why__item" data-level={r.level}>
-                <span class="why__text">{i18n.reason(r)}</span>
+                <span class="status-col">
+                  <Pill tone={levelStatus(r)} label={i18n.status(levelStatus(r))} />
+                </span>
+                <span class="why__text">
+                  {i18n.reason(r)}.{' '}
+                  {run ? (
+                    <ExtLink href={run} i18n={i18n} label={d.project.openRun} />
+                  ) : (
+                    <a href={`#${anchor}`}>
+                      {d.project.seeSection}
+                      <span class="visually-hidden">: {i18n.dimension(dim)}</span>
+                    </a>
+                  )}
+                </span>
               </li>
-            ))}
-          </ul>
-        )}
-        {whyHidden > 0 && <p class="why__more">{f(d.project.whyMore, { n: whyHidden })}</p>}
-        {showCause && (
-          <p class="why__cause">
-            {f(s.collectionErrors.length === 1 ? d.project.whyCauseOne : d.project.whyCause, {
-              count: s.collectionErrors.length,
-              classes: errorClasses.join(', '),
-            })}{' '}
-            <a href={href(locale, 'dataQuality')}>{d.project.seeDataQuality}</a>
-          </p>
-        )}
+            );
+          };
+          const cause = showCause && (
+            <p class="why__cause" data-why-cause>
+              {f(s.collectionErrors.length === 1 ? d.project.whyCauseOne : d.project.whyCause, {
+                count: s.collectionErrors.length,
+                classes: errorClasses.join(', '),
+              })}{' '}
+              <a href={href(locale, 'dataQuality')}>{d.project.seeDataQuality}</a>
+            </p>
+          );
+          return (
+            <>
+              {allUnknown && cause}
+              <ul class="why__list">
+                {allUnknown ? (
+                  <li class="why__item" data-level="grey" data-all-unknown>
+                    <span class="status-col">
+                      <Pill tone="grey" label={i18n.status('grey')} />
+                    </span>
+                    <span class="why__text">{f(d.project.allUnknown, { n: dims.length })}</span>
+                  </li>
+                ) : whyShown.length > 0 ? (
+                  whyShown.map(item)
+                ) : (
+                  s.overallHealth.reasons.map((r) => (
+                    <li class="why__item" data-level={r.level}>
+                      <span class="why__text">{i18n.reason(r)}</span>
+                    </li>
+                  ))
+                )}
+              </ul>
+              {whyHidden.length > 0 && (
+                <details class="why__more disclosure" data-why-more>
+                  <summary>
+                    {whyHidden.length === 1
+                      ? d.project.whyMoreOne
+                      : f(d.project.whyMore, { n: whyHidden.length })}
+                  </summary>
+                  <ul class="why__list">{whyHidden.map(item)}</ul>
+                </details>
+              )}
+              {!allUnknown && cause}
+            </>
+          );
+        })()}
       </section>
 
       <section class="dimcards" aria-label={d.project.dimensionCards}>
@@ -858,10 +888,21 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
   .why__more,
   .why__cause {
     margin: var(--space-3) 0 0;
-    color: var(--text-muted);
   }
-  .why__cause {
-    color: var(--text);
+  /* Cause first (nothing measured): it leads the box, the rows follow. */
+  .why h2 + .why__cause {
+    margin: 0 0 var(--space-3);
+  }
+  .why__more > summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    color: var(--text-muted);
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .why__more > .why__list {
+    margin-top: var(--space-2);
   }
 
   .dimcards {

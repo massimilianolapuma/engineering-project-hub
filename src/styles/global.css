@@ -644,6 +644,13 @@ select {
   .langswitch {
     margin-left: 0;
   }
+  /* Main nav: one row that scrolls sideways inside itself (see Base.astro). */
+  .mainnav ul {
+    flex-wrap: nowrap;
+  }
+  .mainnav a {
+    white-space: nowrap;
+  }
   .table-wrap {
     border: 0;
     background: transparent;
