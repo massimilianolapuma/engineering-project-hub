@@ -815,6 +815,126 @@ export const en = {
     mergeAdded: '{id} added to {name}.',
     mergeClose: 'Close comparison',
   },
+  howToRead: {
+    title: 'How to read',
+    hero: 'Four states, six symbols, one score: they mean the same on every page.',
+    intro:
+      'Each page says one thing first, then lists projects worst first, then shows detail on demand. Thresholds and weights below come from the configured health policies.',
+    defaultsNote: 'No policies file was found at build time: the default policies are shown.',
+    mismatchNote:
+      'The snapshot was collected with a different staleness threshold than the policies shown here: the other values may not match the ones that produced this snapshot.',
+    onThisPage: 'On this page',
+    statesTitle: 'Health states',
+    statesIntro:
+      'Every project and every dimension has one of four states. The state is always written next to its dot: colour is never the only sign.',
+    states: {
+      red: 'A blocking issue, for example an open critical alert or a failed critical workflow.',
+      amber:
+        'Issues that need follow-up but do not block, for example a component behind its latest release.',
+      green: 'Every required dimension is healthy under the configured policies.',
+      grey: 'We could not read enough data to decide. Drawn as a dashed outline: never as zero, never as healthy.',
+    },
+    criticalDimensions:
+      'Critical in {dimensions} makes the whole project critical; critical elsewhere counts as attention.',
+    greyRequired: {
+      grey: 'An unknown required dimension makes the project unknown, unless another dimension is critical or needs attention.',
+      amber: 'An unknown required dimension makes the project need attention.',
+    },
+    symbolsTitle: 'Control symbols',
+    symbolsIntro:
+      'Security controls use the same six symbols on every page. The symbol carries the meaning; colour only helps.',
+    symbolsHelp: {
+      ok: 'The control is set up and working.',
+      gap: 'The control is required for this project and is not set up, or has never run.',
+      stale: 'The control is required and its last scan is older than the threshold.',
+      failed: 'The last run of the control failed.',
+      blind:
+        'We cannot see the control: not authorised, unknown or collection failed. It may be fine; we cannot tell.',
+      na: 'The control is optional for this project, or does not apply.',
+    },
+    termsTitle: 'Unknown is not zero',
+    termsIntro:
+      'Four situations look alike but mean different things. None of them is ever shown as zero or as healthy.',
+    terms: {
+      unknown:
+        'We tried to read the source but could not determine the state, for example because the collection failed or returned no usable data.',
+      'not-authorised':
+        'The hub has no permission to read the source. The control may well be set up: we cannot see it.',
+      'not-configured': 'We can read the source and the control is not set up.',
+      'not-applicable':
+        'There is nothing to measure, for example a project without critical workflows.',
+    },
+    termEffects: {
+      unknown:
+        'Drawn dashed. Counts as not measured: it lowers the score confidence, never adds 0.',
+      'not-authorised':
+        'Drawn dashed, like unknown. Data quality lists it with the fix: grant read access.',
+      'not-configured':
+        'Required: a real gap that needs attention. Optional: shown as not required.',
+      'not-applicable':
+        'Left out of the score: neither measured nor required, so confidence does not drop.',
+    },
+    scoreTitle: 'Score',
+    scoreIntro:
+      "A number from 0 to 100 to rank and compare projects in today's snapshot. It sits next to the state and never replaces the five dimensions.",
+    formula: 'score = min(round(Σ weight × points ÷ Σ weight), cap of the overall state)',
+    formulaNote:
+      'Σ runs over the measured required dimensions only: an unknown dimension is left out, never counted as 0.',
+    pointsTitle: 'Points per dimension',
+    weightsTitle: 'Weights',
+    capsTitle: 'Caps by overall state',
+    colState: 'State',
+    colPoints: 'Points',
+    colDimension: 'Dimension',
+    colChecks: 'What it checks',
+    colWeight: 'Weight',
+    colCap: 'Highest score',
+    notMeasured: 'Not measured',
+    notRequired: 'Not required: left out of the score',
+    checks: {
+      delivery: 'Critical workflows: last runs, failures, missing or stale runs.',
+      version: 'Coordinator, components and environments: declared versions, drift and alignment.',
+      security: 'Open alerts by severity, secret scanning alerts and failed required controls.',
+      coverage: 'Share of the required security controls that are enabled and visible.',
+      governance:
+        'Repository standards: standard workflows, archived repositories, security status file, default branch.',
+    },
+    capsNote:
+      'Caps keep the number consistent with the state: a critical project always ranks below one that needs attention or is unknown. A healthy project scores 100.',
+    confidenceTitle: 'Confidence and insufficient data',
+    confidence:
+      'Next to the score: measured dimensions out of the required ones, for example “{example}”. A dimension that is not applicable leaves both counts.',
+    minMeasured: 'Share of required dimensions that must be measured to show a score',
+    insufficient:
+      'Below this share there is no number: the page shows “— {label}” and the project sorts in its own group, never at the bottom as if it were fine.',
+    thresholdsTitle: 'Thresholds',
+    thresholdsIntro:
+      'From the configured health policies. They are choices of this hub, not universal risk ratings.',
+    colRule: 'Rule',
+    colValue: 'Value',
+    thresholds: {
+      snapshotStaleHours: 'The whole snapshot is flagged as stale after',
+      workflowRunStaleDays: 'The last run of a critical workflow is stale after',
+      securityScanStaleDays: 'A security scan is stale after',
+      securityStatusFileStaleDays: 'A security status file is stale after',
+      queuedThresholdMinutes: 'A run queued or in progress needs attention after',
+      greenThresholdPercent: 'Security coverage is healthy from',
+      redOnSeverities: 'Open alerts that make security risk critical',
+      amberOnSeverities: 'Open alerts that make security risk need attention',
+    },
+    staleSourceNote:
+      'Snapshot staleness is the value the collector published with this snapshot; the other values come from the policies read when the site was built.',
+    units: {
+      hours: 'hours',
+      days: 'days',
+      minutes: 'minutes',
+    },
+    none: 'None',
+    docsTitle: 'More detail',
+    docsText:
+      'Every policy, its default and how to change it is described in the configuration reference.',
+    docsLink: 'Configuration reference',
+  },
   errorsPage: {
     title: 'Snapshot data unavailable',
     missing:

@@ -415,12 +415,13 @@ file, or a file whose `repository` does not match.
 
 ## Environment variables
 
-| Variable                                                    | Where                     | Purpose                                           |
-| ----------------------------------------------------------- | ------------------------- | ------------------------------------------------- |
-| `DATA_SOURCE`                                               | repository variable / env | `mock` (default) or `github`                      |
-| `GH_APP_ID`, `GH_APP_PRIVATE_KEY`, `GH_APP_INSTALLATION_ID` | Actions secrets           | GitHub App authentication (preferred)             |
-| `GH_READ_TOKEN`                                             | Actions secret            | Fallback fine-grained PAT                         |
-| `GITHUB_TOKEN`                                              | automatic                 | Last fallback (current repository only)           |
-| `GITHUB_API_URL`                                            | automatic / env           | API base URL (GitHub Enterprise Server)           |
-| `SITE_URL`, `BASE_PATH`                                     | set by deploy workflow    | Astro `site` and `base` (from configure-pages)    |
-| `SNAPSHOT_DIR`                                              | local / tests             | Alternative snapshot directory for the site build |
+| Variable                                                    | Where                     | Purpose                                                                                                                                                                           |
+| ----------------------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATA_SOURCE`                                               | repository variable / env | `mock` (default) or `github`                                                                                                                                                      |
+| `GH_APP_ID`, `GH_APP_PRIVATE_KEY`, `GH_APP_INSTALLATION_ID` | Actions secrets           | GitHub App authentication (preferred)                                                                                                                                             |
+| `GH_READ_TOKEN`                                             | Actions secret            | Fallback fine-grained PAT                                                                                                                                                         |
+| `GITHUB_TOKEN`                                              | automatic                 | Last fallback (current repository only)                                                                                                                                           |
+| `GITHUB_API_URL`                                            | automatic / env           | API base URL (GitHub Enterprise Server)                                                                                                                                           |
+| `SITE_URL`, `BASE_PATH`                                     | set by deploy workflow    | Astro `site` and `base` (from configure-pages)                                                                                                                                    |
+| `SNAPSHOT_DIR`                                              | local / tests             | Alternative snapshot directory for the site build                                                                                                                                 |
+| `POLICIES_FILE`                                             | site build                | Policies explained on the "How to read" page (default `config/policies.yaml`; schema defaults only if the default file is missing; an unreadable or invalid file fails the build) |

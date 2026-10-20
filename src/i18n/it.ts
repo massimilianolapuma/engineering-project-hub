@@ -819,6 +819,128 @@ export const it: Dict = {
     mergeAdded: '{id} aggiunto a {name}.',
     mergeClose: 'Chiudi il confronto',
   },
+  howToRead: {
+    title: 'Come leggere',
+    hero: 'Quattro stati, sei simboli, uno score: hanno lo stesso significato in ogni pagina.',
+    intro:
+      'Ogni pagina dice prima una cosa, poi elenca i progetti dal peggiore, poi mostra il dettaglio su richiesta. Soglie e pesi qui sotto vengono dalle policy di salute configurate.',
+    defaultsNote:
+      'Nessun file delle policy trovato durante la build: sono mostrate le policy predefinite.',
+    mismatchNote:
+      'Lo snapshot è stato raccolto con una soglia di vecchiaia diversa da quella delle policy mostrate qui: gli altri valori potrebbero non coincidere con quelli che hanno prodotto questo snapshot.',
+    onThisPage: 'In questa pagina',
+    statesTitle: 'Stati di salute',
+    statesIntro:
+      'Ogni progetto e ogni dimensione ha uno di quattro stati. Lo stato è sempre scritto accanto al suo pallino: il colore non è mai l’unico segnale.',
+    states: {
+      red: 'Un problema bloccante, per esempio un alert critico aperto o un workflow critico fallito.',
+      amber:
+        'Problemi che richiedono un seguito ma non bloccano, per esempio un componente indietro rispetto all’ultima release.',
+      green: 'Ogni dimensione richiesta è sana secondo le policy configurate.',
+      grey: 'Non abbiamo potuto leggere abbastanza dati per decidere. Disegnato con un contorno tratteggiato: mai come zero, mai come sano.',
+    },
+    criticalDimensions:
+      'Critico in {dimensions} rende critico l’intero progetto; critico altrove vale come attenzione.',
+    greyRequired: {
+      grey: 'Una dimensione richiesta sconosciuta rende il progetto sconosciuto, a meno che un’altra dimensione sia critica o richieda attenzione.',
+      amber: 'Una dimensione richiesta sconosciuta porta il progetto in attenzione.',
+    },
+    symbolsTitle: 'Simboli dei controlli',
+    symbolsIntro:
+      'I controlli di sicurezza usano gli stessi sei simboli in ogni pagina. Il simbolo porta il significato; il colore aiuta soltanto.',
+    symbolsHelp: {
+      ok: 'Il controllo è configurato e funziona.',
+      gap: 'Il controllo è richiesto per questo progetto e non è configurato, o non è mai stato eseguito.',
+      stale: 'Il controllo è richiesto e la sua ultima scansione è più vecchia della soglia.',
+      failed: 'L’ultima esecuzione del controllo è fallita.',
+      blind:
+        'Non vediamo il controllo: non autorizzato, sconosciuto o raccolta fallita. Potrebbe andare bene; non possiamo dirlo.',
+      na: 'Il controllo è opzionale per questo progetto, oppure non si applica.',
+    },
+    termsTitle: 'Sconosciuto non è zero',
+    termsIntro:
+      'Quattro situazioni si somigliano ma significano cose diverse. Nessuna è mai mostrata come zero o come sana.',
+    terms: {
+      unknown:
+        'Abbiamo provato a leggere la sorgente ma non siamo riusciti a determinarne lo stato, per esempio perché la raccolta è fallita o non ha restituito dati utilizzabili.',
+      'not-authorised':
+        'L’hub non ha il permesso di leggere la sorgente. Il controllo potrebbe essere configurato: non possiamo vederlo.',
+      'not-configured': 'Possiamo leggere la sorgente e il controllo non è configurato.',
+      'not-applicable':
+        'Non c’è nulla da misurare, per esempio un progetto senza workflow critici.',
+    },
+    termEffects: {
+      unknown:
+        'Disegnato tratteggiato. Conta come non misurato: abbassa la confidenza dello score, non aggiunge mai 0.',
+      'not-authorised':
+        'Disegnato tratteggiato, come sconosciuto. Qualità dati lo elenca con la correzione: concedere l’accesso in lettura.',
+      'not-configured':
+        'Richiesto: una lacuna reale che richiede attenzione. Opzionale: mostrato come non richiesto.',
+      'not-applicable':
+        'Escluso dallo score: né misurato né richiesto, quindi la confidenza non scende.',
+    },
+    scoreTitle: 'Score',
+    scoreIntro:
+      'Un numero da 0 a 100 per ordinare e confrontare i progetti nello snapshot di oggi. Sta accanto allo stato e non sostituisce mai le cinque dimensioni.',
+    formula: 'score = min(round(Σ peso × punti ÷ Σ peso), tetto dello stato complessivo)',
+    formulaNote:
+      'Σ considera solo le dimensioni richieste misurate: una dimensione sconosciuta resta fuori, mai contata come 0.',
+    pointsTitle: 'Punti per dimensione',
+    weightsTitle: 'Pesi',
+    capsTitle: 'Tetti per stato complessivo',
+    colState: 'Stato',
+    colPoints: 'Punti',
+    colDimension: 'Dimensione',
+    colChecks: 'Cosa verifica',
+    colWeight: 'Peso',
+    colCap: 'Score massimo',
+    notMeasured: 'Non misurato',
+    notRequired: 'Non richiesta: esclusa dallo score',
+    checks: {
+      delivery: 'Workflow critici: ultime esecuzioni, fallimenti, esecuzioni assenti o vecchie.',
+      version:
+        'Coordinator, componenti e ambienti: versioni dichiarate, disallineamenti e allineamento.',
+      security: 'Alert aperti per gravità, alert di secret scanning e controlli richiesti falliti.',
+      coverage: 'Quota dei controlli di sicurezza richiesti attivi e visibili.',
+      governance:
+        'Standard dei repository: workflow standard, repository archiviati, file di stato sicurezza, branch predefinito.',
+    },
+    capsNote:
+      'I tetti mantengono il numero coerente con lo stato: un progetto critico sta sempre sotto uno che richiede attenzione o è sconosciuto. Un progetto sano ha score 100.',
+    confidenceTitle: 'Confidenza e dati insufficienti',
+    confidence:
+      'Accanto allo score: dimensioni misurate su quelle richieste, per esempio “{example}”. Una dimensione non applicabile esce da entrambi i conteggi.',
+    minMeasured: 'Quota di dimensioni richieste da misurare per mostrare uno score',
+    insufficient:
+      'Sotto questa quota non c’è un numero: la pagina mostra “— {label}” e il progetto è ordinato in un gruppo a sé, mai in fondo come se andasse bene.',
+    thresholdsTitle: 'Soglie',
+    thresholdsIntro:
+      'Dalle policy di salute configurate. Sono scelte di questo hub, non valutazioni universali del rischio.',
+    colRule: 'Regola',
+    colValue: 'Valore',
+    thresholds: {
+      snapshotStaleHours: 'L’intero snapshot è segnalato come vecchio dopo',
+      workflowRunStaleDays: 'L’ultima esecuzione di un workflow critico è vecchia dopo',
+      securityScanStaleDays: 'Una scansione di sicurezza è vecchia dopo',
+      securityStatusFileStaleDays: 'Un file di stato sicurezza è vecchio dopo',
+      queuedThresholdMinutes: 'Un’esecuzione in coda o in corso richiede attenzione dopo',
+      greenThresholdPercent: 'La copertura sicurezza è sana da',
+      redOnSeverities: 'Alert aperti che rendono critico il rischio sicurezza',
+      amberOnSeverities: 'Alert aperti che portano il rischio sicurezza in attenzione',
+    },
+    staleSourceNote:
+      'La vecchiaia dello snapshot è il valore pubblicato dal collector con questo snapshot; gli altri valori vengono dalle policy lette durante la build del sito.',
+    units: {
+      hours: 'ore',
+      days: 'giorni',
+      minutes: 'minuti',
+    },
+    none: 'Nessuno',
+    docsTitle: 'Più dettagli',
+    docsText:
+      'Ogni policy, il suo valore predefinito e come cambiarla sono descritti nel riferimento di configurazione.',
+    docsLink: 'Riferimento di configurazione',
+  },
   errorsPage: {
     title: 'Dati snapshot non disponibili',
     missing:
