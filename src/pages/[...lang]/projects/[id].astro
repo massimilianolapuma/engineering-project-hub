@@ -91,6 +91,11 @@ const topReason = (h: HealthResult) =>
   [...h.reasons].sort((a, b) => LEVEL_RANK[a.level] - LEVEL_RANK[b.level])[0];
 const sum = (c: SeverityCounts | null, keys: (keyof SeverityCounts)[]) =>
   keys.reduce((n, k) => n + (c?.[k] ?? 0), 0);
+/** One vocabulary for severity counts on the card, the components table and the security section. */
+const sevCount = (k: keyof SeverityCounts, n: number) =>
+  `${n} ${n === 1 ? d.project.sevOne[k] : d.project.sevMany[k]}`;
+const OTHER_SEVERITIES: (keyof SeverityCounts)[] = ['medium', 'low', 'informational', 'unknown'];
+const otherCount = (n: number) => f(n === 1 ? d.project.otherOne : d.project.otherMany, { n });
 /**
  * Coverage line that never shows unknown as zero: controls that could not be read are named
  * ("n not visible"), and lead the line when nothing at all could be confirmed as enabled.
@@ -110,9 +115,9 @@ function dimSummary(dim: Dimension, health: HealthResult): string {
     const c = s.securityHealth.openCounts;
     if (c.critical === null) return d.project.dimSecurityUnknown;
     const counts = f(d.project.dimSecurity, {
-      critical: c.critical ?? 0,
-      high: c.high ?? 0,
-      other: sum(c, ['medium', 'low', 'informational', 'unknown']),
+      critical: sevCount('critical', c.critical ?? 0),
+      high: sevCount('high', c.high ?? 0),
+      other: otherCount(sum(c, OTHER_SEVERITIES)),
     });
     // Some sources unreadable: the counts are a lower bound, say so on the card too.
     return s.securityHealth.countsComplete ? counts : `${counts} · ${d.project.alertsPartial}`;
@@ -208,7 +213,7 @@ function alertsOf(c: ComponentSnapshot): { text: string | null; partial: boolean
     n: read.reduce((t, x) => t + (x.counts?.[k] ?? 0), 0),
   }))
     .filter((x) => x.n > 0)
-    .map((x) => `${x.n} ${lower(d.severity[x.k])}`);
+    .map((x) => sevCount(x.k, x.n));
   return { text: parts.length ? parts.join(' · ') : d.common.noOpenAlerts, partial };
 }
 const gapsOf = (c: ComponentSnapshot) =>
@@ -223,7 +228,21 @@ const listed = s
   : [];
 const openCounts = s?.securityHealth.openCounts;
 const countsKnown = openCounts ? openCounts.critical !== null : false;
-const otherAlerts = openCounts ? Math.max(0, sum(openCounts, [...SEVERITIES]) - listed.length) : 0;
+/**
+ * Open critical/high alerts the hub has no finding record for (e.g. container scanning): they
+ * stay critical/high, named by severity, never folded into "other". Same split as the card.
+ */
+const unlisted = (['critical', 'high'] as const)
+  .map((k) => ({
+    k,
+    n: Math.max(0, (openCounts?.[k] ?? 0) - listed.filter((x) => x.severity === k).length),
+  }))
+  .filter((x) => x.n > 0);
+const unlistedText = unlisted.map((x) => sevCount(x.k, x.n)).join(' · ');
+const otherAlerts = openCounts ? sum(openCounts, OTHER_SEVERITIES) : 0;
+/** Monorepo: the shared repository's alerts are shown once, under the components table. */
+const sharedAlertsComponent = s?.components.find((c) => sharedControls(c)) ?? null;
+const sharedAlerts = sharedAlertsComponent ? alertsOf(sharedAlertsComponent) : null;
 const repos = s
   ? [s.coordinator.repository, ...s.components.map((c) => c.repository)].filter(
       (r, i, all) => r.status === 'ok' && all.findIndex((x) => x.fullName === r.fullName) === i,
@@ -320,7 +339,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
         {whyHidden > 0 && <p class="why__more">{f(d.project.whyMore, { n: whyHidden })}</p>}
         {showCause && (
           <p class="why__cause">
-            {f(d.project.whyCause, {
+            {f(s.collectionErrors.length === 1 ? d.project.whyCauseOne : d.project.whyCause, {
               count: s.collectionErrors.length,
               classes: errorClasses.join(', '),
             })}{' '}
@@ -354,7 +373,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
               {f(d.project.versionFrom, { source: d.versionSource[s.coordinator.versionSource] })}
             </>
           ) : (
-            <strong>{lower(d.common.unknown)}</strong>
+            <strong>{d.project.versionUnknown}</strong>
           )}
           {s.coordinator.latestRelease && (
             <>
@@ -471,11 +490,13 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
                           )}
                           {c.manifestConsistency === 'mismatch' && (
                             <span class="comps__flag">
-                              <Pill
-                                tone="amber"
-                                label={d.consistency.mismatch}
-                                title={`${d.project.declared}: ${c.declaredVersion ?? d.common.unknownValue}`}
-                              />
+                              <Pill tone="amber" label={d.consistency.mismatch} />
+                              <span class="sub">
+                                {lower(d.project.declared)}{' '}
+                                <span class="mono">
+                                  {displayVersion(c.declaredVersion) ?? d.common.unknownValue}
+                                </span>
+                              </span>
                             </span>
                           )}
                         </span>
@@ -488,11 +509,16 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
                         )}
                       </td>
                       <td data-label={d.project.openAlerts}>
-                        <span class="cell">
-                          {alerts.text ?? <span class="muted">{d.common.unknown}</span>}
-                          {alerts.partial && <span class="sub"> · {d.project.alertsPartial}</span>}
-                          {sharedControls(c) && <span class="sub"> · {d.project.sharedRepo}</span>}
-                        </span>
+                        {sharedControls(c) ? (
+                          <span class="sub">{d.project.sharedRepo}</span>
+                        ) : (
+                          <span class="cell">
+                            {alerts.text ?? <span class="muted">{d.common.unknown}</span>}
+                            {alerts.partial && alerts.text !== null && (
+                              <span class="sub"> · {d.project.alertsPartial}</span>
+                            )}
+                          </span>
+                        )}
                       </td>
                       <td data-label={d.project.coverageCol}>
                         {!hasRequired(c) ? (
@@ -524,9 +550,16 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
             </table>
           </div>
         )}
+        {sharedAlertsComponent && sharedAlerts && (
+          <p class="note" data-shared-alerts>
+            {d.project.sharedAlerts} <code>{sharedAlertsComponent.repository.name}</code>:{' '}
+            {sharedAlerts.text ?? d.common.unknown}
+            {sharedAlerts.partial && sharedAlerts.text !== null && ` · ${d.project.alertsPartial}`}
+          </p>
+        )}
       </section>
 
-      <section class="block sections" aria-label={d.project.seeSection}>
+      <div class="block sections">
         <details id="workflows" class="fold">
           <summary>
             <span class="fold__title">{d.project.workflows}</span>
@@ -620,8 +653,20 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
                 ))}
               </ul>
             )}
+            {countsKnown && unlisted.length > 0 && (
+              <p class="alerts__unlisted" data-unlisted-crit-high>
+                {f(d.project.unlistedCritHigh, { alerts: unlistedText })}
+              </p>
+            )}
             {countsKnown && otherAlerts > 0 && (
-              <p>{f(d.project.otherAlertsOnGitHub, { n: otherAlerts })}</p>
+              <p>
+                {f(
+                  otherAlerts === 1
+                    ? d.project.otherAlertsOnGitHubOne
+                    : d.project.otherAlertsOnGitHub,
+                  { n: otherAlerts },
+                )}
+              </p>
             )}
             {countsKnown && !s.securityHealth.countsComplete && (
               <p class="note">{d.common.partial}</p>
@@ -700,7 +745,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
             )}
           </div>
         </details>
-      </section>
+      </div>
 
       <Legend i18n={i18n} />
     </>
@@ -912,6 +957,9 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
     display: block;
     margin-top: var(--space-1);
   }
+  .comps__flag .sub {
+    margin-left: var(--space-1);
+  }
   .comps__gaps {
     display: flex;
     flex-direction: column;
@@ -995,6 +1043,9 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
     flex-wrap: wrap;
     align-items: baseline;
     gap: var(--space-1) var(--space-3);
+  }
+  .alerts__unlisted {
+    font-weight: 600;
   }
   .alerts__text {
     display: flex;

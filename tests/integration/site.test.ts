@@ -152,7 +152,21 @@ describe('static site', () => {
       expect(alpha).toContain('Prototype pollution in example-lib');
       expect(alpha).not.toContain('Missing rate limiting on public endpoint'); // medium
       expect(alpha).not.toContain('Use of a weak cryptographic algorithm'); // fixed
-      expect(alpha).toContain('other open alert(s)');
+      expect(alpha).toContain('other open alert');
+    });
+
+    it('keeps an unlisted high alert apart from the other alerts', async () => {
+      // Beta: 1 critical + 2 high open, but only 1 critical and 1 high have a finding record
+      // (the second high comes from container scanning). It must not be counted as "other".
+      const html = await page('projects/project-beta');
+      const card = between(html, 'data-dimension="security"', '</a>');
+      expect(card).toContain('1 critical · 2 high · 4 other');
+      const security = between(html, 'id="security"', '</details>');
+      expect(security).toContain('4 other open alerts are counted here');
+      const unlisted = between(security, 'data-unlisted-crit-high', '</p>');
+      expect(unlisted).toContain('no detail in the hub');
+      expect(unlisted).toContain('1 high');
+      expect(unlisted).not.toContain('critical');
     });
 
     it('shows insufficient data and its cause for an unreadable project', async () => {
@@ -162,7 +176,7 @@ describe('static site', () => {
       expect(head).toContain('score__value--none');
       expect(head).not.toMatch(/class="score__value"[^>]*>\s*0\s*</);
       const why = between(html, 'id="h-why"', '</section>');
-      expect(why).toContain('2 collection error(s)');
+      expect(why).toContain('2 collection errors');
       expect(why).toContain('Not found (404)');
       expect(why).toMatch(/href="[^"]*data-quality\/"/);
     });
@@ -185,11 +199,16 @@ describe('static site', () => {
         expect(row, idRow).not.toContain('None required');
         expect(row, idRow).not.toContain('Unknown');
         expect(row, idRow).not.toContain('No critical workflow');
-        expect(row, idRow).toContain('1 high · 1 medium · 1 low');
+        // Shared counts are shown once under the table, not repeated on every row.
+        expect(row, idRow).not.toContain('1 high');
         expect(row, idRow).toContain('shared repository');
         expect(row, idRow).toContain('All required enabled');
         expect(row, idRow).toContain('Success');
       }
+      const note = between(comps, 'data-shared-alerts', '</p>');
+      expect(note).toContain('Open alerts in the shared repository');
+      expect(note).toContain('1 high · 1 medium · 1 low');
+      expect(comps.match(/1 high · 1 medium · 1 low/g)).toHaveLength(1);
     });
 
     it('never shows unreadable coverage or alert counts as zero or complete', async () => {
@@ -203,6 +222,10 @@ describe('static site', () => {
       const security = between(gamma, 'id="security"', '</details>');
       expect(security).toContain('Alert counts unknown');
       expect(security).not.toContain('Partial: some sources could not be read');
+      // Nothing could be read: no "partial" suffix that would suggest some counts are known.
+      const gammaRows = between(gamma, 'id="h-components"', '</section>');
+      expect(gammaRows).toContain('Unknown');
+      expect(gammaRows).not.toContain('partial');
       // Beta: secret scanning is not authorised, so the card's counts are a lower bound.
       const beta = await page('projects/project-beta');
       const card = between(beta, 'data-dimension="security"', '</a>');
@@ -214,6 +237,29 @@ describe('static site', () => {
       const html = await page('it/projects/project-beta');
       expect(between(html, 'data-dimension="coverage"', '</a>')).toContain('1 non visibile');
       expect(html).not.toContain('coordinatore');
+    });
+
+    it('uses one severity vocabulary in Italian, number first', async () => {
+      const html = await page('it/projects/project-beta');
+      expect(between(html, 'data-dimension="security"', '</a>')).toContain(
+        '1 critico · 2 high · 4 altri',
+      );
+      const security = between(html, 'id="security"', '</details>');
+      expect(security).toContain('Altri 4 alert aperti');
+      expect(between(security, 'data-unlisted-crit-high', '</p>')).toContain('1 high');
+    });
+
+    it('shows the declared version of a manifest mismatch as visible text', async () => {
+      const html = await page('projects/project-beta');
+      const flag = between(html, 'class="comps__flag"', '</td>');
+      expect(flag).toContain('Mismatch');
+      expect(flag).toMatch(/declared\s*<span class="mono"[^>]*>\s*\d+\.\d+\.\d+/);
+    });
+
+    it('agrees in gender and number in Italian', async () => {
+      const html = await page('it/projects/project-gamma');
+      expect(html).not.toContain('coordinator sconosciuto');
+      expect(between(html, 'id="h-why"', '</section>')).toContain('2 errori di raccolta');
     });
 
     it('renders the Italian project page in Italian', async () => {
