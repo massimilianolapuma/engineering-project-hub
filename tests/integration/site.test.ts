@@ -118,6 +118,11 @@ describe('static site', () => {
     expect(notAuth).toContain('project-gamma-service');
     expect(html).toContain('we cannot tell which');
     expect(html).toContain('read access');
+    // Portfolio deep links (/data-quality/#<project-id>) land on the project's first row.
+    for (const id of ['project-beta', 'project-gamma']) {
+      expect(html).toMatch(new RegExp(`<li[^>]*\\bid="${id}"`));
+      expect(html.match(new RegExp(`\\bid="${id}"`, 'g'))).toHaveLength(1);
+    }
     // Stale sources with their age and last update date.
     const stale = html.slice(html.indexOf('id="h-stale"'));
     expect(stale).toContain('project-beta-helm');
@@ -126,6 +131,7 @@ describe('static site', () => {
     expect(stale).toContain('26 Dec 2025');
     // Unmapped submodule with a link to the catalog.
     const sub = html.slice(html.indexOf('id="h-submodules"'));
+    expect(html).toContain('Submodules to check');
     expect(sub).toContain('tools/legacy-scripts');
     expect(sub).toMatch(/href="[^"]*\/catalog\/"/);
     // Capabilities as pills (shape + text), run details collapsed last.

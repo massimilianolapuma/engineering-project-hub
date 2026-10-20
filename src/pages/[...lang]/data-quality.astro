@@ -56,10 +56,11 @@ interface CauseRow {
 const causes = ErrorClassificationSchema.options
   .map((classification, order) => {
     const rows: CauseRow[] = [];
-    let sources = 0;
+    /* A repository shared by two projects is one source: same key as the collector. */
+    const keys = new Set<string>();
     for (const p of projects) {
       for (const e of p.collectionErrors.filter((x) => x.classification === classification)) {
-        sources += 1;
+        keys.add(`${e.repository}|${e.source}|${e.classification}`);
         const row = rows.find((r) => r.projectId === p.project.id && r.source === e.source);
         if (row) {
           if (!row.repositories.includes(e.repository)) row.repositories.push(e.repository);
@@ -72,13 +73,18 @@ const causes = ErrorClassificationSchema.options
           });
       }
     }
-    return { classification, order, sources, rows };
+    return { classification, order, sources: keys.size, rows };
   })
   .filter((c) => c.sources > 0)
   .sort((a, b) => b.sources - a.sources || a.order - b.order);
 const causeTone = (c: ErrorClassification): Tone =>
   c === 'error' || c === 'rate-limited' ? 'red' : c === 'not-configured' ? 'amber' : 'grey';
 const unreadable = causes.reduce((n, c) => n + c.sources, 0);
+/* A 404 means a missing repository only when the repository itself was not found. */
+const causeWhy = (c: (typeof causes)[number]) =>
+  c.classification === 'not-found' && c.rows.some((r) => r.source !== 'repository')
+    ? q.notFoundAny
+    : q.causeWhy[c.classification];
 const unreadableProjects = projects.filter((p) => p.collectionErrors.length > 0).length;
 const accessCauses = causes.some(
   (c) => c.classification === 'not-authorised' || c.classification === 'not-found',
@@ -110,6 +116,14 @@ const submodules = projects.flatMap((p) =>
 );
 const [beforeFile, afterFile] = q.unmappedSentence.split('{file}');
 const [beforeDate, afterDate] = q.lastUpdate.split('{date}');
+
+/* Deep links (/data-quality/#<project-id>) land on the project's first row, always visible. */
+const anchored = new Set<string>();
+const anchor = (projectId: string) => {
+  if (anchored.has(projectId)) return undefined;
+  anchored.add(projectId);
+  return projectId;
+};
 
 /* Collection capabilities, worst first. */
 const AVAIL_RANK: Record<Availability, number> = {
@@ -182,13 +196,12 @@ const lead = [
                 <p class="dq-cause__head">
                   <Pill tone={causeTone(c.classification)} label={d.errorClass[c.classification]} />
                   <span class="muted">
-                    {plural(c.sources, q.sourcesOne, q.sourcesOther)} ·{' '}
-                    {q.causeWhy[c.classification]}
+                    {plural(c.sources, q.sourcesOne, q.sourcesOther)} · {causeWhy(c)}
                   </span>
                 </p>
                 <ul class="dq-rows">
                   {c.rows.map((r) => (
-                    <li class="dq-row">
+                    <li class="dq-row" id={anchor(r.projectId)}>
                       <span>
                         <a class="dq-project" href={href(locale, `projects/${r.projectId}`)}>
                           {r.projectName}
@@ -218,7 +231,7 @@ const lead = [
         ) : (
           <ul class="dq-rows">
             {stale.map((s) => (
-              <li class="dq-row">
+              <li class="dq-row" id={anchor(s.project.id)}>
                 <span>
                   <a class="dq-project" href={href(locale, `projects/${s.project.id}`)}>
                     {s.project.name}
@@ -226,7 +239,7 @@ const lead = [
                   · <span class="mono">{repoName(s.repository)}</span>
                 </span>
                 <span>{d.errorSource[s.source]}</span>
-                <span class="dq-age">
+                <span class="dq-status">
                   {s.days !== null && s.lastUpdatedAt ? (
                     <>
                       <span class="status-col">
@@ -257,27 +270,29 @@ const lead = [
         ) : (
           <ul class="dq-rows">
             {submodules.map((m) => (
-              <li class="dq-row">
+              <li class="dq-row" id={anchor(m.project.id)}>
                 <span>
                   <a class="dq-project" href={href(locale, `projects/${m.project.id}`)}>
                     {m.project.name}
                   </a>
                 </span>
                 <span class="mono">{m.path}</span>
-                <span>
+                <span class="dq-status">
                   {m.association === 'unmapped' ? (
-                    <>
+                    <span>
                       {beforeFile}
                       <code>.gitmodules</code>
                       {afterFile} <a href={href(locale, 'catalog')}>{q.addToCatalog}</a>
-                    </>
+                    </span>
                   ) : (
                     <>
-                      <Pill
-                        tone={m.status === 'unresolvable' ? 'red' : 'grey'}
-                        label={d.submoduleStatus[m.status]}
-                      />{' '}
-                      {q.unresolvedSentence}
+                      <span class="status-col">
+                        <Pill
+                          tone={m.status === 'unresolvable' ? 'red' : 'grey'}
+                          label={d.submoduleStatus[m.status]}
+                        />
+                      </span>
+                      <span>{q.unresolvedSentence}</span>
                     </>
                   )}
                 </span>
@@ -303,7 +318,7 @@ const lead = [
         <summary>
           {f(q.runSummary, {
             date: i18n.date(index.run.startedAt),
-            source: index.run.dataSource === 'mock' ? q.synthetic : q.live,
+            source: index.run.dataSource === 'mock' ? d.common.sourceMock : d.common.sourceGithub,
             version: index.run.collectorVersion,
           })}
         </summary>
@@ -465,13 +480,21 @@ const lead = [
   .dq-row:first-child {
     border-top: 0;
   }
+  .dq-row[id] {
+    scroll-margin-top: var(--space-6);
+  }
+  .dq-row:target {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
   .dq-project {
     font-weight: 600;
   }
   .dq-repos {
     overflow-wrap: anywhere;
   }
-  .dq-age {
+  .dq-status {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
