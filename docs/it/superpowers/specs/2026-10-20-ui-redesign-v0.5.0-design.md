@@ -2,7 +2,7 @@
 
 Versione inglese: [../../../superpowers/specs/2026-10-20-ui-redesign-v0.5.0-design.md](../../../superpowers/specs/2026-10-20-ui-redesign-v0.5.0-design.md)
 
-Stato: bozza in attesa di approvazione · Data: 2026-10-20 · Release di destinazione: v0.5.0
+Stato: approvato dal proprietario il 2026-10-20 · Data: 2026-10-20 · Release di destinazione: v0.5.0
 
 ## 1. Intento e motivazioni
 
@@ -78,14 +78,14 @@ Accento (solo link, focus, azione primaria; mai per lo stato): teal `oklch(0.52 
 
 Stato (riempimenti per pallini e barre; `*-text` per il testo sulle tinte)
 
-| State                     | Light fill / text                             | Dark fill / text                                |
-| ------------------------- | --------------------------------------------- | ----------------------------------------------- |
-| Critical (red, vermilion) | `oklch(0.6 0.19 35)` / `oklch(0.48 0.16 35)`  | `oklch(0.7 0.17 35)` / `oklch(0.82 0.11 35)`    |
-| Attention (amber, ochre)  | `oklch(0.66 0.15 72)` / `oklch(0.47 0.1 65)`  | `oklch(0.8 0.14 80)` / `oklch(0.86 0.1 82)`     |
-| Healthy (green, emerald)  | `oklch(0.6 0.12 165)` / `oklch(0.45 0.1 165)` | `oklch(0.72 0.12 165)` / `oklch(0.82 0.09 165)` |
+| State                     | Light fill / text                                     | Dark fill / text                                |
+| ------------------------- | ----------------------------------------------------- | ----------------------------------------------- |
+| Critical (red, vermilion) | `oklch(0.6 0.19 35)` / `oklch(0.48 0.16 35)`          | `oklch(0.7 0.17 35)` / `oklch(0.82 0.11 35)`    |
+| Attention (amber, ochre)  | `oklch(0.66 0.15 72)` / `oklch(0.47 0.1 65)`          | `oklch(0.8 0.14 80)` / `oklch(0.86 0.1 82)`     |
+| Healthy (green, emerald)  | `oklch(0.6 0.12 165)` / `oklch(0.45 0.1 165)`         | `oklch(0.72 0.12 165)` / `oklch(0.82 0.09 165)` |
+| Unknown                   | no fill, 1.5px dashed `--unknown` outline, muted text | same                                            |
 
 Tinte delle pill (valori fissi, non color-mix, così possono essere testati per il contrasto): rosso `oklch(0.95 0.03 35)` / `oklch(0.27 0.05 35)`, ambra `oklch(0.95 0.05 85)` / `oklch(0.29 0.05 80)`, verde `oklch(0.95 0.03 165)` / `oklch(0.27 0.04 165)` (chiaro / scuro). I riempimenti di stato raggiungono 3:1 su `--surface` come elementi grafici (l'ambra chiaro è stato scurito a ocra per questo); ogni `*-text` raggiunge 4.5:1 sulla propria tinta e su `--surface`.
-| Unknown | no fill, 1.5px dashed `--unknown` outline, muted text | same |
 
 Le pill di stato poste prima del testo (motivi nelle liste, righe dei workflow) stanno in una colonna a larghezza fissa, così il testo che le segue inizia sempre alla stessa x, qualunque sia la lunghezza dell'etichetta (feedback del proprietario sul mockup). La severità mantiene la propria scala (critical / high / medium / low), mai disegnata con i toni di salute; il builder può riusare le tinte rosso/ambra per i badge critical/high come etichette di testo, con il glifo a barre o l'etichetta sempre presenti.
 
@@ -134,7 +134,7 @@ Tutte le pagine: una frase o un blocco dominante in alto, poi la lista ordinata 
 
 **Catalog (come nel mockup).** Stesso comportamento di oggi (modifica nella UI, proposta come pull request, il discovery propone soltanto, nulla viene salvato, nessuna chiamata a GitHub). Lista laterale dei progetti con badge di modifica in sospeso e "Nuovo progetto", repository scoperti con "Usa"; modulo con fieldset General, Project type (radio segmentati con aiuto), Components (righe con rimozione), Environments, Workflows, Security controls; un riquadro "Proposta" con pill di validazione, riepilogo delle modifiche e azioni, primaria "Proponi su GitHub" (accento), "Scarica YAML", "Annulla modifiche".
 
-**Come leggere (nuova).** Significato degli stati, i cinque simboli, le distinzioni sconosciuto / non autorizzato / non configurato / non applicabile, la formula dello score e i cap, soglie riassunte da `policies.yaml`, link ai documenti. EN + IT, nella navigazione come link secondario (footer o utility dell'header).
+**Come leggere (nuova).** Significato degli stati, i sei simboli, le distinzioni sconosciuto / non autorizzato / non configurato / non applicabile, la formula dello score e i cap, soglie riassunte da `policies.yaml`, link ai documenti. EN + IT, nella navigazione come link secondario (footer o utility dell'header).
 
 ## 8. Lasciato al builder
 

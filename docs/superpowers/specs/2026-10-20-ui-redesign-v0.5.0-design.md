@@ -2,7 +2,7 @@
 
 Italiano: [../../it/superpowers/specs/2026-10-20-ui-redesign-v0.5.0-design.md](../../it/superpowers/specs/2026-10-20-ui-redesign-v0.5.0-design.md)
 
-Status: draft for approval · Date: 2026-10-20 · Target release: v0.5.0
+Status: approved by the owner on 2026-10-20 · Date: 2026-10-20 · Target release: v0.5.0
 
 ## 1. Intent and why
 
@@ -78,14 +78,14 @@ Accent (links, focus, primary action only; never status): teal `oklch(0.52 0.09 
 
 Status (fills for dots and bars; `*-text` for text on tints)
 
-| State                     | Light fill / text                             | Dark fill / text                                |
-| ------------------------- | --------------------------------------------- | ----------------------------------------------- |
-| Critical (red, vermilion) | `oklch(0.6 0.19 35)` / `oklch(0.48 0.16 35)`  | `oklch(0.7 0.17 35)` / `oklch(0.82 0.11 35)`    |
-| Attention (amber, ochre)  | `oklch(0.66 0.15 72)` / `oklch(0.47 0.1 65)`  | `oklch(0.8 0.14 80)` / `oklch(0.86 0.1 82)`     |
-| Healthy (green, emerald)  | `oklch(0.6 0.12 165)` / `oklch(0.45 0.1 165)` | `oklch(0.72 0.12 165)` / `oklch(0.82 0.09 165)` |
+| State                     | Light fill / text                                     | Dark fill / text                                |
+| ------------------------- | ----------------------------------------------------- | ----------------------------------------------- |
+| Critical (red, vermilion) | `oklch(0.6 0.19 35)` / `oklch(0.48 0.16 35)`          | `oklch(0.7 0.17 35)` / `oklch(0.82 0.11 35)`    |
+| Attention (amber, ochre)  | `oklch(0.66 0.15 72)` / `oklch(0.47 0.1 65)`          | `oklch(0.8 0.14 80)` / `oklch(0.86 0.1 82)`     |
+| Healthy (green, emerald)  | `oklch(0.6 0.12 165)` / `oklch(0.45 0.1 165)`         | `oklch(0.72 0.12 165)` / `oklch(0.82 0.09 165)` |
+| Unknown                   | no fill, 1.5px dashed `--unknown` outline, muted text | same                                            |
 
 Pill tints (fixed values, not color-mix, so they can be contrast-tested): red `oklch(0.95 0.03 35)` / `oklch(0.27 0.05 35)`, amber `oklch(0.95 0.05 85)` / `oklch(0.29 0.05 80)`, green `oklch(0.95 0.03 165)` / `oklch(0.27 0.04 165)` (light / dark). Status fills reach 3:1 on `--surface` as graphics (the light amber was darkened to ochre for this); every `*-text` reaches 4.5:1 on its tint and on `--surface`.
-| Unknown | no fill, 1.5px dashed `--unknown` outline, muted text | same |
 
 Status pills placed before text (list reasons, workflow rows) sit in a fixed-width column so the text after them always starts at the same x, whatever the label length (owner feedback on the mockup). Severity keeps its own scale (critical / high / medium / low), never drawn with health tones; the builder may reuse the red/amber hues for critical/high badges as text labels, with the bar glyph or label always present.
 
@@ -134,7 +134,7 @@ All pages: one dominant sentence or block at the top, then the list sorted worst
 
 **Catalog (as mocked).** Same behaviour as today (edit in the UI, propose as a pull request, discovery only proposes, nothing saved, no GitHub calls). Side list of projects with pending-change badge and "New project", discovered repositories with "Use"; form with fieldsets General, Project type (segmented radios with help), Components (rows with remove), Environments, Workflows, Security controls; a "Proposal" box with validation pill, change summary and actions, primary "Propose on GitHub" (accent), "Download YAML", "Discard changes".
 
-**How to read (new).** State meanings, the five symbols, the distinctions unknown / not authorised / not configured / not applicable, the score formula and caps, thresholds summarised from `policies.yaml`, link to docs. EN + IT, in nav as a secondary link (footer or header utility).
+**How to read (new).** State meanings, the six symbols, the distinctions unknown / not authorised / not configured / not applicable, the score formula and caps, thresholds summarised from `policies.yaml`, link to docs. EN + IT, in nav as a secondary link (footer or header utility).
 
 ## 8. Left to the builder
 

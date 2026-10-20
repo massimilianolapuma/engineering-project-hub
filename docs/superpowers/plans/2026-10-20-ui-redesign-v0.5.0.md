@@ -1,5 +1,7 @@
 # UI redesign v0.5.0 (Warm Graphite) Implementation Plan
 
+> Working document for agents, English only (specs and user docs are EN + IT).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the v0.4.0 "Survey Sheet" UI with the approved Warm Graphite system on all pages, add a project score computed by the collector, and add a "How to read" page.

@@ -65,7 +65,7 @@ database.
 Ogni vista è disponibile in **inglese** (`/`) e in **italiano** (`/it/`), in modalità chiara
 e scura, con navigazione da tastiera. Ogni pagina si apre con una frase che dice cosa
 conta, poi l'elenco ordinato dal peggiore, e lascia il dettaglio a un clic di distanza. Una
-legenda di una riga sotto ogni elenco porta alla pagina **Come leggere**.
+legenda di una riga sotto ogni elenco di stati porta alla pagina **Come leggere**.
 
 | Vista                  | Path              | Contenuto                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ---------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

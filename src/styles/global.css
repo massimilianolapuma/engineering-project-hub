@@ -521,30 +521,6 @@ select {
   color: var(--text-muted);
   margin-left: var(--space-2);
 }
-/* Reasons */
-.reasons {
-  list-style: none;
-  padding: 0;
-  margin: var(--space-3) 0 0;
-  display: grid;
-  gap: var(--space-2);
-}
-.reasons__item {
-  display: flex;
-  gap: var(--space-2);
-  align-items: baseline;
-}
-.reasons__item .icon {
-  position: relative;
-  top: 2px;
-}
-.reasons__item--info {
-  color: var(--text-muted);
-}
-.reasons__more {
-  color: var(--text-muted);
-  font-size: var(--fs-xs);
-}
 .callout {
   border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-4);
@@ -918,7 +894,7 @@ textarea.ce-input {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: 32px;
+  min-height: 40px;
   font-size: var(--fs-sm);
   cursor: pointer;
 }

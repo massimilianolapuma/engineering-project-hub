@@ -63,7 +63,7 @@ The browser never calls the GitHub API, and the site has no backend and no datab
 Every view is available in **English** (`/`) and **Italian** (`/it/`), in light and dark
 mode, with keyboard navigation. Each page opens with one sentence that says what matters,
 then the list sorted worst first, and keeps the detail one click away. A one-line legend
-under each list links to the **How to read** page.
+under each status list links to the **How to read** page.
 
 | View               | Path              | Content                                                                                                                                                                                                                                                                                                                                                                       |
 | ------------------ | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

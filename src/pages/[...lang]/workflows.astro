@@ -7,6 +7,7 @@
 import type { WorkflowStatus } from '@model/index';
 import ErrorState from '../../components/ErrorState.astro';
 import ExtLink from '../../components/ExtLink.astro';
+import Legend from '../../components/Legend.astro';
 import StatusDot from '../../components/StatusDot.astro';
 import Base from '../../layouts/Base.astro';
 import { pageContext } from '../../lib/page';
@@ -206,6 +207,8 @@ const detailKind = (issue: WorkflowIssue, w: WorkflowStatus) =>
           );
         })}
       </div>
+
+      <Legend i18n={i18n} />
     </>
   )}
 </Base>

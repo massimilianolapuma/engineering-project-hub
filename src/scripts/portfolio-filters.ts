@@ -81,8 +81,11 @@ if (form && tbody) {
           return 0;
         case 'updated':
           return -Date.parse(d.updated ?? '');
-        case 'critical':
-          return -Number(d.critical);
+        case 'critical': {
+          // Unknown (-1) sits between projects with alerts and projects with none.
+          const c = Number(d.critical);
+          return c < 0 ? -0.5 : -c;
+        }
         case 'health':
           return Number(d.rank);
         default:

@@ -86,6 +86,14 @@ test('filters live in the URL, apply on load and can be cleared from the empty s
   await expect(rows).toHaveCount(1);
 });
 
+test('sorting by critical alerts never puts an unknown count at the bottom', async ({ page }) => {
+  await page.goto('/?sort=critical');
+  const names = await page
+    .locator('tr[data-project]:not([hidden])')
+    .evaluateAll((rs) => rs.map((r) => (r as HTMLElement).dataset.name));
+  expect(names).toEqual(['project beta', 'project gamma', 'platform (monorepo)', 'project alpha']);
+});
+
 test('the chosen theme survives navigation', async ({ page }) => {
   await page.goto('/');
   const toggle = page.locator('[data-theme-toggle]');

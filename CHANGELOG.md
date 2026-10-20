@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Project score (0–100) computed by the collector to rank and compare projects: weighted mean of the measured dimensions (green 100, amber 60, red 20), capped by the overall status (red ≤ 49, amber and grey ≤ 89), with confidence "measured n of m"; unreadable dimensions are excluded, never counted as zero, and below half measured the site shows "insufficient data". Weights, points, caps and the minimum measured ratio are configurable in an optional `score` block of `config/policies.yaml` (EN/IT docs).
-- "How to read" page (EN/IT): state meanings, the six control symbols, unknown vs not authorised vs not configured vs not applicable, the score formula and caps, thresholds from `policies.yaml`; each page keeps a one-line legend that links to it.
+- "How to read" page (EN/IT): state meanings, the six control symbols, unknown vs not authorised vs not configured vs not applicable, the score formula and caps, thresholds from `policies.yaml`; the status lists (Portfolio, Security, Versions, Workflows, project pages) end with a one-line legend that links to it.
 
 ### Changed
 
@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - The "Survey Sheet" visual world: hatching, grid references, sheet frame, margin notes and the per-page legend block.
-- Unused v0.4.0 components (`HealthTile`, `SeverityKpis`, `Count`), styles, token aliases and UI strings.
+- Unused v0.4.0 components (`HealthTile`, `SeverityKpis`, `Count`, `PinCell`, `EffectiveVersion`, `ReasonList`), styles, token aliases and UI strings.
 
 ## [0.4.0] - 2026-10-18
 

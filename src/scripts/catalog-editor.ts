@@ -1499,7 +1499,6 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
   window.addEventListener('beforeunload', (e) => {
     if (pendingChanges(published, draft).length === 0) return;
     e.preventDefault();
-    e.returnValue = '';
   });
 
   projectsEl.addEventListener('click', (e) => {
