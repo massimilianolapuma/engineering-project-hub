@@ -318,6 +318,17 @@ export async function discover(
     catalog.projects.map((pr) => [pr.coordinator.repository.toLowerCase(), pr.id]),
   );
   const catalogIds = new Set(catalog.projects.map((pr) => pr.id));
+  // Every repository already part of a catalog project (coordinator or component), by project.
+  const memberOf = new Map<string, Set<string>>();
+  for (const pr of catalog.projects)
+    memberOf.set(
+      pr.id,
+      new Set(
+        [pr.coordinator.repository, ...pr.components.map((c) => c.repository)].map((x) =>
+          x.toLowerCase(),
+        ),
+      ),
+    );
   const limit = createLimiter(4);
 
   const analysed = await Promise.all(
@@ -351,7 +362,11 @@ export async function discover(
   );
 
   const proposals: DiscoveryProposal[] = [];
-  const hintsOf = new Map<string, RepoHints>();
+  // Hints of every scanned repository, read up front: a repository claimed as a submodule
+  // takes its hinted type and component id into the coordinator's proposal.
+  const hintsOf = new Map<string, RepoHints>(
+    analysed.map((a) => [a.repo.fullName.toLowerCase(), readHints(a.repo, a.properties, cfg)]),
+  );
   const claimed: DiscoveryResult['claimed'] = [];
 
   for (const a of analysed) {
@@ -379,13 +394,14 @@ export async function discover(
         const target = remote ? known.get(remote) : undefined;
         if (!target) return [];
         claimed.push({ repository: target.fullName, by: repo.fullName });
-        const id = uniqueSlug(e.path.split('/').pop() ?? e.path, used);
+        const targetHints = hintsOf.get(target.fullName.toLowerCase());
+        const id = uniqueSlug(targetHints?.component ?? e.path.split('/').pop() ?? e.path, used);
         return [
           {
             id,
             name: titleCase(e.path.split('/').pop() ?? e.path),
             repository: target.fullName,
-            type: guessType(e.path),
+            type: targetHints?.type ?? guessType(e.path),
             submodulePath: e.path,
             notApplicableControls: [],
             notApplicableChecks: [],
@@ -430,8 +446,7 @@ export async function discover(
           });
       }
     }
-    const hinted = readHints(repo, a.properties, cfg);
-    hintsOf.set(repo.fullName.toLowerCase(), hinted);
+    const hinted = hintsOf.get(repo.fullName.toLowerCase())!;
     if (kind === 'single') evidence.push('no submodules or workspace manifest');
     evidence.push(...hinted.evidence);
     if (trackedWorkflows.length) evidence.push(`${trackedWorkflows.length} workflow(s)`);
@@ -455,7 +470,7 @@ export async function discover(
       hintedProjectId:
         hinted.project &&
         catalogIds.has(hinted.project) &&
-        coordinatorOf.get(repo.fullName.toLowerCase()) !== hinted.project
+        !memberOf.get(hinted.project)?.has(repo.fullName.toLowerCase())
           ? hinted.project
           : null,
       hints: hinted.hints,
@@ -469,7 +484,7 @@ export async function discover(
   const open = proposals.filter(
     (x) => x.kind !== 'single' || !claimedSet.has(x.repository.toLowerCase()),
   );
-  const grouped = groupByHint(open, hintsOf, catalogIds, coordinatorOf);
+  const grouped = groupByHint(open, hintsOf, catalogIds, coordinatorOf, memberOf);
   return {
     owners: cfg.owners,
     scanned: scanned.length,
@@ -490,6 +505,7 @@ function groupByHint(
   hintsOf: Map<string, RepoHints>,
   catalogIds: Set<string>,
   coordinatorOf: Map<string, string>,
+  memberOf: Map<string, Set<string>>,
 ): DiscoveryProposal[] {
   const groups = new Map<string, DiscoveryProposal[]>();
   for (const pr of proposals) {
@@ -540,9 +556,7 @@ function groupByHint(
         ...lead.evidence,
       ].slice(0, 20),
       hintedProjectId:
-        existing && coordinatorOf.get(lead.repository.toLowerCase()) !== projectId
-          ? projectId
-          : null,
+        existing && !memberOf.get(projectId)?.has(lead.repository.toLowerCase()) ? projectId : null,
       hints: lead.hints,
       project: project.data,
     });

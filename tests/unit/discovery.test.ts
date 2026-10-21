@@ -305,6 +305,41 @@ describe('discovery hints', () => {
     expect(d.hintedProjectId).toBe('platform');
     expect(d.hints).toEqual([{ source: 'property', key: 'hub-project', value: 'platform' }]);
   });
+  it('hinted type and component id also apply to a submodule component', async () => {
+    const c = ctx();
+    const orig = c.provider.getCustomPropertyValues.bind(c.provider);
+    c.provider.getCustomPropertyValues = async (repo: string) =>
+      repo === 'example-org/project-alpha-backend'
+        ? {
+            ok: true as const,
+            data: [
+              { name: 'hub-component-type', value: 'worker' },
+              { name: 'hub-component', value: 'api-server' },
+            ],
+          }
+        : orig(repo);
+    const r = await run(c);
+    const coordinator = r.proposals.find(
+      (p) => p.repository === 'example-org/project-alpha-coordinator',
+    )!;
+    const m = coordinator.project.components.find(
+      (x) => x.repository === 'example-org/project-alpha-backend',
+    )!;
+    expect(m).toMatchObject({ id: 'api-server', type: 'worker' });
+  });
+  it('a repository that is a catalog component is not suggested for that project', async () => {
+    const existing = parse(readFileSync('config/projects/platform.yaml', 'utf8'));
+    existing.components.push({
+      id: 'docs',
+      name: 'Docs',
+      repository: 'example-org/docs-site',
+      type: 'webapp',
+      versionSource: 'release',
+    });
+    const r = await run(ctx(), [existing]);
+    const d = r.proposals.find((p) => p.repository === 'example-org/docs-site')!;
+    expect(d.hintedProjectId).toBeNull();
+  });
   it('never leaks the unconfigured property', async () => {
     const s = JSON.stringify(await run());
     expect(s).not.toContain('CC-1234');
