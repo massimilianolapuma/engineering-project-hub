@@ -1,0 +1,41 @@
+{
+  "repository": {
+    "owner": "example-org",
+    "visibility": "public",
+    "defaultBranch": "main",
+    "archived": false,
+    "updatedAt": "@now-2d",
+    "name": "tools-cli",
+    "fullName": "example-org/tools-cli",
+    "htmlUrl": "https://github.com/example-org/tools-cli",
+    "topics": ["demo", "project-tools"]
+  },
+  "head": {
+    "sha": "dddddddddddddddddddddddddddddddddddddddd",
+    "committedAt": "@now-3d"
+  },
+  "directories": {
+    "": [
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  },
+  "workflows": [],
+  "workflowRuns": {},
+  "customProperties": [
+    {
+      "name": "hub-component-type",
+      "value": "other"
+    },
+    {
+      "name": "cost-center",
+      "value": "CC-1234"
+    }
+  ],
+  "codeScanningAlerts": [],
+  "codeScanningAnalysis": null,
+  "dependabotAlerts": [],
+  "secretScanningAlerts": []
+}

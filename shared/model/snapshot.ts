@@ -683,13 +683,27 @@ export type PortfolioIndex = z.infer<typeof PortfolioIndexSchema>;
 
 export const DiscoveryProposalSchema = z
   .object({
-    /** coordinator: has .gitmodules · monorepo: workspace manifest · single: one repository. */
-    kind: z.enum(['coordinator', 'monorepo', 'single']),
+    /** coordinator: .gitmodules · monorepo: workspace manifest · grouped: repositories sharing a hinted project · single: one repository. */
+    kind: z.enum(['coordinator', 'monorepo', 'grouped', 'single']),
     repository: z.string().max(200),
     url: httpsUrl.nullable(),
     /** Id of the catalog project that already uses this repository as coordinator. */
     projectId: z.string().max(64).nullable(),
     evidence: z.array(z.string().max(200)).max(20),
+    /** Existing catalog project suggested by a hint when the repository is not part of it. */
+    hintedProjectId: z.string().max(64).nullable(),
+    /** The configured hint keys that were read (never any other property). */
+    hints: z
+      .array(
+        z
+          .object({
+            source: z.enum(['property', 'topic']),
+            key: z.string().max(50),
+            value: z.string().max(100),
+          })
+          .strict(),
+      )
+      .max(10),
     /** Ready-to-edit project configuration proposed for the catalog. */
     project: ProjectConfigSchema,
   })

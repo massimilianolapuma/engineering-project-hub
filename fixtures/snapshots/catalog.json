@@ -11,8 +11,15 @@
       "includeForks": false,
       "includeArchived": false,
       "maxRepositories": 200,
-      "topics": false,
-      "customProperties": false
+      "topics": true,
+      "customProperties": true,
+      "hints": {
+        "projectProperty": "hub-project",
+        "componentProperty": "hub-component",
+        "typeProperty": "hub-component-type",
+        "projectTopicPrefix": "project-",
+        "typeTopicPrefix": "type-"
+      }
     },
     "projects": [
       {
@@ -484,7 +491,7 @@
     "owners": [
       "example-org"
     ],
-    "scanned": 10,
+    "scanned": 12,
     "proposals": [
       {
         "kind": "coordinator",
@@ -494,6 +501,8 @@
         "evidence": [
           ".gitmodules: 4 submodule(s)"
         ],
+        "hintedProjectId": null,
+        "hints": [],
         "project": {
           "id": "project-alpha-coordinator",
           "name": "Project Alpha Coordinator",
@@ -588,6 +597,8 @@
         "evidence": [
           ".gitmodules: 4 submodule(s)"
         ],
+        "hintedProjectId": null,
+        "hints": [],
         "project": {
           "id": "project-beta-coordinator",
           "name": "Project Beta Coordinator",
@@ -663,6 +674,8 @@
           "package.json workspaces: apps/*, services/*",
           "3 workflow(s)"
         ],
+        "hintedProjectId": null,
+        "hints": [],
         "project": {
           "id": "platform-mono",
           "name": "Platform Mono",
@@ -771,6 +784,88 @@
         }
       },
       {
+        "kind": "grouped",
+        "repository": "example-org/tools-api",
+        "url": "https://github.com/example-org/tools-api",
+        "projectId": null,
+        "evidence": [
+          "grouped by project hint \"tools\": 2 repositories",
+          "no submodules or workspace manifest"
+        ],
+        "hintedProjectId": null,
+        "hints": [
+          {
+            "source": "topic",
+            "key": "project-*",
+            "value": "tools"
+          },
+          {
+            "source": "property",
+            "key": "hub-component",
+            "value": "api"
+          },
+          {
+            "source": "topic",
+            "key": "type-*",
+            "value": "service"
+          }
+        ],
+        "project": {
+          "id": "tools",
+          "name": "Tools",
+          "description": "Discovered group of repositories (project hint).",
+          "businessUnit": "example-org",
+          "lifecycle": "development",
+          "coordinator": {
+            "repository": "example-org/tools-api",
+            "defaultBranch": "main",
+            "manifestPath": "release-manifest.yaml",
+            "notApplicableControls": [],
+            "notApplicableChecks": []
+          },
+          "components": [
+            {
+              "id": "tools-cli",
+              "name": "Tools Cli",
+              "repository": "example-org/tools-cli",
+              "type": "other",
+              "notApplicableControls": [],
+              "notApplicableChecks": [],
+              "versionSource": "release"
+            }
+          ],
+          "environments": [],
+          "trackedWorkflows": [],
+          "securityControls": {
+            "codeScanning": {
+              "required": true
+            },
+            "secretScanning": {
+              "required": true
+            },
+            "dependabot": {
+              "required": true
+            },
+            "containerScanning": {
+              "required": false
+            },
+            "iacScanning": {
+              "required": false
+            },
+            "dast": {
+              "required": false
+            },
+            "sbom": {
+              "required": false
+            },
+            "artifactSignature": {
+              "required": false
+            }
+          },
+          "securityStatusPath": ".security/project-security-status.json"
+        }
+      },
+      {
         "kind": "single",
         "repository": "example-org/docs-site",
         "url": "https://github.com/example-org/docs-site",
@@ -778,6 +873,14 @@
         "evidence": [
           "no submodules or workspace manifest",
           "1 workflow(s)"
+        ],
+        "hintedProjectId": "platform",
+        "hints": [
+          {
+            "source": "property",
+            "key": "hub-project",
+            "value": "platform"
+          }
         ],
         "project": {
           "id": "docs-site",

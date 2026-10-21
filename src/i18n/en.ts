@@ -887,13 +887,16 @@ export const en = {
     proposalKind: {
       coordinator: 'Coordinator',
       monorepo: 'Monorepo',
+      grouped: 'Grouped by hints',
       single: 'Single repository',
     },
     proposalGroup: {
       coordinator: 'Coordinators',
       monorepo: 'Monorepos',
+      grouped: 'Grouped by hints',
       single: 'Single repositories',
     },
+    hintedProject: 'Suggested for project {id}',
     proposalComponents: '{count} component(s)',
     proposalNoComponents: 'No components',
     alreadyInCatalog: 'Already in catalog: {name}',

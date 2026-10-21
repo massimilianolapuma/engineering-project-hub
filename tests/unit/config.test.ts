@@ -109,6 +109,31 @@ describe('catalog validation (config/projects/<id>.yaml)', () => {
     });
   });
 
+  it('discovery hints default to hub-project / hub-component / hub-component-type / project- / type-', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'eph-config-'));
+    await writeFile(
+      join(dir, 'catalog.yaml'),
+      'discovery:\n  enabled: true\n  owners: [example-org]\n',
+    );
+    const c = await loadCatalog(dir);
+    expect(c.discovery.hints).toEqual({
+      projectProperty: 'hub-project',
+      componentProperty: 'hub-component',
+      typeProperty: 'hub-component-type',
+      projectTopicPrefix: 'project-',
+      typeTopicPrefix: 'type-',
+    });
+  });
+
+  it("rejects projectProperty 'Bad Key'", async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'eph-config-'));
+    await writeFile(
+      join(dir, 'catalog.yaml'),
+      "discovery:\n  enabled: true\n  owners: [example-org]\n  hints:\n    projectProperty: 'Bad Key'\n",
+    );
+    await expect(loadCatalog(dir)).rejects.toThrow();
+  });
+
   it('rejects a project file whose name differs from its id', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'eph-config-'));
     await mkdir(join(dir, 'projects'));

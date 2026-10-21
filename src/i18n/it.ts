@@ -895,13 +895,16 @@ export const it: Dict = {
     proposalKind: {
       coordinator: 'Coordinator',
       monorepo: 'Monorepo',
+      grouped: 'Raggruppato dai suggerimenti',
       single: 'Repository singolo',
     },
     proposalGroup: {
       coordinator: 'Coordinator',
       monorepo: 'Monorepo',
+      grouped: 'Raggruppati dai suggerimenti',
       single: 'Repository singoli',
     },
+    hintedProject: 'Suggerito per il progetto {id}',
     proposalComponents: '{count} componente/i',
     proposalNoComponents: 'Nessun componente',
     alreadyInCatalog: 'Già nel catalogo: {name}',
