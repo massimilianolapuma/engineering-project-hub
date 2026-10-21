@@ -343,7 +343,7 @@ history:
 `scripts/restore-history.ts`, with its selection logic in `collector/src/history/select-artifact.ts` (pure):
 
 1. `GET /repos/{owner}/{repo}` (from `GITHUB_REPOSITORY`) → `id`, `default_branch`.
-2. `GET /repos/{owner}/{repo}/actions/artifacts?name=hub-history&per_page=30`.
+2. `GET /repos/{owner}/{repo}/actions/artifacts?name=hub-history&per_page=100&page=N`, newest first, paging until 5 candidates are found or after 5 pages (500 artifacts), so untrusted artifacts cannot push the real ones off the first page.
 3. Keep artifacts where all of these hold:
    - `expired === false`;
    - `workflow_run.head_branch === default_branch`;
@@ -362,15 +362,19 @@ history:
 5. Download the zip (`rest.actions.downloadArtifact`, `archive_format: 'zip'`), then `readZipEntry(buf, 'history.json', 8_388_608)` (the existing `collector/src/util/zip.ts`). Write `.history-restore/history.json`.
 6. Outcomes:
 
-   | Outcome                             | `state`    | `reason`         |
-   | ----------------------------------- | ---------- | ---------------- |
-   | Downloaded and written              | `restored` | none             |
-   | No candidate                        | `none`     | `no-artifact`    |
-   | 403 on any call                     | `failed`   | `not-authorised` |
-   | `ZipError` or an oversized artifact | `failed`   | `bad-archive`    |
-   | Any other error                     | `failed`   | `api-error`      |
+   | Outcome                             | `state`                                                                                    | `reason`         |
+   | ----------------------------------- | ------------------------------------------------------------------------------------------ | ---------------- |
+   | Downloaded and written              | `restored`                                                                                 | none             |
+   | No candidate                        | `none`                                                                                     | `no-artifact`    |
+   | 403 on any call                     | `failed`                                                                                   | `not-authorised` |
+   | `ZipError` or an oversized artifact | next trusted candidate; `failed` / `bad-archive` after 3 bad archives or when none is left | `bad-archive`    |
+   | Any other error                     | `failed`                                                                                   | `api-error`      |
 
    The script prints only the state and the reason, never a payload or a URL with a token.
+
+   **Upload guard.** The history upload runs only when the restore state is `restored` or `none` (or the run is a requested fresh start). After `failed`, or when the restore step crashed (`continue-on-error: true`, empty state), nothing is uploaded: the one-entry fresh history would otherwise become the newest artifact and drop the chain. The previous artifact stays newest and the next run retries. The `snapshots` artifact and the site still show the fresh state of that run.
+
+   **Operator reset.** The `workflow_dispatch` boolean input `fresh-history` (default `false`) skips the restore step, records the reason `fresh-history` in the job summary, and passes `HISTORY_RESTORE_STATE=none`; the new history is uploaded and replaces the chain. `history.enabled: false` is not a reset: no artifact is uploaded, so the previous one is restored again later.
 
 "Last successful run" (program spec §4) is defined as: the newest default-branch run of the hub's own deploy or collect workflow that reached the upload step. That step runs only after the collector and `validate:snapshots` have succeeded (builder's call). `history.json` is also inside the `snapshots` artifact, so the deploy job and the site see it as before.
 
@@ -545,7 +549,7 @@ The golden `history.json` has 13 entries, `restore.state: "fixture"`, `previousE
 - `operations.md`:
   - how history persists (`hub-history`, 90 days);
   - restore states and what to do for each;
-  - how to reset history (delete the `hub-history` artifacts or set `history.enabled: false` for one run);
+  - how to reset history (the `fresh-history` dispatch input, or delete the `hub-history` artifacts; `history.enabled: false` does not reset);
   - concurrency;
   - the artifact retention table.
 - `security.md`:

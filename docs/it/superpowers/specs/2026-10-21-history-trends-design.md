@@ -343,7 +343,7 @@ history:
 `scripts/restore-history.ts`, con la logica di selezione in `collector/src/history/select-artifact.ts` (pura):
 
 1. `GET /repos/{owner}/{repo}` (da `GITHUB_REPOSITORY`) → `id`, `default_branch`.
-2. `GET /repos/{owner}/{repo}/actions/artifacts?name=hub-history&per_page=30`.
+2. `GET /repos/{owner}/{repo}/actions/artifacts?name=hub-history&per_page=100&page=N`, dal più recente, scorrendo finché si trovano 5 candidati o per al massimo 5 pagine (500 artifact), così gli artifact non affidabili non spingono fuori dalla prima pagina quelli veri.
 3. Tiene gli artifact per cui valgono tutte queste condizioni:
    - `expired === false`;
    - `workflow_run.head_branch === default_branch`;
@@ -362,15 +362,19 @@ history:
 5. Scarica lo zip (`rest.actions.downloadArtifact`, `archive_format: 'zip'`), poi `readZipEntry(buf, 'history.json', 8_388_608)` (l'esistente `collector/src/util/zip.ts`). Scrive `.history-restore/history.json`.
 6. Esiti:
 
-   | Esito                               | `state`    | `reason`         |
-   | ----------------------------------- | ---------- | ---------------- |
-   | Scaricato e scritto                 | `restored` | nessuno          |
-   | Nessun candidato                    | `none`     | `no-artifact`    |
-   | 403 su una qualsiasi chiamata       | `failed`   | `not-authorised` |
-   | `ZipError` o artifact troppo grande | `failed`   | `bad-archive`    |
-   | Qualsiasi altro errore              | `failed`   | `api-error`      |
+   | Esito                               | `state`                                                                                               | `reason`         |
+   | ----------------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------- |
+   | Scaricato e scritto                 | `restored`                                                                                            | nessuno          |
+   | Nessun candidato                    | `none`                                                                                                | `no-artifact`    |
+   | 403 su una qualsiasi chiamata       | `failed`                                                                                              | `not-authorised` |
+   | `ZipError` o artifact troppo grande | prossimo candidato affidabile; `failed` / `bad-archive` dopo 3 archivi non validi o se non ne restano | `bad-archive`    |
+   | Qualsiasi altro errore              | `failed`                                                                                              | `api-error`      |
 
    Lo script stampa solo stato e motivo, mai un payload o un URL con un token.
+
+   **Guardia sull'upload.** L'upload dello storico parte solo se lo stato del ripristino è `restored` o `none` (o se è stato chiesto un nuovo inizio). Dopo `failed`, o se lo step di ripristino è andato in errore (`continue-on-error: true`, stato vuoto), non si carica nulla: lo storico nuovo di una sola voce diventerebbe altrimenti l'artifact più recente e farebbe perdere la catena. Resta il più recente l'artifact precedente e la prossima esecuzione riprova. L'artifact `snapshots` e il sito mostrano comunque lo stato nuovo di quell'esecuzione.
+
+   **Azzeramento da parte dell'operatore.** L'input booleano `fresh-history` di `workflow_dispatch` (predefinito `false`) salta lo step di ripristino, registra il motivo `fresh-history` nel riepilogo del job e passa `HISTORY_RESTORE_STATE=none`; il nuovo storico viene caricato e sostituisce la catena. `history.enabled: false` non è un azzeramento: non si carica nessun artifact, quindi quello precedente viene ripristinato di nuovo più avanti.
 
 "Ultima esecuzione riuscita" (spec di programma §4) è definita così: l'esecuzione più recente, sul branch di default, del workflow di deploy o di raccolta dell'hub stesso che ha raggiunto lo step di upload. Quello step parte solo dopo che collector e `validate:snapshots` sono riusciti (scelta del builder). `history.json` è anche dentro l'artifact `snapshots`, quindi il job di deploy e il sito lo vedono come prima.
 
@@ -545,7 +549,7 @@ Il `history.json` golden ha 13 voci, `restore.state: "fixture"`, `previousEntrie
 - `operations.md`:
   - come persiste lo storico (`hub-history`, 90 giorni);
   - gli stati di ripristino e cosa fare per ciascuno;
-  - come azzerare lo storico (cancellare gli artifact `hub-history` o impostare `history.enabled: false` per un'esecuzione);
+  - come azzerare lo storico (l'input di dispatch `fresh-history`, oppure cancellare gli artifact `hub-history`; `history.enabled: false` non azzera);
   - la concorrenza;
   - la tabella di retention degli artifact.
 - `security.md`:

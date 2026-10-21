@@ -21,6 +21,10 @@ import { readZipEntry } from '../collector/src/util/zip';
 
 const HISTORY_FILE = 'history.json';
 const HISTORY_MAX_BYTES = 8_388_608;
+const PAGE_SIZE = 100;
+const MAX_PAGES = 5;
+/** Bad archives tolerated before giving up (the next trusted artifact is tried each time). */
+const MAX_BAD_ARCHIVES = 3;
 
 const RestoreOctokit = Octokit.plugin(retry);
 export type RestoreClient = InstanceType<typeof RestoreOctokit>;
@@ -57,21 +61,33 @@ export async function restoreHistory(
   let candidates: ArtifactLike[];
   try {
     const { data: repository } = await octokit.rest.repos.get({ owner, repo });
-    const { data } = await octokit.rest.actions.listArtifactsForRepo({
-      owner,
-      repo,
-      name: HISTORY_ARTIFACT,
-      per_page: 30,
-    });
-    candidates = candidateArtifacts(data.artifacts as ArtifactLike[], {
+    const selection = {
       repositoryId: repository.id,
       defaultBranch: repository.default_branch,
       currentRunId: o.currentRunId,
-    });
+    };
+    // Newest first. Page (bounded) until enough trusted candidates are found, so artifacts
+    // that are not trusted (other branches, forks) cannot push the real ones off page 1.
+    const all: ArtifactLike[] = [];
+    candidates = [];
+    for (let page = 1; page <= MAX_PAGES; page++) {
+      const { data } = await octokit.rest.actions.listArtifactsForRepo({
+        owner,
+        repo,
+        name: HISTORY_ARTIFACT,
+        per_page: PAGE_SIZE,
+        page,
+      });
+      const items = data.artifacts as ArtifactLike[];
+      all.push(...items);
+      candidates = candidateArtifacts(all, selection);
+      if (candidates.length >= 5 || items.length < PAGE_SIZE) break;
+    }
   } catch (e) {
     return failure(e);
   }
 
+  let badArchives = 0;
   for (const artifact of candidates) {
     try {
       const { data: run } = await octokit.rest.actions.getWorkflowRun({
@@ -87,12 +103,18 @@ export async function restoreHistory(
         archive_format: 'zip',
       });
       const bytes = new Uint8Array(res.data as ArrayBuffer);
-      if (bytes.byteLength > MAX_ARTIFACT_BYTES) return { state: 'failed', reason: 'bad-archive' };
-      let text: string;
-      try {
-        text = readZipEntry(bytes, HISTORY_FILE, HISTORY_MAX_BYTES);
-      } catch {
-        return { state: 'failed', reason: 'bad-archive' };
+      let text: string | null = null;
+      if (bytes.byteLength <= MAX_ARTIFACT_BYTES) {
+        try {
+          text = readZipEntry(bytes, HISTORY_FILE, HISTORY_MAX_BYTES);
+        } catch {
+          text = null;
+        }
+      }
+      if (text === null) {
+        // Try the next trusted artifact, a bounded number of times.
+        if (++badArchives >= MAX_BAD_ARCHIVES) break;
+        continue;
       }
       const dir = resolve(o.out);
       mkdirSync(dir, { recursive: true });
@@ -102,6 +124,7 @@ export async function restoreHistory(
       return failure(e);
     }
   }
+  if (badArchives > 0) return { state: 'failed', reason: 'bad-archive' };
   return { state: 'none', reason: 'no-artifact' };
 }
 

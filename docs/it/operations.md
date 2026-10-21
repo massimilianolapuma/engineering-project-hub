@@ -160,9 +160,17 @@ runner parte vuoto ogni volta, quindi è GitHub Actions a portare lo storico:
   più recente del **proprio** repository con `GITHUB_TOKEN` e `actions: read` (mai con le
   credenziali del collector); poi il collector aggiunge e scrive il nuovo file;
 - il job carica un nuovo artifact `hub-history` (solo `history.json`, 90 giorni), solo con
-  `data-source: github`. Un'esecuzione mock manuale non può mai rompere la catena reale;
+  `data-source: github` e solo se il ripristino è finito in `restored` o `none`. Dopo un
+  ripristino `failed` (o uno step di ripristino andato in errore) non si carica nulla: lo
+  storico nuovo, di una sola voce, diventerebbe l'artifact più recente e farebbe perdere
+  tutta la catena, quindi resta il più recente quello precedente e la prossima esecuzione
+  riprova. Un'esecuzione mock manuale non può mai rompere la catena reale;
 - un'esecuzione mock non ripristina mai: parte dal `fixtures/history/history.json`
   sintetico.
+
+Il ripristino scorre fino a 500 artifact (5 pagine da 100), dal più recente, e se un artifact
+affidabile non è un archivio valido prova il successivo (fino a 3 archivi non validi) prima
+di arrendersi con `bad-archive`.
 
 Sono accettati solo artifact del branch predefinito, di questo repository (non di un
 fork), di un'altra esecuzione, fino a 5 MiB e del workflow di deploy o di raccolta. Tutto il
@@ -175,15 +183,15 @@ scheda "Storico" di Qualità dei dati e nel riepilogo del job. Uno stato diverso
 `restored` non fa mai fallire la raccolta, e la pagina "Cosa è cambiato" lo spiega invece di
 dire "nessun cambiamento".
 
-| Stato            | Significato                                                                                                    | Cosa fare                                                                                                                                              |
-| ---------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `restored`       | Lo storico precedente è stato letto ed esteso.                                                                 | Niente.                                                                                                                                                |
-| `fixture`        | Esecuzione mock, partita dalla fixture sintetica.                                                              | Niente. Dati demo.                                                                                                                                     |
-| `none`           | Nessuno storico precedente (prima esecuzione, artifact scaduti, `--fresh-history`).                            | Niente. I cambiamenti compaiono dopo la prossima raccolta.                                                                                             |
-| `restore-failed` | Non è stato possibile scaricare l'artifact (non autorizzato, archivio non valido, errore API).                 | Verifica che il job `collect` abbia `actions: read` (il log del workflow stampa il codice del motivo).                                                 |
-| `unreadable`     | Il file precedente era troppo grande, non JSON, non valido per lo schema o non pubblicabile; è stato scartato. | Di solito è un caso isolato. Se si ripete, controlla l'esecuzione precedente.                                                                          |
-| `incompatible`   | Il file precedente usa una versione di schema che questa versione non legge.                                   | Niente: lo storico riparte da questa raccolta.                                                                                                         |
-| `source-changed` | Lo storico precedente veniva dall'altra fonte dati (mock o GitHub).                                            | Niente: lo storico riparte da questa raccolta. Voci più vecchie dell'altra fonte, dietro un'ultima voce corrispondente, vengono scartate con una nota. |
+| Stato            | Significato                                                                                                    | Cosa fare                                                                                                                                                          |
+| ---------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `restored`       | Lo storico precedente è stato letto ed esteso.                                                                 | Niente.                                                                                                                                                            |
+| `fixture`        | Esecuzione mock, partita dalla fixture sintetica.                                                              | Niente. Dati demo.                                                                                                                                                 |
+| `none`           | Nessuno storico precedente (prima esecuzione, artifact scaduti, `--fresh-history`).                            | Niente. I cambiamenti compaiono dopo la prossima raccolta.                                                                                                         |
+| `restore-failed` | Non è stato possibile scaricare l'artifact (non autorizzato, archivio non valido, errore API).                 | Verifica che il job `collect` abbia `actions: read` (il log del workflow stampa il codice del motivo). Non si carica nulla, quindi la prossima esecuzione riprova. |
+| `unreadable`     | Il file precedente era troppo grande, non JSON, non valido per lo schema o non pubblicabile; è stato scartato. | Di solito è un caso isolato. Se si ripete, controlla l'esecuzione precedente.                                                                                      |
+| `incompatible`   | Il file precedente usa una versione di schema che questa versione non legge.                                   | Niente: lo storico riparte da questa raccolta.                                                                                                                     |
+| `source-changed` | Lo storico precedente veniva dall'altra fonte dati (mock o GitHub).                                            | Niente: lo storico riparte da questa raccolta. Voci più vecchie dell'altra fonte, dietro un'ultima voce corrispondente, vengono scartate con una nota.             |
 
 Lo storico non blocca mai gli snapshot. Se lo storico ripristinato supera i controlli ma non
 è comunque pubblicabile, viene scartato (stato `unreadable`). Se non si riesce a costruire
@@ -200,9 +208,13 @@ successiva, le raccolte più vecchie vengono scartate con una nota.
 
 ### Azzerare lo storico
 
-Elimina gli artifact `hub-history` (repository, Actions, Artifacts), oppure esegui una
-raccolta con `history.enabled: false` e poi riattivalo. La raccolta successiva riparte da
-zero.
+Avvia a mano il workflow **Collect — Data snapshots** (`workflow_dispatch`) con
+`data-source: github` e `fresh-history: true`. Salta il ripristino, registra il motivo
+`fresh-history` nel riepilogo del job e il nuovo storico sostituisce la catena. In
+alternativa, elimina tutti gli artifact `hub-history` (repository, Actions, Artifacts): la
+raccolta successiva riparte da zero (stato `none`). Impostare `history.enabled: false`
+**non** azzera nulla: non si carica nessun nuovo artifact, quindi quello vecchio viene
+ripristinato di nuovo quando lo riattivi.
 
 ### Concorrenza e scadenza
 

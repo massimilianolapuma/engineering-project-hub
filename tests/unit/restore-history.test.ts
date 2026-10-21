@@ -100,16 +100,25 @@ interface Mock {
   artifacts?: ArtifactLike[];
   runs?: Record<number, { path: string; event: string }>;
   zip?: Uint8Array;
+  zips?: Record<number, Uint8Array>;
+  pages?: ArtifactLike[][];
   listError?: unknown;
 }
-function client(m: Mock): { c: RestoreClient; download: ReturnType<typeof vi.fn> } {
-  const download = vi.fn(async () => ({ data: buf(m.zip ?? zipOf()) }));
+function client(m: Mock): {
+  c: RestoreClient;
+  download: ReturnType<typeof vi.fn>;
+  list: ReturnType<typeof vi.fn>;
+} {
+  const download = vi.fn(async ({ artifact_id }: { artifact_id: number }) => ({
+    data: buf(m.zips?.[artifact_id] ?? m.zip ?? zipOf()),
+  }));
   const c = {
     rest: {
       repos: { get: vi.fn(async () => ({ data: { id: 100, default_branch: 'main' } })) },
       actions: {
-        listArtifactsForRepo: vi.fn(async () => {
+        listArtifactsForRepo: vi.fn(async ({ page }: { page?: number }) => {
           if (m.listError) throw m.listError;
+          if (m.pages) return { data: { artifacts: m.pages[(page ?? 1) - 1] ?? [] } };
           return { data: { artifacts: m.artifacts ?? [] } };
         }),
         getWorkflowRun: vi.fn(async ({ run_id }: { run_id: number }) => ({
@@ -125,7 +134,11 @@ function client(m: Mock): { c: RestoreClient; download: ReturnType<typeof vi.fn>
       },
     },
   } as unknown as RestoreClient;
-  return { c, download };
+  return {
+    c,
+    download,
+    list: c.rest.actions.listArtifactsForRepo as unknown as ReturnType<typeof vi.fn>,
+  };
 }
 const opts = () => ({
   owner: 'o',
@@ -182,6 +195,40 @@ describe('restoreHistory', () => {
   it('failed/api-error on a 500', async () => {
     const { c } = client({ listError: httpError(500) });
     expect(await restoreHistory(c, opts())).toEqual({ state: 'failed', reason: 'api-error' });
+  });
+  it('tries the next trusted artifact after a bad archive', async () => {
+    const o = opts();
+    const { c, download } = client({
+      artifacts: [art(1), art(2)],
+      zips: { 2: zipOf('other.json') },
+    });
+    expect(await restoreHistory(c, o)).toEqual({ state: 'restored' });
+    expect(download.mock.calls.map((x) => x[0].artifact_id)).toEqual([2, 1]);
+  });
+  it('gives up with bad-archive after 3 bad archives', async () => {
+    const bad = zipOf('other.json');
+    const { c, download } = client({
+      artifacts: [1, 2, 3, 4, 5].map((i) => art(i)),
+      zip: bad,
+    });
+    expect(await restoreHistory(c, opts())).toEqual({ state: 'failed', reason: 'bad-archive' });
+    expect(download).toHaveBeenCalledTimes(3);
+  });
+  it('pages past untrusted artifacts to find a trusted one', async () => {
+    const fork = (i: number) => art(i, { workflow_run: wr({ head_repository_id: 200 }) });
+    const full = Array.from({ length: 100 }, (_, i) => fork(1000 + i));
+    const { c, download, list } = client({ pages: [full, full, [art(1)]] });
+    expect(await restoreHistory(c, opts())).toEqual({ state: 'restored' });
+    expect(list).toHaveBeenCalledTimes(3);
+    expect(list.mock.calls[0]?.[0]).toMatchObject({ per_page: 100, page: 1 });
+    expect(download.mock.calls[0]?.[0]).toMatchObject({ artifact_id: 1 });
+  });
+  it('pages at most 5 times', async () => {
+    const fork = (i: number) => art(i, { workflow_run: wr({ head_repository_id: 200 }) });
+    const full = Array.from({ length: 100 }, (_, i) => fork(1000 + i));
+    const { c, list } = client({ pages: [full, full, full, full, full, full, [art(1)]] });
+    expect(await restoreHistory(c, opts())).toEqual({ state: 'none', reason: 'no-artifact' });
+    expect(list).toHaveBeenCalledTimes(5);
   });
   it('never writes outside --out', async () => {
     const o = opts();

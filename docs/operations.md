@@ -154,8 +154,16 @@ runner starts empty every time, so GitHub Actions carries the history:
   `hub-history` artifact with `GITHUB_TOKEN` and `actions: read` (never the collector
   credentials), then the collector appends and writes the new file;
 - the job uploads a new `hub-history` artifact (only `history.json`, 90 days), only for
-  `data-source: github`. A manual mock run can never break the real chain;
+  `data-source: github` and only when the restore ended `restored` or `none`. After a
+  `failed` restore (or a restore step that crashed) nothing is uploaded: the fresh
+  one-entry history would become the newest artifact and drop the whole chain, so the
+  previous artifact stays newest and the next run tries again. A manual mock run can never
+  break the real chain;
 - a mock run never restores: it starts from the synthetic `fixtures/history/history.json`.
+
+The restore pages through up to 500 artifacts (5 pages of 100), newest first, and if a
+trusted artifact is not a valid archive it tries the next trusted one (up to 3 bad archives)
+before giving up with `bad-archive`.
 
 Only artifacts of the default branch, of this repository (not a fork), from another run, up
 to 5 MiB and from the deploy or collect workflow are accepted. Anything else is not used.
@@ -172,7 +180,7 @@ changes".
 | `restored`       | The previous history was read and extended.                                                               | Nothing.                                                                                                                                        |
 | `fixture`        | Mock run, started from the synthetic fixture.                                                             | Nothing. Demo data.                                                                                                                             |
 | `none`           | No previous history (first run, expired artifacts, `--fresh-history`).                                    | Nothing. Changes appear after the next collection.                                                                                              |
-| `restore-failed` | The artifact could not be fetched (not authorised, bad archive, API error).                               | Check that the `collect` job has `actions: read` (the workflow log prints the reason code).                                                     |
+| `restore-failed` | The artifact could not be fetched (not authorised, bad archive, API error).                               | Check that the `collect` job has `actions: read` (the workflow log prints the reason code). Nothing is uploaded, so the next run retries.       |
 | `unreadable`     | The previous file was too large, not JSON, failed the schema or could not be published; it was set aside. | Usually a one-off. Check the previous run if it repeats.                                                                                        |
 | `incompatible`   | The previous file uses a schema version this version does not read.                                       | Nothing: history starts again from this collection.                                                                                             |
 | `source-changed` | The previous history came from the other data source (mock or GitHub).                                    | Nothing: history starts again from this collection. Older entries from the other source, behind a matching last entry, are dropped with a note. |
@@ -192,8 +200,13 @@ with a note.
 
 ### Resetting history
 
-Delete the `hub-history` artifacts (repository, Actions, Artifacts), or run one collection
-with `history.enabled: false` and then turn it on again. The next collection starts fresh.
+Run the **Collect — Data snapshots** workflow manually (`workflow_dispatch`) with
+`data-source: github` and `fresh-history: true`. It skips the restore, records the reason
+`fresh-history` in the job summary, and its new history replaces the chain. Alternatively,
+delete all the `hub-history` artifacts (repository, Actions, Artifacts); the next
+collection starts fresh (state `none`). Setting `history.enabled: false` does **not** reset
+anything: no new artifact is uploaded, so the old one is restored again when you turn it
+back on.
 
 ### Concurrency and expiry
 
