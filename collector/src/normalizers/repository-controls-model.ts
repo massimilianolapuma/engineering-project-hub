@@ -139,8 +139,9 @@ export function recordControlsErrors(ctx: BuildContext, r: RepoData): void {
     .map(([, result]) => result)
     .find((result) => !result.ok);
   recordError(ctx, r.repository, r.componentId, 'workflow-files', failedFile ?? null);
-  recordError(ctx, r.repository, r.componentId, 'repository-rules', c.rules);
-  recordError(ctx, r.repository, r.componentId, 'repository-rules', c.classic);
+  // Rules and the opt-in classic protection share one source: at most one error between them.
+  if (!recordError(ctx, r.repository, r.componentId, 'repository-rules', c.rules))
+    recordError(ctx, r.repository, r.componentId, 'repository-rules', c.classic);
   recordError(ctx, r.repository, r.componentId, 'scorecard-analysis', c.scorecardAnalysis, {
     expectedNotFound: true,
   });

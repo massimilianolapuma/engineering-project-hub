@@ -272,7 +272,7 @@ repositoryControls:
 
 - `SNAPSHOT_SCHEMA_VERSION = '1.5'` e `SUPPORTED = ['1.5']`, con il commento di storia `1.5: repository controls, discovery hints`.
 - Nuovi: `RepositoryCheckIdSchema`, `RepositoryCheckStateSchema = z.enum(['pass','fail','unknown','not-applicable'])`, `BranchRuleTypeSchema`, `ScorecardCheckSchema`.
-- Nuova capability `repositoryRules`.
+- Nuova capability `repositoryRules`. Riflette solo la rules API (Metadata: read). La chiamata opzionale alla protezione classica richiede Administration: read, quindi i suoi fallimenti si registrano come errori `repository-rules` ma non cambiano mai questa capability. Regole e protezione classica condividono la fonte `repository-rules`: al massimo un errore per repository univoco.
 - Codici motivo: `repository-check-failed`, `repository-check-unknown`, `repository-checks-passed`.
 
 `shared/model/snapshot.ts`: `RepositoryControlsHealthSchema` con la forma dello spec inglese §5.8, cioè:

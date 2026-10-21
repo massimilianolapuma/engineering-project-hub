@@ -67,8 +67,9 @@ function capabilities(raws: RawProjectData[]): Record<Capability, Availability> 
       outcomes.secretScanning.push(r.secretScanning);
       outcomes.codeQuality.push(r.codeQualityFindings);
       if (r.controls) {
+        // Metadata: read only. Opt-in classic protection needs Administration: read, a separate
+        // permission: its failures are recorded as errors, not as this capability.
         outcomes.repositoryRules.push(r.controls.rules);
-        if (r.controls.classic) outcomes.repositoryRules.push(r.controls.classic);
         outcomes.contents.push(r.controls.workflowDir, ...r.controls.workflowFiles.values());
         outcomes.codeScanning.push(r.controls.scorecardAnalysis);
       }

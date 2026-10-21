@@ -1348,4 +1348,40 @@ describe('repository controls (mock run)', () => {
     expect(await classicCalls(false)).toBe(0);
     expect(await classicCalls(true)).toBeGreaterThan(0);
   });
+
+  it('a failing classic protection call is one repository-rules error per repository and leaves the repositoryRules capability alone', async () => {
+    const { catalog, policies } = await loadConfig('config');
+    const clock = fixedClock(GOLDEN_NOW);
+    const p = structuredClone(policies);
+    p.repositoryControls.readClassicProtection = true;
+    const run = async (rulesDenied: boolean) => {
+      const inner = new MockProvider('fixtures/github', clock);
+      const denied = fail({ classification: 'not-authorised', httpStatus: 403 });
+      const watch = new Proxy(inner, {
+        get(target, prop, receiver) {
+          const v = Reflect.get(target, prop, receiver);
+          if (prop === 'getClassicBranchProtection') return async () => denied;
+          if (prop === 'getBranchRules') return async () => (rulesDenied ? denied : ok([]));
+          return typeof v === 'function' ? v.bind(target) : v;
+        },
+      });
+      return runCollection({ catalog, policies: p, provider: watch, clock });
+    };
+    const perRepo = (result: Awaited<ReturnType<typeof run>>) => {
+      const seen = new Map<string, number>();
+      for (const e of result.projects.flatMap((x) => x.collectionErrors))
+        if (e.source === 'repository-rules')
+          seen.set(e.repository, (seen.get(e.repository) ?? 0) + 1);
+      return seen;
+    };
+    // Rules readable everywhere: the capability is available; classic 403s are still recorded.
+    const rulesOk = await run(false);
+    expect(rulesOk.index.run.capabilities.repositoryRules).toBe('available');
+    expect(perRepo(rulesOk).size).toBeGreaterThan(0);
+    expect([...perRepo(rulesOk).values()].every((n) => n === 1)).toBe(true);
+    // Rules and classic both denied: still a single repository-rules error per repository.
+    const bothDenied = await run(true);
+    expect(bothDenied.index.run.capabilities.repositoryRules).toBe('not-authorised');
+    expect([...perRepo(bothDenied).values()].every((n) => n === 1)).toBe(true);
+  });
 });
