@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "platform",
@@ -295,7 +295,15 @@
       "htmlUrl": "https://github.com/example-org/platform-mono/security/code-scanning/4",
       "tool": "CodeQL",
       "repositoryPrivate": false,
-      "dataClassification": "public"
+      "dataClassification": "public",
+      "exception": null,
+      "sla": {
+        "state": "within",
+        "days": 30,
+        "dueAt": "2026-02-08T12:00:00.000Z",
+        "ageDays": 6,
+        "overdueDays": null
+      }
     },
     {
       "id": "example-org/platform-mono#code-scanning#5",
@@ -316,7 +324,48 @@
       "htmlUrl": "https://github.com/example-org/platform-mono/security/code-scanning/5",
       "tool": "CodeQL",
       "repositoryPrivate": false,
-      "dataClassification": "public"
+      "dataClassification": "public",
+      "exception": {
+        "id": "EXC-PLAT-001",
+        "state": "expired",
+        "expires": "2026-01-14"
+      },
+      "sla": {
+        "state": "within",
+        "days": 90,
+        "dueAt": "2026-04-11T12:00:00.000Z",
+        "ageDays": 4,
+        "overdueDays": null
+      }
+    },
+    {
+      "id": "example-org/platform-mono#code-scanning#2",
+      "projectId": "platform",
+      "componentId": "coordinator",
+      "repository": "example-org/platform-mono",
+      "source": "github-code-scanning",
+      "category": "code",
+      "severity": "high",
+      "originalSeverity": "high",
+      "status": "open",
+      "originalStatus": "open",
+      "ruleId": "js/prototype-pollution-utility",
+      "title": "Prototype-polluting function",
+      "detectedAt": "2025-12-15T18:00:00.000Z",
+      "updatedAt": "2025-12-15T18:00:00.000Z",
+      "fixAvailable": null,
+      "htmlUrl": "https://github.com/example-org/platform-mono/security/code-scanning/2",
+      "tool": "CodeQL",
+      "repositoryPrivate": false,
+      "dataClassification": "public",
+      "exception": null,
+      "sla": {
+        "state": "overdue",
+        "days": 30,
+        "dueAt": "2026-01-14T18:00:00.000Z",
+        "ageDays": 30,
+        "overdueDays": 0
+      }
     },
     {
       "id": "example-org/platform-mono#dependabot#9",
@@ -337,7 +386,63 @@
       "htmlUrl": "https://github.com/example-org/platform-mono/security/dependabot/9",
       "tool": "dependabot",
       "repositoryPrivate": false,
-      "dataClassification": "public"
+      "dataClassification": "public",
+      "exception": {
+        "id": "EXC-PLAT-002",
+        "state": "active",
+        "expires": "2026-01-22"
+      },
+      "sla": {
+        "state": "paused",
+        "days": 180,
+        "dueAt": "2026-07-06T12:00:00.000Z",
+        "ageDays": 8,
+        "overdueDays": null
+      }
+    }
+  ],
+  "securityExceptions": [
+    {
+      "id": "EXC-PLAT-001",
+      "repository": "example-org/platform-mono",
+      "source": "code-scanning",
+      "selector": {
+        "kind": "rule",
+        "value": "js/path-injection",
+        "tool": null
+      },
+      "owner": "team-platform",
+      "reason": "Paths are built from an internal allowlist in this demo; renew after the review.",
+      "created": "2025-11-16",
+      "expires": "2026-01-14",
+      "ticketUrl": "https://github.com/example-org/platform-mono/issues/31",
+      "state": "expired",
+      "expiringSoon": false,
+      "matched": 1,
+      "findingIds": [
+        "example-org/platform-mono#code-scanning#5"
+      ]
+    },
+    {
+      "id": "EXC-PLAT-002",
+      "repository": "example-org/platform-mono",
+      "source": "dependabot",
+      "selector": {
+        "kind": "advisory",
+        "value": "GHSA-demo-0004-mono",
+        "tool": null
+      },
+      "owner": "team-platform",
+      "reason": "The merge helper only receives trusted configuration in this demo.",
+      "created": "2025-07-29",
+      "expires": "2026-01-22",
+      "ticketUrl": null,
+      "state": "active",
+      "expiringSoon": true,
+      "matched": 1,
+      "findingIds": [
+        "example-org/platform-mono#dependabot#9"
+      ]
     }
   ],
   "securityControls": [
@@ -353,7 +458,7 @@
           "lastScanAt": "2026-01-15T09:00:00.000Z",
           "counts": {
             "critical": 0,
-            "high": 1,
+            "high": 2,
             "medium": 1,
             "low": 0,
             "informational": 0,
@@ -387,7 +492,7 @@
             "critical": 0,
             "high": 0,
             "medium": 0,
-            "low": 1,
+            "low": 0,
             "informational": 0,
             "unknown": 0
           },
@@ -464,36 +569,94 @@
     ]
   },
   "securityHealth": {
-    "status": "amber",
+    "status": "red",
     "reasons": [
       {
         "code": "open-high-alerts",
         "level": "amber",
         "params": {
-          "count": 1
+          "count": 2
         }
       },
       {
         "code": "open-medium-low-alerts",
         "level": "amber",
         "params": {
-          "count": 2
+          "count": 1
+        }
+      },
+      {
+        "code": "sla-overdue",
+        "level": "red",
+        "params": {
+          "severity": "high",
+          "count": 1,
+          "days": 30
+        }
+      },
+      {
+        "code": "security-exception-active",
+        "level": "info",
+        "params": {
+          "count": 1
+        }
+      },
+      {
+        "code": "security-exception-expired",
+        "level": "amber",
+        "params": {
+          "count": 1,
+          "ids": "EXC-PLAT-001"
         }
       }
     ],
     "openCounts": {
       "critical": 0,
-      "high": 1,
+      "high": 2,
       "medium": 1,
+      "low": 0,
+      "informational": 0,
+      "unknown": 0
+    },
+    "acceptedCounts": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
       "low": 1,
       "informational": 0,
       "unknown": 0
     },
+    "remediation": {
+      "enabled": true,
+      "slaDays": {
+        "critical": 7,
+        "high": 30,
+        "medium": 90,
+        "low": 180,
+        "secret": 7
+      },
+      "overdue": {
+        "critical": 0,
+        "high": 1,
+        "medium": 0,
+        "low": 0,
+        "secret": 0
+      },
+      "oldestOverdueSince": "2026-01-14T18:00:00.000Z",
+      "slaUnknown": 0
+    },
+    "exceptionStates": {
+      "active": 1,
+      "expired": 1,
+      "stale": 0,
+      "unverifiable": 0,
+      "expiringSoon": 1
+    },
     "countsComplete": true,
     "openSecretAlerts": 0,
     "byCategory": {
-      "code": 2,
-      "dependency": 1,
+      "code": 3,
+      "dependency": 0,
       "secret": 0,
       "container": 0,
       "iac": 0,
@@ -502,8 +665,8 @@
       "configuration": 0
     },
     "bySource": {
-      "github-code-scanning": 2,
-      "github-dependabot": 1,
+      "github-code-scanning": 3,
+      "github-dependabot": 0,
       "github-secret-scanning": 0,
       "security-status-file": 0
     }
@@ -852,11 +1015,11 @@
     ]
   },
   "overallHealth": {
-    "status": "amber",
+    "status": "red",
     "reasons": [
       {
-        "code": "dimension-amber",
-        "level": "amber",
+        "code": "dimension-red",
+        "level": "red",
         "params": {
           "dimension": "security"
         }
@@ -871,7 +1034,7 @@
     ]
   },
   "score": {
-    "value": 82,
+    "value": 49,
     "measured": 6,
     "required": 6
   },

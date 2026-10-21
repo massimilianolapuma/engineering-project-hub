@@ -141,6 +141,25 @@ export async function loadCatalog(configDir = 'config'): Promise<Catalog> {
   return merged.data;
 }
 
+/**
+ * Where the collector reads exceptions from: the mock source reads the fixture (date tokens
+ * allowed), the github source reads the reviewed config file (absolute dates only). An explicit
+ * file never allows tokens for github.
+ */
+export function resolveExceptionsPath(o: {
+  source: 'mock' | 'github';
+  config: string;
+  exceptions?: string;
+}): { file: string; allowDateTokens: boolean } {
+  const mock = o.source === 'mock';
+  return {
+    file:
+      o.exceptions ??
+      (mock ? 'fixtures/exceptions/exceptions.yaml' : join(o.config, 'exceptions.yaml')),
+    allowDateTokens: mock,
+  };
+}
+
 const DATE_TOKEN = /^@now([+-]\d+[mhd])?$/;
 
 /** Replaces "@now±N(d|h|m)" in created / expires with the UTC date of the resulting instant. */

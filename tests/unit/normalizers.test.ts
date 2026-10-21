@@ -5,6 +5,10 @@ import {
   normaliseStatus,
 } from '../../collector/src/normalizers/security';
 import { QualitySummarySchema } from '@model/index';
+import { ok } from '../../collector/src/providers/types';
+import { countOpen, toFindings } from '../../collector/src/normalizers/security-model';
+import type { BuildContext } from '../../collector/src/normalizers/model';
+import { NOW, policies, repoData, repoDto } from '../helpers/factories';
 import { compareVersions, normaliseVersion } from '../../collector/src/util/semver';
 import { githubRepositoryFromUrl, parseGitmodules } from '../../collector/src/util/gitmodules';
 
@@ -164,4 +168,74 @@ describe('QualitySummarySchema', () => {
     expect(QualitySummarySchema.safeParse({ ...valid, commitSha: 'z'.repeat(40) }).success).toBe(
       false,
     ));
+});
+
+describe('security findings: match keys and exceptions', () => {
+  const ctx: BuildContext = { projectId: 'beta', policies: policies(), now: NOW, errors: [] };
+  const alert = {
+    number: 7,
+    state: 'open',
+    dismissedReason: null,
+    ruleId: 'py/flask-debug',
+    ruleSeverity: 'warning',
+    securitySeverityLevel: 'medium',
+    ruleDescription: 'Flask app is run in debug mode',
+    toolName: 'CodeQL',
+    createdAt: '2026-01-10T12:00:00.000Z',
+    updatedAt: '2026-01-10T12:00:00.000Z',
+    htmlUrl: 'https://github.com/example-org/project-beta-api/security/code-scanning/7',
+  };
+
+  it('toFindings keeps keys.ruleId "py/flask-debug" while finding.ruleId is null for a private repo under public audience', () => {
+    const data = repoData('project-beta-api', {
+      repo: ok(repoDto('project-beta-api', 'private')),
+      codeScanning: ok([alert]),
+    });
+    const { findings } = toFindings(ctx, data);
+    expect(findings[0]!.keys).toMatchObject({ alert: 7, ruleId: 'py/flask-debug', tool: 'CodeQL' });
+    expect(findings[0]!.finding.ruleId).toBeNull();
+    expect(findings[0]!.finding.title).toBeNull();
+    expect(JSON.stringify(findings[0]!.finding)).not.toContain('py/flask-debug');
+  });
+
+  it('keeps the advisory ids as match keys (GHSA and CVE) for Dependabot', () => {
+    const data = repoData('project-beta-api', {
+      repo: ok(repoDto('project-beta-api', 'private')),
+      dependabot: ok([
+        {
+          number: 4,
+          state: 'open',
+          dismissedReason: null,
+          ghsaId: 'GHSA-demo-0004-mono',
+          cveId: 'CVE-2025-12345',
+          severity: 'low',
+          summary: 's',
+          packageName: 'p',
+          firstPatchedVersion: null,
+          createdAt: null,
+          updatedAt: null,
+          htmlUrl: 'https://github.com/example-org/project-beta-api/security/dependabot/4',
+        },
+      ]),
+    });
+    const { findings } = toFindings(ctx, data);
+    expect(findings[0]!.keys.advisoryIds).toEqual(['GHSA-demo-0004-mono', 'CVE-2025-12345']);
+    expect(findings[0]!.finding.ruleId).toBeNull();
+  });
+
+  it('countOpen ignores findings with exception.state active', () => {
+    const data = repoData('project-beta-api', { codeScanning: ok([alert]) });
+    const [f] = toFindings(ctx, data).findings.map((m) => m.finding);
+    const accepted = {
+      ...f!,
+      exception: { id: 'EXC-1', state: 'active' as const, expires: '2026-02-04' },
+    };
+    const expired = {
+      ...accepted,
+      exception: { ...accepted.exception, state: 'expired' as const },
+    };
+    expect(countOpen([{ ...f!, exception: null }]).medium).toBe(1);
+    expect(countOpen([accepted]).medium).toBe(0);
+    expect(countOpen([expired]).medium).toBe(1);
+  });
 });

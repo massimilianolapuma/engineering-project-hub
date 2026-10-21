@@ -68,8 +68,8 @@ describe('seriesFor and summarise on the golden history', () => {
     });
     expect(summary('platform')).toMatchObject({
       first: 84,
-      last: 82,
-      delta: -2,
+      last: 49,
+      delta: -35,
       days: 9,
       count: 10,
     });

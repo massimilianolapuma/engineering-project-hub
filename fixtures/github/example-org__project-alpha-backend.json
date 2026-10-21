@@ -73,6 +73,20 @@
   },
   "codeScanningAlerts": [
     {
+      "number": 15,
+      "state": "open",
+      "dismissedReason": null,
+      "ruleId": "java/xxe",
+      "ruleSeverity": "error",
+      "securitySeverityLevel": "high",
+      "ruleDescription": "Resolving XML external entity in user-controlled data",
+      "toolName": "CodeQL",
+      "createdAt": "@now-45d",
+      "updatedAt": "@now-45d",
+      "htmlUrl": "https://github.com/example-org/project-alpha-backend/security/code-scanning/15",
+      "path": "src/main/java/Xml.java"
+    },
+    {
       "number": 14,
       "state": "open",
       "dismissedReason": null,

@@ -1,0 +1,80 @@
+# yaml-language-server: $schema=../../config/schema/exceptions.schema.json
+#
+# Mock security exceptions (synthetic). Only the mock source reads this file. `created` and
+# `expires` may use @now±N(d|h|m) tokens here (never in a real config), so the demo keeps its
+# intended states over time. Dates resolve to the UTC date of the resulting instant.
+
+schemaVersion: '1.0'
+exceptions:
+  # Active: accepts the high alert #15; its SLA is paused, never reset.
+  - id: EXC-ALPHA-001
+    repository: example-org/project-alpha-backend
+    source: code-scanning
+    match: { alert: 15 }
+    owner: team-alpha
+    reason: Parser only reads trusted vendor files in this demo; a safe parser is planned for the next release.
+    created: '@now-10d'
+    expires: '@now+20d'
+    ticket: https://github.com/example-org/project-alpha-backend/issues/101
+
+  # Stale: alert 5 is fixed, so the exception matches no open alert.
+  - id: EXC-ALPHA-002
+    repository: example-org/project-alpha-frontend
+    source: dependabot
+    match: { alert: 5 }
+    owner: team-alpha
+    reason: Regular expression only runs on short synthetic inputs in this demo.
+    created: '@now-50d'
+    expires: '@now+10d'
+
+  # Active, private repository: selector, tool, reason and ticket are withheld in the snapshot.
+  - id: EXC-BETA-001
+    repository: example-org/project-beta-api
+    source: code-scanning
+    match: { rule: py/flask-debug, tool: CodeQL }
+    owner: team-beta
+    reason: marker-reason-b7c1 Debug mode is only reachable in the local profile; removal planned with the settings refactor.
+    created: '@now-15d'
+    expires: '@now+60d'
+    ticket: https://github.com/example-org/project-beta-api/issues/12
+
+  # Unverifiable: the secret scanning source answers 403 in the mock.
+  - id: EXC-BETA-002
+    repository: example-org/project-beta-web
+    source: secret-scanning
+    match: { alert: 2 }
+    owner: team-beta
+    reason: Synthetic test credential in a demo fixture, revoked before this entry was written.
+    created: '@now-5d'
+    expires: '@now+25d'
+
+  # Expired yesterday: medium #5 counts again and the project gets an amber reason.
+  - id: EXC-PLAT-001
+    repository: example-org/platform-mono
+    source: code-scanning
+    match: { rule: js/path-injection }
+    owner: team-platform
+    reason: Paths are built from an internal allowlist in this demo; renew after the review.
+    created: '@now-60d'
+    expires: '@now-1d'
+    ticket: https://github.com/example-org/platform-mono/issues/31
+
+  # Active and expiring soon: accepts the low alert from advisory GHSA-demo-0004-mono.
+  - id: EXC-PLAT-002
+    repository: example-org/platform-mono
+    source: dependabot
+    match: { advisory: GHSA-demo-0004-mono }
+    owner: team-platform
+    reason: The merge helper only receives trusted configuration in this demo.
+    created: '@now-170d'
+    expires: '@now+7d'
+
+  # Orphaned: the repository is in no catalog project.
+  - id: EXC-LEGACY-001
+    repository: example-org/legacy-tool
+    source: dependabot
+    match: { alert: 3 }
+    owner: team-platform
+    reason: Legacy tool kept for reference only; the repository left the catalog.
+    created: '@now-30d'
+    expires: '@now+30d'

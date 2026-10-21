@@ -601,6 +601,15 @@ describe('computeChanges', () => {
     source: 'github-dependabot' as const,
     htmlUrl: null,
   };
+  /** Alpha's other open high alert in the golden run (accepted by an exception, still open). */
+  const alpha15 = {
+    id: 'example-org/project-alpha-backend#code-scanning#15',
+    severity: 'high' as const,
+    componentId: 'backend',
+    repository: 'example-org/project-alpha-backend',
+    source: 'github-code-scanning' as const,
+    htmlUrl: null,
+  };
   const versionsNow = [
     { kind: 'coordinator' as const, componentId: null, version: '1.4.0' },
     { kind: 'component' as const, componentId: 'backend', version: '1.4.0' },
@@ -638,15 +647,19 @@ describe('computeChanges', () => {
   it('new high alert when its pair was readable before', () => {
     const c = changesFor(previousOf(alphaNow(), { findings: [] }));
     const p = alphaOf(c);
-    expect(p.newFindings.map((f) => f.id)).toEqual([dependabot7.id]);
-    expect(p.newFindings[0]!.title).toContain('Prototype pollution');
+    // Accepted by an exception on GitHub's side it is still open: new when not in the baseline.
+    expect(p.newFindings.map((f) => f.id)).toEqual([alpha15.id, dependabot7.id]);
+    expect(p.newFindings[1]!.title).toContain('Prototype pollution');
     expect(p.findingsPartial).toBe(false);
-    expect(c.totals.newFindings).toBe(1);
+    expect(c.totals.newFindings).toBe(2);
   });
 
   it('not new when its pair was unreadable in the previous run; findingsPartial true', () => {
     const c = changesFor(
-      previousOf(alphaNow(), { unreadable: ['example-org/project-alpha-frontend|dependabot'] }),
+      previousOf(alphaNow(), {
+        findings: [alpha15],
+        unreadable: ['example-org/project-alpha-frontend|dependabot'],
+      }),
     );
     expect(alphaOf(c).newFindings).toEqual([]);
     expect(alphaOf(c).findingsPartial).toBe(true);
@@ -654,7 +667,7 @@ describe('computeChanges', () => {
 
   it('resolved when absent now and its pair readable now', () => {
     const gone = { ...dependabot7, id: 'example-org/project-alpha-backend#code-scanning#9' };
-    const c = changesFor(previousOf(alphaNow(), { findings: [dependabot7, gone] }));
+    const c = changesFor(previousOf(alphaNow(), { findings: [alpha15, dependabot7, gone] }));
     expect(alphaOf(c).resolvedFindings.map((f) => f.id)).toEqual([gone.id]);
     expect(alphaOf(c).newFindings).toEqual([]);
     expect(c.totals.resolvedFindings).toBe(1);
@@ -703,7 +716,7 @@ describe('computeChanges', () => {
   it('a component added to the catalog: its open alerts are not new; findingsPartial true', () => {
     const c = changesFor(
       previousOf(alphaNow(), {
-        findings: [],
+        findings: [alpha15],
         repositories: alphaRepos.filter((r) => r !== dependabot7.repository),
       }),
     );
@@ -713,9 +726,12 @@ describe('computeChanges', () => {
   });
 
   it('an alert still open at a lower severity is not resolved', () => {
-    const c = changesFor(previousOf(alphaNow(), { findings: [dependabot7] }), ({ project }) => {
-      project.securityFindings.find((f) => f.id === dependabot7.id)!.severity = 'medium';
-    });
+    const c = changesFor(
+      previousOf(alphaNow(), { findings: [alpha15, dependabot7] }),
+      ({ project }) => {
+        project.securityFindings.find((f) => f.id === dependabot7.id)!.severity = 'medium';
+      },
+    );
     expect(alphaOf(c).resolvedFindings).toEqual([]);
     expect(c.totals.resolvedFindings).toBe(0);
   });
@@ -767,14 +783,17 @@ describe('computeChanges', () => {
   });
 
   it('61 new findings → 50 listed, findingsTruncated 11, totals.newFindings 61', () => {
-    const c = changesFor(previousOf(alphaNow(), { findings: [dependabot7] }), ({ project }) => {
-      const template = project.securityFindings.find((f) => f.id === dependabot7.id)!;
-      for (let n = 100; n < 161; n++)
-        project.securityFindings.push({
-          ...template,
-          id: `example-org/project-alpha-frontend#dependabot#${n}`,
-        });
-    });
+    const c = changesFor(
+      previousOf(alphaNow(), { findings: [alpha15, dependabot7] }),
+      ({ project }) => {
+        const template = project.securityFindings.find((f) => f.id === dependabot7.id)!;
+        for (let n = 100; n < 161; n++)
+          project.securityFindings.push({
+            ...template,
+            id: `example-org/project-alpha-frontend#dependabot#${n}`,
+          });
+      },
+    );
     expect(alphaOf(c).newFindings).toHaveLength(50);
     expect(alphaOf(c).findingsTruncated).toBe(11);
     expect(c.totals.newFindings).toBe(61);

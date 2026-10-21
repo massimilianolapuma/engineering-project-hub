@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-beta",
@@ -524,7 +524,48 @@
       "htmlUrl": "https://github.com/example-org/project-beta-api/security/code-scanning/3",
       "tool": "CodeQL",
       "repositoryPrivate": true,
-      "dataClassification": "internal"
+      "dataClassification": "internal",
+      "exception": null,
+      "sla": {
+        "state": "within",
+        "days": 7,
+        "dueAt": "2026-01-19T12:00:00.000Z",
+        "ageDays": 3,
+        "overdueDays": null
+      }
+    },
+    {
+      "id": "example-org/project-beta-api#code-scanning#7",
+      "projectId": "project-beta",
+      "componentId": "api",
+      "repository": "example-org/project-beta-api",
+      "source": "github-code-scanning",
+      "category": "code",
+      "severity": "medium",
+      "originalSeverity": "medium",
+      "status": "open",
+      "originalStatus": "open",
+      "ruleId": null,
+      "title": null,
+      "detectedAt": "2025-12-26T12:00:00.000Z",
+      "updatedAt": "2025-12-26T12:00:00.000Z",
+      "fixAvailable": null,
+      "htmlUrl": "https://github.com/example-org/project-beta-api/security/code-scanning/7",
+      "tool": "CodeQL",
+      "repositoryPrivate": true,
+      "dataClassification": "internal",
+      "exception": {
+        "id": "EXC-BETA-001",
+        "state": "active",
+        "expires": "2026-03-16"
+      },
+      "sla": {
+        "state": "paused",
+        "days": 90,
+        "dueAt": "2026-03-26T12:00:00.000Z",
+        "ageDays": 20,
+        "overdueDays": null
+      }
     },
     {
       "id": "example-org/project-beta-api#code-scanning#901",
@@ -545,7 +586,15 @@
       "htmlUrl": "https://github.com/example-org/project-beta-api/security/code-scanning/901",
       "tool": "Scorecard",
       "repositoryPrivate": true,
-      "dataClassification": "internal"
+      "dataClassification": "internal",
+      "exception": null,
+      "sla": {
+        "state": "within",
+        "days": 30,
+        "dueAt": "2026-02-12T12:00:00.000Z",
+        "ageDays": 2,
+        "overdueDays": null
+      }
     },
     {
       "id": "example-org/project-beta-api#code-scanning#902",
@@ -566,7 +615,15 @@
       "htmlUrl": "https://github.com/example-org/project-beta-api/security/code-scanning/902",
       "tool": "Scorecard",
       "repositoryPrivate": true,
-      "dataClassification": "internal"
+      "dataClassification": "internal",
+      "exception": null,
+      "sla": {
+        "state": "within",
+        "days": 90,
+        "dueAt": "2026-04-13T12:00:00.000Z",
+        "ageDays": 2,
+        "overdueDays": null
+      }
     },
     {
       "id": "example-org/project-beta-web#dependabot#11",
@@ -587,7 +644,57 @@
       "htmlUrl": "https://github.com/example-org/project-beta-web/security/dependabot/11",
       "tool": "dependabot",
       "repositoryPrivate": false,
-      "dataClassification": "public"
+      "dataClassification": "public",
+      "exception": null,
+      "sla": {
+        "state": "within",
+        "days": 30,
+        "dueAt": "2026-02-10T12:00:00.000Z",
+        "ageDays": 4,
+        "overdueDays": null
+      }
+    }
+  ],
+  "securityExceptions": [
+    {
+      "id": "EXC-BETA-002",
+      "repository": "example-org/project-beta-web",
+      "source": "secret-scanning",
+      "selector": {
+        "kind": "alert",
+        "value": "2",
+        "tool": null
+      },
+      "owner": "team-beta",
+      "reason": "Synthetic test credential in a demo fixture, revoked before this entry was written.",
+      "created": "2026-01-10",
+      "expires": "2026-02-09",
+      "ticketUrl": null,
+      "state": "unverifiable",
+      "expiringSoon": false,
+      "matched": null,
+      "findingIds": []
+    },
+    {
+      "id": "EXC-BETA-001",
+      "repository": "example-org/project-beta-api",
+      "source": "code-scanning",
+      "selector": {
+        "kind": "rule",
+        "value": null,
+        "tool": null
+      },
+      "owner": "team-beta",
+      "reason": null,
+      "created": "2025-12-31",
+      "expires": "2026-03-16",
+      "ticketUrl": null,
+      "state": "active",
+      "expiringSoon": false,
+      "matched": 1,
+      "findingIds": [
+        "example-org/project-beta-api#code-scanning#7"
+      ]
     }
   ],
   "securityControls": [
@@ -1089,6 +1196,21 @@
         }
       },
       {
+        "code": "security-exception-active",
+        "level": "info",
+        "params": {
+          "count": 1
+        }
+      },
+      {
+        "code": "security-exception-unverifiable",
+        "level": "info",
+        "params": {
+          "count": 1,
+          "ids": "EXC-BETA-002"
+        }
+      },
+      {
         "code": "coverage-incomplete",
         "level": "amber",
         "params": {
@@ -1113,6 +1235,40 @@
       "low": 1,
       "informational": 0,
       "unknown": 0
+    },
+    "acceptedCounts": {
+      "critical": 0,
+      "high": 0,
+      "medium": 1,
+      "low": 0,
+      "informational": 0,
+      "unknown": 0
+    },
+    "remediation": {
+      "enabled": true,
+      "slaDays": {
+        "critical": 7,
+        "high": 30,
+        "medium": 90,
+        "low": 180,
+        "secret": 7
+      },
+      "overdue": {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "secret": 0
+      },
+      "oldestOverdueSince": null,
+      "slaUnknown": 0
+    },
+    "exceptionStates": {
+      "active": 1,
+      "expired": 0,
+      "stale": 0,
+      "unverifiable": 1,
+      "expiringSoon": 0
     },
     "countsComplete": false,
     "openSecretAlerts": 0,

@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { ExceptionEntry, SecurityFinding } from '@model/index';
+import type { ExceptionEntry } from '@model/index';
 import {
   applyExceptions,
   expiryInstant,
   orphanedExceptionIds,
   validateExceptions,
+  type BaseFinding,
   type FindingKeys,
   type MatchableFinding,
   type SourceReadability,
@@ -39,7 +40,7 @@ function finding(
   source: keyof typeof SOURCE_OF,
   alert: number,
   keys: Partial<FindingKeys> = {},
-  over: Partial<SecurityFinding> = {},
+  over: Partial<BaseFinding> = {},
   repository = REPO,
 ): MatchableFinding {
   return {

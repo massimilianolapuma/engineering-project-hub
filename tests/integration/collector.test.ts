@@ -16,7 +16,7 @@ import {
   type Policies,
   type ProjectSnapshot,
 } from '@model/index';
-import { loadConfig } from '../../collector/src/config/load';
+import { loadConfig, resolveExceptionsPath } from '../../collector/src/config/load';
 import { buildHistoryExtras } from '../../collector/src/history/extras';
 import { loadPreviousHistory } from '../../collector/src/history/load';
 import { MockProvider } from '../../collector/src/providers/mock/mock-provider';
@@ -45,14 +45,24 @@ beforeAll(async () => {
 });
 afterAll(() => rm(out, { recursive: true, force: true }));
 
+/** The mock source reads the fixture exceptions, with date tokens (as the golden script does). */
+async function loadMockConfig() {
+  return loadConfig('config', {
+    exceptionsFile: 'fixtures/exceptions/exceptions.yaml',
+    allowDateTokens: true,
+    now: new Date(GOLDEN_NOW),
+  });
+}
+
 async function mockRun() {
-  const { catalog, policies } = await loadConfig('config');
+  const { catalog, policies, exceptions } = await loadMockConfig();
   const clock = fixedClock(GOLDEN_NOW);
   return runCollection({
     catalog,
     policies,
     provider: new MockProvider('fixtures/github', clock),
     clock,
+    exceptions,
   });
 }
 
@@ -178,7 +188,7 @@ describe('mock collection', () => {
   it('keeps collecting other repositories when one fails (partial data)', async () => {
     const { index } = await mockRun();
     expect(index.run.repositories).toMatchObject({ total: 12, unavailable: 2 });
-    expect(index.projects.map((p) => p.overall)).toEqual(['amber', 'amber', 'red', 'grey']);
+    expect(index.projects.map((p) => p.overall)).toEqual(['red', 'amber', 'red', 'grey']);
     expect(index.run.capabilities.secretScanning).toBe('partial');
     // Platform: findings 404 still proves the permission works (house rule for a 404).
     expect(index.run.capabilities.codeQuality).toBe('available');
@@ -209,10 +219,10 @@ const readGolden = async <T>(file: string): Promise<T> =>
   JSON.parse(await readFile(join('fixtures/snapshots', file), 'utf8')) as T;
 
 describe('history and changes (mock run)', () => {
-  it('golden changes totals are {statusChanges:4,newFindings:1,resolvedFindings:1,versionMoves:1,newErrors:1}', async () => {
+  it('golden changes totals are {statusChanges:6,newFindings:1,resolvedFindings:1,versionMoves:1,newErrors:1}', async () => {
     const changes = await readGolden<ChangesFile>('changes.json');
     expect(changes.totals).toEqual({
-      statusChanges: 4,
+      statusChanges: 6,
       newFindings: 1,
       resolvedFindings: 1,
       versionMoves: 1,
@@ -272,9 +282,24 @@ describe('history and changes (mock run)', () => {
     expect(alpha.newFindings).toEqual([]);
   });
 
-  it('golden changes: platform and gamma have empty lists; basis {state:"compared", previousCollectedAt:"2026-01-14T12:00:00.000Z", synthetic:true}', async () => {
+  it('golden changes: platform goes amber → red on overall and security through the overdue high alert, with no new findings', async () => {
+    const platform = (await readGolden<ChangesFile>('changes.json')).projects.find(
+      (p) => p.id === 'platform',
+    )!;
+    expect(platform.statusChanges).toEqual([
+      { dimension: 'overall', from: 'amber', to: 'red' },
+      { dimension: 'security', from: 'amber', to: 'red' },
+    ]);
+    expect(platform.previous).toEqual({ overall: 'amber', score: 82 });
+    expect(platform.current).toEqual({ overall: 'red', score: 49 });
+    // The overdue high alert and the accepted ones were already in the baseline: nothing is new.
+    expect(platform.newFindings).toEqual([]);
+    expect(platform.resolvedFindings).toEqual([]);
+  });
+
+  it('golden changes: gamma has empty lists; basis {state:"compared", previousCollectedAt:"2026-01-14T12:00:00.000Z", synthetic:true}', async () => {
     const changes = await readGolden<ChangesFile>('changes.json');
-    for (const id of ['platform', 'project-gamma']) {
+    for (const id of ['project-gamma']) {
       expect(changes.projects.find((p) => p.id === id)).toMatchObject({
         added: false,
         statusChanges: [],
@@ -956,7 +981,7 @@ describe('sanitisation end to end', () => {
 describe('snapshot schema versions', () => {
   it('fails in a controlled way on an unsupported schemaVersion', async () => {
     const text = (await readFile('fixtures/snapshots/index.json', 'utf8')).replace(
-      '"schemaVersion": "1.5"',
+      '"schemaVersion": "1.6"',
       '"schemaVersion": "9.0"',
     );
     const r = validatePortfolio(text);
@@ -1030,10 +1055,10 @@ describe('repository controls (mock run)', () => {
     p.repositoryControls.repositories.find((r) => r.repository === `example-org/${name}`)!;
   const states = (p: ProjectSnapshot, name: string) => repoOf(p, name).checks.map((c) => c.state);
 
-  it('writes snapshot schema 1.5', async () => {
+  it('writes snapshot schema 1.6', async () => {
     const { index, projects } = await byId();
-    expect(index.schemaVersion).toBe('1.5');
-    for (const p of Object.values(projects)) expect(p.schemaVersion).toBe('1.5');
+    expect(index.schemaVersion).toBe('1.6');
+    for (const p of Object.values(projects)) expect(p.schemaVersion).toBe('1.6');
   });
 
   it('counts the checks per project over unique repositories', async () => {
@@ -1200,7 +1225,8 @@ describe('repository controls (mock run)', () => {
       projects[id]!.governanceHealth.status,
       projects[id]!.overallHealth.status,
     ];
-    expect(status('platform')).toEqual(['green', 'amber']);
+    // Platform turns red through the demo's overdue escalation (risk governance), not governance.
+    expect(status('platform')).toEqual(['green', 'red']);
     expect(status('project-alpha')).toEqual(['green', 'amber']);
     expect(status('project-beta')).toEqual(['amber', 'red']);
     expect(status('project-gamma')).toEqual(['grey', 'grey']);
@@ -1384,5 +1410,226 @@ describe('repository controls (mock run)', () => {
     const bothDenied = await run(true);
     expect(bothDenied.index.run.capabilities.repositoryRules).toBe('not-authorised');
     expect([...perRepo(bothDenied).values()].every((n) => n === 1)).toBe(true);
+  });
+});
+
+describe('risk governance (mock run)', () => {
+  const byId = (projects: ProjectSnapshot[]) =>
+    Object.fromEntries(projects.map((p) => [p.project.id, p])) as Record<string, ProjectSnapshot>;
+  const finding = (p: ProjectSnapshot, id: string) =>
+    p.securityFindings.find((f) => f.id === `${id}`)!;
+
+  it('schemaVersion is "1.6" in index, projects and catalog', async () => {
+    const { index, projects } = await mockRun();
+    expect(index.schemaVersion).toBe('1.6');
+    for (const p of projects) expect(p.schemaVersion).toBe('1.6');
+    const catalog = JSON.parse(await readFile('fixtures/snapshots/catalog.json', 'utf8'));
+    expect(catalog.schemaVersion).toBe('1.6');
+  });
+
+  it('index.run.exceptions equals { source: "fixture", total: 7, orphaned: ["EXC-LEGACY-001"] }', async () => {
+    const { index } = await mockRun();
+    expect(index.run.exceptions).toEqual({
+      source: 'fixture',
+      total: 7,
+      orphaned: ['EXC-LEGACY-001'],
+    });
+  });
+
+  it('Alpha: accepted high #15 is paused with its original due date', async () => {
+    const alpha = byId((await mockRun()).projects)['project-alpha']!;
+    expect(alpha.securityHealth.status).toBe('amber');
+    expect(alpha.securityHealth.openCounts.high).toBe(1);
+    expect(alpha.securityHealth.acceptedCounts.high).toBe(1);
+    expect(alpha.securityHealth.remediation.overdue.high).toBe(0);
+    expect(alpha.securityHealth.exceptionStates).toEqual({
+      active: 1,
+      expired: 0,
+      stale: 1,
+      unverifiable: 0,
+      expiringSoon: 0,
+    });
+    expect(finding(alpha, 'example-org/project-alpha-backend#code-scanning#15')).toMatchObject({
+      status: 'open',
+      exception: { id: 'EXC-ALPHA-001', state: 'active' },
+      sla: { state: 'paused', dueAt: '2025-12-31T12:00:00.000Z' },
+    });
+  });
+
+  it('Beta: withheld selector, unverifiable secret exception, critical #3 within SLA', async () => {
+    const beta = byId((await mockRun()).projects)['project-beta']!;
+    expect(beta.securityHealth.status).toBe('red');
+    expect(beta.securityHealth.acceptedCounts.medium).toBe(1);
+    const b1 = beta.securityExceptions.find((e) => e.id === 'EXC-BETA-001')!;
+    expect(b1).toMatchObject({
+      selector: { kind: 'rule', value: null, tool: null },
+      reason: null,
+      ticketUrl: null,
+      state: 'active',
+      matched: 1,
+    });
+    expect(beta.securityExceptions.find((e) => e.id === 'EXC-BETA-002')).toMatchObject({
+      state: 'unverifiable',
+      matched: null,
+    });
+    expect(finding(beta, 'example-org/project-beta-api#code-scanning#3').sla).toEqual({
+      state: 'within',
+      days: 7,
+      dueAt: '2026-01-19T12:00:00.000Z',
+      ageDays: 3,
+      overdueDays: null,
+    });
+  });
+
+  it('Platform: red through an overdue high, expired and expiring exceptions', async () => {
+    const platform = byId((await mockRun()).projects)['platform']!;
+    expect(platform.securityHealth.status).toBe('red');
+    expect(platform.overallHealth.status).toBe('red');
+    expect(platform.score.value).toBeLessThanOrEqual(49);
+    expect(platform.securityHealth.openCounts).toMatchObject({
+      critical: 0,
+      high: 2,
+      medium: 1,
+      low: 0,
+    });
+    expect(platform.securityHealth.remediation.overdue.high).toBe(1);
+    expect(platform.securityHealth.remediation.oldestOverdueSince).toBe('2026-01-14T18:00:00.000Z');
+    expect(finding(platform, 'example-org/platform-mono#code-scanning#2').sla).toEqual({
+      state: 'overdue',
+      days: 30,
+      dueAt: '2026-01-14T18:00:00.000Z',
+      ageDays: 30,
+      overdueDays: 0,
+    });
+    expect(finding(platform, 'example-org/platform-mono#code-scanning#5').exception).toEqual({
+      id: 'EXC-PLAT-001',
+      state: 'expired',
+      expires: '2026-01-14',
+    });
+    expect(platform.securityExceptions.find((e) => e.id === 'EXC-PLAT-002')).toMatchObject({
+      state: 'active',
+      expiringSoon: true,
+      matched: 1,
+    });
+    const reasons = platform.securityHealth.reasons;
+    expect(reasons.find((r) => r.code === 'sla-overdue')?.level).toBe('red');
+    expect(reasons.find((r) => r.code === 'security-exception-expired')?.level).toBe('amber');
+    expect(reasons.find((r) => r.code === 'security-exception-active')?.level).toBe('info');
+  });
+
+  it('Gamma: nothing is measured, nothing is invented', async () => {
+    const { index, projects } = await mockRun();
+    const gamma = byId(projects)['project-gamma']!;
+    expect(gamma.securityExceptions).toEqual([]);
+    expect(index.projects.find((p) => p.id === 'project-gamma')!.risk).toEqual({
+      overdue: null,
+      overdueCriticalHigh: null,
+      accepted: null,
+      exceptionIssues: 0,
+    });
+    expect(gamma.securityHealth.status).toBe('grey');
+  });
+
+  it('summaries: alpha, beta and platform risk', async () => {
+    const { index } = await mockRun();
+    const risk = (id: string) => index.projects.find((p) => p.id === id)!.risk;
+    expect(risk('project-alpha')).toEqual({
+      overdue: 0,
+      overdueCriticalHigh: 0,
+      accepted: 1,
+      exceptionIssues: 1,
+    });
+    expect(risk('project-beta')).toEqual({
+      overdue: 0,
+      overdueCriticalHigh: 0,
+      accepted: 1,
+      exceptionIssues: 1,
+    });
+    expect(risk('platform')).toEqual({
+      overdue: 1,
+      overdueCriticalHigh: 1,
+      accepted: 1,
+      exceptionIssues: 1,
+    });
+  });
+
+  it('collection-report.md has the exceptions line', async () => {
+    const md = await readFile('fixtures/snapshots/collection-report.md', 'utf8');
+    expect(md).toContain(
+      'Exceptions: 7 loaded (fixture) · 3 active · 1 expired · 1 stale · 1 unverifiable · 1 orphaned',
+    );
+  });
+
+  it('"py/flask-debug" and "marker-reason-b7c1" appear nowhere in the serialised output', async () => {
+    const { index, projects } = await mockRun();
+    const text = [...serialise(index, projects)].map(([, t]) => t).join('\n');
+    expect(text).not.toContain('py/flask-debug');
+    expect(text).not.toContain('marker-reason-b7c1');
+    for (const f of await readdir('fixtures/snapshots/projects')) {
+      const g = await readFile(join('fixtures/snapshots/projects', f), 'utf8');
+      expect(g).not.toContain('py/flask-debug');
+      expect(g).not.toContain('marker-reason-b7c1');
+    }
+  });
+
+  it('with the schema-default policies (overdue all info) Platform securityHealth.status is amber', async () => {
+    const { catalog, policies, exceptions } = await loadMockConfig();
+    policies.remediation.overdue = {
+      critical: 'info',
+      high: 'info',
+      medium: 'info',
+      low: 'info',
+      secret: 'info',
+    };
+    const clock = fixedClock(GOLDEN_NOW);
+    const r = await runCollection({
+      catalog,
+      policies,
+      provider: new MockProvider('fixtures/github', clock),
+      clock,
+      exceptions,
+    });
+    expect(byId(r.projects)['platform']!.securityHealth.status).toBe('amber');
+  });
+
+  it('with no exceptions and default policies, Alpha, Beta and Gamma keep their status; Platform is amber in both', async () => {
+    const { catalog, policies, exceptions } = await loadMockConfig();
+    policies.remediation.overdue = {
+      critical: 'info',
+      high: 'info',
+      medium: 'info',
+      low: 'info',
+      secret: 'info',
+    };
+    const clock = () => fixedClock(GOLDEN_NOW);
+    const run = (e: typeof exceptions) =>
+      runCollection({
+        catalog,
+        policies,
+        provider: new MockProvider('fixtures/github', clock()),
+        clock: clock(),
+        exceptions: e,
+      });
+    const withExc = byId((await run(exceptions)).projects);
+    const without = byId((await run({ source: 'none', file: null, warnings: [] })).projects);
+    for (const id of ['project-alpha', 'project-beta', 'project-gamma', 'platform']) {
+      expect(without[id]!.securityHealth.status).toBe(withExc[id]!.securityHealth.status);
+    }
+    expect(without['platform']!.securityHealth.status).toBe('amber');
+    expect(without['project-alpha']!.securityHealth.openCounts.high).toBe(2);
+  });
+
+  it('the github source never reads fixtures/exceptions', () => {
+    expect(resolveExceptionsPath({ source: 'github', config: 'cfg' })).toEqual({
+      file: 'cfg/exceptions.yaml',
+      allowDateTokens: false,
+    });
+    expect(resolveExceptionsPath({ source: 'mock', config: 'cfg' })).toEqual({
+      file: 'fixtures/exceptions/exceptions.yaml',
+      allowDateTokens: true,
+    });
+    expect(
+      resolveExceptionsPath({ source: 'github', config: 'cfg', exceptions: 'x.yaml' }),
+    ).toEqual({ file: 'x.yaml', allowDateTokens: false });
   });
 });

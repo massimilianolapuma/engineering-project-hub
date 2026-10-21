@@ -3,7 +3,7 @@
  * Engineering Project Hub collector CLI.
  *
  *   tsx collector/src/index.ts [--source mock|github] [--out public/data] [--config config]
- *                              [--fixtures fixtures/github] [--now 2026-01-15T12:00:00Z]
+ *                              [--exceptions <file>] [--fixtures fixtures/github] [--now 2026-01-15T12:00:00Z]
  *                              [--history-from <dir>] [--history-fixture <file>] [--fresh-history]
  *
  * --source defaults to $DATA_SOURCE, then "mock". The previous history is read from
@@ -13,7 +13,7 @@
  */
 import { parseArgs } from 'node:util';
 import { DataSourceSchema } from '@model/index';
-import { ConfigError, loadConfig } from './config/load';
+import { ConfigError, loadConfig, resolveExceptionsPath } from './config/load';
 import { AuthConfigError, resolveAuth } from './providers/auth';
 import { createGitHubClient, GitHubProvider } from './providers/github/github-provider';
 import { buildHistoryExtras } from './history/extras';
@@ -35,6 +35,7 @@ async function main(): Promise<number> {
       source: { type: 'string' },
       out: { type: 'string', default: 'public/data' },
       config: { type: 'string', default: 'config' },
+      exceptions: { type: 'string' },
       fixtures: { type: 'string', default: 'fixtures/github' },
       now: { type: 'string' },
       'history-from': { type: 'string' },
@@ -55,7 +56,17 @@ async function main(): Promise<number> {
   const source = sourceParse.data;
   const clock = values.now ? fixedClock(values.now) : systemClock;
 
-  const { catalog, policies } = await loadConfig(values.config);
+  const { file, allowDateTokens } = resolveExceptionsPath({
+    source,
+    config: values.config,
+    exceptions: values.exceptions,
+  });
+  const { catalog, policies, exceptions } = await loadConfig(values.config, {
+    exceptionsFile: file,
+    allowDateTokens,
+    now: clock(),
+  });
+  for (const w of exceptions.warnings) console.warn(`⚠ ${w.path}: ${w.message}`);
   const auth = resolveAuth(source);
   const provider: SourceProvider =
     auth.mode === 'mock'
@@ -68,7 +79,7 @@ async function main(): Promise<number> {
   console.log(
     `Collecting ${catalog.projects.length} project(s) · source=${source} · auth=${provider.authenticationMode}`,
   );
-  const result = await runCollection({ catalog, policies, provider, clock });
+  const result = await runCollection({ catalog, policies, provider, clock, exceptions });
   // The previous history is read before writeSnapshots, which replaces the output directory.
   let extras: HistoryExtras = { history: null, changes: null };
   if (policies.history.enabled) {

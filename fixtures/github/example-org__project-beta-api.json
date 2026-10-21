@@ -92,6 +92,19 @@
       "htmlUrl": "https://github.com/example-org/project-beta-api/security/code-scanning/3"
     },
     {
+      "number": 7,
+      "state": "open",
+      "dismissedReason": null,
+      "ruleId": "py/flask-debug",
+      "ruleSeverity": "warning",
+      "securitySeverityLevel": "medium",
+      "ruleDescription": "Flask app is run in debug mode",
+      "toolName": "CodeQL",
+      "createdAt": "@now-20d",
+      "updatedAt": "@now-20d",
+      "htmlUrl": "https://github.com/example-org/project-beta-api/security/code-scanning/7"
+    },
+    {
       "number": 901,
       "state": "open",
       "dismissedReason": null,

@@ -23,8 +23,10 @@ export interface FindingKeys {
   tool: string | null;
   advisoryIds: string[];
 }
+/** A finding before exceptions and SLAs are applied. */
+export type BaseFinding = Omit<SecurityFinding, 'exception' | 'sla'>;
 export interface MatchableFinding {
-  finding: SecurityFinding;
+  finding: BaseFinding;
   keys: FindingKeys;
 }
 /** Key "owner/repo|code-scanning" (repository lower-cased on lookup). */
@@ -34,9 +36,9 @@ export interface ExceptionIssue {
   path: string;
   message: string;
 }
-export type FindingWithException = SecurityFinding & { exception: FindingException | null };
+export type FindingWithException = BaseFinding & { exception: FindingException | null };
 
-const FINDING_SOURCE: Record<ExceptionSource, SecurityFinding['source']> = {
+const FINDING_SOURCE: Record<ExceptionSource, BaseFinding['source']> = {
   'code-scanning': 'github-code-scanning',
   dependabot: 'github-dependabot',
   'secret-scanning': 'github-secret-scanning',

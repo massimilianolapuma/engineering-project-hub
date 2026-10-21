@@ -164,6 +164,7 @@ export function projectSummary(partial: Partial<ProjectSummary> = {}): ProjectSu
       informational: 0,
       unknown: 0,
     },
+    risk: { overdue: 0, overdueCriticalHigh: 0, accepted: 0, exceptionIssues: 0 },
     countsComplete: true,
     openSecretAlerts: 0,
     secretScanning: 'enabled',

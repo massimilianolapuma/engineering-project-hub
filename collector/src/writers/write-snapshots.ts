@@ -144,6 +144,16 @@ export interface CollectionReport {
   repositories: PortfolioIndex['run']['repositories'];
   errorsByClassification: Record<string, number>;
   errors: CollectionError[];
+  /** Exceptions by state, de-duplicated by id across projects (monorepos share them). */
+  exceptions: {
+    source: PortfolioIndex['run']['exceptions']['source'];
+    total: number;
+    active: number;
+    expired: number;
+    stale: number;
+    unverifiable: number;
+    orphaned: number;
+  };
   /**
    * null when history is turned off. "not-written": the history could not be built this run
    * (see notes); the snapshots were still written.
@@ -173,6 +183,9 @@ export function buildReport(
   const errorsByClassification: Record<string, number> = {};
   for (const e of errors)
     errorsByClassification[e.classification] = (errorsByClassification[e.classification] ?? 0) + 1;
+  const states = new Map<string, string>();
+  for (const e of projects.flatMap((p) => p.securityExceptions)) states.set(e.id, e.state);
+  const inState = (s: string) => [...states.values()].filter((x) => x === s).length;
   return {
     generatedAt: index.generatedAt,
     dataSource: index.run.dataSource,
@@ -186,6 +199,15 @@ export function buildReport(
     repositories: index.run.repositories,
     errorsByClassification,
     errors,
+    exceptions: {
+      source: index.run.exceptions.source,
+      total: index.run.exceptions.total,
+      active: inState('active'),
+      expired: inState('expired'),
+      stale: inState('stale'),
+      unverifiable: inState('unverifiable'),
+      orphaned: index.run.exceptions.orphaned.length,
+    },
     history: history
       ? { state: history.restore.state, entries: history.entries.length, notes: [...notes] }
       : notes.length
@@ -202,6 +224,11 @@ function historyLine(h: CollectionReport['history']): string {
   return `${usable ? h.state : `started fresh (${h.state})`} · ${entries}`;
 }
 
+function exceptionsLine(e: CollectionReport['exceptions']): string {
+  if (e.source === 'none') return 'Exceptions: none';
+  return `Exceptions: ${e.total} loaded (${e.source}) · ${e.active} active · ${e.expired} expired · ${e.stale} stale · ${e.unverifiable} unverifiable · ${e.orphaned} orphaned`;
+}
+
 export function reportMarkdown(r: CollectionReport): string {
   const lines = [
     '## Engineering Project Hub — collection report',
@@ -214,6 +241,8 @@ export function reportMarkdown(r: CollectionReport): string {
     `| Duration | ${r.durationMs} ms |`,
     `| Repositories | ${r.repositories.total} total · ${r.repositories.ok} ok · ${r.repositories.withErrors} with errors · ${r.repositories.unavailable} unavailable |`,
     `| History | ${historyLine(r.history)} |`,
+    '',
+    exceptionsLine(r.exceptions),
     '',
     '### Projects',
     '',

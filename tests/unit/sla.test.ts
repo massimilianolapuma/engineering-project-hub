@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { SecurityFinding } from '@model/index';
+import type { BaseFinding } from '../../collector/src/policy/exceptions';
 import { applySla, slaClassOf } from '../../collector/src/policy/sla';
 import { NOW, policies } from '../helpers/factories';
 
-type Input = SecurityFinding & {
+type Input = BaseFinding & {
   exception?: { id: string; state: 'active' | 'expired'; expires: string } | null;
 };
 

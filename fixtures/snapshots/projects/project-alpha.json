@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-alpha",
@@ -674,6 +674,39 @@
   ],
   "securityFindings": [
     {
+      "id": "example-org/project-alpha-backend#code-scanning#15",
+      "projectId": "project-alpha",
+      "componentId": "backend",
+      "repository": "example-org/project-alpha-backend",
+      "source": "github-code-scanning",
+      "category": "code",
+      "severity": "high",
+      "originalSeverity": "high",
+      "status": "open",
+      "originalStatus": "open",
+      "ruleId": "java/xxe",
+      "title": "Resolving XML external entity in user-controlled data",
+      "detectedAt": "2025-12-01T12:00:00.000Z",
+      "updatedAt": "2025-12-01T12:00:00.000Z",
+      "fixAvailable": null,
+      "htmlUrl": "https://github.com/example-org/project-alpha-backend/security/code-scanning/15",
+      "tool": "CodeQL",
+      "repositoryPrivate": false,
+      "dataClassification": "public",
+      "exception": {
+        "id": "EXC-ALPHA-001",
+        "state": "active",
+        "expires": "2026-02-04"
+      },
+      "sla": {
+        "state": "paused",
+        "days": 30,
+        "dueAt": "2025-12-31T12:00:00.000Z",
+        "ageDays": 45,
+        "overdueDays": null
+      }
+    },
+    {
       "id": "example-org/project-alpha-backend#code-scanning#14",
       "projectId": "project-alpha",
       "componentId": "backend",
@@ -692,7 +725,15 @@
       "htmlUrl": "https://github.com/example-org/project-alpha-backend/security/code-scanning/14",
       "tool": "CodeQL",
       "repositoryPrivate": false,
-      "dataClassification": "public"
+      "dataClassification": "public",
+      "exception": null,
+      "sla": {
+        "state": "within",
+        "days": 90,
+        "dueAt": "2026-04-10T12:00:00.000Z",
+        "ageDays": 5,
+        "overdueDays": null
+      }
     },
     {
       "id": "example-org/project-alpha-backend#code-scanning#12",
@@ -713,7 +754,15 @@
       "htmlUrl": "https://github.com/example-org/project-alpha-backend/security/code-scanning/12",
       "tool": "CodeQL",
       "repositoryPrivate": false,
-      "dataClassification": "public"
+      "dataClassification": "public",
+      "exception": null,
+      "sla": {
+        "state": "within",
+        "days": 90,
+        "dueAt": "2026-04-03T12:00:00.000Z",
+        "ageDays": 12,
+        "overdueDays": null
+      }
     },
     {
       "id": "example-org/project-alpha-backend#code-scanning#9",
@@ -734,7 +783,9 @@
       "htmlUrl": "https://github.com/example-org/project-alpha-backend/security/code-scanning/9",
       "tool": "CodeQL",
       "repositoryPrivate": false,
-      "dataClassification": "public"
+      "dataClassification": "public",
+      "exception": null,
+      "sla": null
     },
     {
       "id": "example-org/project-alpha-frontend#dependabot#7",
@@ -755,7 +806,15 @@
       "htmlUrl": "https://github.com/example-org/project-alpha-frontend/security/dependabot/7",
       "tool": "dependabot",
       "repositoryPrivate": false,
-      "dataClassification": "public"
+      "dataClassification": "public",
+      "exception": null,
+      "sla": {
+        "state": "within",
+        "days": 30,
+        "dueAt": "2026-02-10T12:00:00.000Z",
+        "ageDays": 4,
+        "overdueDays": null
+      }
     },
     {
       "id": "example-org/project-alpha-frontend#dependabot#5",
@@ -776,7 +835,51 @@
       "htmlUrl": "https://github.com/example-org/project-alpha-frontend/security/dependabot/5",
       "tool": "dependabot",
       "repositoryPrivate": false,
-      "dataClassification": "public"
+      "dataClassification": "public",
+      "exception": null,
+      "sla": null
+    }
+  ],
+  "securityExceptions": [
+    {
+      "id": "EXC-ALPHA-002",
+      "repository": "example-org/project-alpha-frontend",
+      "source": "dependabot",
+      "selector": {
+        "kind": "alert",
+        "value": "5",
+        "tool": null
+      },
+      "owner": "team-alpha",
+      "reason": "Regular expression only runs on short synthetic inputs in this demo.",
+      "created": "2025-11-26",
+      "expires": "2026-01-25",
+      "ticketUrl": null,
+      "state": "stale",
+      "expiringSoon": false,
+      "matched": 0,
+      "findingIds": []
+    },
+    {
+      "id": "EXC-ALPHA-001",
+      "repository": "example-org/project-alpha-backend",
+      "source": "code-scanning",
+      "selector": {
+        "kind": "alert",
+        "value": "15",
+        "tool": null
+      },
+      "owner": "team-alpha",
+      "reason": "Parser only reads trusted vendor files in this demo; a safe parser is planned for the next release.",
+      "created": "2026-01-05",
+      "expires": "2026-02-04",
+      "ticketUrl": "https://github.com/example-org/project-alpha-backend/issues/101",
+      "state": "active",
+      "expiringSoon": false,
+      "matched": 1,
+      "findingIds": [
+        "example-org/project-alpha-backend#code-scanning#15"
+      ]
     }
   ],
   "securityControls": [
@@ -1356,6 +1459,21 @@
         }
       },
       {
+        "code": "security-exception-active",
+        "level": "info",
+        "params": {
+          "count": 1
+        }
+      },
+      {
+        "code": "security-exception-stale",
+        "level": "info",
+        "params": {
+          "count": 1,
+          "ids": "EXC-ALPHA-002"
+        }
+      },
+      {
         "code": "coverage-incomplete",
         "level": "amber",
         "params": {
@@ -1370,6 +1488,40 @@
       "low": 3,
       "informational": 0,
       "unknown": 0
+    },
+    "acceptedCounts": {
+      "critical": 0,
+      "high": 1,
+      "medium": 0,
+      "low": 0,
+      "informational": 0,
+      "unknown": 0
+    },
+    "remediation": {
+      "enabled": true,
+      "slaDays": {
+        "critical": 7,
+        "high": 30,
+        "medium": 90,
+        "low": 180,
+        "secret": 7
+      },
+      "overdue": {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "secret": 0
+      },
+      "oldestOverdueSince": null,
+      "slaUnknown": 0
+    },
+    "exceptionStates": {
+      "active": 1,
+      "expired": 0,
+      "stale": 1,
+      "unverifiable": 0,
+      "expiringSoon": 0
     },
     "countsComplete": true,
     "openSecretAlerts": 0,

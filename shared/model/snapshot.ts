@@ -178,35 +178,6 @@ export const SeverityCountsSchema = z
   .strict();
 export type SeverityCounts = z.infer<typeof SeverityCountsSchema>;
 
-export const SecurityFindingSchema = z
-  .object({
-    id: z.string().max(200),
-    projectId: z.string().max(64),
-    componentId: z.string().max(64),
-    repository: z.string().max(200),
-    source: FindingSourceSchema,
-    category: FindingCategorySchema,
-    severity: SeveritySchema,
-    originalSeverity: z.string().max(50).nullable(),
-    status: FindingStatusSchema,
-    originalStatus: z.string().max(50).nullable(),
-    ruleId: z.string().max(200).nullable(),
-    /** Sanitised title; null when withheld by the publication policy. */
-    title: shortText.nullable(),
-    environment: z.string().max(64).optional(),
-    version: z.string().max(100).optional(),
-    commitSha: sha.optional(),
-    detectedAt: isoDate.nullable(),
-    updatedAt: isoDate.nullable(),
-    fixAvailable: z.boolean().nullable(),
-    htmlUrl: httpsUrl.nullable(),
-    tool: z.string().max(50).nullable(),
-    repositoryPrivate: z.boolean().nullable(),
-    dataClassification: z.enum(['public', 'internal', 'restricted']),
-  })
-  .strict();
-export type SecurityFinding = z.infer<typeof SecurityFindingSchema>;
-
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 /**
@@ -318,6 +289,39 @@ export const RunExceptionsSchema = z
   .strict();
 export type RunExceptions = z.infer<typeof RunExceptionsSchema>;
 
+export const SecurityFindingSchema = z
+  .object({
+    id: z.string().max(200),
+    projectId: z.string().max(64),
+    componentId: z.string().max(64),
+    repository: z.string().max(200),
+    source: FindingSourceSchema,
+    category: FindingCategorySchema,
+    severity: SeveritySchema,
+    originalSeverity: z.string().max(50).nullable(),
+    status: FindingStatusSchema,
+    originalStatus: z.string().max(50).nullable(),
+    ruleId: z.string().max(200).nullable(),
+    /** Sanitised title; null when withheld by the publication policy. */
+    title: shortText.nullable(),
+    environment: z.string().max(64).optional(),
+    version: z.string().max(100).optional(),
+    commitSha: sha.optional(),
+    detectedAt: isoDate.nullable(),
+    updatedAt: isoDate.nullable(),
+    fixAvailable: z.boolean().nullable(),
+    htmlUrl: httpsUrl.nullable(),
+    tool: z.string().max(50).nullable(),
+    repositoryPrivate: z.boolean().nullable(),
+    dataClassification: z.enum(['public', 'internal', 'restricted']),
+    /** The exception accepting (or that accepted) this finding; status stays the GitHub truth. */
+    exception: FindingExceptionSchema.nullable(),
+    /** Remediation SLA of an open GitHub finding; null otherwise or when SLAs are off. */
+    sla: FindingSlaSchema.nullable(),
+  })
+  .strict();
+export type SecurityFinding = z.infer<typeof SecurityFindingSchema>;
+
 export const ControlStatusSchema = z
   .object({
     control: ControlIdSchema,
@@ -365,6 +369,10 @@ export type CoverageSummary = z.infer<typeof CoverageSummarySchema>;
 
 export const SecuritySummarySchema = HealthResultSchema.extend({
   openCounts: SeverityCountsSchema,
+  /** Open findings accepted by an active exception, by severity (null = not measured). */
+  acceptedCounts: SeverityCountsSchema,
+  remediation: RemediationSummarySchema,
+  exceptionStates: ExceptionStatesSchema,
   /** false when at least one alert source could not be read: counts are a lower bound. */
   countsComplete: z.boolean(),
   openSecretAlerts: nullableCount,
@@ -660,6 +668,8 @@ export const ProjectSnapshotSchema = z
     environments: z.array(EnvironmentSnapshotSchema),
     workflows: z.array(WorkflowStatusSchema),
     securityFindings: z.array(SecurityFindingSchema),
+    /** Sorted by state (expired, unverifiable, stale, active), then id. */
+    securityExceptions: z.array(SecurityExceptionSchema).max(500),
     securityControls: z.array(RepositoryControlsSchema),
     deliveryHealth: HealthResultSchema,
     versionHealth: HealthResultSchema,
@@ -736,6 +746,7 @@ export const ProjectSummarySchema = z
       .strict(),
     freshness: HealthStatusSchema,
     openCounts: SeverityCountsSchema,
+    risk: ProjectRiskSchema,
     countsComplete: z.boolean(),
     openSecretAlerts: nullableCount,
     /** Project-level secret scanning state, so "0" is never shown when it was not readable. */
@@ -775,6 +786,7 @@ export const RunMetadataSchema = z
       })
       .strict(),
     configValid: z.boolean(),
+    exceptions: RunExceptionsSchema,
     policy: z
       .object({
         snapshotStaleHours: z.number().positive(),

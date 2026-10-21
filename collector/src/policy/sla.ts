@@ -4,8 +4,8 @@ import {
   type FindingSla,
   type Policies,
   type RemediationSummary,
-  type SecurityFinding,
 } from '@model/index';
+import type { BaseFinding } from './exceptions';
 import { DAY_MS } from '../util/clock';
 
 /*
@@ -17,14 +17,14 @@ import { DAY_MS } from '../util/clock';
 export type SlaClass = 'critical' | 'high' | 'medium' | 'low' | 'secret';
 export const SLA_CLASSES: readonly SlaClass[] = ['critical', 'high', 'medium', 'low', 'secret'];
 
-const GITHUB_SOURCES = new Set<SecurityFinding['source']>([
+const GITHUB_SOURCES = new Set<BaseFinding['source']>([
   'github-code-scanning',
   'github-dependabot',
   'github-secret-scanning',
 ]);
 
 /** Secret scanning has its own class (its severity is always unknown); informational has none. */
-export function slaClassOf(f: SecurityFinding): SlaClass | null {
+export function slaClassOf(f: BaseFinding): SlaClass | null {
   if (f.source === 'github-secret-scanning') return 'secret';
   return f.severity === 'critical' ||
     f.severity === 'high' ||
@@ -37,7 +37,7 @@ export function slaClassOf(f: SecurityFinding): SlaClass | null {
 const noOverdue = () => ({ critical: null, high: null, medium: null, low: null, secret: null });
 
 function slaOf(
-  f: SecurityFinding & { exception?: FindingException | null },
+  f: BaseFinding & { exception?: FindingException | null },
   policies: Policies,
   now: Date,
 ): FindingSla {
@@ -64,7 +64,7 @@ function slaOf(
   return { state: 'within', days, dueAt, ageDays, overdueDays: null };
 }
 
-export function applySla<T extends SecurityFinding & { exception?: FindingException | null }>(
+export function applySla<T extends BaseFinding & { exception?: FindingException | null }>(
   findings: T[],
   policies: Policies,
   now: Date,

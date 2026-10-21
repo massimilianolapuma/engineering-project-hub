@@ -1,4 +1,5 @@
 import {
+  countsAsOpen,
   NATIVE_CONTROLS,
   SecurityStatusFileSchema,
   type ControlId,
@@ -13,6 +14,7 @@ import {
 } from '@model/index';
 import type { RepoData } from '../collectors/collect';
 import type { ProviderResult } from '../providers/types';
+import type { BaseFinding, MatchableFinding } from '../policy/exceptions';
 import { scrubIdentifier, scrubText } from '../sanitizers/sanitize';
 import { ageMs, DAY_MS } from '../util/clock';
 import { codeScanningSeverity, normaliseSeverity, normaliseStatus } from './security';
@@ -25,7 +27,7 @@ export function isPublicDetail(ctx: BuildContext, data: RepoData): boolean {
 
 function classification(data: RepoData): {
   repositoryPrivate: boolean | null;
-  dataClassification: SecurityFinding['dataClassification'];
+  dataClassification: BaseFinding['dataClassification'];
 } {
   if (!data.repo.ok) return { repositoryPrivate: null, dataClassification: 'restricted' };
   const v = data.repo.data.visibility;
@@ -41,8 +43,8 @@ export function toFindings(
   data: RepoData,
   /** Monorepos: maps the alert's file path to the component owning that directory. */
   componentOf: (path: string | null | undefined) => string = () => data.componentId,
-): { findings: SecurityFinding[]; withheld: boolean } {
-  const findings: SecurityFinding[] = [];
+): { findings: MatchableFinding[]; withheld: boolean } {
+  const findings: MatchableFinding[] = [];
   const reveal = isPublicDetail(ctx, data);
   const cls = classification(data);
   const common = {
@@ -55,7 +57,7 @@ export function toFindings(
   if (data.codeScanning.ok) {
     for (const a of data.codeScanning.data) {
       const sev = codeScanningSeverity(a.securitySeverityLevel, a.ruleSeverity);
-      findings.push({
+      const finding: BaseFinding = {
         ...common,
         componentId: componentOf(a.path),
         id: `${data.repository}#code-scanning#${a.number}`,
@@ -72,13 +74,18 @@ export function toFindings(
         fixAvailable: null, // not declared by the code scanning API
         htmlUrl: link(ctx, a.htmlUrl),
         tool: scrubIdentifier(a.toolName, 50),
+      };
+      // Match keys come from the DTO before withholding and never leave the collector.
+      findings.push({
+        finding,
+        keys: { alert: a.number, ruleId: a.ruleId, tool: a.toolName, advisoryIds: [] },
       });
     }
   }
   if (data.dependabot.ok) {
     for (const a of data.dependabot.data) {
       const title = [a.packageName, a.summary].filter(Boolean).join(': ');
-      findings.push({
+      const finding: BaseFinding = {
         ...common,
         componentId: componentOf(a.manifestPath),
         id: `${data.repository}#dependabot#${a.number}`,
@@ -95,13 +102,22 @@ export function toFindings(
         fixAvailable: a.firstPatchedVersion !== null,
         htmlUrl: link(ctx, a.htmlUrl),
         tool: 'dependabot',
+      };
+      findings.push({
+        finding,
+        keys: {
+          alert: a.number,
+          ruleId: null,
+          tool: null,
+          advisoryIds: [a.ghsaId, a.cveId].filter((x): x is string => !!x),
+        },
       });
     }
   }
   if (data.secretScanning.ok) {
     for (const a of data.secretScanning.data) {
       // Only the secret *type* is published: never the value, location, file or commit.
-      findings.push({
+      const finding: BaseFinding = {
         ...common,
         id: `${data.repository}#secret-scanning#${a.number}`,
         source: 'github-secret-scanning',
@@ -117,6 +133,10 @@ export function toFindings(
         fixAvailable: null,
         htmlUrl: link(ctx, a.htmlUrl),
         tool: 'secret-scanning',
+      };
+      findings.push({
+        finding,
+        keys: { alert: a.number, ruleId: null, tool: null, advisoryIds: [] },
       });
     }
   }
@@ -134,9 +154,22 @@ export function emptyCounts(value: number | null = 0): SeverityCounts {
   };
 }
 
-export function countOpen(findings: SecurityFinding[]): SeverityCounts {
+type CountableFinding = Pick<BaseFinding, 'status' | 'severity'> & {
+  exception?: { state: string } | null;
+};
+
+/** Open findings that count: an active exception takes a finding out of the counts. */
+export function countOpen(findings: CountableFinding[]): SeverityCounts {
   const c = emptyCounts(0) as Record<keyof SeverityCounts, number>;
-  for (const f of findings) if (f.status === 'open') c[f.severity]++;
+  for (const f of findings) if (countsAsOpen(f)) c[f.severity]++;
+  return c;
+}
+
+/** Open findings accepted by an active exception, by severity. */
+export function countAccepted(findings: CountableFinding[]): SeverityCounts {
+  const c = emptyCounts(0) as Record<keyof SeverityCounts, number>;
+  for (const f of findings)
+    if (f.status === 'open' && f.exception?.state === 'active') c[f.severity]++;
   return c;
 }
 

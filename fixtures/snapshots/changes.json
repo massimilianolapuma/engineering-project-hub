@@ -8,7 +8,7 @@
     "synthetic": true
   },
   "totals": {
-    "statusChanges": 4,
+    "statusChanges": 6,
     "newFindings": 1,
     "resolvedFindings": 1,
     "versionMoves": 1,
@@ -24,10 +24,21 @@
         "score": 82
       },
       "current": {
-        "overall": "amber",
-        "score": 82
+        "overall": "red",
+        "score": 49
       },
-      "statusChanges": [],
+      "statusChanges": [
+        {
+          "dimension": "overall",
+          "from": "amber",
+          "to": "red"
+        },
+        {
+          "dimension": "security",
+          "from": "amber",
+          "to": "red"
+        }
+      ],
       "newFindings": [],
       "resolvedFindings": [],
       "findingsTruncated": 0,

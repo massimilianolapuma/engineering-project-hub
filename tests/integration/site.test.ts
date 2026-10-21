@@ -147,9 +147,9 @@ describe('static site', () => {
     );
     expect(names).toEqual([
       'project beta',
+      'platform (monorepo)',
       'project gamma',
       'project alpha',
-      'platform (monorepo)',
     ]);
     const beta = html.slice(html.indexOf('data-name="project beta"'));
     expect(beta.slice(0, beta.indexOf('>'))).toContain('data-score="40"');
@@ -345,8 +345,9 @@ describe('static site', () => {
       }
       const note = between(comps, 'data-shared-alerts', '</p>');
       expect(note).toContain('Open alerts in the shared repository');
-      expect(note).toContain('1 high · 1 medium · 1 low');
-      expect(comps.match(/1 high · 1 medium · 1 low/g)).toHaveLength(1);
+      // The low alert is accepted by an exception: it no longer counts.
+      expect(note).toContain('2 high · 1 medium');
+      expect(comps.match(/2 high · 1 medium/g)).toHaveLength(1);
     });
 
     it('never shows unreadable coverage or alert counts as zero or complete', async () => {
@@ -536,8 +537,9 @@ describe('static site', () => {
     expect(html).toContain('The portal reads runs; it never triggers them.');
     // The v0.4.0 per-component matrix is gone.
     expect(html).not.toContain('table--matrix');
-    // Worst first: Beta (red), Gamma (unknown), then the healthy ones by score.
-    const order = ['project-beta', 'project-gamma', 'project-alpha', 'platform'].map((id) =>
+    // Worst first: Beta (red), Gamma (unknown), then the healthy ones by score (Platform's score
+    // fell to 49 with its overdue alert, so it sorts before Alpha).
+    const order = ['project-beta', 'project-gamma', 'platform', 'project-alpha'].map((id) =>
       html.indexOf(`data-project="${id}"`),
     );
     expect(order).toEqual([...order].sort((a, b) => a - b));
@@ -598,7 +600,7 @@ describe('static site', () => {
 
   it('shows security per project, worst first, with blind spots and no full alert table', async () => {
     const html = await page('security');
-    // Portfolio severity totals: critical 1, high 5, medium 8, low 5 (Gamma unknown, not 0).
+    // Portfolio severity totals: critical 1, high 6, medium 8, low 4 (Gamma unknown, not 0).
     const totals = /<section[^>]*data-security-totals[\s\S]*?<\/section>/.exec(html)?.[0] ?? '';
     // Counts are incomplete, so each known total is a lower bound: "≥ n", read as "at least n".
     const values = [
@@ -606,9 +608,9 @@ describe('static site', () => {
     ].map(([, k, v]) => `${k}=${textOf(v!).trim()}`);
     expect(values).toEqual([
       'critical=≥at least 1',
-      'high=≥at least 5',
+      'high=≥at least 6',
       'medium=≥at least 8',
-      'low=≥at least 5',
+      'low=≥at least 4',
     ]);
     expect(totals).toMatch(
       /<span aria-hidden="true"[^>]*>≥<\/span>\s*<span class="visually-hidden"[^>]*>at least </,
@@ -621,7 +623,7 @@ describe('static site', () => {
     expect(itHtml).toContain('almeno 1 alert critico aperto');
     // One card per project, in the portfolio order (score, insufficient data right after red).
     const order = [...html.matchAll(/<article[^>]*data-project="([\w-]+)"/g)].map((m) => m[1]);
-    expect(order).toEqual(['project-beta', 'project-gamma', 'project-alpha', 'platform']);
+    expect(order).toEqual(['project-beta', 'platform', 'project-gamma', 'project-alpha']);
     const card = (id: string) => {
       const start = html.lastIndexOf('<article', html.indexOf(`data-project="${id}"`));
       return html.slice(start, html.indexOf('</article>', start));
@@ -966,22 +968,23 @@ describe('static site', () => {
     it('shows the five totals with their labels', async () => {
       const t = text(await page('changes'));
       expect(t).toContain(
-        '4 status changes · 1 new and 1 resolved critical/high alerts · 1 version moves · 1 new collection errors',
+        '6 status changes · 1 new and 1 resolved critical/high alerts · 1 version moves · 1 new collection errors',
       );
       expect(text(await page('it/changes'))).toContain(
-        '4 cambi di stato · 1 alert critici/alti nuovi e 1 risolti · 1 versioni cambiate · 1 nuovi errori di raccolta',
+        '6 cambi di stato · 1 alert critici/alti nuovi e 1 risolti · 1 versioni cambiate · 1 nuovi errori di raccolta',
       );
       expect(t).toContain('Compared with the collection of 14 Jan 2026');
       expect(t).toContain('Demo data: earlier collections are synthetic.');
     });
 
-    it('puts project beta first with its status changes, new alert and partial note', async () => {
+    it('puts project beta before alpha with its status changes, new alert and partial note', async () => {
       const html = await page('changes');
       expect(html.indexOf('id="p-project-beta"')).toBeLessThan(
         html.indexOf('id="p-project-alpha"'),
       );
+      // Platform moved too (amber → red through its overdue alert) and is listed with Beta.
       const articles = [...html.matchAll(/<article[^>]*id="p-([\w-]+)"/g)].map((m) => m[1]);
-      expect(articles[0]).toBe('project-beta');
+      expect(articles.slice(0, 2).sort()).toEqual(['platform', 'project-beta']);
       const beta = card(html, 'project-beta');
       for (const dim of ['Overall', 'Delivery', 'Security risk'])
         expect(text(beta)).toMatch(new RegExp(`${dim}:? .*Attention.*→.*Critical`));
@@ -1001,9 +1004,12 @@ describe('static site', () => {
       expect(text(alpha)).toContain('example-org/project-alpha-backend#code-scanning#9');
     });
 
-    it('says "No changes." for platform and gamma', async () => {
+    it('lists the platform status change and says no changes for nobody else but gamma', async () => {
       const html = await page('changes');
-      expect(text(card(html, 'platform'))).toContain('No changes.');
+      const platform = text(card(html, 'platform'));
+      expect(platform).not.toContain('No changes.');
+      expect(platform).toMatch(/Security risk:? .*Attention.*→.*Critical/);
+      expect(platform).toContain('82 → 49');
       expect(text(card(html, 'project-alpha'))).not.toContain('No changes.');
     });
 
@@ -1342,7 +1348,7 @@ describe('static site', () => {
     const idx = join(data, 'index.json');
     await writeFile(
       idx,
-      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.5"', '"schemaVersion": "9.0"'),
+      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.6"', '"schemaVersion": "9.0"'),
     );
     const out = join(work, 'dist-bad');
     await buildSite(data, out);
