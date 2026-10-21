@@ -150,6 +150,54 @@ Note:
 - La copertura è letta dagli attributi radice Cobertura `lines-covered` e `lines-valid`. Per
   gli altri formati calcola i due numeri e imposta `format` di conseguenza.
 
+## Storico tra le esecuzioni
+
+Ogni raccolta aggiunge a `history.json` un punto compatto per progetto, e il collector lo
+confronta con il precedente per scrivere `changes.json` (la pagina "Cosa è cambiato"). Il
+runner parte vuoto ogni volta, quindi è GitHub Actions a portare lo storico:
+
+- il job `collect` esegue prima `npm run history:restore`. Legge l'artifact `hub-history`
+  più recente del **proprio** repository con `GITHUB_TOKEN` e `actions: read` (mai con le
+  credenziali del collector); poi il collector aggiunge e scrive il nuovo file;
+- il job carica un nuovo artifact `hub-history` (solo `history.json`, 90 giorni), solo con
+  `data-source: github`. Un'esecuzione mock manuale non può mai rompere la catena reale;
+- un'esecuzione mock non ripristina mai: parte dal `fixtures/history/history.json`
+  sintetico.
+
+Sono accettati solo artifact del branch predefinito, di questo repository (non di un
+fork), di un'altra esecuzione, fino a 5 MiB e del workflow di deploy o di raccolta. Tutto il
+resto non viene usato.
+
+### Stati del ripristino
+
+Lo stato è in `history.json` (`restore.state`), in `changes.json` (`basis.state`), nella
+scheda "Storico" di Qualità dei dati e nel riepilogo del job. Uno stato diverso da
+`restored` non fa mai fallire la raccolta, e la pagina "Cosa è cambiato" lo spiega invece di
+dire "nessun cambiamento".
+
+| Stato            | Significato                                                                                    | Cosa fare                                                                                              |
+| ---------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `restored`       | Lo storico precedente è stato letto ed esteso.                                                 | Niente.                                                                                                |
+| `fixture`        | Esecuzione mock, partita dalla fixture sintetica.                                              | Niente. Dati demo.                                                                                     |
+| `none`           | Nessuno storico precedente (prima esecuzione, artifact scaduti, `--fresh-history`).            | Niente. I cambiamenti compaiono dopo la prossima raccolta.                                             |
+| `restore-failed` | Non è stato possibile scaricare l'artifact (non autorizzato, archivio non valido, errore API). | Verifica che il job `collect` abbia `actions: read` (il log del workflow stampa il codice del motivo). |
+| `unreadable`     | Il file precedente era troppo grande, non JSON o non valido per lo schema; è stato scartato.   | Di solito è un caso isolato. Se si ripete, controlla l'esecuzione precedente.                          |
+| `incompatible`   | Il file precedente usa una versione di schema che questa versione non legge.                   | Niente: lo storico riparte da questa raccolta.                                                         |
+| `source-changed` | Lo storico precedente veniva dall'altra fonte dati (mock o GitHub).                            | Niente: lo storico riparte da questa raccolta.                                                         |
+
+### Azzerare lo storico
+
+Elimina gli artifact `hub-history` (repository, Actions, Artifacts), oppure esegui una
+raccolta con `history.enabled: false` e poi riattivalo. La raccolta successiva riparte da
+zero.
+
+### Concorrenza e scadenza
+
+Il job `collect` gira nel gruppo di concorrenza `hub-collect` con
+`cancel-in-progress: false`, così due raccolte non ripristinano mai la stessa base
+sovrascrivendosi a vicenda. L'artifact dura 90 giorni: se nessuna raccolta gira per più
+tempo, la catena si perde e lo storico riparte (stato `none`).
+
 ## Dati locali e `ci:build`
 
 `npm run ci:build` esegue `collect:mock`, che sovrascrive `public/data`. Uno snapshot locale
@@ -160,6 +208,10 @@ con dati reali (per esempio da `collect:github`) va raccolto di nuovo dopo di es
 raccolto di nuovo (`collect:github`, o la prossima esecuzione pianificata). Ricorda che
 `npm run ci:build` sovrascrive `public/data` con dati mock.
 
+Un `npm run collect:github` locale aggiunge a `public/data/history.json` (il percorso
+predefinito dello storico è la directory di output), quindi uno storico locale con dati reali
+cresce tra le esecuzioni come quello della CI. `npm run ci:build` ci scrive sopra lo storico mock.
+
 ## Conservazione degli artifact
 
 | Artifact                                              | Conservazione           | Contenuto                                  |
@@ -169,6 +221,7 @@ raccolto di nuovo (`collect:github`, o la prossima esecuzione pianificata). Rico
 | `github-pages`                                        | default di GitHub       | Artifact di deployment di Pages            |
 | Report di coverage CI                                 | default upstream        | Coverage di Vitest (`coverage/`)           |
 | `hub-quality-summary` (in ogni repository monitorato) | 30 giorni (consigliato) | `quality-summary.json`: solo conteggi      |
+| `hub-history`                                         | 90 giorni               | `history.json`: solo punti compatti        |
 
 Gli artifact contengono solo dati sanitizzati e pubblicabili. Non contengono mai
 credenziali, file temporanei o payload grezzi.

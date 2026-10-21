@@ -348,6 +348,9 @@ frontend change.
 | `score.points`                          | green 100, amber 60, red 20                                                  | Points of a measured dimension by status. Grey is not measured, never 0.                                               |
 | `score.caps`                            | red 49, amber 89, grey 89                                                    | Highest score allowed for each overall status.                                                                         |
 | `score.minMeasuredRatio`                | 0.5                                                                          | Below this share of measured required dimensions the score is "insufficient data".                                     |
+| `history.enabled`                       | true                                                                         | `false` writes no `history.json` and no `changes.json`; the pages say history is off.                                  |
+| `history.maxEntries`                    | 120                                                                          | Collections kept (integer 2 to 1000). 120 is about 30 days at the 6-hour schedule.                                     |
+| `history.maxAgeDays`                    | 90                                                                           | Older collections are dropped (integer 1 to 400).                                                                      |
 | `publication.audience`                  | public                                                                       | `public` withholds finding titles and rule ids of non-public repositories. `restricted` needs access-controlled Pages. |
 | `publication.allowedLinkHosts`          | [github.com]                                                                 | Only links to these hosts are published.                                                                               |
 
@@ -521,6 +524,51 @@ pages remain, that repository's findings are unknown (a collection error), never
 count. GitHub exposes no endpoint for the coverage percentage, which is why coverage comes
 from the CI summary.
 
+## History and CSV export
+
+From v0.7.0 the collector keeps a compact history of every collection and publishes two
+more files next to the snapshot, plus three CSV files. The snapshot schema is unchanged
+(1.4), so no re-collect is needed after upgrading: history starts with the first v0.7.0
+collection. How it persists in Actions is described in
+[Operations](operations.md#history-between-runs).
+
+| File                           | Content                                                                                                                             |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `history.json`                 | `kind: hub-history`, schema `1.0`: one compact point per project and collection, plus the baseline needed to compute the next diff. |
+| `changes.json`                 | `kind: hub-changes`, schema `1.0`: what moved since the previous collection, or why that cannot be said.                            |
+| `exports/portfolio.csv`        | One row per project, with the previous collection's status and score.                                                               |
+| `exports/findings-summary.csv` | One row per project and repository: open alerts by severity, no titles.                                                             |
+| `exports/versions.csv`         | One row per coordinator, component and environment.                                                                                 |
+
+Both JSON files are versioned separately from the snapshot, so history survives a snapshot
+schema bump. A missing or invalid file never fails the site build: the pages say why.
+`npm run validate:snapshots` does fail on an invalid one.
+
+### Collector flags
+
+| Flag                       | Meaning                                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------------- |
+| `--history-from <dir>`     | Directory with the previous `history.json`. Default: `$HISTORY_FROM`, then the `--out` directory. |
+| `--history-fixture <file>` | Mock source only: the synthetic history to start from (default `fixtures/history/history.json`).  |
+| `--fresh-history`          | Ignore any previous history and start again from this collection (state `none`).                  |
+
+A mock run never restores real history: it always starts from the synthetic fixture, so
+mock and real history never meet. A previous history written by the other data source is
+set aside (`source-changed`).
+
+### CSV files
+
+Format: RFC 4180, comma separator, CRLF after every row, UTF-8 with a BOM (so Excel reads
+accents), English snake_case headers, booleans `true` / `false`, ISO dates. `unknown` means
+the value could not be read and is never 0; `n/a` means the column does not apply to the
+row. A text cell that starts with `=`, `+`, `-`, `@`, TAB or CR gets a leading `'`, so a
+spreadsheet never runs it as a formula. Numbers are never prefixed. Excel with a `;` list
+separator: use Data, From Text/CSV.
+
+- `portfolio.csv`: `project_id, project_name, business_unit, lifecycle, overall, score, score_measured, score_required, delivery, version, security, controls_coverage, controls_coverage_percent, governance, quality, quality_percent, open_critical, open_high, open_medium, open_low, counts_complete, open_secret_alerts, failed_critical_workflows, collection_errors, collected_at, previous_overall, previous_score, previous_collected_at`. The `previous_*` columns are `n/a` when there is no previous collection.
+- `findings-summary.csv`: `project_id, component_id, repository, open_critical, open_high, open_medium, open_low, open_informational, open_unknown, sources_complete`. All counts are `unknown` when no alert source was readable; when only some were, the counts are a lower bound and `sources_complete` is `false`.
+- `versions.csv`: `row_type (coordinator|component|environment), project_id, item_id, item_name, repository, version, version_source, declared_version, latest_release, drift, manifest_consistency, pin_status, environment_status`.
+
 ## Environment variables
 
 | Variable                                                    | Where                     | Purpose                                                                                                                                                                           |
@@ -533,3 +581,5 @@ from the CI summary.
 | `SITE_URL`, `BASE_PATH`                                     | set by deploy workflow    | Astro `site` and `base` (from configure-pages)                                                                                                                                    |
 | `SNAPSHOT_DIR`                                              | local / tests             | Alternative snapshot directory for the site build                                                                                                                                 |
 | `POLICIES_FILE`                                             | site build                | Policies explained on the "How to read" page (default `config/policies.yaml`; schema defaults only if the default file is missing; an unreadable or invalid file fails the build) |
+| `HISTORY_FROM`                                              | collect job / local       | Directory holding the previous `history.json` (set by the workflow to `.history-restore`)                                                                                         |
+| `HISTORY_RESTORE_STATE`                                     | collect job               | `none` or `failed`, from the restore step; anything else reads the file                                                                                                           |
