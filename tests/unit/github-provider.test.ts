@@ -503,6 +503,8 @@ describe('GitHubProvider quality calls', () => {
     if (!r.ok) {
       expect(r.error.classification).toBe('error');
       expect(r.error.message).toBe('FindingsPageCapExceeded');
+      // The call itself succeeded: it proves the permission, only the count is unknown.
+      expect(r.error.incomplete).toBe(true);
     }
     // Stops at the cap: no fourth page is requested.
     expect(seen).toHaveLength(3);

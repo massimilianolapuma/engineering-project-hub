@@ -302,6 +302,15 @@ describe('quality dimension (mock run)', () => {
       expect(p.qualityHealth.findings.state, p.project.id).toBe('not-authorised');
   });
 
+  it('codeQuality capability: a findings page-cap hit still proves the permission', async () => {
+    const capped = async () =>
+      fail<never>({ classification: 'error', message: 'FindingsPageCapExceeded', incomplete: true });
+    const { index, projects } = await runWith(withQuality({ listCodeQualityFindings: capped }));
+    expect(index.run.capabilities.codeQuality).toBe('available');
+    for (const p of projects.filter((x) => x.project.id !== 'project-gamma'))
+      expect(p.qualityHealth.findings.state, p.project.id).toBe('unknown');
+  });
+
   it('a "not configured" findings message skips that repository', async () => {
     const notEnabled = async () =>
       fail<never>({ classification: 'not-configured', httpStatus: 404 });

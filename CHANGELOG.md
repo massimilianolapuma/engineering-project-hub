@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The `codeQuality` capability no longer drops to "partial" when a repository has more than 300 open findings: the call answered, so the permission works (the count stays "unknown").
+- Docs: the "not enabled" skip also applies to a 403, the `unknown` capability case is documented, the Italian ADR 0003 status is translated, and the confidence examples match the UI and the sixth dimension (EN/IT).
+
 ## [0.6.0] - 2026-10-21
 
 ### Added

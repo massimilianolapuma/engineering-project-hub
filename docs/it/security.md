@@ -78,12 +78,15 @@ conteggi, percentuali, SHA, date ISO e link `https://github.com/...` in allowlis
     delle GitHub App: ricontrollali sul tuo piano prima di concedere l'accesso.
   - Comportamento osservato: un 403 sui finding è `not-authorised`, mai "mancante". Un 404
     sui finding è ambiguo (Code Quality non attivo, o non visibile), quindi i finding del
-    progetto sono `unknown`, mai 0. Un 404 il cui messaggio dice che Code Quality non è
-    attivo esclude quel repository. Come per gli altri endpoint di sicurezza, un 404
-    dimostra comunque che il permesso funziona: la capability `codeQuality` è `available`
-    quando ogni chiamata ai finding risponde 200 o 404, `not-authorised` quando nessuna lo
-    fa e almeno una risponde 403, e `partial` quando lo fanno solo alcune. I finding di Code
-    Quality sono informativi: non cambiano mai lo stato della Qualità.
+    progetto sono `unknown`, mai 0. Un 403 o 404 il cui messaggio dice che Code Quality non
+    è attivo esclude quel repository. Oltre 300 finding aperti (tre pagine) il conteggio è
+    `unknown`, mai sottostimato. Come per gli altri endpoint di sicurezza, un 404, una
+    risposta "non attivo" o il superamento del limite di pagine dimostrano comunque che il
+    permesso funziona: la capability `codeQuality` è `available` quando ogni chiamata ai
+    finding è utilizzabile, `partial` quando lo sono solo alcune, `not-authorised` quando
+    nessuna lo è e almeno una risponde 403, e `unknown` quando nessuna lo è e nessuna
+    risponde 403 (per esempio solo errori di rete). I finding di Code Quality sono
+    informativi: non cambiano mai lo stato della Qualità.
 - **Fallback (solo MVP): un PAT fine-grained** in `GH_READ_TOKEN`. Limitalo ai repository
   monitorati, assegnagli gli stessi permessi in sola lettura e usa una scadenza breve. È
   legato a una persona, quindi è preferibile la App.

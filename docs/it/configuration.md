@@ -377,7 +377,7 @@ sostituisce mai le dimensioni. Il blocco opzionale `score` in
 - **Dimensioni opzionali** (`quality` per impostazione predefinita) contano quando sono
   misurate. Quando sono grigie escono sia da `measured` sia da `required`: un progetto senza
   report di copertura non perde punti e non diventa grigio.
-- **Affidabilità**: `measured / required` ("misurate 4 su 5"; "misurate 6 su 6" quando la
+- **Affidabilità**: `measured / required` ("misurato 4 di 5"; "misurato 6 di 6" quando la
   Qualità è misurata).
 - **Dati insufficienti**: se è misurata meno di `minMeasuredRatio` (predefinito metà) delle
   dimensioni obbligatorie, `value` è `null` e il sito mostra "dati insufficienti".

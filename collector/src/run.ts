@@ -68,9 +68,12 @@ function capabilities(raws: RawProjectData[]): Record<Capability, Availability> 
   for (const cap of CapabilitySchema.options) {
     outcomes[cap] = outcomes[cap].filter((r) => r.ok || !r.error.skipped);
   }
-  // A 404 / "not configured" still proves the permission works.
+  // A 404 / "not configured" / page-cap hit still proves the permission works.
   const usable = (r: ProviderResult<unknown>) =>
-    r.ok || r.error.classification === 'not-found' || r.error.classification === 'not-configured';
+    r.ok ||
+    r.error.incomplete === true ||
+    r.error.classification === 'not-found' ||
+    r.error.classification === 'not-configured';
   const denied = (r: ProviderResult<unknown>) =>
     !r.ok && r.error.classification === 'not-authorised';
   const result = {} as Record<Capability, Availability>;
