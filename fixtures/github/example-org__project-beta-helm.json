@@ -12,7 +12,8 @@
   },
   "head": {
     "sha": "03cdf9fa305ab78f28c4694ccc25ce319bd9658c",
-    "committedAt": "@now-20d"
+    "committedAt": "@now-20d",
+    "protected": false
   },
   "latestRelease": {
     "tagName": "v1.0.0",
@@ -51,5 +52,6 @@
       "sha": "1485c43fd9e24ef6e7d082c0d83c62d7becafbed"
     }
   ],
-  "codeQualityFindings": []
+  "codeQualityFindings": [],
+  "branchRules": { "$error": { "classification": "not-authorised", "httpStatus": 403 } }
 }

@@ -17,7 +17,7 @@
     {
       "id": "project-beta",
       "overall": "red",
-      "errors": 3
+      "errors": 4
     },
     {
       "id": "project-gamma",
@@ -27,12 +27,12 @@
   ],
   "repositories": {
     "total": 12,
-    "ok": 7,
-    "withErrors": 3,
+    "ok": 6,
+    "withErrors": 4,
     "unavailable": 2
   },
   "errorsByClassification": {
-    "not-authorised": 4,
+    "not-authorised": 5,
     "not-found": 1
   },
   "errors": [
@@ -59,6 +59,13 @@
       "classification": "not-authorised",
       "httpStatus": 403,
       "detail": "Resource not accessible by integration"
+    },
+    {
+      "repository": "example-org/project-beta-helm",
+      "componentId": "helm",
+      "source": "repository-rules",
+      "classification": "not-authorised",
+      "httpStatus": 403
     },
     {
       "repository": "example-org/project-gamma-coordinator",

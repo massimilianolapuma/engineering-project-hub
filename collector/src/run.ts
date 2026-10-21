@@ -14,7 +14,13 @@ import {
 } from '@model/index';
 import { buildProjectSnapshot, toProjectSummary } from './build-snapshot';
 import { discover } from './discovery/discover';
-import { collectProject, type CollectContext, type RawProjectData } from './collectors/collect';
+import {
+  collectProject,
+  collectReusableTargets,
+  type CollectContext,
+  type RawProjectData,
+} from './collectors/collect';
+import { referencedRepositories } from './normalizers/repository-controls-model';
 import type { ProviderResult, SourceProvider } from './providers/types';
 import { createLimiter } from './util/concurrency';
 import type { Clock } from './util/clock';
@@ -60,6 +66,12 @@ function capabilities(raws: RawProjectData[]): Record<Capability, Availability> 
       outcomes.dependabot.push(r.dependabot);
       outcomes.secretScanning.push(r.secretScanning);
       outcomes.codeQuality.push(r.codeQualityFindings);
+      if (r.controls) {
+        outcomes.repositoryRules.push(r.controls.rules);
+        if (r.controls.classic) outcomes.repositoryRules.push(r.controls.classic);
+        outcomes.contents.push(r.controls.workflowDir, ...r.controls.workflowFiles.values());
+        outcomes.codeScanning.push(r.controls.scorecardAnalysis);
+      }
     }
     outcomes.contents.push(raw.manifest, raw.gitmodules);
     for (const w of raw.workflows) outcomes.actions.push(w.runs);
@@ -94,13 +106,17 @@ export async function runCollection(opts: RunOptions): Promise<RunResult> {
     provider,
     limit: createLimiter(opts.concurrency ?? 4),
     cache: new Map(),
+    policies,
   };
 
   // One project failing unexpectedly must not stop the others.
   const raws = await Promise.all(catalog.projects.map((p) => collectProject(ctx, p)));
   const discovery = await discover(ctx, catalog, policies);
   const now = clock();
-  const projects = raws.map((raw) => buildProjectSnapshot(raw, policies, now));
+  // Reusable workflows: latest release / tag of the referenced repositories, once per run.
+  const referenced = referencedRepositories(raws.flatMap((raw) => raw.repos));
+  const reusable = await collectReusableTargets(ctx, referenced.targets, referenced.shaTargets);
+  const projects = raws.map((raw) => buildProjectSnapshot(raw, policies, now, reusable));
   const finishedAt = clock();
 
   const allRepos = new Map<string, { metadataOk: boolean; errors: number }>();

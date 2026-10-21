@@ -12,7 +12,8 @@
   },
   "head": {
     "sha": "b742ac48b91fee1318f9da33b686ef142b2806b6",
-    "committedAt": "@now-1d"
+    "committedAt": "@now-1d",
+    "protected": false
   },
   "latestRelease": {
     "tagName": "v3.1.0",
@@ -22,6 +23,7 @@
     "htmlUrl": "https://github.com/example-org/project-beta-web/releases/tag/v3.1.0"
   },
   "files": {
+    ".github/workflows/ci.yml": "name: CI\non: push\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@0123456789abcdef0123456789abcdef01234567\n      - uses: actions/setup-node@0123456789abcdef0123456789abcdef01234567\n",
     ".security/project-security-status.json": "{\n  \"schemaVersion\": \"1.0\",\n  \"generatedAt\": \"@now-21d\",\n  \"repository\": \"example-org/project-beta-web\",\n  \"version\": \"synthetic\",\n  \"commitSha\": \"b742ac48b91fee1318f9da33b686ef142b2806b6\",\n  \"controls\": {\n    \"containerScanning\": {\n      \"status\": \"completed\",\n      \"tool\": \"trivy\",\n      \"critical\": 0,\n      \"high\": 0,\n      \"medium\": 1,\n      \"low\": 1,\n      \"completedAt\": \"@now-21d\"\n    }\n  }\n}"
   },
   "workflowRuns": {
@@ -82,5 +84,7 @@
       "sha": "74d77c07925aea1b9d655d1455dcae68b2a0c3ce"
     }
   ],
-  "codeQualityFindings": [{ "category": "maintainability", "severity": "warning" }]
+  "codeQualityFindings": [{ "category": "maintainability", "severity": "warning" }],
+  "directories": { ".github/workflows": [{ "name": "ci.yml", "type": "file" }] },
+  "branchRules": []
 }

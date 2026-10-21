@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.4",
+  "schemaVersion": "1.5",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-alpha",
@@ -1457,6 +1457,11 @@
     "status": "green",
     "reasons": [
       {
+        "code": "repository-checks-passed",
+        "level": "info",
+        "params": {}
+      },
+      {
         "code": "governance-compliant",
         "level": "info",
         "params": {}
@@ -1556,6 +1561,431 @@
         "none": 0
       }
     }
+  },
+  "repositoryControls": {
+    "enabled": true,
+    "collectedAt": "2026-01-15T12:00:00.000Z",
+    "passed": 25,
+    "failed": 0,
+    "unknown": 0,
+    "notApplicable": 5,
+    "ratio": 100,
+    "perCheck": [
+      {
+        "id": "actions-pinned",
+        "level": "info",
+        "passed": 4,
+        "failed": 0,
+        "unknown": 0,
+        "notApplicable": 1
+      },
+      {
+        "id": "reusable-workflows-current",
+        "level": "info",
+        "passed": 1,
+        "failed": 0,
+        "unknown": 0,
+        "notApplicable": 4
+      },
+      {
+        "id": "branch-protected",
+        "level": "info",
+        "passed": 5,
+        "failed": 0,
+        "unknown": 0,
+        "notApplicable": 0
+      },
+      {
+        "id": "pull-request-required",
+        "level": "info",
+        "passed": 5,
+        "failed": 0,
+        "unknown": 0,
+        "notApplicable": 0
+      },
+      {
+        "id": "force-push-blocked",
+        "level": "info",
+        "passed": 5,
+        "failed": 0,
+        "unknown": 0,
+        "notApplicable": 0
+      },
+      {
+        "id": "status-checks-required",
+        "level": "info",
+        "passed": 5,
+        "failed": 0,
+        "unknown": 0,
+        "notApplicable": 0
+      }
+    ],
+    "repositories": [
+      {
+        "componentIds": [
+          "coordinator"
+        ],
+        "repository": "example-org/project-alpha-coordinator",
+        "checks": [
+          {
+            "id": "actions-pinned",
+            "state": "pass"
+          },
+          {
+            "id": "reusable-workflows-current",
+            "state": "pass"
+          },
+          {
+            "id": "branch-protected",
+            "state": "pass"
+          },
+          {
+            "id": "pull-request-required",
+            "state": "pass"
+          },
+          {
+            "id": "force-push-blocked",
+            "state": "pass"
+          },
+          {
+            "id": "status-checks-required",
+            "state": "pass"
+          }
+        ],
+        "passed": 6,
+        "failed": 0,
+        "unknown": 0,
+        "notApplicable": 0,
+        "ratio": 100,
+        "actions": {
+          "state": "available",
+          "workflowFiles": 1,
+          "total": 2,
+          "pinned": 2,
+          "unpinned": 0,
+          "unknown": 0,
+          "detailsWithheld": false,
+          "unpinnedRefs": [],
+          "truncated": 0
+        },
+        "reusableWorkflows": [
+          {
+            "workflow": "rel-release.yml",
+            "target": "example-shared/ci-templates/.github/workflows/build.yml",
+            "ref": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+            "latest": "v2.4.0",
+            "status": "current",
+            "url": "https://github.com/example-shared/ci-templates"
+          }
+        ],
+        "branchRules": {
+          "state": "available",
+          "branch": "main",
+          "protected": true,
+          "source": "rulesets",
+          "ruleTypes": [
+            "pull_request",
+            "required_status_checks",
+            "non_fast_forward",
+            "deletion"
+          ],
+          "otherRules": 0,
+          "requiredApprovals": 1,
+          "classicRead": false
+        },
+        "scorecard": {
+          "state": "not-used",
+          "lastAnalysisAt": null,
+          "openAlerts": 0,
+          "failingChecks": [],
+          "otherFailing": 0
+        }
+      },
+      {
+        "componentIds": [
+          "backend"
+        ],
+        "repository": "example-org/project-alpha-backend",
+        "checks": [
+          {
+            "id": "actions-pinned",
+            "state": "pass"
+          },
+          {
+            "id": "reusable-workflows-current",
+            "state": "not-applicable"
+          },
+          {
+            "id": "branch-protected",
+            "state": "pass"
+          },
+          {
+            "id": "pull-request-required",
+            "state": "pass"
+          },
+          {
+            "id": "force-push-blocked",
+            "state": "pass"
+          },
+          {
+            "id": "status-checks-required",
+            "state": "pass"
+          }
+        ],
+        "passed": 5,
+        "failed": 0,
+        "unknown": 0,
+        "notApplicable": 1,
+        "ratio": 100,
+        "actions": {
+          "state": "available",
+          "workflowFiles": 1,
+          "total": 3,
+          "pinned": 3,
+          "unpinned": 0,
+          "unknown": 0,
+          "detailsWithheld": false,
+          "unpinnedRefs": [],
+          "truncated": 0
+        },
+        "reusableWorkflows": [],
+        "branchRules": {
+          "state": "available",
+          "branch": "main",
+          "protected": true,
+          "source": "rulesets",
+          "ruleTypes": [
+            "pull_request",
+            "required_status_checks",
+            "non_fast_forward",
+            "deletion"
+          ],
+          "otherRules": 0,
+          "requiredApprovals": 1,
+          "classicRead": false
+        },
+        "scorecard": {
+          "state": "available",
+          "lastAnalysisAt": "2026-01-12T12:00:00.000Z",
+          "openAlerts": 0,
+          "failingChecks": [],
+          "otherFailing": 0
+        }
+      },
+      {
+        "componentIds": [
+          "frontend"
+        ],
+        "repository": "example-org/project-alpha-frontend",
+        "checks": [
+          {
+            "id": "actions-pinned",
+            "state": "pass"
+          },
+          {
+            "id": "reusable-workflows-current",
+            "state": "not-applicable"
+          },
+          {
+            "id": "branch-protected",
+            "state": "pass"
+          },
+          {
+            "id": "pull-request-required",
+            "state": "pass"
+          },
+          {
+            "id": "force-push-blocked",
+            "state": "pass"
+          },
+          {
+            "id": "status-checks-required",
+            "state": "pass"
+          }
+        ],
+        "passed": 5,
+        "failed": 0,
+        "unknown": 0,
+        "notApplicable": 1,
+        "ratio": 100,
+        "actions": {
+          "state": "available",
+          "workflowFiles": 1,
+          "total": 3,
+          "pinned": 3,
+          "unpinned": 0,
+          "unknown": 0,
+          "detailsWithheld": false,
+          "unpinnedRefs": [],
+          "truncated": 0
+        },
+        "reusableWorkflows": [],
+        "branchRules": {
+          "state": "available",
+          "branch": "main",
+          "protected": true,
+          "source": "rulesets",
+          "ruleTypes": [
+            "pull_request",
+            "required_status_checks",
+            "non_fast_forward",
+            "deletion"
+          ],
+          "otherRules": 0,
+          "requiredApprovals": 1,
+          "classicRead": false
+        },
+        "scorecard": {
+          "state": "not-used",
+          "lastAnalysisAt": null,
+          "openAlerts": 0,
+          "failingChecks": [],
+          "otherFailing": 0
+        }
+      },
+      {
+        "componentIds": [
+          "worker"
+        ],
+        "repository": "example-org/project-alpha-worker",
+        "checks": [
+          {
+            "id": "actions-pinned",
+            "state": "pass"
+          },
+          {
+            "id": "reusable-workflows-current",
+            "state": "not-applicable"
+          },
+          {
+            "id": "branch-protected",
+            "state": "pass"
+          },
+          {
+            "id": "pull-request-required",
+            "state": "pass"
+          },
+          {
+            "id": "force-push-blocked",
+            "state": "pass"
+          },
+          {
+            "id": "status-checks-required",
+            "state": "pass"
+          }
+        ],
+        "passed": 5,
+        "failed": 0,
+        "unknown": 0,
+        "notApplicable": 1,
+        "ratio": 100,
+        "actions": {
+          "state": "available",
+          "workflowFiles": 1,
+          "total": 3,
+          "pinned": 3,
+          "unpinned": 0,
+          "unknown": 0,
+          "detailsWithheld": false,
+          "unpinnedRefs": [],
+          "truncated": 0
+        },
+        "reusableWorkflows": [],
+        "branchRules": {
+          "state": "available",
+          "branch": "main",
+          "protected": true,
+          "source": "rulesets",
+          "ruleTypes": [
+            "pull_request",
+            "required_status_checks",
+            "non_fast_forward",
+            "deletion"
+          ],
+          "otherRules": 0,
+          "requiredApprovals": 1,
+          "classicRead": false
+        },
+        "scorecard": {
+          "state": "not-used",
+          "lastAnalysisAt": null,
+          "openAlerts": 0,
+          "failingChecks": [],
+          "otherFailing": 0
+        }
+      },
+      {
+        "componentIds": [
+          "helm"
+        ],
+        "repository": "example-org/project-alpha-helm",
+        "checks": [
+          {
+            "id": "actions-pinned",
+            "state": "not-applicable"
+          },
+          {
+            "id": "reusable-workflows-current",
+            "state": "not-applicable"
+          },
+          {
+            "id": "branch-protected",
+            "state": "pass"
+          },
+          {
+            "id": "pull-request-required",
+            "state": "pass"
+          },
+          {
+            "id": "force-push-blocked",
+            "state": "pass"
+          },
+          {
+            "id": "status-checks-required",
+            "state": "pass"
+          }
+        ],
+        "passed": 4,
+        "failed": 0,
+        "unknown": 0,
+        "notApplicable": 2,
+        "ratio": 100,
+        "actions": {
+          "state": "none",
+          "workflowFiles": 0,
+          "total": 0,
+          "pinned": 0,
+          "unpinned": 0,
+          "unknown": 0,
+          "detailsWithheld": false,
+          "unpinnedRefs": [],
+          "truncated": 0
+        },
+        "reusableWorkflows": [],
+        "branchRules": {
+          "state": "available",
+          "branch": "main",
+          "protected": true,
+          "source": "rulesets",
+          "ruleTypes": [
+            "pull_request",
+            "required_status_checks",
+            "non_fast_forward",
+            "deletion"
+          ],
+          "otherRules": 0,
+          "requiredApprovals": 1,
+          "classicRead": false
+        },
+        "scorecard": {
+          "state": "not-used",
+          "lastAnalysisAt": null,
+          "openAlerts": 0,
+          "failingChecks": [],
+          "otherFailing": 0
+        }
+      }
+    ]
   },
   "overallHealth": {
     "status": "amber",

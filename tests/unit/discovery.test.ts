@@ -21,6 +21,7 @@ const ctx = () => ({
   provider: new MockProvider('fixtures/github', fixedClock('2026-01-15T12:00:00.000Z')),
   limit: createLimiter(4),
   cache: new Map(),
+  policies: policies(),
 });
 const catalog = (discovery: object, projects: unknown[] = []) =>
   CatalogSchema.parse({ discovery, projects });
@@ -181,7 +182,12 @@ describe('discovery resource bounds (untrusted manifests)', () => {
             };
       },
     };
-    const c = { provider: provider as never, limit: createLimiter(4), cache: new Map() };
+    const c = {
+      provider: provider as never,
+      limit: createLimiter(4),
+      cache: new Map(),
+      policies: policies(),
+    };
     const r = (await discover(c, catalog({ enabled: true, owners: ['example-org'] }), policies()))!;
     // Root listing + at most MAX_WORKSPACE_PATTERNS expansions, and the loop stops at 30 dirs.
     expect(listed.length).toBeLessThanOrEqual(1 + MAX_WORKSPACE_PATTERNS);

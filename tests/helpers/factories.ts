@@ -81,6 +81,7 @@ export function repoData(name: string, partial: Partial<RepoData> = {}): RepoDat
     secretScanning: ok([]),
     qualitySummary: fail({ classification: 'not-found', httpStatus: 404 }),
     codeQualityFindings: fail({ classification: 'not-found', httpStatus: 404 }),
+    controls: null,
     ...partial,
   };
 }
@@ -140,6 +141,7 @@ export function projectSummary(partial: Partial<ProjectSummary> = {}): ProjectSu
     coverage: { status: 'green', percentage: 100, required: 4, available: 4 },
     governance: 'green',
     quality: { status: 'green', percentage: 90, measured: 4, applicable: 4 },
+    repositoryControls: { passed: 6, failed: 0, unknown: 0, notApplicable: 0, ratio: 100 },
     freshness: 'green',
     openCounts: {
       critical: 0,

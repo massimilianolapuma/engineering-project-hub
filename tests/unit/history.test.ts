@@ -531,6 +531,7 @@ describe('appendHistory', () => {
     expect(b.errors).toContain('example-org/project-beta-api|secret-scanning|not-authorised');
     expect(b.findings.map((f) => f.id)).toEqual([
       'example-org/project-beta-api#code-scanning#3',
+      'example-org/project-beta-api#code-scanning#901',
       'example-org/project-beta-web#dependabot#11',
     ]);
     expect(b.versions).toContainEqual({ kind: 'component', componentId: 'api', version: '3.1.0' });

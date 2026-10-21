@@ -553,6 +553,7 @@ export const ProjectSnapshotSchema = z
     securityCoverage: CoverageSummarySchema,
     governanceHealth: HealthResultSchema,
     qualityHealth: QualityHealthSchema,
+    repositoryControls: RepositoryControlsHealthSchema,
     overallHealth: HealthResultSchema,
     score: ProjectScoreSchema,
     dataFreshness: z
@@ -607,6 +608,16 @@ export const ProjectSummarySchema = z
         percentage: z.number().min(0).max(100).nullable(),
         measured: z.number().int().min(0),
         applicable: z.number().int().min(0),
+      })
+      .strict(),
+    /** Repository controls over unique repositories x checks. Informative: not a dimension. */
+    repositoryControls: z
+      .object({
+        passed: intCount,
+        failed: intCount,
+        unknown: intCount,
+        notApplicable: intCount,
+        ratio: percent,
       })
       .strict(),
     freshness: HealthStatusSchema,

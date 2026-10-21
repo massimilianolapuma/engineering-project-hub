@@ -1251,6 +1251,14 @@
         ],
         "findings": [
           {
+            "id": "example-org/project-beta-api#code-scanning#901",
+            "severity": "high",
+            "componentId": "api",
+            "repository": "example-org/project-beta-api",
+            "source": "github-code-scanning",
+            "htmlUrl": "https://github.com/example-org/project-beta-api/security/code-scanning/901"
+          },
+          {
             "id": "example-org/project-beta-web#dependabot#11",
             "severity": "high",
             "componentId": "web",
@@ -1265,7 +1273,8 @@
         ],
         "errors": [
           "example-org/project-beta-api|secret-scanning|not-authorised",
-          "example-org/project-beta-coordinator|secret-scanning|not-authorised"
+          "example-org/project-beta-coordinator|secret-scanning|not-authorised",
+          "example-org/project-beta-helm|repository-rules|not-authorised"
         ],
         "versions": [
           {

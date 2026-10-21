@@ -5,7 +5,7 @@
     "schemaVersion": {
       "type": "string",
       "enum": [
-        "1.4"
+        "1.5"
       ]
     },
     "generatedAt": {
@@ -3174,6 +3174,602 @@
       ],
       "additionalProperties": false
     },
+    "repositoryControls": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "collectedAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        "passed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "unknown": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "notApplicable": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "ratio": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "perCheck": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "enum": [
+                  "actions-pinned",
+                  "reusable-workflows-current",
+                  "branch-protected",
+                  "pull-request-required",
+                  "force-push-blocked",
+                  "status-checks-required"
+                ]
+              },
+              "level": {
+                "type": "string",
+                "enum": [
+                  "info",
+                  "amber",
+                  "red"
+                ]
+              },
+              "passed": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "failed": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "unknown": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "notApplicable": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "id",
+              "level",
+              "passed",
+              "failed",
+              "unknown",
+              "notApplicable"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "repositories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "componentIds": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "repository": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "checks": {
+                "minItems": 6,
+                "maxItems": 6,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "enum": [
+                        "actions-pinned",
+                        "reusable-workflows-current",
+                        "branch-protected",
+                        "pull-request-required",
+                        "force-push-blocked",
+                        "status-checks-required"
+                      ]
+                    },
+                    "state": {
+                      "type": "string",
+                      "enum": [
+                        "pass",
+                        "fail",
+                        "unknown",
+                        "not-applicable"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "state"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "passed": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "failed": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "unknown": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "notApplicable": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "ratio": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "actions": {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "available",
+                      "partial",
+                      "none",
+                      "not-authorised",
+                      "unknown"
+                    ]
+                  },
+                  "workflowFiles": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "total": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "pinned": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "unpinned": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "unknown": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "detailsWithheld": {
+                    "type": "boolean"
+                  },
+                  "unpinnedRefs": {
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "workflow": {
+                          "type": "string",
+                          "maxLength": 100,
+                          "pattern": "^[A-Za-z0-9._-]+\\.ya?ml$"
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "action",
+                            "reusable-workflow",
+                            "docker"
+                          ]
+                        },
+                        "target": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "ref": {
+                          "type": "string",
+                          "maxLength": 100
+                        }
+                      },
+                      "required": [
+                        "workflow",
+                        "kind",
+                        "target",
+                        "ref"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "truncated": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "state",
+                  "workflowFiles",
+                  "total",
+                  "pinned",
+                  "unpinned",
+                  "unknown",
+                  "detailsWithheld",
+                  "unpinnedRefs",
+                  "truncated"
+                ],
+                "additionalProperties": false
+              },
+              "reusableWorkflows": {
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "workflow": {
+                      "type": "string",
+                      "maxLength": 100,
+                      "pattern": "^[A-Za-z0-9._-]+\\.ya?ml$"
+                    },
+                    "target": {
+                      "type": "string",
+                      "maxLength": 250
+                    },
+                    "ref": {
+                      "type": "string",
+                      "maxLength": 100
+                    },
+                    "latest": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "current",
+                        "behind",
+                        "untagged",
+                        "floating",
+                        "unknown"
+                      ]
+                    },
+                    "url": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 500,
+                          "format": "uri"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "workflow",
+                    "target",
+                    "ref",
+                    "latest",
+                    "status",
+                    "url"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "branchRules": {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "available",
+                      "not-authorised",
+                      "unknown"
+                    ]
+                  },
+                  "branch": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 255
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "protected": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "rulesets",
+                      "classic",
+                      "both",
+                      "none",
+                      "unknown"
+                    ]
+                  },
+                  "ruleTypes": {
+                    "maxItems": 30,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "creation",
+                        "update",
+                        "deletion",
+                        "required_linear_history",
+                        "merge_queue",
+                        "required_deployments",
+                        "required_signatures",
+                        "pull_request",
+                        "required_status_checks",
+                        "non_fast_forward",
+                        "commit_message_pattern",
+                        "commit_author_email_pattern",
+                        "committer_email_pattern",
+                        "branch_name_pattern",
+                        "tag_name_pattern",
+                        "workflows",
+                        "code_scanning",
+                        "code_quality",
+                        "code_coverage",
+                        "copilot_code_review",
+                        "license_compliance_scanning",
+                        "file_path_restriction",
+                        "max_file_path_length",
+                        "file_extension_restriction",
+                        "max_file_size"
+                      ]
+                    }
+                  },
+                  "otherRules": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "requiredApprovals": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 10
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "classicRead": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "state",
+                  "branch",
+                  "protected",
+                  "source",
+                  "ruleTypes",
+                  "otherRules",
+                  "requiredApprovals",
+                  "classicRead"
+                ],
+                "additionalProperties": false
+              },
+              "scorecard": {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "available",
+                      "not-used",
+                      "not-authorised",
+                      "unknown"
+                    ]
+                  },
+                  "lastAnalysisAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "openAlerts": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "failingChecks": {
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "Binary-Artifacts",
+                        "Branch-Protection",
+                        "CI-Tests",
+                        "CII-Best-Practices",
+                        "Code-Review",
+                        "Contributors",
+                        "Dangerous-Workflow",
+                        "Dependency-Update-Tool",
+                        "Fuzzing",
+                        "License",
+                        "Maintained",
+                        "Packaging",
+                        "Pinned-Dependencies",
+                        "SAST",
+                        "SBOM",
+                        "Security-Policy",
+                        "Signed-Releases",
+                        "Token-Permissions",
+                        "Vulnerabilities",
+                        "Webhooks"
+                      ]
+                    }
+                  },
+                  "otherFailing": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "state",
+                  "lastAnalysisAt",
+                  "openAlerts",
+                  "failingChecks",
+                  "otherFailing"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "componentIds",
+              "repository",
+              "checks",
+              "passed",
+              "failed",
+              "unknown",
+              "notApplicable",
+              "ratio",
+              "actions",
+              "reusableWorkflows",
+              "branchRules",
+              "scorecard"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "enabled",
+        "collectedAt",
+        "passed",
+        "failed",
+        "unknown",
+        "notApplicable",
+        "ratio",
+        "perCheck",
+        "repositories"
+      ],
+      "additionalProperties": false
+    },
     "overallHealth": {
       "type": "object",
       "properties": {
@@ -3490,6 +4086,7 @@
     "securityCoverage",
     "governanceHealth",
     "qualityHealth",
+    "repositoryControls",
     "overallHealth",
     "score",
     "dataFreshness",

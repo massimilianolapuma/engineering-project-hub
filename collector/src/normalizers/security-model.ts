@@ -18,7 +18,7 @@ import { ageMs, DAY_MS } from '../util/clock';
 import { codeScanningSeverity, normaliseSeverity, normaliseStatus } from './security';
 import { link, pushError, recordError, type BuildContext } from './model';
 
-function isPublicDetail(ctx: BuildContext, data: RepoData): boolean {
+export function isPublicDetail(ctx: BuildContext, data: RepoData): boolean {
   if (ctx.policies.publication.audience === 'restricted') return true;
   return data.repo.ok && data.repo.data.visibility === 'public';
 }

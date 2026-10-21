@@ -12,7 +12,8 @@
   },
   "head": {
     "sha": "95c7fbdc2c7d81daf6bf050dab7bdd4c1e160a82",
-    "committedAt": "@now-2h"
+    "committedAt": "@now-2h",
+    "protected": true
   },
   "latestRelease": {
     "tagName": "v1.4.0",
@@ -22,6 +23,7 @@
     "htmlUrl": "https://github.com/example-org/project-alpha-backend/releases/tag/v1.4.0"
   },
   "files": {
+    ".github/workflows/ci-main.yml": "name: CI\non: push\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@0123456789abcdef0123456789abcdef01234567\n      - uses: actions/setup-java@0123456789abcdef0123456789abcdef01234567\n      - uses: actions/upload-artifact@0123456789abcdef0123456789abcdef01234567\n",
     ".security/project-security-status.json": "{\n  \"schemaVersion\": \"1.0\",\n  \"generatedAt\": \"@now-6h\",\n  \"repository\": \"example-org/project-alpha-backend\",\n  \"version\": \"synthetic\",\n  \"commitSha\": \"95c7fbdc2c7d81daf6bf050dab7bdd4c1e160a82\",\n  \"controls\": {\n    \"containerScanning\": {\n      \"status\": \"completed\",\n      \"tool\": \"trivy\",\n      \"critical\": 0,\n      \"high\": 0,\n      \"medium\": 1,\n      \"low\": 3,\n      \"completedAt\": \"@now-6h\",\n      \"reportUrl\": \"https://github.com/example-org/project-alpha-backend/actions/runs/9100\"\n    },\n    \"iacScanning\": {\n      \"status\": \"not-configured\"\n    },\n    \"dast\": {\n      \"status\": \"not-configured\"\n    },\n    \"sbom\": {\n      \"status\": \"available\",\n      \"format\": \"cyclonedx\"\n    },\n    \"artifactSignature\": {\n      \"status\": \"verified\",\n      \"tool\": \"cosign\"\n    }\n  }\n}"
   },
   "workflowRuns": {
@@ -143,5 +145,13 @@
   "codeQualityFindings": [
     { "category": "maintainability", "severity": "warning" },
     { "category": "maintainability", "severity": "note" }
-  ]
+  ],
+  "directories": { ".github/workflows": [{ "name": "ci-main.yml", "type": "file" }] },
+  "branchRules": [
+    { "type": "pull_request", "requiredApprovals": 1 },
+    { "type": "required_status_checks", "requiredApprovals": null },
+    { "type": "non_fast_forward", "requiredApprovals": null },
+    { "type": "deletion", "requiredApprovals": null }
+  ],
+  "scorecardAnalysis": { "createdAt": "@now-3d", "toolName": "Scorecard" }
 }

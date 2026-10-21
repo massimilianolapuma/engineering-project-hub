@@ -6,7 +6,7 @@
 | Data source | mock |
 | Authentication | mock |
 | Duration | 0 ms |
-| Repositories | 12 total · 7 ok · 3 with errors · 2 unavailable |
+| Repositories | 12 total · 6 ok · 4 with errors · 2 unavailable |
 | History | fixture · 13 entries |
 
 ### Projects
@@ -15,7 +15,7 @@
 |---|---|---|
 | platform | amber | 0 |
 | project-alpha | amber | 0 |
-| project-beta | red | 3 |
+| project-beta | red | 4 |
 | project-gamma | grey | 2 |
 
 ### Collection errors
@@ -25,5 +25,6 @@
 | example-org/project-beta-coordinator | secret-scanning | not-authorised | 403 |
 | example-org/project-beta-api | secret-scanning | not-authorised | 403 |
 | example-org/project-beta-web | secret-scanning | not-authorised | 403 |
+| example-org/project-beta-helm | repository-rules | not-authorised | 403 |
 | example-org/project-gamma-coordinator | repository | not-found | 404 |
 | example-org/project-gamma-service | repository | not-authorised | 403 |

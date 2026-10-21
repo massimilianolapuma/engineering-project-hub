@@ -5,8 +5,9 @@ import { z } from 'zod';
 // 1.2: component path (monorepos); catalog.json carries discovery settings and proposals.
 // 1.3: project score (value, measured, required) on project snapshots and summaries.
 // 1.4: quality dimension (qualityHealth, summary.quality, codeQuality capability).
-export const SNAPSHOT_SCHEMA_VERSION = '1.4';
-export const SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS = ['1.4'] as const;
+// 1.5: repository controls (repositoryControls, summary.repositoryControls, repositoryRules capability), discovery hints.
+export const SNAPSHOT_SCHEMA_VERSION = '1.5';
+export const SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS = ['1.5'] as const;
 
 export const HealthStatusSchema = z.enum(['green', 'amber', 'red', 'grey']);
 export type HealthStatus = z.infer<typeof HealthStatusSchema>;

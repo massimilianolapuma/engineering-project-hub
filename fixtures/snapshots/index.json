@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.4",
+  "schemaVersion": "1.5",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "run": {
     "dataSource": "mock",
@@ -16,7 +16,7 @@
       "dependabot": "available",
       "secretScanning": "partial",
       "codeQuality": "available",
-      "repositoryRules": "not-used"
+      "repositoryRules": "partial"
     },
     "inaccessibleSources": [
       {
@@ -35,6 +35,11 @@
         "classification": "not-authorised"
       },
       {
+        "repository": "example-org/project-beta-helm",
+        "source": "repository-rules",
+        "classification": "not-authorised"
+      },
+      {
         "repository": "example-org/project-gamma-coordinator",
         "source": "repository",
         "classification": "not-found"
@@ -47,8 +52,8 @@
     ],
     "repositories": {
       "total": 12,
-      "ok": 7,
-      "withErrors": 3,
+      "ok": 6,
+      "withErrors": 4,
       "unavailable": 2
     },
     "configValid": true,
@@ -84,6 +89,13 @@
         "percentage": 58,
         "measured": 4,
         "applicable": 4
+      },
+      "repositoryControls": {
+        "passed": 4,
+        "failed": 1,
+        "unknown": 1,
+        "notApplicable": 0,
+        "ratio": 80
       },
       "freshness": "amber",
       "openCounts": {
@@ -129,6 +141,13 @@
         "measured": 4,
         "applicable": 4
       },
+      "repositoryControls": {
+        "passed": 25,
+        "failed": 0,
+        "unknown": 0,
+        "notApplicable": 5,
+        "ratio": 100
+      },
       "freshness": "green",
       "openCounts": {
         "critical": 0,
@@ -173,11 +192,18 @@
         "measured": 2,
         "applicable": 3
       },
+      "repositoryControls": {
+        "passed": 5,
+        "failed": 7,
+        "unknown": 8,
+        "notApplicable": 4,
+        "ratio": 42
+      },
       "freshness": "amber",
       "openCounts": {
         "critical": 1,
-        "high": 2,
-        "medium": 3,
+        "high": 3,
+        "medium": 4,
         "low": 1,
         "informational": 0,
         "unknown": 0
@@ -187,7 +213,7 @@
       "secretScanning": "not-authorised",
       "failedCriticalWorkflows": 1,
       "collectedAt": "2026-01-15T12:00:00.000Z",
-      "collectionErrorCount": 3,
+      "collectionErrorCount": 4,
       "unresolvedSubmodules": 1
     },
     {
@@ -216,6 +242,13 @@
         "percentage": null,
         "measured": 0,
         "applicable": 2
+      },
+      "repositoryControls": {
+        "passed": 0,
+        "failed": 0,
+        "unknown": 12,
+        "notApplicable": 0,
+        "ratio": null
       },
       "freshness": "grey",
       "openCounts": {

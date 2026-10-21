@@ -941,7 +941,7 @@ describe('sanitisation end to end', () => {
 describe('snapshot schema versions', () => {
   it('fails in a controlled way on an unsupported schemaVersion', async () => {
     const text = (await readFile('fixtures/snapshots/index.json', 'utf8')).replace(
-      '"schemaVersion": "1.4"',
+      '"schemaVersion": "1.5"',
       '"schemaVersion": "9.0"',
     );
     const r = validatePortfolio(text);
@@ -993,5 +993,344 @@ describe('repositories that are not accessible', () => {
     }
     expect(result.index.run.repositories).toMatchObject({ total: 12, unavailable: 12 });
     expect(result.index.run.capabilities.actions).toBe('not-used');
+  });
+});
+
+describe('repository controls (mock run)', () => {
+  const byId = async () => {
+    const { projects, index } = await mockRun();
+    return {
+      index,
+      projects: Object.fromEntries(projects.map((p) => [p.project.id, p])) as Record<
+        string,
+        ProjectSnapshot
+      >,
+    };
+  };
+  const counts = (p: ProjectSnapshot) => {
+    const { passed, failed, unknown, notApplicable, ratio } = p.repositoryControls;
+    return { passed, failed, unknown, notApplicable, ratio };
+  };
+  const repoOf = (p: ProjectSnapshot, name: string) =>
+    p.repositoryControls.repositories.find((r) => r.repository === `example-org/${name}`)!;
+  const states = (p: ProjectSnapshot, name: string) => repoOf(p, name).checks.map((c) => c.state);
+
+  it('writes snapshot schema 1.5', async () => {
+    const { index, projects } = await byId();
+    expect(index.schemaVersion).toBe('1.5');
+    for (const p of Object.values(projects)) expect(p.schemaVersion).toBe('1.5');
+  });
+
+  it('counts the checks per project over unique repositories', async () => {
+    const { projects } = await byId();
+    expect(counts(projects['project-alpha']!)).toEqual({
+      passed: 25,
+      failed: 0,
+      unknown: 0,
+      notApplicable: 5,
+      ratio: 100,
+    });
+    expect(counts(projects['project-beta']!)).toEqual({
+      passed: 5,
+      failed: 7,
+      unknown: 8,
+      notApplicable: 4,
+      ratio: 42,
+    });
+    expect(counts(projects['platform']!)).toEqual({
+      passed: 4,
+      failed: 1,
+      unknown: 1,
+      notApplicable: 0,
+      ratio: 80,
+    });
+    expect(counts(projects['project-gamma']!)).toEqual({
+      passed: 0,
+      failed: 0,
+      unknown: 12,
+      notApplicable: 0,
+      ratio: null,
+    });
+  });
+
+  it('evaluates the monorepo once, listing every target on it', async () => {
+    const { projects } = await byId();
+    const platform = projects['platform']!;
+    expect(platform.repositoryControls.repositories).toHaveLength(1);
+    expect(platform.repositoryControls.repositories[0]!.componentIds).toEqual([
+      'coordinator',
+      'web',
+      'api',
+      'worker',
+    ]);
+  });
+
+  it('beta: check states per repository, in spec order', async () => {
+    const { projects } = await byId();
+    const beta = projects['project-beta']!;
+    expect(states(beta, 'project-beta-coordinator')).toEqual([
+      'fail',
+      'fail',
+      'pass',
+      'unknown',
+      'unknown',
+      'unknown',
+    ]);
+    expect(states(beta, 'project-beta-api')).toEqual([
+      'fail',
+      'not-applicable',
+      'pass',
+      'pass',
+      'unknown',
+      'pass',
+    ]);
+    expect(states(beta, 'project-beta-web')).toEqual([
+      'pass',
+      'not-applicable',
+      'fail',
+      'fail',
+      'fail',
+      'fail',
+    ]);
+    expect(states(beta, 'project-beta-helm')).toEqual([
+      'not-applicable',
+      'not-applicable',
+      'unknown',
+      'unknown',
+      'unknown',
+      'unknown',
+    ]);
+  });
+
+  it('beta-api counts its actions but withholds the identifiers of a private repository', async () => {
+    const { projects } = await byId();
+    const api = repoOf(projects['project-beta']!, 'project-beta-api');
+    expect(api.actions).toMatchObject({
+      state: 'available',
+      workflowFiles: 1,
+      total: 4,
+      pinned: 2,
+      unpinned: 2,
+      unknown: 0,
+      detailsWithheld: true,
+      unpinnedRefs: [],
+      truncated: 0,
+    });
+    expect(api.branchRules).toMatchObject({
+      state: 'available',
+      protected: true,
+      source: 'rulesets',
+      requiredApprovals: 1,
+      ruleTypes: ['pull_request', 'required_status_checks'],
+    });
+  });
+
+  it('lists the unpinned references of a public repository', async () => {
+    const { projects } = await byId();
+    const mono = projects['platform']!.repositoryControls.repositories[0]!;
+    expect(mono.actions).toMatchObject({
+      total: 4,
+      pinned: 1,
+      unpinned: 3,
+      detailsWithheld: false,
+    });
+    expect(mono.actions.unpinnedRefs.map((r) => `${r.workflow} ${r.target}@${r.ref}`)).toEqual([
+      'ci.yml pnpm/action-setup@v4',
+      'docs.yml example-private/templates/.github/workflows/docs.yml@v1.0.0',
+      'release.yml example-shared/ci-templates/.github/workflows/release.yml@main',
+    ]);
+  });
+
+  it('beta coordinator is behind the latest release of the shared templates', async () => {
+    const { projects } = await byId();
+    const coordinator = repoOf(projects['project-beta']!, 'project-beta-coordinator');
+    expect(coordinator.reusableWorkflows[0]).toEqual({
+      workflow: 'release.yml',
+      target: 'example-shared/ci-templates/.github/workflows/build.yml',
+      ref: 'v2.1.0',
+      latest: 'v2.4.0',
+      status: 'behind',
+      url: 'https://github.com/example-shared/ci-templates',
+    });
+  });
+
+  it('platform: a floating branch and a not visible template repository', async () => {
+    const { projects } = await byId();
+    const mono = projects['platform']!.repositoryControls.repositories[0]!;
+    const status = (file: string) => mono.reusableWorkflows.find((r) => r.workflow === file)!;
+    expect(status('release.yml')).toMatchObject({ ref: 'main', status: 'floating' });
+    expect(status('docs.yml')).toMatchObject({ ref: 'v1.0.0', status: 'unknown', url: null });
+  });
+
+  it('scorecard summary per repository', async () => {
+    const { projects } = await byId();
+    expect(repoOf(projects['project-beta']!, 'project-beta-api').scorecard).toMatchObject({
+      state: 'available',
+      openAlerts: 2,
+      failingChecks: ['Token-Permissions', 'Pinned-Dependencies'],
+      otherFailing: 0,
+    });
+    expect(repoOf(projects['project-alpha']!, 'project-alpha-backend').scorecard).toMatchObject({
+      state: 'available',
+      openAlerts: 0,
+      failingChecks: [],
+    });
+    expect(repoOf(projects['project-beta']!, 'project-beta-web').scorecard.state).toBe('not-used');
+  });
+
+  it('governance and overall status of every project are unchanged by default', async () => {
+    const { projects } = await byId();
+    const status = (id: string) => [
+      projects[id]!.governanceHealth.status,
+      projects[id]!.overallHealth.status,
+    ];
+    expect(status('platform')).toEqual(['green', 'amber']);
+    expect(status('project-alpha')).toEqual(['green', 'amber']);
+    expect(status('project-beta')).toEqual(['amber', 'red']);
+    expect(status('project-gamma')).toEqual(['grey', 'grey']);
+  });
+
+  it('shows failing checks in governance as info reasons only', async () => {
+    const { projects } = await byId();
+    const reasons = projects['project-beta']!.governanceHealth.reasons.filter((r) =>
+      r.code.startsWith('repository-check'),
+    );
+    expect(reasons.length).toBeGreaterThan(0);
+    expect(reasons.every((r) => r.level === 'info')).toBe(true);
+  });
+
+  it('records the repository-rules capability as partial (beta-helm answers 403)', async () => {
+    const { index } = await byId();
+    expect(index.run.capabilities.repositoryRules).toBe('partial');
+  });
+
+  it('records collection errors only for monitored repositories', async () => {
+    const { projects } = await byId();
+    const errors = Object.values(projects).flatMap((p) => p.collectionErrors);
+    expect(
+      errors.some((e) => e.source === 'repository-rules' && e.repository.endsWith('beta-helm')),
+    ).toBe(true);
+    expect(errors.some((e) => /ci-templates|example-private/.test(e.repository))).toBe(false);
+    expect(errors.some((e) => e.source === 'workflow-files')).toBe(false);
+  });
+
+  it('summary.repositoryControls equals the snapshot counts for each project', async () => {
+    const { projects, index } = await byId();
+    for (const summary of index.projects) {
+      expect(summary.repositoryControls).toEqual(counts(projects[summary.id]!));
+    }
+  });
+
+  it('never publishes workflow text or an unconfigured custom property', async () => {
+    const result = await mockRun();
+    const { catalog, policies } = await loadConfig('config');
+    const dir = await mkdtemp(join(tmpdir(), 'eph-controls-'));
+    try {
+      const extras = await historyExtras(result, { catalog, policies });
+      await writeSnapshots(dir, result.index, result.projects, catalog, result.discovery, extras);
+      const files = [
+        'index.json',
+        'catalog.json',
+        'collection-report.json',
+        'collection-report.md',
+        'history.json',
+        'changes.json',
+        ...(await readdir(join(dir, 'projects'))).map((f) => `projects/${f}`),
+      ];
+      for (const f of files) {
+        const text = await readFile(join(dir, f), 'utf8');
+        for (const marker of ['marker-step-7f3e', 'marker-run-7f3e', 'CC-1234'])
+          expect(text, `${marker} in ${f}`).not.toContain(marker);
+      }
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('a monorepo check is not applicable only when every target lists it', async () => {
+    const { catalog, policies } = await loadConfig('config');
+    const clock = fixedClock(GOLDEN_NOW);
+    const run = async (mutate: (p: Catalog['projects'][number]) => void) => {
+      const c = structuredClone(catalog);
+      mutate(c.projects.find((p) => p.id === 'platform')!);
+      const result = await runCollection({
+        catalog: c,
+        policies,
+        provider: new MockProvider('fixtures/github', clock),
+        clock,
+      });
+      const platform = result.projects.find((p) => p.project.id === 'platform')!;
+      return platform.repositoryControls.repositories[0]!.checks.find(
+        (x) => x.id === 'status-checks-required',
+      )!.state;
+    };
+    expect(
+      await run((p) => {
+        p.coordinator.notApplicableChecks = ['status-checks-required'];
+      }),
+    ).toBe('pass');
+    expect(
+      await run((p) => {
+        p.coordinator.notApplicableChecks = ['status-checks-required'];
+        for (const c of p.components) c.notApplicableChecks = ['status-checks-required'];
+      }),
+    ).toBe('not-applicable');
+  });
+
+  it('does not make any repository-controls call when the block is disabled', async () => {
+    const { catalog, policies } = await loadConfig('config');
+    policies.repositoryControls.enabled = false;
+    const clock = fixedClock(GOLDEN_NOW);
+    const inner = new MockProvider('fixtures/github', clock);
+    const called: string[] = [];
+    const watch = new Proxy(inner, {
+      get(target, prop, receiver) {
+        const v = Reflect.get(target, prop, receiver);
+        if (typeof v !== 'function') return v;
+        return (...args: unknown[]) => {
+          called.push(String(prop));
+          return (v as (...a: unknown[]) => unknown).apply(target, args);
+        };
+      },
+    });
+    const result = await runCollection({ catalog, policies, provider: watch, clock });
+    for (const name of [
+      'getBranchRules',
+      'getClassicBranchProtection',
+      'getLatestScorecardAnalysis',
+    ])
+      expect(called, name).not.toContain(name);
+    expect(result.index.run.capabilities.repositoryRules).toBe('not-used');
+    for (const p of result.projects) {
+      expect(p.repositoryControls).toMatchObject({ enabled: false, repositories: [], ratio: null });
+      expect(p.governanceHealth.reasons.some((r) => r.code.startsWith('repository-check'))).toBe(
+        false,
+      );
+    }
+  });
+
+  it('makes the classic protection call only when readClassicProtection is on', async () => {
+    const { catalog, policies } = await loadConfig('config');
+    const clock = fixedClock(GOLDEN_NOW);
+    const classicCalls = async (flag: boolean) => {
+      const p = structuredClone(policies);
+      p.repositoryControls.readClassicProtection = flag;
+      const inner = new MockProvider('fixtures/github', clock);
+      let n = 0;
+      const watch = new Proxy(inner, {
+        get(target, prop, receiver) {
+          const v = Reflect.get(target, prop, receiver);
+          if (prop !== 'getClassicBranchProtection' || typeof v !== 'function') return v;
+          return (...args: unknown[]) => {
+            n++;
+            return (v as (...a: unknown[]) => unknown).apply(target, args);
+          };
+        },
+      });
+      await runCollection({ catalog, policies: p, provider: watch, clock });
+      return n;
+    };
+    expect(await classicCalls(false)).toBe(0);
+    expect(await classicCalls(true)).toBeGreaterThan(0);
   });
 });

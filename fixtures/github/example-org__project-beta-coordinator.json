@@ -12,7 +12,8 @@
   },
   "head": {
     "sha": "971a7f034dadeeaea0d6daacfc265dd40cde39e8",
-    "committedAt": "@now-2d"
+    "committedAt": "@now-2d",
+    "protected": true
   },
   "latestRelease": {
     "tagName": "v3.2.0",
@@ -22,6 +23,7 @@
     "htmlUrl": "https://github.com/example-org/project-beta-coordinator/releases/tag/v3.2.0"
   },
   "files": {
+    ".github/workflows/release.yml": "name: Release\non: workflow_dispatch\njobs:\n  build:\n    uses: example-shared/ci-templates/.github/workflows/build.yml@v2.1.0\n  tag:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@0123456789abcdef0123456789abcdef01234567\n",
     "release-manifest.yaml": "schemaVersion: '1.0'\nversion: 3.2.0\ncomponents:\n  api:\n    version: 3.2.0\n  web:\n    version: 3.1.0\n  helm:\n    version: 1.0.0\nenvironments:\n  dev:\n    version: 3.2.0\n  uat:\n    version: 3.2.0\n  prod:\n    version: 3.1.0\n",
     ".gitmodules": "[submodule \"api\"]\n\tpath = services/api\n\turl = https://github.com/example-org/project-beta-api.git\n[submodule \"web\"]\n\tpath = apps/web\n\turl = https://github.com/example-org/project-beta-web.git\n[submodule \"helm\"]\n\tpath = deploy/helm\n\turl = https://github.com/example-org/project-beta-helm.git\n[submodule \"legacy-scripts\"]\n\tpath = tools/legacy-scripts\n\turl = https://github.com/example-org/legacy-scripts.git\n"
   },
@@ -78,5 +80,7 @@
   "codeQualityFindings": [
     { "category": "maintainability", "severity": "warning" },
     { "category": "maintainability", "severity": "note" }
-  ]
+  ],
+  "directories": { ".github/workflows": [{ "name": "release.yml", "type": "file" }] },
+  "branchRules": []
 }

@@ -12,7 +12,8 @@
   },
   "head": {
     "sha": "b85777552b25839b2cea3e76e5c15827386f60ac",
-    "committedAt": "@now-3h"
+    "committedAt": "@now-3h",
+    "protected": true
   },
   "latestRelease": {
     "tagName": "web-v2.0.1",
@@ -40,10 +41,18 @@
     }
   ],
   "files": {
+    ".github/workflows/ci.yml": "name: CI\non: push\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@0123456789abcdef0123456789abcdef01234567\n      - uses: pnpm/action-setup@v4\n",
+    ".github/workflows/release.yml": "name: Release\non: workflow_dispatch\njobs:\n  release:\n    uses: example-shared/ci-templates/.github/workflows/release.yml@main\n",
+    ".github/workflows/docs.yml": "name: Docs\non: push\njobs:\n  docs:\n    uses: example-private/templates/.github/workflows/docs.yml@v1.0.0\n",
     "package.json": "{\n  \"name\": \"platform\",\n  \"private\": true,\n  \"workspaces\": [\n    \"apps/*\",\n    \"services/*\"\n  ]\n}",
     "release-manifest.yaml": "schemaVersion: '1.0'\nversion: 2026.10.1\ncomponents:\n  api:\n    version: 1.8.0\n  web:\n    version: 2.0.1\n  worker:\n    version: 0.4.0\nenvironments:\n  dev:\n    version: 2026.10.1\n  prod:\n    version: 2026.10.1\n"
   },
   "directories": {
+    ".github/workflows": [
+      { "name": "ci.yml", "type": "file" },
+      { "name": "docs.yml", "type": "file" },
+      { "name": "release.yml", "type": "file" }
+    ],
     "": [
       {
         "name": "apps",
@@ -190,5 +199,11 @@
     },
     "createdAt": "@now-20d",
     "runId": 9501
-  }
+  },
+  "branchRules": [
+    { "type": "pull_request", "requiredApprovals": 1 },
+    { "type": "required_status_checks", "requiredApprovals": null },
+    { "type": "non_fast_forward", "requiredApprovals": null },
+    { "type": "deletion", "requiredApprovals": null }
+  ]
 }
