@@ -76,7 +76,7 @@ flowchart TB
    the latest tag), security status file, code scanning alerts and latest analysis,
    Dependabot alerts, and secret scanning alerts (`hide_secret=true`), the
    `hub-quality-summary` artifact (newest default-branch, same-repository run; zip capped
-   at 64 KB) and the GitHub Code Quality findings and setup. When the metadata call fails,
+   at 64 KB) and the GitHub Code Quality findings. When the metadata call fails,
    dependent calls are skipped and inherit its classified error.
 4. **Collect per project**: the release manifest and `.gitmodules` from the coordinator,
    the submodule SHAs, and the tracked workflow runs (the last 20 on the default branch),

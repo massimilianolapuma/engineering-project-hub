@@ -70,17 +70,20 @@ conteggi, percentuali, SHA, date ISO e link `https://github.com/...` in allowlis
   - Elencare i finding di Code Quality (`GET /repos/{owner}/{repo}/code-quality/findings`)
     richiede il permesso di repository **Code quality: read**. Il nome della chiave API non
     è documentato in quella pagina.
-  - Leggere la configurazione di Code Quality (`GET /repos/{owner}/{repo}/code-quality/setup`)
-    è elencato sotto **Administration** con accesso **write**. L'hub non assegna mai write,
-    quindi con una credenziale in sola lettura questa chiamata risponde attesamente 403.
+  - L'endpoint di configurazione (`GET /repos/{owner}/{repo}/code-quality/setup`) richiede
+    **Administration: write**, quindi l'hub non lo chiama; un 404 sui finding è mostrato
+    come sconosciuto.
   - Le pagine di riferimento REST di questi endpoint riportano solo gli scope dei token
-    classic, non i permessi fine-grained. Considera i nomi sopra come quelli documentati e
-    ricontrollali sul tuo piano.
-  - Comportamento osservato: 403 è `not-authorised`, mai "mancante"; un 404 ambiguo (per
-    esempio Code Quality non attivo, o non visibile) è `unknown` a meno che l'altra chiamata
-    dimostri che il permesso funziona. Se nessuna delle due chiamate Code Quality è
-    leggibile, la capability è `unknown` e la UI lo dice. I finding di Code Quality sono
-    informativi: non cambiano mai lo stato della Qualità.
+    classic, non i permessi fine-grained. I nomi sopra vengono dalla pagina dei permessi
+    delle GitHub App: ricontrollali sul tuo piano prima di concedere l'accesso.
+  - Comportamento osservato: un 403 sui finding è `not-authorised`, mai "mancante". Un 404
+    sui finding è ambiguo (Code Quality non attivo, o non visibile), quindi i finding del
+    progetto sono `unknown`, mai 0. Un 404 il cui messaggio dice che Code Quality non è
+    attivo esclude quel repository. Come per gli altri endpoint di sicurezza, un 404
+    dimostra comunque che il permesso funziona: la capability `codeQuality` è `available`
+    quando ogni chiamata ai finding risponde 200 o 404, `not-authorised` quando nessuna lo
+    fa e almeno una risponde 403, e `partial` quando lo fanno solo alcune. I finding di Code
+    Quality sono informativi: non cambiano mai lo stato della Qualità.
 - **Fallback (solo MVP): un PAT fine-grained** in `GH_READ_TOKEN`. Limitalo ai repository
   monitorati, assegnagli gli stessi permessi in sola lettura e usa una scadenza breve. È
   legato a una persona, quindi è preferibile la App.

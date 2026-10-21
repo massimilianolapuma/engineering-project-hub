@@ -99,6 +99,8 @@ CI uploads an artifact named **`hub-quality-summary`** that contains one file, `
 - The fine-grained token and GitHub App permission name for these endpoints is **not documented**. The builder verifies it. If unreadable, the capability is `not-authorised` or `unknown` and the UI says so.
 - Findings are **informative in this release**: they are shown but do not change the Quality status.
 
+> **Amendment (2026-10-21):** the setup endpoint needs Administration: write, so the hub does not call it. A findings 404 shows as unknown.
+
 ### 5.3 Applicability per component
 
 - Coverage applies by default to component types `service`, `webapp`, `worker`, `library`. It does not apply to `deployment`, `infrastructure` and `other` (builder's call).

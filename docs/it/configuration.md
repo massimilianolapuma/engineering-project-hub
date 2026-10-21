@@ -517,10 +517,10 @@ limita un verde a ambra (un rosso resta rosso).
 
 I **finding di GitHub Code Quality** sono solo informativi: i finding aperti sono contati per
 repository (per categoria `reliability` / `maintainability` e per severità `error` /
-`warning` / `note` / `none`) da `GET /repos/{owner}/{repo}/code-quality/findings?state=open`,
-e `GET .../code-quality/setup` distingue "non attivo" da "non visibile". Non cambiano mai lo
-stato della Qualità. I conteggi sono pubblicati solo quando ogni repository con Code Quality
-attivo è stato leggibile; altrimenti lo stato è `not-authorised` o `unknown`, mai 0. GitHub
+`warning` / `note` / `none`) da `GET /repos/{owner}/{repo}/code-quality/findings?state=open`.
+Non cambiano mai lo stato della Qualità. I conteggi sono pubblicati solo quando ogni
+repository è stato leggibile o ha risposto che Code Quality non è attivo; altrimenti lo stato
+è `not-authorised` o `unknown`, mai 0. GitHub
 non espone alcun endpoint per la percentuale di copertura: per questo la copertura arriva dal
 riepilogo della CI.
 

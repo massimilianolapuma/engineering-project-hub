@@ -76,9 +76,9 @@ flowchart TB
    fallback sull'ultimo tag), file di stato sicurezza, alert di code scanning e ultima
    analisi, alert Dependabot e alert di secret scanning (`hide_secret=true`), l'artifact
    `hub-quality-summary` (l'esecuzione più recente sul branch predefinito dello stesso
-   repository; zip limitato a 64 KB) e i finding e la configurazione di GitHub Code
-   Quality. Se la chiamata dei metadati fallisce, le chiamate dipendenti vengono saltate ed
-   ereditano il suo errore classificato.
+   repository; zip limitato a 64 KB) e i finding di GitHub Code Quality. Se la chiamata dei
+   metadati fallisce, le chiamate dipendenti vengono saltate ed ereditano il suo errore
+   classificato.
 4. **Raccolta per progetto**: il release manifest e `.gitmodules` dal coordinator, gli SHA
    dei submodule e le esecuzioni dei workflow monitorati (le ultime 20 sul branch
    predefinito), più i nomi del job e dello step falliti nell'ultima esecuzione fallita. Ogni

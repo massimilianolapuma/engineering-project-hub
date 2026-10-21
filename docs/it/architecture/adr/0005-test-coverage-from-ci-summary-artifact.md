@@ -14,8 +14,7 @@ accanto a delivery, versioni e sicurezza. Fatti verificati il 2026-10-21:
   organizzazioni è incerto, quindi l'hub non deve dipenderne.
 - GitHub Code Quality mostra la copertura di righe nelle pull request da un report Cobertura,
   ma nessun endpoint REST o GraphQL restituisce la percentuale di copertura. La sua API REST
-  restituisce solo i finding (conteggi per categoria e severità) e lo stato della
-  configurazione.
+  restituisce solo i finding (conteggi per categoria e severità).
 - L'hub ha già una dimensione chiamata `coverage`. Indica la quota dei controlli di
   sicurezza obbligatori attivi, non la copertura dei test.
 

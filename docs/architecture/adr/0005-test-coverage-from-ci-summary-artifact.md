@@ -14,7 +14,7 @@ delivery, versions and security. Facts checked on 2026-10-21:
   the hub must not depend on it.
 - GitHub Code Quality shows line coverage on pull requests from a Cobertura report, but no
   REST or GraphQL endpoint returns the coverage percentage. Its REST API returns only
-  findings (counts by category and severity) and the setup state.
+  findings (counts by category and severity).
 - The hub already has a dimension called `coverage`. It means the share of required security
   controls that are enabled, not test coverage.
 

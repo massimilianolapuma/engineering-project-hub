@@ -512,11 +512,11 @@ at amber (a red stays red).
 
 **GitHub Code Quality findings** are informative: open findings are counted per repository
 (by category `reliability` / `maintainability` and by severity `error` / `warning` / `note` /
-`none`) from `GET /repos/{owner}/{repo}/code-quality/findings?state=open`, with
-`GET .../code-quality/setup` telling "not enabled" from "not visible". They never change the
-Quality status. Counts are published only when every repository with Code Quality set up was
-readable; otherwise the state is `not-authorised` or `unknown`, never 0. GitHub exposes no
-endpoint for the coverage percentage, which is why coverage comes from the CI summary.
+`none`) from `GET /repos/{owner}/{repo}/code-quality/findings?state=open`. They never change
+the Quality status. Counts are published only when every repository was readable or answered
+that Code Quality is not enabled; otherwise the state is `not-authorised` or `unknown`, and
+never 0. GitHub exposes no endpoint for the coverage percentage, which is why coverage comes
+from the CI summary.
 
 ## Environment variables
 

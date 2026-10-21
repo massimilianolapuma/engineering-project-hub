@@ -99,6 +99,8 @@ A ogni esecuzione sul branch di default, la CI carica un artifact chiamato **`hu
 - Il nome del permesso per token fine-grained e GitHub App **non è documentato**: chi costruisce lo verifica. Se non è leggibile, la capability vale `not-authorised` o `unknown` e l'interfaccia lo dice.
 - In questa release i finding sono **solo informativi**: si vedono ma non cambiano lo stato Qualità.
 
+> **Modifica (2026-10-21):** l'endpoint di configurazione richiede Administration: write, quindi l'hub non lo chiama. Un 404 sui finding è mostrato come sconosciuto.
+
 ### 5.3 Applicabilità per componente
 
 - Per default la coverage si applica ai tipi `service`, `webapp`, `worker`, `library`; non si applica a `deployment`, `infrastructure` e `other` (scelta di chi costruisce).

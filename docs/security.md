@@ -70,17 +70,20 @@ allow-listed `https://github.com/...` links are published.
   - Listing Code Quality findings (`GET /repos/{owner}/{repo}/code-quality/findings`) needs
     the repository permission **Code quality: read**. The API key name is not documented
     on that page.
-  - Reading the Code Quality setup (`GET /repos/{owner}/{repo}/code-quality/setup`) is
-    listed under **Administration** with **write** access. The hub never grants write, so
-    with a read-only credential this call is expected to answer 403.
+  - The setup endpoint (`GET /repos/{owner}/{repo}/code-quality/setup`) needs
+    **Administration: write**, so the hub does not call it; a findings 404 is shown as
+    unknown.
   - The REST reference pages of these endpoints state only classic-token scopes, not
-    fine-grained permissions. Treat the names above as the documented ones and re-check
-    them on your own plan.
-  - Observed behaviour: 403 is `not-authorised`, never "missing"; an ambiguous 404 (for
-    example Code Quality not enabled, or not visible) is `unknown` unless the other call
-    proves the permission works. If neither Code Quality call is readable, the capability
-    is `unknown`, and the UI says so. Code Quality findings are informative: they never
-    change the Quality status.
+    fine-grained permissions. The names above come from the GitHub App permissions page;
+    re-check them on your own plan before you grant access.
+  - Observed behaviour: a findings 403 is `not-authorised`, never "missing". A findings 404
+    is ambiguous (Code Quality not enabled, or not visible), so the project's findings are
+    `unknown`, never 0. A 404 whose message says Code Quality is not enabled skips that
+    repository. Like the other security endpoints, a 404 still proves the permission
+    works: the `codeQuality` capability is `available` when every findings call answers
+    200 or 404, `not-authorised` when none does and at least one answers 403, and
+    `partial` when only some do. Code Quality findings are informative: they never change
+    the Quality status.
 - **Fallback (MVP only): a fine-grained PAT** in `GH_READ_TOKEN`. Limit it to the monitored
   repositories, give it the same read-only permissions, and use a short expiry. It is tied
   to a person, so prefer the App.
