@@ -472,6 +472,19 @@ exceptions:
     await expect(run).rejects.toThrow(/exceptions\[0\] \(EXC-0001\): .*exceptions\.maxDays/);
   });
 
+  it('a huge date token is a ConfigError, never a RangeError', async () => {
+    const run = load(exceptionsYaml("'@now-999999999999999d'", "'@now+20d'"), true);
+    await expect(run).rejects.toBeInstanceOf(ConfigError);
+  });
+
+  it('an oversized exceptions file is a ConfigError before it is parsed', async () => {
+    const run = load(
+      `# ${'x'.repeat(1_100_000)}\n${exceptionsYaml("'2026-01-05'", "'2026-01-14'")}`,
+    );
+    await expect(run).rejects.toBeInstanceOf(ConfigError);
+    await expect(run).rejects.toThrow(/too large/);
+  });
+
   it('validate-config prints "✔ config/exceptions.yaml: 0 exception(s)"', () => {
     const r = spawnSync('npx', ['tsx', 'scripts/validate-config.ts', 'config'], {
       encoding: 'utf8',

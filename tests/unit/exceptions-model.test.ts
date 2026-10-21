@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ExceptionEntrySchema, ExceptionsFileSchema, countsAsOpen } from '@model/index';
 
@@ -117,5 +118,42 @@ describe('countsAsOpen', () => {
     expect(countsAsOpen({ status: 'open', exception: { state: 'active' } })).toBe(false);
     expect(countsAsOpen({ status: 'open', exception: { state: 'expired' } })).toBe(true);
     expect(countsAsOpen({ status: 'fixed', exception: null })).toBe(false);
+  });
+});
+
+describe('advisory selector (schema, JSON Schema and bounds)', () => {
+  const advisoryEntry = (advisory: string) => entry({ source: 'dependabot', match: { advisory } });
+
+  it('accepts lower-case ids in Zod and in the generated JSON Schema pattern', () => {
+    const id = 'ghsa-abcd-1234-wxyz';
+    expect(ExceptionEntrySchema.safeParse(advisoryEntry(id)).success).toBe(true);
+    expect(ExceptionEntrySchema.safeParse(advisoryEntry('cve-2025-12345')).success).toBe(true);
+    const schema = JSON.parse(readFileSync('config/schema/exceptions.schema.json', 'utf8'));
+    const patterns = [...JSON.stringify(schema).matchAll(/"pattern":\s*("(?:[^"\\]|\\.)*")/g)]
+      .map((m) => JSON.parse(m[1]!) as string)
+      .filter((p) => p.includes('GHSA') || p.includes('Gg'));
+    expect(patterns.length).toBeGreaterThan(0);
+    for (const p of patterns) {
+      expect(new RegExp(p).test(id), p).toBe(true);
+      expect(new RegExp(p).test('cve-2025-12345'), p).toBe(true);
+    }
+  });
+
+  it('bounds the length (no 10 000-digit CVE number)', () => {
+    expect(
+      ExceptionEntrySchema.safeParse(advisoryEntry(`CVE-2025-${'1'.repeat(200)}`)).success,
+    ).toBe(false);
+  });
+});
+
+describe('selector identity', () => {
+  it('{rule} and {rule, tool: "*"} are different selectors, not duplicates', () => {
+    const r = ExceptionsFileSchema.safeParse(
+      file(
+        entry({ match: { rule: 'py/flask-debug' }, source: 'code-scanning' }),
+        entry({ id: 'EXC-0002', match: { rule: 'py/flask-debug', tool: '*' } }),
+      ),
+    );
+    expect(r.success).toBe(true);
   });
 });

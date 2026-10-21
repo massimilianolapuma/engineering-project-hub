@@ -36,6 +36,27 @@ const run = () => {
   return { index, projects };
 };
 
+describe('buildReport exception states', () => {
+  it('reports the worst state of an exception shared by two projects, whatever the order', () => {
+    const states = (first: 'expired' | 'active', second: 'expired' | 'active') => {
+      const { index, projects } = run();
+      const template = projects.find((p) => p.securityExceptions.length)!.securityExceptions[0]!;
+      for (const p of projects) p.securityExceptions = [];
+      projects[0]!.securityExceptions = [{ ...template, id: 'EXC-SHARED', state: first }];
+      projects[1]!.securityExceptions = [{ ...template, id: 'EXC-SHARED', state: second }];
+      return buildReport(index, projects).exceptions;
+    };
+    for (const [a, b] of [
+      ['expired', 'active'],
+      ['active', 'expired'],
+    ] as const) {
+      const e = states(a, b);
+      expect(e.expired, `${a}/${b}`).toBe(1);
+      expect(e.active, `${a}/${b}`).toBe(0);
+    }
+  });
+});
+
 describe('buildHistoryExtras', () => {
   it('uses a usable restored history as is', () => {
     const { index, projects } = run();

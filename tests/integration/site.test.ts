@@ -1292,6 +1292,10 @@ describe('static site', () => {
       expect(platform).toMatch(/Security risk:? .*Attention.*→.*Critical/);
       expect(platform).toContain('82 → 49');
       expect(text(card(html, 'project-alpha'))).not.toContain('No changes.');
+      // Gamma could only be partly compared, so it never claims a plain "No changes."
+      const gamma = text(card(html, 'project-gamma'));
+      expect(gamma).toContain('No changes in what could be compared.');
+      expect(gamma).not.toContain('No changes.');
     });
 
     it('does not say "No changes." when a project\'s alerts could not be compared', async () => {

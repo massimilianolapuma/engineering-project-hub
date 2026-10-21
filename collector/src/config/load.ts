@@ -160,7 +160,9 @@ export function resolveExceptionsPath(o: {
   };
 }
 
-const DATE_TOKEN = /^@now([+-]\d+[mhd])?$/;
+const DATE_TOKEN = /^@now([+-]\d{1,6}[mhd])?$/;
+/** The exceptions file is a reviewed list of at most 500 entries: 1 MiB is far beyond it. */
+const MAX_EXCEPTIONS_BYTES = 1024 * 1024;
 
 /** Replaces "@now±N(d|h|m)" in created / expires with the UTC date of the resulting instant. */
 export function resolveDateTokens(raw: unknown, now: Date): unknown {
@@ -189,6 +191,8 @@ export async function loadExceptions(
 ): Promise<LoadedExceptions> {
   const text = await readOptional(file);
   if (text === null) return { source: 'none', file: null, warnings: [] };
+  if (Buffer.byteLength(text) > MAX_EXCEPTIONS_BYTES)
+    throw new ConfigError(`${file} is too large (at most ${MAX_EXCEPTIONS_BYTES} bytes)`, file);
   let raw: unknown;
   try {
     raw = parse(text, { prettyErrors: true });

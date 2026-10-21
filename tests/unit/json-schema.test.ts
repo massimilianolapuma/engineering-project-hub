@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { parse } from 'yaml';
 import { ExceptionsFileSchema } from '@model/index';
 import { SCHEMA_TARGETS, renderSchema } from '../../scripts/generate-json-schema';
@@ -13,6 +13,13 @@ describe('generated JSON Schemas', () => {
         `config/schema/${file} is out of date: run npm run schema:generate`,
       ).toBe(true);
     }
+  });
+
+  it('config/schema holds exactly the generated targets (no stale or unlisted file)', () => {
+    const committed = readdirSync('config/schema')
+      .filter((f) => f.endsWith('.json'))
+      .sort();
+    expect(committed).toEqual(SCHEMA_TARGETS.map(([file]) => file).sort());
   });
 
   it('config/exceptions.yaml parses with ExceptionsFileSchema and has 0 exceptions', () => {

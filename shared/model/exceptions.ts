@@ -28,7 +28,13 @@ export const ExceptionMatchSchema = z.union([
     .object({ rule: z.string().min(1).max(200), tool: z.string().min(1).max(50).optional() })
     .strict(),
   z
-    .object({ advisory: z.string().regex(/^(GHSA(-[A-Za-z0-9]{4}){3}|CVE-\d{4}-\d{4,})$/i) })
+    .object({
+      // Case-insensitive written out (not /i), so the generated JSON Schema accepts the same ids.
+      advisory: z
+        .string()
+        .max(100)
+        .regex(/^([Gg][Hh][Ss][Aa](-[A-Za-z0-9]{4}){3}|[Cc][Vv][Ee]-\d{4}-\d{4,7})$/),
+    })
     .strict(),
 ]);
 export type ExceptionMatch = z.infer<typeof ExceptionMatchSchema>;
@@ -78,7 +84,7 @@ export function selectorKey(e: Pick<ExceptionEntry, 'repository' | 'source' | 'm
   const head = `${e.repository.toLowerCase()}|${e.source}`;
   if ('alert' in e.match) return `${head}|alert:${e.match.alert}`;
   if ('rule' in e.match)
-    return `${head}|rule:${e.match.rule}|${e.match.tool?.toLowerCase() ?? '*'}`;
+    return `${head}|rule:${e.match.rule}|${e.match.tool ? `tool=${e.match.tool.toLowerCase()}` : 'any-tool'}`;
   return `${head}|advisory:${e.match.advisory.toUpperCase()}`;
 }
 
@@ -122,10 +128,10 @@ export type ExceptionState = z.infer<typeof ExceptionStateSchema>;
 /** An ISO instant or a "@now±N(d|h|m)" token relative to the case clock. */
 const instantOrToken = z.union([
   z.iso.datetime({ offset: true }),
-  z.string().regex(/^@now([+-]\d+[mhd])?$/),
+  z.string().regex(/^@now([+-]\d{1,6}[mhd])?$/),
 ]);
 /** A YYYY-MM-DD date or a "@now±N(d|h|m)" token (cases and the mock fixture only). */
-const dateOrToken = z.union([ExceptionDateSchema, z.string().regex(/^@now([+-]\d+[mhd])?$/)]);
+const dateOrToken = z.union([ExceptionDateSchema, z.string().regex(/^@now([+-]\d{1,6}[mhd])?$/)]);
 
 const CaseFindingSchema = z
   .object({

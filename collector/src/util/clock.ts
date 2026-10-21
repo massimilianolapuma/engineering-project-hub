@@ -12,7 +12,7 @@ const UNIT_MS = { m: 60_000, h: 3_600_000, d: 86_400_000 } as const;
 
 /** Resolves "@now", "@now-2h", "@now-20d", "@now-15m" against the clock. */
 export function resolveRelativeTime(token: string, now: Date): string | null {
-  const m = /^@now(?:([+-])(\d+)([mhd]))?$/.exec(token);
+  const m = /^@now(?:([+-])(\d{1,6})([mhd]))?$/.exec(token);
   if (!m) return null;
   const [, sign, amount, unit] = m;
   const delta = sign && amount && unit ? Number(amount) * UNIT_MS[unit as keyof typeof UNIT_MS] : 0;

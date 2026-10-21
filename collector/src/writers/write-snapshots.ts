@@ -184,7 +184,13 @@ export function buildReport(
   for (const e of errors)
     errorsByClassification[e.classification] = (errorsByClassification[e.classification] ?? 0) + 1;
   const states = new Map<string, string>();
-  for (const e of projects.flatMap((p) => p.securityExceptions)) states.set(e.id, e.state);
+  // An exception shared by two projects is counted once, in its worst state.
+  const WORST = ['expired', 'unverifiable', 'stale', 'active'];
+  for (const e of projects.flatMap((p) => p.securityExceptions)) {
+    const seen = states.get(e.id);
+    if (seen === undefined || WORST.indexOf(e.state) < WORST.indexOf(seen))
+      states.set(e.id, e.state);
+  }
   const inState = (s: string) => [...states.values()].filter((x) => x === s).length;
   return {
     generatedAt: index.generatedAt,

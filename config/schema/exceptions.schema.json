@@ -69,7 +69,8 @@
                 "properties": {
                   "advisory": {
                     "type": "string",
-                    "pattern": "^(GHSA(-[A-Za-z0-9]{4}){3}|CVE-\\d{4}-\\d{4,})$"
+                    "maxLength": 100,
+                    "pattern": "^([Gg][Hh][Ss][Aa](-[A-Za-z0-9]{4}){3}|[Cc][Vv][Ee]-\\d{4}-\\d{4,7})$"
                   }
                 },
                 "required": [

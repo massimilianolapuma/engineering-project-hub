@@ -65,7 +65,7 @@
                       },
                       {
                         "type": "string",
-                        "pattern": "^@now([+-]\\d+[mhd])?$"
+                        "pattern": "^@now([+-]\\d{1,6}[mhd])?$"
                       }
                     ]
                   },
@@ -162,7 +162,8 @@
                     "properties": {
                       "advisory": {
                         "type": "string",
-                        "pattern": "^(GHSA(-[A-Za-z0-9]{4}){3}|CVE-\\d{4}-\\d{4,})$"
+                        "maxLength": 100,
+                        "pattern": "^([Gg][Hh][Ss][Aa](-[A-Za-z0-9]{4}){3}|[Cc][Vv][Ee]-\\d{4}-\\d{4,7})$"
                       }
                     },
                     "required": [
@@ -194,7 +195,7 @@
                   },
                   {
                     "type": "string",
-                    "pattern": "^@now([+-]\\d+[mhd])?$"
+                    "pattern": "^@now([+-]\\d{1,6}[mhd])?$"
                   }
                 ]
               },
@@ -206,7 +207,7 @@
                   },
                   {
                     "type": "string",
-                    "pattern": "^@now([+-]\\d+[mhd])?$"
+                    "pattern": "^@now([+-]\\d{1,6}[mhd])?$"
                   }
                 ]
               }
