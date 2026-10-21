@@ -392,6 +392,24 @@ describe('evaluateQuality', () => {
       expect(two.findings).toMatchObject({ state: 'available', reliability: 1 });
     });
 
+    it('findings past the page cap → unknown, never an under-count', () => {
+      const q = evaluate(
+        input(one, readable, {
+          findings: new Map([
+            [
+              'example-org/a',
+              fail<CodeQualityFindingDTO[]>({
+                classification: 'error',
+                message: 'FindingsPageCapExceeded',
+              }),
+            ],
+          ]),
+        }),
+      );
+      expect(q.findings.state).toBe('unknown');
+      expect(q.findings.maintainability).toBeNull();
+    });
+
     it('one repository 404 among readable ones → unknown (never a partial sum)', () => {
       const q = evaluate(
         input(

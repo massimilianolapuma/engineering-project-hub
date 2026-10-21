@@ -207,7 +207,8 @@ immagini remote, quindi qui non è sfruttabile. Segui la fix upstream tramite De
   sito coincide con quello di Pages.
 - Nessun alert non significa nessuna vulnerabilità. La copertura dipende dai controlli
   configurati e da ciò che restituiscono le API (fino a 300 alert per fonte e per
-  repository).
+  repository). I finding di Code Quality hanno lo stesso limite di 300, ma oltre il limite
+  i finding del repository sono sconosciuti invece che contati in difetto.
 - I risultati degli scanner esterni sono considerati attendibili così come dichiarati in
   `.security/project-security-status.json`. Nell'MVP quel file non è firmato (roadmap:
   attestation).

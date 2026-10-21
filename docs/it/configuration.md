@@ -522,9 +522,10 @@ repository (per categoria `reliability` / `maintainability` e per severità `err
 `warning` / `note` / `none`) da `GET /repos/{owner}/{repo}/code-quality/findings?state=open`.
 Non cambiano mai lo stato della Qualità. I conteggi sono pubblicati solo quando ogni
 repository è stato leggibile o ha risposto che Code Quality non è attivo; altrimenti lo stato
-è `not-authorised` o `unknown`, mai 0. GitHub
-non espone alcun endpoint per la percentuale di copertura: per questo la copertura arriva dal
-riepilogo della CI.
+è `not-authorised` o `unknown`, mai 0. Il collector legge al massimo 3 pagine da 100 finding
+(300) per repository. Se restano altre pagine, i finding di quel repository sono sconosciuti
+(un errore di raccolta), mai un conteggio parziale. GitHub non espone alcun endpoint per la
+percentuale di copertura: per questo la copertura arriva dal riepilogo della CI.
 
 ## Variabili d'ambiente
 

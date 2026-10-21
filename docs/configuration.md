@@ -516,7 +516,9 @@ they add no row to the project's "why" box.
 `none`) from `GET /repos/{owner}/{repo}/code-quality/findings?state=open`. They never change
 the Quality status. Counts are published only when every repository was readable or answered
 that Code Quality is not enabled; otherwise the state is `not-authorised` or `unknown`, and
-never 0. GitHub exposes no endpoint for the coverage percentage, which is why coverage comes
+never 0. The collector reads at most 3 pages of 100 findings (300) per repository. When more
+pages remain, that repository's findings are unknown (a collection error), never a partial
+count. GitHub exposes no endpoint for the coverage percentage, which is why coverage comes
 from the CI summary.
 
 ## Environment variables

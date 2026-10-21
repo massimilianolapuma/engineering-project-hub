@@ -202,6 +202,8 @@ upstream fix through Dependabot.
   audience.
 - No alerts does not mean no vulnerabilities. Coverage depends on the controls that are
   configured and on what the APIs return (up to 300 alerts per source and repository).
+  Code Quality findings use the same 300 cap, but past it the repository's findings are
+  unknown rather than under-counted.
 - Results from external scanners are trusted as declared in
   `.security/project-security-status.json`. That file is not signed in the MVP (roadmap:
   attestations).

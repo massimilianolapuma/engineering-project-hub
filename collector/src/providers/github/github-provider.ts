@@ -114,6 +114,11 @@ class InvalidData extends Error {
   readonly status = 0;
 }
 
+/** More pages remain past MAX_ALERT_PAGES: the count would be incomplete (classified error). */
+class FindingsPageCapExceeded extends Error {
+  override readonly name = 'FindingsPageCapExceeded';
+}
+
 export class GitHubProvider implements SourceProvider {
   readonly dataSource = 'github' as const;
 
@@ -342,21 +347,30 @@ export class GitHubProvider implements SourceProvider {
     );
   }
 
-  /** Reads at most MAX_ALERT_PAGES pages of 100 items. */
+  /**
+   * Reads at most MAX_ALERT_PAGES pages of 100 items. With `failWhenCapped`, hitting the cap
+   * while more pages remain throws instead of returning a partial list (a count must never
+   * read as complete when it is not).
+   */
   private async paginate<T, R>(
     method: unknown,
     params: Record<string, unknown>,
     map: (item: T) => R,
+    opts: { failWhenCapped?: boolean } = {},
   ): Promise<R[]> {
     const out: R[] = [];
     let pages = 0;
     const iterator = this.client.paginate.iterator as (
       m: unknown,
       p: unknown,
-    ) => AsyncIterable<{ data: unknown }>;
+    ) => AsyncIterable<{ data: unknown; headers?: { link?: string } }>;
     for await (const page of iterator(method, { ...params, per_page: 100 })) {
       for (const item of page.data as unknown as T[]) out.push(map(item));
-      if (++pages >= MAX_ALERT_PAGES) break;
+      if (++pages >= MAX_ALERT_PAGES) {
+        if (opts.failWhenCapped && /rel="next"/.test(page.headers?.link ?? ''))
+          throw new FindingsPageCapExceeded();
+        break;
+      }
     }
     return out;
   }
@@ -529,6 +543,8 @@ export class GitHubProvider implements SourceProvider {
           category: f.rule?.category ?? 'unknown',
           severity: f.rule?.severity ?? 'unknown',
         }),
+        // Past 300 findings the repository's count is unknown, never under-counted.
+        { failWhenCapped: true },
       ),
     );
   }

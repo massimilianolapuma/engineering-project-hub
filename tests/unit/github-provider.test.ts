@@ -440,6 +440,52 @@ describe('GitHubProvider quality calls', () => {
     });
   });
 
+  /** Findings served 100 per page over `pages` pages, with a Link rel="next" header. */
+  const pagedFindings = (pages: number, seen: string[] = []) =>
+    new GitHubProvider(
+      createGitHubClient(
+        { mode: 'fine-grained-token', token: 'synthetic' },
+        {
+          fetch: (async (input: string | URL | Request) => {
+            const url = new URL(
+              typeof input === 'string' ? input : input instanceof URL ? input.href : input.url,
+            );
+            seen.push(url.pathname + url.search);
+            const page = Number(url.searchParams.get('page') ?? '1');
+            const next = new URL(url.href);
+            next.searchParams.set('page', String(page + 1));
+            const body = Array.from({ length: 100 }, () => ({
+              rule: { category: 'maintainability', severity: 'note' },
+            }));
+            return new Response(JSON.stringify(body), {
+              headers: {
+                'content-type': 'application/json',
+                ...(page < pages ? { link: `<${next.href}>; rel="next"` } : {}),
+              },
+            });
+          }) as typeof fetch,
+        },
+      ),
+      'fine-grained-token',
+    );
+
+  it('listCodeQualityFindings counts all findings when they fit in the 3-page cap', async () => {
+    const r = await pagedFindings(3).listCodeQualityFindings('o/a');
+    expect(r.ok && r.data.length).toBe(300);
+  });
+
+  it('listCodeQualityFindings past the 3-page cap is unknown, never an under-count', async () => {
+    const seen: string[] = [];
+    const r = await pagedFindings(5, seen).listCodeQualityFindings('o/a');
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.error.classification).toBe('error');
+      expect(r.error.message).toBe('FindingsPageCapExceeded');
+    }
+    // Stops at the cap: no fourth page is requested.
+    expect(seen).toHaveLength(3);
+  });
+
   it('listCodeQualityFindings sends X-GitHub-Api-Version 2026-03-10 and maps rule.category / rule.severity only', async () => {
     let version: string | null = null;
     const base = fakeFetch({
