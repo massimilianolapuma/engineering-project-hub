@@ -157,7 +157,11 @@ condiviso dei pattern in `shared/security/patterns.ts`:
 7. **Storico ripristinato**: è input non attendibile. Controlli di provenienza (proprio
    repository, branch predefinito, non un fork, non l'esecuzione corrente, workflow ed
    evento consentiti), limite di 5 MiB per l'artifact e di 8 MiB per il file, lettura
-   strict, link ripuliti di nuovo con l'allowlist corrente e testo ripulito di nuovo. Vedi
+   strict, link ripuliti di nuovo con l'allowlist corrente e testo ripulito di nuovo. La
+   versione del collector e il componente e il repository di ogni alert della baseline
+   devono rispettare formati rigidi. Uno storico ripristinato che non supera comunque lo
+   schema o il controllo di pubblicazione viene scartato (stato `unreadable`), così un file
+   piantato non blocca mai gli snapshot. Vedi
    [Operatività](operations.md#storico-tra-le-esecuzioni).
 8. **CSV injection**: una cella di testo che inizia con `=`, `+`, `-`, `@`, TAB o CR riceve
    un `'` iniziale. I numeri non hanno mai prefissi.

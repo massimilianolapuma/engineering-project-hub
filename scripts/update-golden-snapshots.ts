@@ -4,8 +4,7 @@
  *   npm run fixtures:update
  */
 import { loadConfig } from '../collector/src/config/load';
-import { appendHistory } from '../collector/src/history/append';
-import { computeChanges } from '../collector/src/history/changes';
+import { buildHistoryExtras } from '../collector/src/history/extras';
 import { loadPreviousHistory } from '../collector/src/history/load';
 import { MockProvider } from '../collector/src/providers/mock/mock-provider';
 import { runCollection } from '../collector/src/run';
@@ -39,9 +38,6 @@ await writeSnapshots(
   result.projects,
   catalog,
   result.discovery,
-  {
-    history: appendHistory(previous, result.index, result.projects, catalog, policies, now),
-    changes: computeChanges(previous, result.index, result.projects),
-  },
+  buildHistoryExtras(previous, result.index, result.projects, catalog, policies, now),
 );
 console.log('✔ fixtures/snapshots regenerated');

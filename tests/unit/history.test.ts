@@ -24,6 +24,7 @@ import {
   type LoadHistoryOptions,
   type PreviousHistory,
 } from '../../collector/src/history/load';
+import { serialise } from '../../collector/src/writers/write-snapshots';
 import { CANARIES } from '../helpers/canaries';
 import {
   daysAgo,
@@ -181,6 +182,37 @@ describe('loadPreviousHistory', () => {
   });
 });
 
+describe('poisoned restored history', () => {
+  it('never aborts the run and never reaches the published files', async () => {
+    for (const canary of CANARIES) {
+      const file = githubHistory();
+      file.entries[0]!.collectorVersion = canary;
+      file.baseline.projects[0]!.findings = [
+        {
+          id: 'example-org/x#dependabot#2',
+          severity: 'high',
+          componentId: 'backend',
+          repository: `example-org/${canary}`,
+          source: 'github-dependabot',
+          htmlUrl: null,
+        },
+      ];
+      const previous = await loadGithub(file);
+      const r = runOf('project-alpha');
+      r.index.generatedAt = NOW.toISOString();
+      r.index.run.dataSource = 'github';
+      const extras = {
+        history: appendHistory(previous, r.index, [r.project], catalog, policies, NOW),
+        changes: computeChanges(previous, r.index, [r.project]),
+      };
+      const text = [...serialise(r.index, [r.project], undefined, null, extras).values()].join(
+        '\n',
+      );
+      for (const c of CANARIES) expect(text).not.toContain(c);
+    }
+  });
+});
+
 describe('cleanHistory', () => {
   const clean = (f: HistoryFile): CleanHistory => cleanHistory(f, catalog, policies, NOW);
 
@@ -238,6 +270,43 @@ describe('cleanHistory', () => {
     ];
     const urls = clean(file).baseline?.projects[0]!.findings.map((f) => f.htmlUrl);
     expect(urls).toEqual([null, 'https://github.com/example-org/x/security/code-scanning/2']);
+  });
+
+  it('canaries in a restored collectorVersion, baseline componentId or repository never reach the output', () => {
+    const poison = [...CANARIES, '<img src=x onerror=alert(1)>'];
+    for (const canary of poison) {
+      const file = historyFile([
+        historyEntry(daysAgo(2), { collectorVersion: canary }),
+        historyEntry(daysAgo(1)),
+      ]);
+      const finding = {
+        severity: 'high' as const,
+        source: 'github-dependabot' as const,
+        htmlUrl: null,
+      };
+      file.baseline.projects[0]!.findings = [
+        {
+          ...finding,
+          id: 'example-org/x#dependabot#1',
+          componentId: canary,
+          repository: 'example-org/x',
+        },
+        {
+          ...finding,
+          id: 'example-org/x#dependabot#2',
+          componentId: 'backend',
+          repository: `example-org/${canary}`,
+        },
+        {
+          ...finding,
+          id: 'example-org/x#dependabot#3',
+          componentId: 'backend',
+          repository: canary,
+        },
+      ];
+      const text = JSON.stringify(clean(file));
+      for (const c of poison) expect(text).not.toContain(c);
+    }
   });
 
   it('a canary in a restored baseline version is scrubbed', () => {

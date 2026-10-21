@@ -293,7 +293,9 @@ Diff rules (pure function, `collector/src/history/changes.ts`):
   - it is parsed with the strict schema;
   - every `htmlUrl` is re-checked with `sanitizeUrl` against the **current** `publication.allowedLinkHosts`, and dropped to `null` when not allowed;
   - every `version` and finding `id` goes through `scrubIdentifier`;
+  - `collectorVersion` must match a semver-like pattern (`1.2.3` or `1.2.3-rc.1`), the baseline alert `componentId` must be a slug and its `repository` an `owner/name` reference; they are republished, so the cleaning step also drops an entry or alert that scrubbing would change;
   - the final output passes `assertPublishable`.
+- History never blocks the snapshots (defence in depth). If building or publishing the history from a restored file still fails (schema or publication gate), it is set aside and the run starts fresh with state `unreadable`. If even a fresh history cannot be built, `history.json` and `changes.json` are not written for that run, the snapshots are, and the collection report says `History | not written this run` with the reason under "History notes". Notes name the failing check (schema path or secret pattern), never the value.
 - Restored entries are cleaned before use:
   - entries with `collectedAt` at or after the current run are dropped;
   - entries are sorted and de-duplicated by `collectedAt`;

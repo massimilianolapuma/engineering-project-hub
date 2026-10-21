@@ -45,6 +45,10 @@ export const ChangesBasisStateSchema = z.enum([
 export type ChangesBasisState = z.infer<typeof ChangesBasisStateSchema>;
 
 const projectId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,62}$/);
+/** Catalog component id (or "coordinator"). */
+const componentId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,62}$/);
+/** The collector's package version, semver-like. Restored files are checked against it. */
+export const COLLECTOR_VERSION_PATTERN = /^\d{1,5}\.\d{1,5}\.\d{1,5}(?:-[0-9A-Za-z.-]{1,30})?$/;
 const score = z.number().int().min(0).max(100);
 const count = z.number().int().min(0);
 
@@ -78,7 +82,7 @@ export const HistoryEntrySchema = z
     collectedAt: isoDate,
     dataSource: DataSourceSchema,
     authenticationMode: AuthenticationModeSchema,
-    collectorVersion: z.string().max(50),
+    collectorVersion: z.string().max(50).regex(COLLECTOR_VERSION_PATTERN),
     projects: z.array(HistoryProjectPointSchema).max(500),
   })
   .strict();
@@ -106,8 +110,8 @@ export const HistoryBaselineSchema = z
                   .object({
                     id: z.string().max(200),
                     severity: z.enum(['critical', 'high']),
-                    componentId: z.string().max(64),
-                    repository: z.string().max(200),
+                    componentId,
+                    repository: RepositoryRefSchema,
                     source: FindingSourceSchema,
                     htmlUrl: httpsUrl.nullable(),
                   })

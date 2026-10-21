@@ -293,7 +293,9 @@ Regole del confronto (funzione pura, `collector/src/history/changes.ts`):
   - viene validato con lo schema rigoroso;
   - ogni `htmlUrl` viene ricontrollato con `sanitizeUrl` rispetto agli `publication.allowedLinkHosts` **attuali**, e portato a `null` se non ammesso;
   - ogni `version` e ogni `id` di finding passa da `scrubIdentifier`;
+  - `collectorVersion` deve rispettare un formato tipo semver (`1.2.3` o `1.2.3-rc.1`), il `componentId` di un alert della baseline deve essere uno slug e il suo `repository` un riferimento `owner/name`; vengono ripubblicati, quindi la pulizia scarta anche una voce o un alert che lo scrubbing modificherebbe;
   - l'output finale passa da `assertPublishable`.
+- Lo storico non blocca mai gli snapshot (difesa in profondità). Se costruire o pubblicare lo storico da un file ripristinato fallisce comunque (schema o controllo di pubblicazione), il file viene scartato e l'esecuzione riparte da zero con stato `unreadable`. Se non si riesce a costruire nemmeno uno storico da zero, `history.json` e `changes.json` non vengono scritti per quell'esecuzione, gli snapshot sì, e il report di raccolta indica `History | not written this run` con il motivo sotto "History notes". Le note nominano il controllo fallito (percorso nello schema o pattern di segreto), mai il valore.
 - Le voci ripristinate vengono ripulite prima dell'uso:
   - si scartano le voci con `collectedAt` uguale o successivo all'esecuzione attuale;
   - le voci vengono ordinate e deduplicate per `collectedAt`;

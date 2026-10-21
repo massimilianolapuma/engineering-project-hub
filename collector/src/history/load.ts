@@ -1,7 +1,9 @@
 import { open } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
+  COLLECTOR_VERSION_PATTERN,
   HistoryFileSchema,
+  RepositoryRefSchema,
   HistoryProbeSchema,
   SUPPORTED_HISTORY_SCHEMA_VERSIONS,
   type Catalog,
@@ -135,7 +137,8 @@ export function cleanHistory(
   const entries = [...byTime.entries()]
     .sort(([a], [b]) => a - b)
     .map(([, e]) => ({ ...e, projects: e.projects.filter((p) => ids.has(p.id)) }))
-    .filter((e) => e.projects.length > 0);
+    // Republished as is: must still be a clean version string (defence in depth).
+    .filter((e) => e.projects.length > 0 && isCleanVersion(e.collectorVersion));
   const last = entries.at(-1);
   const baselineMatches =
     last !== undefined && Date.parse(file.baseline.collectedAt) === Date.parse(last.collectedAt);
@@ -145,6 +148,21 @@ export function cleanHistory(
     baseline: baselineMatches ? cleanBaseline(file.baseline, ids, policies) : null,
   };
 }
+
+const COMPONENT_ID = /^[a-z0-9][a-z0-9-]{0,62}$/;
+
+/** Unchanged by scrubbing: nothing was redacted, cut or stripped. */
+const isScrubbed = (s: string, max: number): boolean => scrubIdentifier(s, max) === s;
+
+const isCleanVersion = (v: string): boolean =>
+  COLLECTOR_VERSION_PATTERN.test(v) && isScrubbed(v, 50);
+
+/** componentId and repository of a resolved alert are republished in changes.json. */
+const isCleanFinding = (f: { componentId: string; repository: string }): boolean =>
+  COMPONENT_ID.test(f.componentId) &&
+  isScrubbed(f.componentId, 64) &&
+  RepositoryRefSchema.safeParse(f.repository).success &&
+  isScrubbed(f.repository, 200);
 
 function cleanBaseline(
   baseline: HistoryBaseline,
@@ -160,7 +178,9 @@ function cleanBaseline(
         ...p,
         findings: p.findings.flatMap((f) => {
           const id = scrubIdentifier(f.id, 200);
-          return id ? [{ ...f, id, htmlUrl: sanitizeUrl(f.htmlUrl, hosts) }] : [];
+          return id && isCleanFinding(f)
+            ? [{ ...f, id, htmlUrl: sanitizeUrl(f.htmlUrl, hosts) }]
+            : [];
         }),
         versions: p.versions.map((v) => ({ ...v, version: scrubIdentifier(v.version, 100) })),
       })),

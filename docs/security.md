@@ -151,7 +151,10 @@ pattern list in `shared/security/patterns.ts`:
 7. **Restored history** is untrusted input: provenance checks (own repository, default
    branch, not a fork, not the current run, allowed workflow and event), a 5 MiB artifact
    cap and an 8 MiB file cap, a strict parse, links re-sanitised against the current
-   allowlist and text re-scrubbed. See [Operations](operations.md#history-between-runs).
+   allowlist and text re-scrubbed. The collector version and the component and repository
+   of each baseline alert must match strict patterns. A restored history that still fails
+   the schema or the publication gate is set aside (state `unreadable`), so a planted file
+   never blocks the snapshots. See [Operations](operations.md#history-between-runs).
 8. **CSV injection**: a text cell that starts with `=`, `+`, `-`, `@`, TAB or CR gets a
    leading `'`. Numbers are never prefixed.
 

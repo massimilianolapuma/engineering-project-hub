@@ -17,8 +17,7 @@ import {
   type ProjectSnapshot,
 } from '@model/index';
 import { loadConfig } from '../../collector/src/config/load';
-import { appendHistory } from '../../collector/src/history/append';
-import { computeChanges } from '../../collector/src/history/changes';
+import { buildHistoryExtras } from '../../collector/src/history/extras';
 import { loadPreviousHistory } from '../../collector/src/history/load';
 import { MockProvider } from '../../collector/src/providers/mock/mock-provider';
 import { fail, ok, type SourceProvider } from '../../collector/src/providers/types';
@@ -82,10 +81,17 @@ async function historyExtras(
     policies: o.policies,
     now,
   });
-  return {
-    history: appendHistory(previous, result.index, result.projects, o.catalog, o.policies, now),
-    changes: computeChanges(previous, result.index, result.projects),
-  };
+  const extras = buildHistoryExtras(
+    previous,
+    result.index,
+    result.projects,
+    o.catalog,
+    o.policies,
+    now,
+  );
+  expect(extras.history).not.toBeNull();
+  expect(extras.changes).not.toBeNull();
+  return extras as HistoryExtras & { history: HistoryFile; changes: ChangesFile };
 }
 
 describe('mock collection', () => {
@@ -403,6 +409,28 @@ describe('history and changes (mock run)', () => {
       }
     });
 
+    it('a poisoned history fixture never blocks the snapshots', async () => {
+      const dir = await mkdtemp(join(tmpdir(), 'eph-cli-'));
+      try {
+        const fixture = join(dir, 'history.json');
+        await writeFile(
+          fixture,
+          (await readFile('fixtures/history/history.json', 'utf8')).replace(
+            '"0.6.0"',
+            '"ghp_exampleSecretValue"',
+          ),
+        );
+        const out2 = join(dir, 'out');
+        runCli(['--out', out2, '--history-fixture', fixture]);
+        const files = await readdir(out2);
+        expect(files).toContain('index.json');
+        const history = await readFile(join(out2, 'history.json'), 'utf8');
+        expect(history).not.toContain('ghp_exampleSecretValue');
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    });
+
     it('history.enabled false → no history.json or changes.json written and report says disabled', async () => {
       const dir = await mkdtemp(join(tmpdir(), 'eph-cli-'));
       try {
@@ -432,25 +460,29 @@ describe('history and changes (mock run)', () => {
     });
   });
 
-  it('canary in the history fixture is blocked', async () => {
+  it('a canary planted in the history fixture is scrubbed, never aborts the run', async () => {
     const { catalog, policies } = await loadConfig('config');
     const dir = await mkdtemp(join(tmpdir(), 'eph-canary-'));
     try {
       const fixture = await readFile('fixtures/history/history.json', 'utf8');
       const result = await mockRun();
+      const fields = [
+        (t: string, c: string) => t.replace('"2026.10.1"', JSON.stringify(c)),
+        (t: string, c: string) => t.replace('"0.6.0"', JSON.stringify(c)),
+        (t: string, c: string) =>
+          t.replace('"example-org/platform-mono"', JSON.stringify(`example-org/${c}`)),
+      ];
       for (const canary of CANARIES) {
-        const path = join(dir, 'history.json');
-        await writeFile(path, fixture.replace('"2026.10.1"', JSON.stringify(canary)));
-        let text = '';
-        try {
+        for (const plant of fields) {
+          const path = join(dir, 'history.json');
+          await writeFile(path, plant(fixture, canary));
+          // No catch: a sanitisation abort (no snapshot written) is a failure, not a pass.
           const extras = await historyExtras(result, { catalog, policies, fixturePath: path });
-          text = [
+          const text = [
             ...serialise(result.index, result.projects, catalog, result.discovery, extras).values(),
           ].join('\n');
-        } catch (e) {
-          expect(e).toBeInstanceOf(SanitizationError);
+          expect(text).not.toContain(canary);
         }
-        expect(text).not.toContain(canary);
       }
     } finally {
       await rm(dir, { recursive: true, force: true });

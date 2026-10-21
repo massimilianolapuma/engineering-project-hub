@@ -16,8 +16,7 @@ import { DataSourceSchema } from '@model/index';
 import { ConfigError, loadConfig } from './config/load';
 import { AuthConfigError, resolveAuth } from './providers/auth';
 import { createGitHubClient, GitHubProvider } from './providers/github/github-provider';
-import { appendHistory } from './history/append';
-import { computeChanges } from './history/changes';
+import { buildHistoryExtras } from './history/extras';
 import { loadPreviousHistory } from './history/load';
 import { MockProvider } from './providers/mock/mock-provider';
 import type { SourceProvider } from './providers/types';
@@ -84,10 +83,9 @@ async function main(): Promise<number> {
       policies,
       now,
     });
-    extras = {
-      history: appendHistory(previous, result.index, result.projects, catalog, policies, now),
-      changes: computeChanges(previous, result.index, result.projects),
-    };
+    // Never throws: a history that cannot be used is set aside, the snapshots are still written.
+    extras = buildHistoryExtras(previous, result.index, result.projects, catalog, policies, now);
+    for (const note of extras.notes ?? []) console.warn(`⚠ History: ${note}`);
   }
   const report = await writeSnapshots(
     values.out,
