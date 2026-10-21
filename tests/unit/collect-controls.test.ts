@@ -183,6 +183,37 @@ describe('collectReusableTargets', () => {
     expect(provider.listTags).toHaveBeenCalledTimes(1);
   });
 
+  it('makes at most 3 calls per referenced repository (spec budget: 150 for 50 repositories)', async () => {
+    const provider = stub({
+      listTags: vi.fn(async () =>
+        ok([
+          { name: 'v1.3.0', sha: A },
+          { name: 'v1.2.0', sha: A },
+        ]),
+      ),
+    });
+    const map = await collectReusableTargets(
+      context(provider),
+      ['o/sha-no-release', 'o/tag-no-release'],
+      new Set(['o/sha-no-release']),
+    );
+    // A SHA target with no release: the latest tag is the first entry of the tag list.
+    expect(map.get('o/sha-no-release')).toMatchObject({ latest: 'v1.3.0', visible: true });
+    const callsFor = (repo: string) =>
+      [
+        provider.getRepository,
+        provider.getLatestRelease,
+        provider.getLatestTag,
+        provider.listTags,
+      ].reduce<number>(
+        (n, fn) => n + (fn as Mock).mock.calls.filter((c) => c[0] === repo).length,
+        0,
+      );
+    expect(callsFor('o/sha-no-release')).toBe(3);
+    expect(callsFor('o/tag-no-release')).toBe(3);
+    expect(provider.getLatestTag).not.toHaveBeenCalledWith('o/sha-no-release');
+  });
+
   it('a repository the credentials cannot see is not visible, never "behind"', async () => {
     const provider = stub({ getRepository: vi.fn(async () => NOT_FOUND) });
     const map = await collectReusableTargets(context(provider), ['o/private']);

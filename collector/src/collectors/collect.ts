@@ -337,20 +337,23 @@ export async function collectReusableTargets(
       const release = await call(ctx, `release:${repository}`, () =>
         p.getLatestRelease(repository),
       );
-      const tag =
-        !release.ok && release.error.classification === 'not-found'
-          ? await call(ctx, `tag:${repository}`, () => p.getLatestTag(repository))
-          : null;
       const tags = shaTargets.has(key)
         ? await call(ctx, `tags:${repository}`, () => p.listTags(repository))
         : null;
+      // No release: fall back to the latest tag. When the tag list was read, its first entry is
+      // that tag (same endpoint and order), so at most 3 calls are made per repository.
+      let latestTag: string | null = null;
+      if (!release.ok && release.error.classification === 'not-found') {
+        if (tags) latestTag = tags.ok ? (tags.data[0]?.name ?? null) : null;
+        else {
+          const tag = await call(ctx, `tag:${repository}`, () => p.getLatestTag(repository));
+          latestTag = tag.ok ? tag.data.name : null;
+        }
+      }
       result.set(key, {
         // Tag names come from repositories the hub does not monitor: kept only when exact
         // (at most 100 characters, unchanged by scrubbing), never truncated.
-        latest: exactIdentifier(
-          release.ok ? release.data.tagName : tag?.ok ? tag.data.name : null,
-          100,
-        ),
+        latest: exactIdentifier(release.ok ? release.data.tagName : latestTag, 100),
         tags: tags?.ok
           ? tags.data.flatMap((t) => {
               const name = exactIdentifier(t.name, 100);

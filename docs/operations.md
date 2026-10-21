@@ -39,7 +39,7 @@ To change the frequency, edit the `cron` in `deploy-pages.yml`. Keep the stale t
   with at most 4 calls in parallel.
 - A GitHub App installation gets higher limits than a PAT. Prefer the App for large
   catalogs.
-- Repository controls add per unique repository: 1 call for the branch rules, 1 for the workflows directory and up to `maxWorkflowFiles` (30 by default) file reads, 1 for the Scorecard analysis, 1 more for classic protection when enabled, plus about 3 calls per distinct referenced reusable-workflow repository (50 at most), once per run. A discovery run adds 1 call per scanned repository when `customProperties` is on. Lower `maxWorkflowFiles` or set `repositoryControls.enabled: false` to cut the cost.
+- Repository controls add per unique repository: 1 call for the branch rules, 1 for the workflows directory and up to `maxWorkflowFiles` (30 by default) file reads, 1 for the Scorecard analysis, 1 more for classic protection when enabled, plus at most 3 calls per distinct referenced reusable-workflow repository (50 at most, so 150), once per run. A discovery run adds 1 call per scanned repository when `customProperties` is on. Lower `maxWorkflowFiles` or set `repositoryControls.enabled: false` to cut the cost.
 - If you see `rate-limited` errors, reduce the schedule frequency, split the catalog, or
   lower the concurrency in `collector/src/run.ts`.
 

@@ -41,7 +41,7 @@ dato non aggiornato (`freshness.snapshotStaleHours`) superiore all'intervallo.
   secondari), con al massimo 4 chiamate in parallelo.
 - Un'installazione di GitHub App ha limiti più alti di un PAT. Per cataloghi grandi è
   preferibile la App.
-- I controlli repository aggiungono, per repository univoco: 1 chiamata per le regole del branch, 1 per la cartella dei workflow e fino a `maxWorkflowFiles` (30 per impostazione predefinita) letture di file, 1 per l'analisi Scorecard, 1 in più per la protezione classica se attivata, più circa 3 chiamate per ogni repository di workflow riutilizzabili referenziato (al massimo 50), una volta per esecuzione. Una scoperta aggiunge 1 chiamata per repository analizzato quando `customProperties` è attivo. Riduci `maxWorkflowFiles` o imposta `repositoryControls.enabled: false` per ridurre il costo.
+- I controlli repository aggiungono, per repository univoco: 1 chiamata per le regole del branch, 1 per la cartella dei workflow e fino a `maxWorkflowFiles` (30 per impostazione predefinita) letture di file, 1 per l'analisi Scorecard, 1 in più per la protezione classica se attivata, più al massimo 3 chiamate per ogni repository di workflow riutilizzabili referenziato (al massimo 50, quindi 150), una volta per esecuzione. Una scoperta aggiunge 1 chiamata per repository analizzato quando `customProperties` è attivo. Riduci `maxWorkflowFiles` o imposta `repositoryControls.enabled: false` per ridurre il costo.
 - Se compaiono errori `rate-limited`, riduci la frequenza della pianificazione, suddividi
   il catalogo oppure abbassa la concorrenza in `collector/src/run.ts`.
 
