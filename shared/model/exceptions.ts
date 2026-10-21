@@ -118,7 +118,13 @@ export const ExceptionsFileSchema = z
   .superRefine(uniqueIdsAndSelectors);
 export type ExceptionsFile = z.infer<typeof ExceptionsFileSchema>;
 
-export const ExceptionStateSchema = z.enum(['active', 'expired', 'stale', 'unverifiable']);
+export const ExceptionStateSchema = z.enum([
+  'active',
+  'expired',
+  'stale',
+  'unverifiable',
+  'invalid',
+]);
 export type ExceptionState = z.infer<typeof ExceptionStateSchema>;
 
 // ---------------------------------------------------------------------------------------------

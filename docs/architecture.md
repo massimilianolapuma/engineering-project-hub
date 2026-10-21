@@ -92,7 +92,7 @@ flowchart TB
    `originalStatus` are kept.
 6. **Match exceptions, compute SLAs, then evaluate.** For each repository the unpublished match
    keys of every finding (alert number, raw rule id, tool, advisory ids) stay inside the collector.
-   `config/exceptions.yaml` is matched against them (states: active, expired, stale, unverifiable;
+   `config/exceptions.yaml` is matched against them (states: active, expired, stale, unverifiable, invalid;
    an unreadable source is never read as accepted), then remediation SLAs are computed from each
    alert's creation time, then the Security evaluator runs. An excepted finding keeps `status: open`;
    one helper, `countsAsOpen`, decides what is counted.

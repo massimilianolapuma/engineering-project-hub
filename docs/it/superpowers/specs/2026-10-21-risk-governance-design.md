@@ -76,23 +76,23 @@ Anti-obiettivi (programma §5, specializzati)
 
 ## 4. Decisioni in breve
 
-| #   | Decisione                                                                                                                                                                                                                                     | Perché                                                                                                                                          |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| D1  | Le eccezioni stanno in `<configDir>/exceptions.yaml`, opzionale. Nessun file = nessuna eccezione. JSON Schema `config/schema/exceptions.schema.json`, generato da Zod **(SC)**                                                                | Stesso posto, stesso percorso di revisione e stesso schema di override (`config.local/`, configurazione privata di deploy) di policy e catalogo |
-| D2  | Un finding con eccezione mantiene `status: 'open'` (la verità di GitHub) e riceve `exception: { id, state, expires }`. Il conteggio usa un solo helper condiviso, `countsAsOpen(f)` **(SC)**                                                  | L'hub non finge che GitHub sia cambiato. La baseline della v0.7.0 continua a vedere l'alert aperto, quindi nessun "risolto" fittizio            |
-| D3  | Selettori: `alert` (numero) per ogni fonte; `rule` (+ `tool` opzionale) per code scanning; `advisory` (GHSA o CVE) per Dependabot. Secret scanning accetta **solo** `alert` **(SC)**                                                          | Regole e advisory coprono finding ricorrenti. Accettare un intero tipo di segreto nasconderebbe segreti esposti in futuro                       |
-| D4  | Obbligatori `owner`, `reason` (10–300 caratteri), `created`, `expires` (date). `expires − created ≤ exceptions.maxDays` (default **180**). `ticket` opzionale, con host in `publication.allowedLinkHosts` **(SC)**                            | Un'accettazione a tempo, con un responsabile e motivata. Una sola allowlist di host per ogni link pubblicato                                    |
-| D5  | Stati dell'eccezione a ogni raccolta: `active`, `expired`, `stale` (nessun finding aperto corrisponde), `unverifiable` (fonte non leggibile). Le eccezioni orfane (repository in nessun progetto) sono contate a livello di raccolta **(SC)** | Sconosciuto ≠ zero: una fonte illeggibile non può né confermare né smentire una corrispondenza                                                  |
-| D6  | I finding di un'eccezione scaduta tornano a contare e il progetto riceve il motivo Sicurezza `security-exception-expired` a livello amber (`exceptions.expiredIsAmber: true`) **(SC)**                                                        | "Quelle scadute tornano e sono segnalate" (programma §4). Tocca solo chi ha creato eccezioni                                                    |
-| D7  | Giorni di SLA per classe: critical 7, high 30, medium 90, low 180, secret 7 (secret scanning, qualunque severità). Severità informational e unknown senza SLA **(SC)**                                                                        | Valori comuni nella gestione delle vulnerabilità. La severità del secret scanning è sempre `unknown`, quindi serve una classe a sé              |
-| D8  | Età = adesso − `created_at` dell'alert. Scadenza = `created_at` + giorni di SLA. Un'eccezione attiva sospende il "in ritardo" ma non riavvia mai l'orologio **(SC)**                                                                          | Deterministico dai dati raccolti, senza bisogno dello storico. Un'eccezione non deve diventare un modo per far ripartire lo SLA                 |
-| D9  | Escalation del ritardo per classe: `remediation.overdue.<classe>: info \| amber \| red`, **default `info` per ogni classe**. Il `config/policies.yaml` della demo la attiva con `critical: red, high: red` **(SC)**                           | Programma §5: mai rosso dalla sera alla mattina. La demo mostra l'effetto, e il commento dice che è una scelta esplicita                        |
-| D10 | `npm run policy:check`: validazione + casi di decisione in `<configDir>/policy-cases/*.yaml` + rivalutazione opzionale con `--snapshot <dir>`. Non scrive mai **(SC)**                                                                        | Mostra l'effetto di una modifica alle policy nella pull request, prima della raccolta successiva                                                |
-| D11 | Niente OPA / Rego. Zod è il validatore, il JSON Schema è generato da Zod, e un test li tiene allineati **(SC)**                                                                                                                               | Nessun nuovo runtime, nessun secondo linguaggio di policy per un insieme di regole piccolo e tipizzato (§5.9, ADR 0008)                         |
-| D12 | CI: un job `policy-check` in `ci.yml` su ogni pull request, tramite l'esistente `rw-node-quality-host.yml` **(SC)**                                                                                                                           | Copre ogni modifica a `config/` senza filtro di percorso (un check obbligatorio saltato resta in attesa). Nessun nuovo workflow riutilizzabile  |
-| D13 | La fonte mock legge `fixtures/exceptions/exceptions.yaml`, dove `created` / `expires` possono usare token `@now±Nd`. Le raccolte reali leggono `<configDir>/exceptions.yaml`, solo date assolute **(SC)**                                     | Golden deterministici e una demo dal vivo che non "scade" mai, come la fixture dello storico della v0.7.0 (lì D4)                               |
-| D14 | Schema snapshot **1.5 → 1.6**. Storico **1.1 → 1.2** (conteggi `risk` opzionali). `changes.json` resta `1.0` con campi opzionali aggiunti **(SC)**                                                                                            | Un aumento per release. Lo storico segue lo schema additivo della v0.8.0                                                                        |
-| D15 | ADR 0008: "Governo del rischio come policy-as-code tipizzata: eccezioni in configurazione revisionata, mai dismiss su GitHub, niente OPA"                                                                                                     | Registra perché l'hub tiene un proprio livello di accettazione accanto ai dismiss di GitHub                                                     |
+| #   | Decisione                                                                                                                                                                                                                                                                                                         | Perché                                                                                                                                          |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | Le eccezioni stanno in `<configDir>/exceptions.yaml`, opzionale. Nessun file = nessuna eccezione. JSON Schema `config/schema/exceptions.schema.json`, generato da Zod **(SC)**                                                                                                                                    | Stesso posto, stesso percorso di revisione e stesso schema di override (`config.local/`, configurazione privata di deploy) di policy e catalogo |
+| D2  | Un finding con eccezione mantiene `status: 'open'` (la verità di GitHub) e riceve `exception: { id, state, expires }`. Il conteggio usa un solo helper condiviso, `countsAsOpen(f)` **(SC)**                                                                                                                      | L'hub non finge che GitHub sia cambiato. La baseline della v0.7.0 continua a vedere l'alert aperto, quindi nessun "risolto" fittizio            |
+| D3  | Selettori: `alert` (numero) per ogni fonte; `rule` (+ `tool` opzionale) per code scanning; `advisory` (GHSA o CVE) per Dependabot. Secret scanning accetta **solo** `alert` **(SC)**                                                                                                                              | Regole e advisory coprono finding ricorrenti. Accettare un intero tipo di segreto nasconderebbe segreti esposti in futuro                       |
+| D4  | Obbligatori `owner`, `reason` (10–300 caratteri), `created`, `expires` (date). `expires − created ≤ exceptions.maxDays` (default **180**). `ticket` opzionale, con host in `publication.allowedLinkHosts` **(SC)**                                                                                                | Un'accettazione a tempo, con un responsabile e motivata. Una sola allowlist di host per ogni link pubblicato                                    |
+| D5  | Stati dell'eccezione a ogni raccolta: `active`, `expired`, `stale` (nessun finding aperto corrisponde), `unverifiable` (fonte non leggibile), `invalid` (`created` è nel futuro, quindi non viene mai applicata). Le eccezioni orfane (repository in nessun progetto) sono contate a livello di raccolta **(SC)** | Sconosciuto ≠ zero: una fonte illeggibile non può né confermare né smentire una corrispondenza                                                  |
+| D6  | I finding di un'eccezione scaduta tornano a contare e il progetto riceve il motivo Sicurezza `security-exception-expired` a livello amber (`exceptions.expiredIsAmber: true`) **(SC)**                                                                                                                            | "Quelle scadute tornano e sono segnalate" (programma §4). Tocca solo chi ha creato eccezioni                                                    |
+| D7  | Giorni di SLA per classe: critical 7, high 30, medium 90, low 180, secret 7 (secret scanning, qualunque severità). Severità informational e unknown senza SLA **(SC)**                                                                                                                                            | Valori comuni nella gestione delle vulnerabilità. La severità del secret scanning è sempre `unknown`, quindi serve una classe a sé              |
+| D8  | Età = adesso − `created_at` dell'alert. Scadenza = `created_at` + giorni di SLA. Un'eccezione attiva sospende il "in ritardo" ma non riavvia mai l'orologio **(SC)**                                                                                                                                              | Deterministico dai dati raccolti, senza bisogno dello storico. Un'eccezione non deve diventare un modo per far ripartire lo SLA                 |
+| D9  | Escalation del ritardo per classe: `remediation.overdue.<classe>: info \| amber \| red`, **default `info` per ogni classe**. Il `config/policies.yaml` della demo la attiva con `critical: red, high: red` **(SC)**                                                                                               | Programma §5: mai rosso dalla sera alla mattina. La demo mostra l'effetto, e il commento dice che è una scelta esplicita                        |
+| D10 | `npm run policy:check`: validazione + casi di decisione in `<configDir>/policy-cases/*.yaml` + rivalutazione opzionale con `--snapshot <dir>`. Non scrive mai **(SC)**                                                                                                                                            | Mostra l'effetto di una modifica alle policy nella pull request, prima della raccolta successiva                                                |
+| D11 | Niente OPA / Rego. Zod è il validatore, il JSON Schema è generato da Zod, e un test li tiene allineati **(SC)**                                                                                                                                                                                                   | Nessun nuovo runtime, nessun secondo linguaggio di policy per un insieme di regole piccolo e tipizzato (§5.9, ADR 0008)                         |
+| D12 | CI: un job `policy-check` in `ci.yml` su ogni pull request, tramite l'esistente `rw-node-quality-host.yml` **(SC)**                                                                                                                                                                                               | Copre ogni modifica a `config/` senza filtro di percorso (un check obbligatorio saltato resta in attesa). Nessun nuovo workflow riutilizzabile  |
+| D13 | La fonte mock legge `fixtures/exceptions/exceptions.yaml`, dove `created` / `expires` possono usare token `@now±Nd`. Le raccolte reali leggono `<configDir>/exceptions.yaml`, solo date assolute **(SC)**                                                                                                         | Golden deterministici e una demo dal vivo che non "scade" mai, come la fixture dello storico della v0.7.0 (lì D4)                               |
+| D14 | Schema snapshot **1.5 → 1.6**. Storico **1.1 → 1.2** (conteggi `risk` opzionali). `changes.json` resta `1.0` con campi opzionali aggiunti **(SC)**                                                                                                                                                                | Un aumento per release. Lo storico segue lo schema additivo della v0.8.0                                                                        |
+| D15 | ADR 0008: "Governo del rischio come policy-as-code tipizzata: eccezioni in configurazione revisionata, mai dismiss su GitHub, niente OPA"                                                                                                                                                                         | Registra perché l'hub tiene un proprio livello di accettazione accanto ai dismiss di GitHub                                                     |
 
 ## 5. Design
 
@@ -138,7 +138,7 @@ Controlli incrociati che richiedono policy o catalogo (`validateExceptions`, `co
 | `repository` in nessun progetto del catalogo           | avviso ("orfana")                             |
 | scaduta al momento della validazione                   | avviso ("rimuovi o rinnova")                  |
 | in scadenza entro `exceptions.expiringSoonDays`        | avviso                                        |
-| `created` successiva a oggi (UTC)                      | avviso                                        |
+| `created` successiva a oggi (UTC)                      | errore ("creata nel futuro")                  |
 
 - Gli errori fanno fallire `validate:config`, il collector (exit 1, strutturale, come ogni errore di configurazione) e `policy:check`.
 - Gli avvisi sono stampati e non fanno mai fallire il collector.
@@ -169,10 +169,11 @@ Input: per repository, i finding con le loro **chiavi di confronto non pubblicat
   - `advisory`: finding Dependabot con GHSA o CVE uguale (senza distinzione maiuscole/minuscole).
 - Scadenza: un'eccezione scade a `expires + 1 giorno, 00:00:00Z` (ultimo giorno incluso, UTC).
 - Stato di ogni eccezione a `now`, vince la prima condizione vera:
-  1. `expired`: `now ≥ scadenza`;
-  2. `unverifiable`: la fonte di `(repository, source)` non era leggibile in questa raccolta (qualunque risultato fallito tranne `not-configured`, compresi un repository saltato e un limite di pagine). Una fonte `not-configured` per definizione non ha alert, quindi vale come vuota, la stessa regola che usa `countsComplete`;
-  3. `stale`: nessun finding aperto corrisponde;
-  4. `active`.
+  1. `invalid`: `created` è dopo oggi (UTC). La voce non viene mai applicata, non corrisponde a nulla (`matched: null`) e i suoi finding continuano a contare. Il loader e `policy:check` rifiutano un file così come errore, quindi questo stato è una difesa in più per una raccolta che ne riceve comunque uno, ed è elencato in Data quality. Non può essere anche scaduta, perché `expires ≥ created`;
+  2. `expired`: `now ≥ scadenza`;
+  3. `unverifiable`: la fonte di `(repository, source)` non era leggibile in questa raccolta (qualunque risultato fallito tranne `not-configured`, compresi un repository saltato e un limite di pagine). Una fonte `not-configured` per definizione non ha alert, quindi vale come vuota, la stessa regola che usa `countsComplete`;
+  4. `stale`: nessun finding aperto corrisponde;
+  5. `active`.
 - `expiringSoon`: `active` e `scadenza − now ≤ exceptions.expiringSoonDays` giorni.
 - Quale eccezione porta un finding, quando ne corrispondono più di una:
   - una attiva batte una scaduta;
@@ -284,7 +285,7 @@ exceptions:
 `shared/model/exceptions.ts` (nuovo):
 
 - `ExceptionSourceSchema`, `ExceptionMatchSchema`, `ExceptionEntrySchema`, `ExceptionsFileSchema` (§5.1);
-- `ExceptionStateSchema = z.enum(['active','expired','stale','unverifiable'])`;
+- `ExceptionStateSchema = z.enum(['active','expired','stale','unverifiable','invalid'])`;
 - `PolicyCaseSchema` (§5.7).
 
 `shared/model/snapshot.ts`:
@@ -331,7 +332,7 @@ SecuritySummarySchema gains:
     oldestOverdueSince: isoDate.nullable(),
     slaUnknown: z.number().int().min(0),
   }).strict(),
-  exceptionStates: z.object({ active, expired, stale, unverifiable, expiringSoon: int ≥ 0 }).strict(),
+  exceptionStates: z.object({ active, expired, stale, unverifiable, invalid, expiringSoon: int ≥ 0 }).strict(),
 
 ProjectSnapshotSchema gains:
   securityExceptions: z.array(SecurityExceptionSchema).max(500),   // sorted by state, then id
@@ -341,7 +342,7 @@ ProjectSummarySchema gains:
     overdue: nullableCount,              // sum of the five overdue classes
     overdueCriticalHigh: nullableCount,
     accepted: nullableCount,             // sum of acceptedCounts
-    exceptionIssues: z.number().int().min(0),   // expired + stale + unverifiable
+    exceptionIssues: z.number().int().min(0),   // expired + stale + unverifiable + invalid
   }).strict(),
 
 RunMetadataSchema gains:
@@ -524,7 +525,7 @@ Più "in scadenza". Ogni voce rimanda a `#exceptions` del progetto.
 **Come leggere:** una nuova sezione `#risk` "Eccezioni e SLA di remediation" / "Exceptions and remediation SLAs":
 
 - accettato contro dismiss su GitHub;
-- i quattro stati di un'eccezione;
+- i cinque stati di un'eccezione;
 - la tabella degli SLA letta dalle policy effettive, con il livello di ritardo per classe e "informativo" quando è `info`;
 - "in ritardo dal = creazione dell'alert + giorni di SLA";
 - perché un'età sconosciuta non è mai "nei tempi".

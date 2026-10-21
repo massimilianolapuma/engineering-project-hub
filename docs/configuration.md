@@ -535,9 +535,10 @@ Field rules:
 - `ticket`: an `https` URL whose host is in `publication.allowedLinkHosts` (an error otherwise).
 - Ids are unique, and two entries cannot share the same repository, source and selector.
 - Dates are plain `YYYY-MM-DD` and **UTC**: an exception stays active through the whole `expires` day and ends at 00:00 UTC the day after.
-- Warnings (never fail a collection): the repository is in no catalog project (orphaned), already expired, expiring soon, or created in the future. The horizon check compares two fixed dates, never "now", so a valid file stays valid.
+- `created` must not be after today (UTC): a forward-dated entry would stretch the acceptance past `exceptions.maxDays`, so it is an error ("created in the future"). If a collection still meets one, the exception is never applied: it is reported as **invalid** in Data quality and its alerts keep counting.
+- Warnings (never fail a collection): the repository is in no catalog project (orphaned), already expired or expiring soon. The horizon check compares two fixed dates, never "now", so a valid file stays valid.
 
-States, evaluated at every collection (first match wins): **expired** (the last day has passed;
+States, evaluated at every collection (first match wins): **invalid** (`created` is in the future: never applied), **expired** (the last day has passed;
 the alert counts again, and Security gets an amber reason by default), **unverifiable** (the alert
 source was not readable in this run, so the hub cannot say; never treated as accepted), **stale**
 (it matches no open alert: remove it) and **active**.

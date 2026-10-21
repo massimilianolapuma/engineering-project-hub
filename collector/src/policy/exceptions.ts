@@ -83,7 +83,9 @@ export function validateExceptions(
     if (remaining <= 0) add('warning', `expired on ${e.expires}: remove or renew`);
     else if (remaining <= expiringSoonDays * DAY_MS)
       add('warning', `expires in ${Math.floor(remaining / DAY_MS)} days (${e.expires})`);
-    if (e.created > today) add('warning', `created in the future (${e.created})`);
+    // An exception cannot be written in advance: a forward-dated `created` would stretch the
+    // acceptance past exceptions.maxDays. (Collection never applies such an entry either.)
+    if (e.created > today) add('error', `created in the future (${e.created})`);
   });
   return issues;
 }
@@ -111,7 +113,7 @@ function matches(e: ExceptionEntry, m: MatchableFinding): boolean {
   return keys.advisoryIds.some((id) => id.toUpperCase() === wanted);
 }
 
-const STATE_ORDER = { expired: 0, unverifiable: 1, stale: 2, active: 3 } as const;
+const STATE_ORDER = { invalid: 0, expired: 1, unverifiable: 2, stale: 3, active: 4 } as const;
 
 export function applyExceptions(input: {
   findings: MatchableFinding[];
@@ -122,6 +124,7 @@ export function applyExceptions(input: {
   now: Date;
 }): { findings: FindingWithException[]; records: SecurityException[] } {
   const { policies, now } = input;
+  const today = now.toISOString().slice(0, 10);
   const readable = (e: ExceptionEntry) => {
     const wanted = `${e.repository.toLowerCase()}|${e.source}`;
     for (const [key, state] of input.readability) {
@@ -134,15 +137,19 @@ export function applyExceptions(input: {
   const carried = new Map<string, { entry: ExceptionEntry; state: 'active' | 'expired' }[]>();
   const records: SecurityException[] = input.exceptions.map((e) => {
     const expired = now.getTime() >= expiryInstant(e.expires).getTime();
+    // Never applied before its `created` date (UTC): reported invalid, whatever else is true.
+    const notYetInForce = e.created > today;
     const isReadable = readable(e);
-    const hits = isReadable ? input.findings.filter((m) => matches(e, m)) : [];
-    const state: SecurityException['state'] = expired
-      ? 'expired'
-      : !isReadable
-        ? 'unverifiable'
-        : hits.length === 0
-          ? 'stale'
-          : 'active';
+    const hits = isReadable && !notYetInForce ? input.findings.filter((m) => matches(e, m)) : [];
+    const state: SecurityException['state'] = notYetInForce
+      ? 'invalid'
+      : expired
+        ? 'expired'
+        : !isReadable
+          ? 'unverifiable'
+          : hits.length === 0
+            ? 'stale'
+            : 'active';
     if (state === 'active' || state === 'expired') {
       for (const h of hits) {
         const list = carried.get(h.finding.id) ?? [];
@@ -179,7 +186,7 @@ export function applyExceptions(input: {
         state === 'active' &&
         expiryInstant(e.expires).getTime() - now.getTime() <=
           policies.exceptions.expiringSoonDays * DAY_MS,
-      matched: isReadable ? hits.length : null,
+      matched: isReadable && !notYetInForce ? hits.length : null,
       findingIds: hits
         .map((h) => h.finding.id)
         .sort()

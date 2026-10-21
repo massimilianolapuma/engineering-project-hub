@@ -86,6 +86,19 @@ describe('policy:check decision cases and validation', () => {
     );
   });
 
+  it('fails an exception created in the future', async () => {
+    const config = configCopy();
+    writeFileSync(
+      join(config, 'exceptions.yaml'),
+      EXCEPTION({ created: "'2026-01-16'", expires: "'2026-02-10'" }),
+    );
+    const r = await run({ configDir: config });
+    expect(r.exitCode).toBe(1);
+    expect(
+      r.lines.some((l) => l.startsWith('✖ ') && l.includes('created in the future (2026-01-16)')),
+    ).toBe(true);
+  });
+
   it('reports a schema error with its path', async () => {
     const config = configCopy();
     writeFileSync(join(config, 'exceptions.yaml'), EXCEPTION().replace('team-platform', 'a b c d'));

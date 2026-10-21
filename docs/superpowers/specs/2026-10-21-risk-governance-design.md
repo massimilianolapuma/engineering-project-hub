@@ -76,23 +76,23 @@ Anti-goals (program §5, specialised)
 
 ## 4. Decisions in short
 
-| #   | Decision                                                                                                                                                                                                                  | Why                                                                                                                       |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| D1  | Exceptions live in `<configDir>/exceptions.yaml`, optional. No file = no exceptions. JSON Schema `config/schema/exceptions.schema.json`, generated from Zod **(BC)**                                                      | Same place, review path and override pattern (`config.local/`, private deploy config) as policies and catalog             |
-| D2  | An excepted finding keeps `status: 'open'` (the GitHub truth) and gains `exception: { id, state, expires }`. Counting uses one shared helper, `countsAsOpen(f)` **(BC)**                                                  | The hub never pretends GitHub changed. v0.7.0's baseline keeps seeing the alert as open, so no fake "resolved"            |
-| D3  | Selectors: `alert` (number) for every source; `rule` (+ optional `tool`) for code scanning; `advisory` (GHSA or CVE) for Dependabot. Secret scanning accepts **only** `alert` **(BC)**                                    | Rules and advisories cover recurring findings. Accepting a whole secret type would hide future leaked secrets             |
-| D4  | Mandatory `owner`, `reason` (10–300 chars), `created`, `expires` (dates). `expires − created ≤ exceptions.maxDays` (default **180**). Optional `ticket` URL whose host must be in `publication.allowedLinkHosts` **(BC)** | A time-boxed, owned, explained acceptance. One host allowlist for every published link                                    |
-| D5  | Exception states per run: `active`, `expired`, `stale` (matches no open finding), `unverifiable` (the source was not readable). Orphaned exceptions (repository in no project) are counted at run level **(BC)**          | Unknown ≠ zero: an unreadable source can neither confirm nor deny a match                                                 |
-| D6  | An expired exception's findings count again, and the project gets a Security reason `security-exception-expired` at level amber (`exceptions.expiredIsAmber: true`) **(BC)**                                              | "Expired ones return and are flagged" (program §4). Only owners who created exceptions are affected                       |
-| D7  | SLA days per class: critical 7, high 30, medium 90, low 180, secret 7 (secret scanning, whatever its severity). Informational and unknown severities have no SLA **(BC)**                                                 | Common vulnerability-management defaults. Secret scanning severity is always `unknown`, so it needs its own class         |
-| D8  | Age = now − alert `created_at`. Due = `created_at` + SLA days. An active exception pauses "overdue" but never resets the clock **(BC)**                                                                                   | Deterministic from collected data, with no history needed. An exception must not become a way to restart the SLA          |
-| D9  | Overdue escalation per class: `remediation.overdue.<class>: info \| amber \| red`, **default `info` for every class**. The demo `config/policies.yaml` opts in with `critical: red, high: red` **(BC)**                   | Program §5: never red overnight. The demo shows the effect, and the comment says it is an opt-in                          |
-| D10 | `npm run policy:check`: validation + decision cases in `<configDir>/policy-cases/*.yaml` + optional `--snapshot <dir>` re-evaluation. It never writes **(BC)**                                                            | Shows the effect of a policy change in the pull request, before the next collection                                       |
-| D11 | No OPA / Rego. Zod is the validator, JSON Schema is generated from it, and a test keeps the two in sync **(BC)**                                                                                                          | No new runtime, no second policy language for a small, typed rule set (§5.9, ADR 0008)                                    |
-| D12 | CI: a `policy-check` job in `ci.yml` on every pull request, through the existing `rw-node-quality-host.yml` **(BC)**                                                                                                      | Covers every change to `config/` without a path filter (a skipped required check stays pending). No new reusable workflow |
-| D13 | The mock source reads `fixtures/exceptions/exceptions.yaml`, where `created` / `expires` may use `@now±Nd` tokens. Real runs read `<configDir>/exceptions.yaml`, absolute dates only **(BC)**                             | Deterministic goldens and a live demo that never "expires", like v0.7.0's history fixture (D4 there)                      |
-| D14 | Snapshot schema **1.5 → 1.6**. History **1.1 → 1.2** (optional `risk` counts). `changes.json` stays `1.0` with additive optional fields **(BC)**                                                                          | One bump per release. History follows v0.8.0's additive pattern                                                           |
-| D15 | ADR 0008: "Risk governance as typed policy-as-code: exceptions in reviewed config, never GitHub dismissals, no OPA"                                                                                                       | Records why the hub keeps its own acceptance layer next to GitHub's dismissals                                            |
+| #   | Decision                                                                                                                                                                                                                                                                         | Why                                                                                                                       |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| D1  | Exceptions live in `<configDir>/exceptions.yaml`, optional. No file = no exceptions. JSON Schema `config/schema/exceptions.schema.json`, generated from Zod **(BC)**                                                                                                             | Same place, review path and override pattern (`config.local/`, private deploy config) as policies and catalog             |
+| D2  | An excepted finding keeps `status: 'open'` (the GitHub truth) and gains `exception: { id, state, expires }`. Counting uses one shared helper, `countsAsOpen(f)` **(BC)**                                                                                                         | The hub never pretends GitHub changed. v0.7.0's baseline keeps seeing the alert as open, so no fake "resolved"            |
+| D3  | Selectors: `alert` (number) for every source; `rule` (+ optional `tool`) for code scanning; `advisory` (GHSA or CVE) for Dependabot. Secret scanning accepts **only** `alert` **(BC)**                                                                                           | Rules and advisories cover recurring findings. Accepting a whole secret type would hide future leaked secrets             |
+| D4  | Mandatory `owner`, `reason` (10–300 chars), `created`, `expires` (dates). `expires − created ≤ exceptions.maxDays` (default **180**). Optional `ticket` URL whose host must be in `publication.allowedLinkHosts` **(BC)**                                                        | A time-boxed, owned, explained acceptance. One host allowlist for every published link                                    |
+| D5  | Exception states per run: `active`, `expired`, `stale` (matches no open finding), `unverifiable` (the source was not readable), `invalid` (`created` is in the future, so it is never applied). Orphaned exceptions (repository in no project) are counted at run level **(BC)** | Unknown ≠ zero: an unreadable source can neither confirm nor deny a match                                                 |
+| D6  | An expired exception's findings count again, and the project gets a Security reason `security-exception-expired` at level amber (`exceptions.expiredIsAmber: true`) **(BC)**                                                                                                     | "Expired ones return and are flagged" (program §4). Only owners who created exceptions are affected                       |
+| D7  | SLA days per class: critical 7, high 30, medium 90, low 180, secret 7 (secret scanning, whatever its severity). Informational and unknown severities have no SLA **(BC)**                                                                                                        | Common vulnerability-management defaults. Secret scanning severity is always `unknown`, so it needs its own class         |
+| D8  | Age = now − alert `created_at`. Due = `created_at` + SLA days. An active exception pauses "overdue" but never resets the clock **(BC)**                                                                                                                                          | Deterministic from collected data, with no history needed. An exception must not become a way to restart the SLA          |
+| D9  | Overdue escalation per class: `remediation.overdue.<class>: info \| amber \| red`, **default `info` for every class**. The demo `config/policies.yaml` opts in with `critical: red, high: red` **(BC)**                                                                          | Program §5: never red overnight. The demo shows the effect, and the comment says it is an opt-in                          |
+| D10 | `npm run policy:check`: validation + decision cases in `<configDir>/policy-cases/*.yaml` + optional `--snapshot <dir>` re-evaluation. It never writes **(BC)**                                                                                                                   | Shows the effect of a policy change in the pull request, before the next collection                                       |
+| D11 | No OPA / Rego. Zod is the validator, JSON Schema is generated from it, and a test keeps the two in sync **(BC)**                                                                                                                                                                 | No new runtime, no second policy language for a small, typed rule set (§5.9, ADR 0008)                                    |
+| D12 | CI: a `policy-check` job in `ci.yml` on every pull request, through the existing `rw-node-quality-host.yml` **(BC)**                                                                                                                                                             | Covers every change to `config/` without a path filter (a skipped required check stays pending). No new reusable workflow |
+| D13 | The mock source reads `fixtures/exceptions/exceptions.yaml`, where `created` / `expires` may use `@now±Nd` tokens. Real runs read `<configDir>/exceptions.yaml`, absolute dates only **(BC)**                                                                                    | Deterministic goldens and a live demo that never "expires", like v0.7.0's history fixture (D4 there)                      |
+| D14 | Snapshot schema **1.5 → 1.6**. History **1.1 → 1.2** (optional `risk` counts). `changes.json` stays `1.0` with additive optional fields **(BC)**                                                                                                                                 | One bump per release. History follows v0.8.0's additive pattern                                                           |
+| D15 | ADR 0008: "Risk governance as typed policy-as-code: exceptions in reviewed config, never GitHub dismissals, no OPA"                                                                                                                                                              | Records why the hub keeps its own acceptance layer next to GitHub's dismissals                                            |
 
 ## 5. Design
 
@@ -138,7 +138,7 @@ Cross-checks that need the policies or the catalog (`validateExceptions`, `colle
 | `repository` in no catalog project                   | warning ("orphaned")                          |
 | expired at validation time                           | warning ("remove or renew")                   |
 | expiring within `exceptions.expiringSoonDays`        | warning                                       |
-| `created` after today (UTC)                          | warning                                       |
+| `created` after today (UTC)                          | error ("created in the future")               |
 
 - Errors fail `validate:config`, the collector (exit 1, structural, like any config error) and `policy:check`.
 - Warnings are printed, and never fail the collector.
@@ -169,10 +169,11 @@ Inputs: per repository, the findings plus their **unpublished match keys**, the 
   - `advisory`: Dependabot finding whose GHSA or CVE equals it (case-insensitive).
 - Expiry: an exception expires at `expires + 1 day, 00:00:00Z` (inclusive last day, UTC).
 - State of each exception at `now`, first match wins:
-  1. `expired`: `now ≥ expiry`;
-  2. `unverifiable`: the source of `(repository, source)` was not readable in this run (any failed result except `not-configured`, including a skipped repository or a page cap). A `not-configured` source has no alerts by definition, so it reads as empty, the same rule `countsComplete` uses;
-  3. `stale`: no open finding matches;
-  4. `active`.
+  1. `invalid`: `created` is after today (UTC). The entry is never applied, matches nothing (`matched: null`) and its findings keep counting. The loader and `policy:check` reject such a file as an error, so this state is a defence in depth for a collection that gets one anyway, and it is listed in Data quality. It cannot also be expired, because `expires ≥ created`;
+  2. `expired`: `now ≥ expiry`;
+  3. `unverifiable`: the source of `(repository, source)` was not readable in this run (any failed result except `not-configured`, including a skipped repository or a page cap). A `not-configured` source has no alerts by definition, so it reads as empty, the same rule `countsComplete` uses;
+  4. `stale`: no open finding matches;
+  5. `active`.
 - `expiringSoon`: `active` and `expiry − now ≤ exceptions.expiringSoonDays` days.
 - Which exception a finding carries, when several match:
   - an active one beats an expired one;
@@ -284,7 +285,7 @@ exceptions:
 `shared/model/exceptions.ts` (new):
 
 - `ExceptionSourceSchema`, `ExceptionMatchSchema`, `ExceptionEntrySchema`, `ExceptionsFileSchema` (§5.1);
-- `ExceptionStateSchema = z.enum(['active','expired','stale','unverifiable'])`;
+- `ExceptionStateSchema = z.enum(['active','expired','stale','unverifiable','invalid'])`;
 - `PolicyCaseSchema` (§5.7).
 
 `shared/model/snapshot.ts`:
@@ -331,7 +332,7 @@ SecuritySummarySchema gains:
     oldestOverdueSince: isoDate.nullable(),
     slaUnknown: z.number().int().min(0),
   }).strict(),
-  exceptionStates: z.object({ active, expired, stale, unverifiable, expiringSoon: int ≥ 0 }).strict(),
+  exceptionStates: z.object({ active, expired, stale, unverifiable, invalid, expiringSoon: int ≥ 0 }).strict(),
 
 ProjectSnapshotSchema gains:
   securityExceptions: z.array(SecurityExceptionSchema).max(500),   // sorted by state, then id
@@ -341,7 +342,7 @@ ProjectSummarySchema gains:
     overdue: nullableCount,              // sum of the five overdue classes
     overdueCriticalHigh: nullableCount,
     accepted: nullableCount,             // sum of acceptedCounts
-    exceptionIssues: z.number().int().min(0),   // expired + stale + unverifiable
+    exceptionIssues: z.number().int().min(0),   // expired + stale + unverifiable + invalid
   }).strict(),
 
 RunMetadataSchema gains:
@@ -524,7 +525,7 @@ Plus "expiring soon". Each item links to the project's `#exceptions`.
 **How to read:** a new section `#risk` "Exceptions and remediation SLAs" / "Eccezioni e SLA di remediation":
 
 - accepted vs dismissed on GitHub;
-- the four exception states;
+- the five exception states;
 - the SLA table read from the effective policies, with the overdue level per class and "informative" when `info`;
 - "overdue since = alert creation + SLA days";
 - why an unknown age is never "within SLA".

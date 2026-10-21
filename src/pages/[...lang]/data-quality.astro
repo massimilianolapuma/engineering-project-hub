@@ -179,6 +179,7 @@ const exceptionGroups = (() => {
       repository: e.repository,
       source: e.source,
       expires: e.expires,
+      created: e.created,
       state: e.state,
       expiringSoon: e.expiringSoon,
     })),
@@ -202,6 +203,12 @@ const exceptionGroups = (() => {
       label: q.exceptionLists.unverifiable,
       rows: all.filter((e) => e.state === 'unverifiable'),
       note: q.exceptionLists.sourceUnreadable,
+    },
+    {
+      kind: 'invalid',
+      label: q.exceptionLists.invalid,
+      rows: all.filter((e) => e.state === 'invalid'),
+      note: q.exceptionLists.createdOn,
     },
     {
       kind: 'expiringSoon',
@@ -520,7 +527,10 @@ const lead = [
                     </span>
                     {g.note && (
                       <span class="muted">
-                        {f(g.note, { date: day(e.expires), source: d.risk.source[e.source] })}
+                        {f(g.note, {
+                          date: day(g.kind === 'invalid' ? e.created : e.expires),
+                          source: d.risk.source[e.source],
+                        })}
                       </span>
                     )}
                   </li>

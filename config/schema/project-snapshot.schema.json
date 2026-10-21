@@ -1892,7 +1892,8 @@
               "active",
               "expired",
               "stale",
-              "unverifiable"
+              "unverifiable",
+              "invalid"
             ]
           },
           "expiringSoon": {
@@ -2895,6 +2896,11 @@
               "minimum": 0,
               "maximum": 9007199254740991
             },
+            "invalid": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
             "expiringSoon": {
               "type": "integer",
               "minimum": 0,
@@ -2906,6 +2912,7 @@
             "expired",
             "stale",
             "unverifiable",
+            "invalid",
             "expiringSoon"
           ],
           "additionalProperties": false

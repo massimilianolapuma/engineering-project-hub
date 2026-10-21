@@ -91,6 +91,7 @@
     "expired": 1,
     "stale": 1,
     "unverifiable": 1,
+    "invalid": 0,
     "orphaned": 1
   },
   "history": {

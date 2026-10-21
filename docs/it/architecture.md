@@ -95,7 +95,7 @@ flowchart TB
 6. **Abbinamento delle eccezioni, calcolo degli SLA, poi valutazione.** Per ogni repository le chiavi
    di corrispondenza non pubblicate di ogni finding (numero alert, id regola grezzo, tool, id advisory)
    restano dentro il collector. `config/exceptions.yaml` viene abbinato a esse (stati: attiva, scaduta,
-   obsoleta, non verificabile; una fonte non leggibile non è mai letta come accettata), poi gli SLA di
+   obsoleta, non verificabile, non valida; una fonte non leggibile non è mai letta come accettata), poi gli SLA di
    remediation sono calcolati dalla data di creazione di ogni alert, poi gira il valutatore di
    Sicurezza. Un finding con eccezione mantiene `status: open`; un solo helper, `countsAsOpen`,
    decide cosa viene contato.

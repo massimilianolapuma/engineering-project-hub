@@ -539,9 +539,10 @@ Regole sui campi:
 - `ticket`: un URL `https` il cui host è in `publication.allowedLinkHosts` (altrimenti errore).
 - Gli id sono univoci e due voci non possono avere lo stesso repository, sorgente e selettore.
 - Le date sono `AAAA-MM-GG` semplici e **UTC**: un'eccezione resta attiva per tutto il giorno `expires` e termina alle 00:00 UTC del giorno dopo.
-- Avvisi (non fanno mai fallire una raccolta): il repository non è in nessun progetto del catalogo (orfana), già scaduta, in scadenza o creata nel futuro. Il controllo dell'orizzonte confronta due date fisse, mai "adesso", quindi un file valido resta valido.
+- `created` non deve essere dopo oggi (UTC): una voce datata nel futuro allungherebbe l'accettazione oltre `exceptions.maxDays`, quindi è un errore ("creata nel futuro"). Se una raccolta ne incontra comunque una, l'eccezione non viene mai applicata: è segnalata come **non valida** in Data quality e i suoi alert continuano a contare.
+- Avvisi (non fanno mai fallire una raccolta): il repository non è in nessun progetto del catalogo (orfana), già scaduta o in scadenza. Il controllo dell'orizzonte confronta due date fisse, mai "adesso", quindi un file valido resta valido.
 
-Stati, valutati a ogni raccolta (vale il primo che corrisponde): **scaduta** (l'ultimo giorno è
+Stati, valutati a ogni raccolta (vale il primo che corrisponde): **non valida** (`created` è nel futuro: mai applicata), **scaduta** (l'ultimo giorno è
 passato; l'alert torna a contare e Sicurezza riceve un motivo ambra per default), **non
 verificabile** (la fonte degli alert non era leggibile in questa esecuzione, quindi l'hub non può
 dirlo; mai trattata come accettata), **obsoleta** (non corrisponde a nessun alert aperto: rimuovila)

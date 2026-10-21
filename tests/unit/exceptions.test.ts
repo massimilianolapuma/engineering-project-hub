@@ -141,10 +141,37 @@ describe('validateExceptions', () => {
     expect(msgs('2026-01-29')).toEqual([]);
   });
 
-  it('created 2026-01-16 → warning "created in the future"', () => {
-    const issues = validate([entry({ created: '2026-01-16' })]);
-    expect(issues.map((i) => i.message).join('|')).toContain('created in the future');
-    expect(issues.every((i) => i.level === 'warning')).toBe(true);
+  it('created 2026-01-16 (after today, UTC) → error "created in the future"', () => {
+    const issues = validate([entry({ created: '2026-01-16', expires: '2026-02-04' })]);
+    const future = issues.filter((i) => i.message.includes('created in the future'));
+    expect(future).toHaveLength(1);
+    expect(future[0]!.level).toBe('error');
+  });
+
+  it('created today (UTC) is valid', () => {
+    expect(
+      validate([entry({ created: '2026-01-15', expires: '2026-02-04' })]).filter(
+        (i) => i.level === 'error',
+      ),
+    ).toEqual([]);
+  });
+});
+
+describe('an exception created in the future is never active', () => {
+  it('is reported invalid, matches nothing and leaves the finding counted', () => {
+    const r = run(
+      [entry({ created: '2026-01-16', expires: '2026-06-30' })],
+      [finding('code-scanning', 5)],
+    );
+    expect(r.records[0]).toMatchObject({ state: 'invalid', matched: null, findingIds: [] });
+    expect(r.records[0]!.expiringSoon).toBe(false);
+    expect(r.findings[0]!.exception).toBeNull();
+  });
+
+  it('becomes active on its created date', () => {
+    const e = entry({ created: '2026-01-16', expires: '2026-06-30' });
+    const r = run([e], [finding('code-scanning', 5)], { now: new Date('2026-01-16T00:00:00Z') });
+    expect(r.records[0]!.state).toBe('active');
   });
 });
 

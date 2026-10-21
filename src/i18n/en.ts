@@ -712,9 +712,11 @@ export const en = {
       expired: 'Expired: remove or renew',
       stale: 'Matches no open alert',
       unverifiable: 'Source not readable: not verified',
+      invalid: 'Not applied: created in the future',
       expiringSoon: 'Expiring soon',
       expiredOn: 'expired {date}',
       expiresOn: 'expires {date}',
+      createdOn: 'created {date}',
       sourceUnreadable: '{source} not readable',
     },
     history: {
@@ -1025,7 +1027,7 @@ export const en = {
     risk: {
       acceptedVsDismissed:
         'An exception is a risk acceptance kept in a reviewed config file, with an owner, a reason and a mandatory expiry. The hub never dismisses an alert on GitHub: the alert stays open there, and here it is listed as accepted until the exception expires. While an exception is active, its finding is not counted in the totals or in the Security status.',
-      statesTitle: 'The four exception states',
+      statesTitle: 'The five exception states',
       states: {
         active: 'Active: it matches an open alert and has not expired. The alert is accepted.',
         expired:
@@ -1033,6 +1035,8 @@ export const en = {
         stale: 'Stale: it matches no open alert (fixed, or the selector is wrong). Remove it.',
         unverifiable:
           'Not verifiable: the alert source could not be read in this collection, so the hub cannot say. It is never treated as accepted.',
+        invalid:
+          'Invalid: the exception is dated in the future (created is after today). It is never applied and the alert counts. Fix the date.',
       },
       slaTitle: 'Remediation SLAs',
       slaIntro:
@@ -1328,6 +1332,7 @@ export const en = {
       expired: 'Expired on {date}',
       stale: 'Stale: matches nothing',
       unverifiable: 'Not verifiable: source not readable',
+      invalid: 'Not applied: created in the future',
     },
     ticketOpen: 'Open ticket',
     queueTitle: 'Remediation queue',

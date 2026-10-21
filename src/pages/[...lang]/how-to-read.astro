@@ -31,7 +31,7 @@ const h = d.howToRead;
 const { policies, source } = loadSitePolicies();
 const { score, freshness } = policies;
 
-const EXCEPTION_STATES = ['active', 'expired', 'stale', 'unverifiable'] as const;
+const EXCEPTION_STATES = ['active', 'expired', 'stale', 'unverifiable', 'invalid'] as const;
 const SLA_CLASSES = ['critical', 'high', 'medium', 'low', 'secret'] as const;
 const STATES: HealthStatus[] = ['red', 'amber', 'green', 'grey'];
 const DIMENSIONS: Dimension[] = [

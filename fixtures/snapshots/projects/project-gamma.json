@@ -324,6 +324,7 @@
       "expired": 0,
       "stale": 0,
       "unverifiable": 0,
+      "invalid": 0,
       "expiringSoon": 0
     },
     "countsComplete": false,

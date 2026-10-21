@@ -457,6 +457,7 @@ export function buildProjectSnapshot(
         expired: securityExceptions.filter((e) => e.state === 'expired').length,
         stale: securityExceptions.filter((e) => e.state === 'stale').length,
         unverifiable: securityExceptions.filter((e) => e.state === 'unverifiable').length,
+        invalid: securityExceptions.filter((e) => e.state === 'invalid').length,
         expiringSoon: securityExceptions.filter((e) => e.expiringSoon).length,
       },
       countsComplete,
@@ -494,7 +495,7 @@ function projectRisk(s: ProjectSnapshot): ProjectSummary['risk'] {
     overdue: sumKnown(Object.values(overdue)),
     overdueCriticalHigh: sumKnown([overdue.critical, overdue.high]),
     accepted: sumKnown(Object.values(accepted)),
-    exceptionIssues: states.expired + states.stale + states.unverifiable,
+    exceptionIssues: states.expired + states.stale + states.unverifiable + states.invalid,
   };
 }
 

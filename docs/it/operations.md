@@ -178,7 +178,7 @@ Note:
 Un'eccezione è una pull request su `config/exceptions.yaml` (CODEOWNERS chiede la revisione del
 responsabile). Formato e regole sono in [Configurazione](configuration.md#eccezioni-di-sicurezza-configexceptionsyaml).
 
-1. **Aggiungere:** aggiungi una voce con responsabile, motivo, la data di oggi come `created` e una data
+1. **Aggiungere:** aggiungi una voce con responsabile, motivo, la data di oggi come `created` (una data futura viene rifiutata) e una data
    `expires` entro `exceptions.maxDays` (180 per default). Preferisci un selettore `alert`; usa `rule`
    (con `tool`) o `advisory` solo per finding ricorrenti.
 2. **Controllare in locale:** `npm run policy:check`. Valida il file (gli errori falliscono, gli avvisi

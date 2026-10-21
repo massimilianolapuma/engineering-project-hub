@@ -261,6 +261,8 @@ export const ExceptionStatesSchema = z
     expired: z.number().int().min(0),
     stale: z.number().int().min(0),
     unverifiable: z.number().int().min(0),
+    /** created in the future: never applied. */
+    invalid: z.number().int().min(0),
     expiringSoon: z.number().int().min(0),
   })
   .strict();
@@ -273,7 +275,7 @@ export const ProjectRiskSchema = z
     overdueCriticalHigh: nullableCount,
     /** Sum of acceptedCounts. */
     accepted: nullableCount,
-    /** expired + stale + unverifiable. */
+    /** expired + stale + unverifiable + invalid. */
     exceptionIssues: z.number().int().min(0),
   })
   .strict();
@@ -668,7 +670,7 @@ export const ProjectSnapshotSchema = z
     environments: z.array(EnvironmentSnapshotSchema),
     workflows: z.array(WorkflowStatusSchema),
     securityFindings: z.array(SecurityFindingSchema),
-    /** Sorted by state (expired, unverifiable, stale, active), then id. */
+    /** Sorted by state (invalid, expired, unverifiable, stale, active), then id. */
     securityExceptions: z.array(SecurityExceptionSchema).max(500),
     securityControls: z.array(RepositoryControlsSchema),
     deliveryHealth: HealthResultSchema,

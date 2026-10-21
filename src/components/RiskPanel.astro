@@ -59,6 +59,7 @@ const stateOf = (e: SecurityException): { tone: Tone; label: string } => {
     return { tone: expiredIsAmber ? 'amber' : 'info', label: f(r.state.expired, date) };
   if (e.state === 'stale') return { tone: 'info', label: r.state.stale };
   if (e.state === 'unverifiable') return { tone: 'grey', label: r.state.unverifiable };
+  if (e.state === 'invalid') return { tone: 'info', label: r.state.invalid };
   return e.expiringSoon
     ? { tone: 'info', label: f(r.state.expiring, date) }
     : { tone: 'info', label: f(r.state.active, date) };

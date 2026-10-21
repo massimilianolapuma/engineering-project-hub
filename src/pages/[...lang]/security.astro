@@ -160,7 +160,7 @@ const days = (n: number | null | undefined) =>
   n === null || n === undefined ? d.common.unknown : f(d.risk.days, { n });
 const issuesOf = (p: ProjectSnapshot) => {
   const e = p.securityHealth.exceptionStates;
-  return e.expired + e.stale + e.unverifiable;
+  return e.expired + e.stale + e.unverifiable + e.invalid;
 };
 const githubSecurity = (p: ProjectSnapshot) =>
   p.coordinator.repository.url ? `${p.coordinator.repository.url}/security` : null;

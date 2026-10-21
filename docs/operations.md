@@ -170,7 +170,7 @@ Notes:
 An exception is a pull request on `config/exceptions.yaml` (CODEOWNERS asks the owner to review it).
 The format and the rules are in [Configuration](configuration.md#security-exceptions-configexceptionsyaml).
 
-1. **Add:** append an entry with an owner, a reason, today's date as `created` and an `expires` date
+1. **Add:** append an entry with an owner, a reason, today's date as `created` (a future date is rejected) and an `expires` date
    within `exceptions.maxDays` (180 by default). Prefer an `alert` selector; use `rule` (with `tool`)
    or `advisory` only for recurring findings.
 2. **Check locally:** `npm run policy:check`. It validates the file (errors fail, warnings explain),

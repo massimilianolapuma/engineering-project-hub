@@ -650,6 +650,7 @@
       "expired": 1,
       "stale": 0,
       "unverifiable": 0,
+      "invalid": 0,
       "expiringSoon": 1
     },
     "countsComplete": true,

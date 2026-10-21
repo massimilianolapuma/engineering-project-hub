@@ -152,6 +152,7 @@ export interface CollectionReport {
     expired: number;
     stale: number;
     unverifiable: number;
+    invalid: number;
     orphaned: number;
   };
   /**
@@ -185,7 +186,7 @@ export function buildReport(
     errorsByClassification[e.classification] = (errorsByClassification[e.classification] ?? 0) + 1;
   const states = new Map<string, string>();
   // An exception shared by two projects is counted once, in its worst state.
-  const WORST = ['expired', 'unverifiable', 'stale', 'active'];
+  const WORST = ['invalid', 'expired', 'unverifiable', 'stale', 'active'];
   for (const e of projects.flatMap((p) => p.securityExceptions)) {
     const seen = states.get(e.id);
     if (seen === undefined || WORST.indexOf(e.state) < WORST.indexOf(seen))
@@ -212,6 +213,7 @@ export function buildReport(
       expired: inState('expired'),
       stale: inState('stale'),
       unverifiable: inState('unverifiable'),
+      invalid: inState('invalid'),
       orphaned: index.run.exceptions.orphaned.length,
     },
     history: history
@@ -232,7 +234,7 @@ function historyLine(h: CollectionReport['history']): string {
 
 function exceptionsLine(e: CollectionReport['exceptions']): string {
   if (e.source === 'none') return 'Exceptions: none';
-  return `Exceptions: ${e.total} loaded (${e.source}) · ${e.active} active · ${e.expired} expired · ${e.stale} stale · ${e.unverifiable} unverifiable · ${e.orphaned} orphaned`;
+  return `Exceptions: ${e.total} loaded (${e.source}) · ${e.active} active · ${e.expired} expired · ${e.stale} stale · ${e.unverifiable} unverifiable${e.invalid > 0 ? ` · ${e.invalid} invalid` : ''} · ${e.orphaned} orphaned`;
 }
 
 export function reportMarkdown(r: CollectionReport): string {

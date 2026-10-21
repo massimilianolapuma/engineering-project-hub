@@ -717,9 +717,11 @@ export const it: Dict = {
       expired: 'Scadute: rimuovi o rinnova',
       stale: 'Nessun alert aperto corrisponde',
       unverifiable: 'Fonte non leggibile: non verificata',
+      invalid: 'Non applicata: creata nel futuro',
       expiringSoon: 'In scadenza',
       expiredOn: 'scaduta il {date}',
       expiresOn: 'scade il {date}',
+      createdOn: 'creata il {date}',
       sourceUnreadable: '{source} non leggibile',
     },
     history: {
@@ -1033,7 +1035,7 @@ export const it: Dict = {
     risk: {
       acceptedVsDismissed:
         "Un'eccezione è un'accettazione del rischio tenuta in un file di configurazione rivisto, con responsabile, motivo e scadenza obbligatoria. L'hub non fa mai dismiss di un alert su GitHub: lì l'alert resta aperto, qui è elencato come accettato finché l'eccezione non scade. Finché un'eccezione è attiva, il suo finding non entra nei totali né nello stato Sicurezza.",
-      statesTitle: 'I quattro stati di una eccezione',
+      statesTitle: 'I cinque stati di una eccezione',
       states: {
         active: "Attiva: corrisponde a un alert aperto e non è scaduta. L'alert è accettato.",
         expired:
@@ -1042,6 +1044,8 @@ export const it: Dict = {
           'Obsoleta: non corrisponde a nessun alert aperto (risolto, o selettore sbagliato). Rimuovila.',
         unverifiable:
           "Non verificabile: la fonte degli alert non era leggibile in questa raccolta, quindi l'hub non può dirlo. Non è mai trattata come accettata.",
+        invalid:
+          "Non valida: l'eccezione è datata nel futuro (created è dopo oggi). Non viene mai applicata e l'alert conta. Correggi la data.",
       },
       slaTitle: 'SLA di remediation',
       slaIntro:
@@ -1339,6 +1343,7 @@ export const it: Dict = {
       expired: 'Scaduta il {date}',
       stale: 'Obsoleta: non corrisponde a nulla',
       unverifiable: 'Non verificabile: fonte non leggibile',
+      invalid: 'Non applicata: creata nel futuro',
     },
     ticketOpen: 'Apri il ticket',
     queueTitle: 'Coda di remediation',

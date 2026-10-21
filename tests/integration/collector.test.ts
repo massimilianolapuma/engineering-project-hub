@@ -1474,6 +1474,7 @@ describe('risk governance (mock run)', () => {
       expired: 0,
       stale: 1,
       unverifiable: 0,
+      invalid: 0,
       expiringSoon: 0,
     });
     expect(finding(alpha, 'example-org/project-alpha-backend#code-scanning#15')).toMatchObject({

@@ -1189,6 +1189,28 @@ describe('static site', () => {
       expect(list(await page('it/data-quality'))).toContain('Secret scanning non leggibile');
     });
 
+    it('an invalid (future-dated) exception is listed in Data quality and in the table, never as accepted', async () => {
+      const data = join(work, 'risk-invalid');
+      await cp('fixtures/snapshots', data, { recursive: true });
+      const file = join(data, 'projects/project-alpha.json');
+      const json = JSON.parse(await readFile(file, 'utf8'));
+      const stale = json.securityExceptions.find((e: { state: string }) => e.state === 'stale');
+      stale.state = 'invalid';
+      stale.matched = null;
+      stale.created = '2026-03-01';
+      json.securityHealth.exceptionStates.stale -= 1;
+      json.securityHealth.exceptionStates.invalid += 1;
+      await writeFile(file, JSON.stringify(json));
+      const out = join(work, 'dist-risk-invalid');
+      await buildSite(data, out);
+      const dq = await readFile(join(out, 'data-quality/index.html'), 'utf8');
+      const at = dq.indexOf('data-exception-kind="invalid"');
+      expect(at).toBeGreaterThan(-1);
+      expect(t(dq.slice(at, dq.indexOf('</ul>', at)))).toContain('created');
+      const card = await readFile(join(out, 'projects/project-alpha/index.html'), 'utf8');
+      expect(t(card)).toContain('Not applied: created in the future');
+    }, 180_000);
+
     it('an accepted high never hides an external high (listed / unlisted split)', async () => {
       const data = join(work, 'risk-unlisted');
       await cp('fixtures/snapshots', data, { recursive: true });
