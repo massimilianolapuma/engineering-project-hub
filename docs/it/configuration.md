@@ -368,6 +368,30 @@ interventi sul codice o sul frontend.
 | `publication.audience`                  | public                                                                       | `public` omette titoli dei finding e rule id dei repository non pubblici. `restricted` richiede Pages con controllo degli accessi.                 |
 | `publication.allowedLinkHosts`          | [github.com]                                                                 | Vengono pubblicati solo i link verso questi host.                                                                                                  |
 
+### SLA di remediation (`remediation`) ed eccezioni (`exceptions`)
+
+Entrambi i blocchi sono opzionali; se mancano valgono i default qui sotto. Nulla di tutto questo
+rende rosso un progetto per impostazione predefinita.
+
+| Chiave                        | Default | Significato                                                                                                         |
+| ----------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------- |
+| `remediation.enabled`         | true    | `false` non calcola né mostra alcuno SLA ("non misurato"), mai 0.                                                   |
+| `remediation.days.critical`   | 7       | Giorni di calendario (UTC) dalla creazione dell'alert. Da 1 a 3650, oppure `null` per nessuno SLA in quella classe. |
+| `remediation.days.high`       | 30      | Come sopra.                                                                                                         |
+| `remediation.days.medium`     | 90      | Come sopra.                                                                                                         |
+| `remediation.days.low`        | 180     | Come sopra.                                                                                                         |
+| `remediation.days.secret`     | 7       | Alert di secret scanning, qualunque sia la severità (lì è sempre sconosciuta).                                      |
+| `remediation.overdue.<class>` | info    | `info`, `amber` o `red`: cosa fa a Sicurezza un alert in ritardo di quella classe. `info` lo mostra e basta.        |
+| `exceptions.maxDays`          | 180     | Durata massima tra `created` ed `expires` (da 1 a 366).                                                             |
+| `exceptions.expiringSoonDays` | 14      | Un'eccezione attiva che scade entro questi giorni viene segnalata (da 0 a 90).                                      |
+| `exceptions.expiredIsAmber`   | true    | Un'eccezione scaduta aggiunge un motivo ambra a Sicurezza (altrimenti solo informativo).                            |
+
+- Le severità informational e unknown non hanno SLA.
+- L'età è `adesso − created_at` dell'alert e la scadenza è `created_at + giorni`, quindi è corretta anche per alert più vecchi dello storico dell'hub. Un alert riaperto conserva la data di creazione originale e può essere subito in ritardo.
+- Un'eccezione attiva **mette in pausa** il ritardo ma non azzera mai l'orologio: alla scadenza, un alert in ritardo lo è subito.
+- Un alert senza data di creazione ha età sconosciuta (stato SLA `unknown`), mai "nello SLA".
+- **Attivare l'escalation:** imposta `remediation.overdue.critical: red` e `remediation.overdue.high: red` (il `config/policies.yaml` della demo lo fa e lo dice in un commento, quindi Platform è rosso nella demo). Usa `amber` per un passo più morbido.
+
 ### Controlli repository (`repositoryControls`)
 
 Sei controlli di sola lettura per repository, dai file dei workflow e dalle regole del branch,
@@ -471,6 +495,123 @@ sostituisce mai le dimensioni. Il blocco opzionale `score` in
 Lo schema snapshot 1.4 lo pubblica come `score: { value, measured, required }` in ogni
 snapshot di progetto e in ogni progetto di `index.json`. Con i dati mock: Platform 82,
 Project Alpha 78, Project Beta 40, Project Gamma dati insufficienti.
+
+## Eccezioni di sicurezza: `config/exceptions.yaml`
+
+Un'eccezione è un'accettazione del rischio rivista: dice che un finding è noto, chi ne è
+responsabile, perché è accettato e fino a quando. **L'hub non fa mai dismiss, reopen né commenti
+su un alert su GitHub.** L'alert resta aperto lì; qui è elencato come accettato ed esce dai
+conteggi e dallo stato Sicurezza finché l'eccezione non scade. Il file è opzionale (senza file
+non ci sono eccezioni); il repository include `exceptions: []` con un esempio commentato. Uno
+JSON Schema per gli editor è in `config/schema/exceptions.schema.json` (generato dallo stesso
+schema Zod, con un test che li tiene allineati).
+
+```yaml
+# yaml-language-server: $schema=./schema/exceptions.schema.json
+schemaVersion: '1.0'
+exceptions:
+  - id: EXC-0001 # univoco, da 3 a 40 caratteri: lettere, cifre, . _ -
+    repository: example-org/project-beta-api # owner/nome, senza distinzione di maiuscole
+    source: code-scanning # code-scanning | dependabot | secret-scanning
+    match: { rule: py/flask-debug, tool: CodeQL } # un solo selettore, vedi sotto
+    owner: team-beta # un team o un ruolo (@org/team va bene), mai un indirizzo e-mail
+    reason: La modalità debug è raggiungibile solo nel profilo locale; rimozione prevista col refactor delle impostazioni.
+    created: '2026-01-05' # data della revisione, AAAA-MM-GG (UTC)
+    expires: '2026-03-31' # ultimo giorno di validità (incluso, UTC)
+    ticket: https://github.com/example-org/project-beta-api/issues/12 # opzionale
+```
+
+Selettori (`match` è esattamente uno di questi):
+
+| Selettore                                | Valido per      | Corrisponde a                                                          |
+| ---------------------------------------- | --------------- | ---------------------------------------------------------------------- |
+| `{ alert: 42 }`                          | ogni sorgente   | un numero di alert in quel repository                                  |
+| `{ rule: py/flask-debug, tool: CodeQL }` | `code-scanning` | ogni alert aperto di quella regola (`tool` opzionale, senza maiuscole) |
+| `{ advisory: GHSA-xxxx-xxxx-xxxx }`      | `dependabot`    | ogni alert Dependabot aperto per quell'id GHSA o CVE                   |
+
+Il secret scanning accetta solo `alert`: accettare un intero tipo di segreto nasconderebbe
+perdite future. Un'eccezione per regola o advisory può accettare alert che compaiono dopo,
+quindi tienile strette (usa `tool`) e guarda la colonna "Corrispondenze" della tabella Eccezioni.
+
+Regole sui campi:
+
+- `reason`: da 10 a 300 caratteri. `expires` non precede `created` e `expires − created` è al massimo `exceptions.maxDays` (altrimenti errore).
+- `ticket`: un URL `https` il cui host è in `publication.allowedLinkHosts` (altrimenti errore).
+- Gli id sono univoci e due voci non possono avere lo stesso repository, sorgente e selettore.
+- Le date sono `AAAA-MM-GG` semplici e **UTC**: un'eccezione resta attiva per tutto il giorno `expires` e termina alle 00:00 UTC del giorno dopo.
+- Avvisi (non fanno mai fallire una raccolta): il repository non è in nessun progetto del catalogo (orfana), già scaduta, in scadenza o creata nel futuro. Il controllo dell'orizzonte confronta due date fisse, mai "adesso", quindi un file valido resta valido.
+
+Stati, valutati a ogni raccolta (vale il primo che corrisponde): **scaduta** (l'ultimo giorno è
+passato; l'alert torna a contare e Sicurezza riceve un motivo ambra per default), **non
+verificabile** (la fonte degli alert non era leggibile in questa esecuzione, quindi l'hub non può
+dirlo; mai trattata come accettata), **obsoleta** (non corrisponde a nessun alert aperto: rimuovila)
+e **attiva**.
+
+Da dove viene letto: `--exceptions <file>` sul collector. Il default per `--source github` è
+`<config>/exceptions.yaml`; per la sorgente mock è `fixtures/exceptions/exceptions.yaml`, l'unico
+posto dove `created` ed `expires` possono usare token come `@now-10d` / `@now+20d` (così la demo
+mantiene i suoi stati nel tempo). I token sono rifiutati in una config reale (e in `policy:check`
+salvo `--allow-date-tokens`). Anche `npm run validate:config` valida il file.
+
+Cosa viene pubblicato e cosa nascosto è in [Sicurezza](security.md#eccezioni-di-sicurezza).
+
+## Casi di decisione delle policy: `config/policy-cases/*.yaml`
+
+Un caso di decisione è un piccolo scenario sintetico con lo stato atteso. `npm run policy:check`
+valuta ciascuno con i motori reali e fallisce se la decisione cambia, così una modifica alle
+policy che altera una decisione si vede nella pull request. Il repository include otto casi
+coerenti con le policy della demo; una configurazione privata porta i propri (una cartella
+mancante è solo un avviso).
+
+```yaml
+name: Un alert high in ritardo porta Sicurezza a rosso quando l'escalation è attiva
+kind: security # security | overall
+now: '2026-01-15T12:00:00Z' # opzionale; default 2026-01-15T12:00:00Z
+security:
+  findings: # lo stato predefinito è open
+    - id: example-org/platform-mono#code-scanning#2 # repository, sorgente e numero alert
+      severity: high
+      detectedAt: '@now-31d' # un orario ISO, oppure @now±N(d|h|m) rispetto a `now`
+      ruleId: js/prototype-pollution-utility # opzionale (per i selettori rule)
+  exceptions: [] # stesse voci di exceptions.yaml (qui i token data sono ammessi)
+  unreadable: [] # opzionale: coppie "owner/repo|source" la cui fonte non era leggibile
+expect:
+  status: red
+  reasons: [open-high-alerts, sla-overdue] # devono esserci
+  absent: [security-exception-active] # opzionale: non devono esserci
+```
+
+`kind: overall` accetta `overall: { dimensions: { delivery: green, ... } }` e può attendersi
+uno `score`. Gli altri input di Sicurezza sono fissi (tutti i controlli attivi, copertura verde,
+conteggi completi). Uno JSON Schema è in `config/schema/policy-case.schema.json`.
+
+### Eseguire `policy:check`
+
+```bash
+npm run policy:check                                   # valida, spiega, esegue i casi
+npm run policy:check -- --fail-on-warnings             # falliscono anche gli avvisi (exit 1)
+npm run policy:check -- --snapshot public/data         # what-if in sola lettura su uno snapshot
+```
+
+| Flag                  | Default                    | Significato                                                             |
+| --------------------- | -------------------------- | ----------------------------------------------------------------------- |
+| `--config <dir>`      | `config`                   | policy, catalogo ed eccezioni da controllare                            |
+| `--exceptions <file>` | `<config>/exceptions.yaml` | un altro file di eccezioni                                              |
+| `--cases <dir>`       | `<config>/policy-cases`    | casi di decisione; una cartella mancante è l'avviso "no decision cases" |
+| `--snapshot <dir>`    | nessuno                    | rivaluta una cartella di snapshot esistente, in sola lettura            |
+| `--now <iso>`         | orologio di sistema        | l'istante per gli stati delle eccezioni e la rivalutazione              |
+| `--fail-on-warnings`  | spento                     | gli avvisi fanno uscire con codice 1                                    |
+| `--allow-date-tokens` | spento                     | accetta token `@now±N` nel file delle eccezioni (solo fixture mock)     |
+
+Codici di uscita: 0 valido e ogni caso superato, 1 un errore di validazione, un caso fallito o
+(con `--fail-on-warnings`) un avviso, 2 un errore d'uso. L'output è solo in inglese, come i log
+del collector. Ogni decisione stampa i suoi motivi, ciascuno con livello e chiave di policy che
+lo imposta. In modalità snapshot il comando stampa `unchanged: <progetto>` oppure `would change:
+<progetto> security red → amber`. Non scrive mai nulla. I finding il cui id regola è nascosto
+(repository non pubblici) non possono corrispondere a selettori `rule` o `advisory` da uno
+snapshot pubblicato: quelle eccezioni sono segnalate come "not evaluable from this snapshot
+(details withheld)", mai come senza corrispondenza. Un job `policy-check` esegue il comando a
+ogni pull request.
 
 ## Contratti letti dai repository monitorati
 
@@ -626,13 +767,22 @@ sui repository (`controls`) e la base lo stato superato/fallito di ciascun contr
 del portfolio guadagna `controls_passed`, `controls_failed` e `controls_unknown`). Uno
 storico `1.0` viene ancora letto; semplicemente non ha nulla da confrontare per i controlli.
 
-| File                           | Contenuto                                                                                                                                                   |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `history.json`                 | `kind: hub-history`, schema `1.1` (`1.0` viene ancora letto): un punto compatto per progetto e raccolta, più la base per calcolare il confronto successivo. |
-| `changes.json`                 | `kind: hub-changes`, schema `1.0`: cosa si è mosso rispetto alla raccolta precedente, o perché non si può dire.                                             |
-| `exports/portfolio.csv`        | Una riga per progetto, con stato e punteggio della raccolta precedente.                                                                                     |
-| `exports/findings-summary.csv` | Una riga per progetto e repository: alert aperti per severità, senza titoli.                                                                                |
-| `exports/versions.csv`         | Una riga per coordinator, componente e ambiente.                                                                                                            |
+Dalla v0.9.0 lo schema dello storico è `1.2` (`1.0` e `1.1` vengono ancora letti) e lo schema dello
+snapshot è `1.6`. Un punto dello storico può avere `risk` (conteggi `overdue` e `accepted`); un punto
+senza è stato scritto da un collector più vecchio e la tabella dell'andamento dice "non rilevato",
+mai 0. `changes.json` mantiene lo schema `1.0` e aggiunge le liste opzionali `newlyOverdue` (alert
+critici e alti contati il cui SLA è scaduto dalla raccolta precedente) ed `expiredExceptions`
+(eccezioni il cui ultimo giorno è terminato da allora), con i totali; sono vuote quando la base non
+è un vero confronto. Un'eccezione non crea mai alert "nuovi" o "risolti" in "Cosa è cambiato": un
+alert accettato è ancora aperto su GitHub e la baseline dello storico lo vede ancora come aperto.
+
+| File                           | Contenuto                                                                                                                                                             |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `history.json`                 | `kind: hub-history`, schema `1.2` (`1.0` e `1.1` vengono ancora letti): un punto compatto per progetto e raccolta, più la base per calcolare il confronto successivo. |
+| `changes.json`                 | `kind: hub-changes`, schema `1.0`: cosa si è mosso rispetto alla raccolta precedente, o perché non si può dire.                                                       |
+| `exports/portfolio.csv`        | Una riga per progetto, con stato e punteggio della raccolta precedente.                                                                                               |
+| `exports/findings-summary.csv` | Una riga per progetto e repository: alert aperti per severità, senza titoli.                                                                                          |
+| `exports/versions.csv`         | Una riga per coordinator, componente e ambiente.                                                                                                                      |
 
 I due file JSON hanno una versione separata da quella dello snapshot, così lo storico
 sopravvive a un cambio di schema dello snapshot. Un file mancante o non valido non
@@ -660,8 +810,8 @@ colonna non si applica alla riga. Una cella di testo che inizia con `=`, `+`, `-
 o CR riceve un `'` iniziale, così un foglio di calcolo non la esegue mai come formula. I
 numeri non hanno mai prefissi. Excel con separatore di elenco `;`: usa Dati, Da testo/CSV.
 
-- `portfolio.csv`: `project_id, project_name, business_unit, lifecycle, overall, score, score_measured, score_required, delivery, version, security, controls_coverage, controls_coverage_percent, governance, quality, quality_percent, open_critical, open_high, open_medium, open_low, counts_complete, open_secret_alerts, failed_critical_workflows, collection_errors, collected_at, previous_overall, previous_score, previous_collected_at`. Le colonne `previous_*` sono `n/a` quando non c'è una raccolta precedente.
-- `findings-summary.csv`: `project_id, component_id, repository, open_critical, open_high, open_medium, open_low, open_informational, open_unknown, sources_complete`. Tutti i conteggi sono `unknown` quando nessuna fonte di alert era leggibile; quando solo alcune lo erano, i conteggi sono un limite inferiore e `sources_complete` è `false`.
+- `portfolio.csv`: `project_id, project_name, business_unit, lifecycle, overall, score, score_measured, score_required, delivery, version, security, controls_coverage, controls_coverage_percent, governance, quality, quality_percent, open_critical, open_high, open_medium, open_low, counts_complete, open_secret_alerts, failed_critical_workflows, collection_errors, collected_at, previous_overall, previous_score, previous_collected_at, controls_passed, controls_failed, controls_unknown, overdue, overdue_critical_high, accepted, exception_issues`. Le colonne `previous_*` sono `n/a` quando non c'è una raccolta precedente.
+- `findings-summary.csv`: `project_id, component_id, repository, open_critical, open_high, open_medium, open_low, open_informational, open_unknown, sources_complete, overdue, accepted`. `overdue` e `accepted` contano i finding di quel repository (`unknown` quando gli SLA sono spenti o nessuna fonte di alert era leggibile). Tutti i conteggi sono `unknown` quando nessuna fonte di alert era leggibile; quando solo alcune lo erano, i conteggi sono un limite inferiore e `sources_complete` è `false`.
 - `versions.csv`: `row_type (coordinator|component|environment), project_id, item_id, item_name, repository, version, version_source, declared_version, latest_release, drift, manifest_consistency, pin_status, environment_status`.
 
 Se i dati dello snapshot mancano o non sono validi, ogni CSV contiene l'intestazione e una sola riga che inizia con `data unavailable` e ha `unknown` nelle altre colonne. Non è mai un file con la sola intestazione, che si leggerebbe come "nessun progetto".

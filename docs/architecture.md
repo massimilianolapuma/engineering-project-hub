@@ -90,20 +90,26 @@ flowchart TB
    no tag matches, the SHA is compared with the latest release (ahead / behind / diverged).
 5. **Normalise**: provider values become the model's enums. `originalSeverity` and
    `originalStatus` are kept.
-6. **Evaluate**: delivery, version, security risk, coverage (controls), governance (with
+6. **Match exceptions, compute SLAs, then evaluate.** For each repository the unpublished match
+   keys of every finding (alert number, raw rule id, tool, advisory ids) stay inside the collector.
+   `config/exceptions.yaml` is matched against them (states: active, expired, stale, unverifiable;
+   an unreadable source is never read as accepted), then remediation SLAs are computed from each
+   alert's creation time, then the Security evaluator runs. An excepted finding keeps `status: open`;
+   one helper, `countsAsOpen`, decides what is counted.
+7. **Evaluate**: delivery, version, security risk, coverage (controls), governance (with
    the six repository checks, informative unless enforced), quality (test coverage),
    freshness and overall.
-7. **Sanitise and validate**: free text is scrubbed and links are filtered. Every document
+8. **Sanitise and validate**: free text is scrubbed and links are filtered. Every document
    is parsed with the strict schemas (allowlist), then the serialised JSON goes through the
    credential gate. Any failure stops the run before anything is written.
-8. **Append and diff**: the previous history is loaded (see below), the current run is
+9. **Append and diff**: the previous history is loaded (see below), the current run is
    appended with retention, and the diff against the previous baseline is computed.
-9. **Write** `public/data/index.json`, `projects/<id>.json`, `history.json`,
-   `changes.json`, `collection-report.json` and `collection-report.md`.
-10. **Build** the site. The pages load and re-validate the snapshots at build time, and
+10. **Write** `public/data/index.json`, `projects/<id>.json`, `history.json`,
+    `changes.json`, `collection-report.json` and `collection-report.md`.
+11. **Build** the site. The pages load and re-validate the snapshots at build time, and
     write the three CSV exports. An unsupported `schemaVersion` renders a controlled error
     page. A missing or invalid `history.json` or `changes.json` never fails the build.
-11. **Scan the output** (`dist/`, `public/data/`) for credential patterns and for the
+12. **Scan the output** (`dist/`, `public/data/`) for credential patterns and for the
     values of credentials in the environment, then publish.
 
 **History, in CI:** restore → collect → append → diff → publish. Before step 1 the
@@ -122,6 +128,7 @@ never restores: it starts from `fixtures/history/history.json`.
 | CI artifact → collector                | Only the `hub-quality-summary` artifact of a default-branch run from the same repository is read: zip ≤ 64 KB, one file, strict schema, `repository` must match. Failure means `invalid` and nothing is published.                                                                                                                                                                   |
 | Actions artifact → collector (history) | Only the hub's own `hub-history` artifact of a default-branch run of the deploy or collect workflow, not from a fork, not the current run, at most 5 MiB. The collector then parses it strictly (8 MiB cap), re-sanitises links and text, and rewrites it. Failure starts history fresh, never fails the run.                                                                        |
 | Workflow files → collector             | Untrusted input. Read through the Contents API, bounded (262 144 bytes per file, 200 references per file, 1 000 per repository, 30 files by default), parsed in memory with an alias limit, reduced to validated `uses:` references. Workflow text, step names, `run:`, `with:` and `env:` never leave the parser and are never published; `target` is rebuilt from validated parts. |
+| Exceptions file → collector            | Reviewed configuration, not monitored data: strict schema, text scrubbed before publication, ticket host allowlist, expiry mandatory and capped. For a non-public repository under a public audience, the rule or advisory, tool, reason and ticket are published as `null`. Nothing is ever written to GitHub.                                                                      |
 | Collect job → build job                | Only the sanitised `snapshots` artifact crosses. The build job has no secrets.                                                                                                                                                                                                                                                                                                       |
 | Build → GitHub Pages                   | Output scan. Deploy uses OIDC (`pages: write`, `id-token: write`) only in the deploy job.                                                                                                                                                                                                                                                                                            |
 | Pages → browser                        | Static files only. CSP `default-src 'self'` with no inline scripts. No GitHub API calls. No tokens in storage.                                                                                                                                                                                                                                                                       |
@@ -140,7 +147,7 @@ never restores: it starts from `fixtures/history/history.json`.
   critical workflows, error counts, unresolved submodules and the project `score`.
 
 `history.json` (`kind: hub-history`) and `changes.json` (`kind: hub-changes`) are versioned
-separately (history `1.1`, changes `1.0`) from the snapshot (`1.5`), so history survives a snapshot schema
+separately (history `1.2`, changes `1.0`) from the snapshot (`1.6`), so history survives a snapshot schema
 bump and an existing `public/data` stays readable. `history.json` has one compact point per
 project and collection plus the baseline of the latest run; `changes.json` is the diff
 the site renders. Unknown is never 0: a null score is a gap.
@@ -178,7 +185,7 @@ Normalised enums:
 | Error class      | `not-found`, `not-authorised`, `not-configured`, `rate-limited`, `invalid-data`, `error`                                                 |
 
 Generated JSON Schemas are in `config/schema/`. The site supports the snapshot versions
-listed in `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS` (currently `1.5`).
+listed in `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS` (currently `1.6`).
 
 ## Health rules (MVP policies)
 
@@ -237,6 +244,11 @@ universal risk ratings.
     (Quality by default) counts like a required non-critical one, a grey one is ignored
   - grey otherwise, or amber if `greyRequiredDimension: amber`
 
+`npm run policy:check` (`collector/src/policy/check.ts`) runs the same engines (exceptions, SLAs, the
+Security and overall evaluators) over synthetic decision cases and, read-only, over a published
+snapshot. It is the policy-as-code surface: Zod validates, JSON Schema is generated from it, and the
+cases pin the decisions ([ADR 0008](architecture/adr/0008-risk-governance-policy-as-code.md)).
+
 ## Error handling
 
 - Every provider call returns `ProviderResult`. Exceptions are converted to classified
@@ -262,6 +274,7 @@ universal risk ratings.
 - [ADR 0005: Test coverage from a CI summary artifact, not from Sonar or GitHub UI](architecture/adr/0005-test-coverage-from-ci-summary-artifact.md)
 - [ADR 0006: History persisted through the hub's own Actions artifacts](architecture/adr/0006-history-persisted-through-own-actions-artifacts.md)
 - [ADR 0007: Repository controls from workflow files and the rules API, informative by default](architecture/adr/0007-repository-controls-informative-by-default.md)
+- [ADR 0008: Risk governance as typed policy-as-code: exceptions in reviewed config, never GitHub dismissals, no OPA](architecture/adr/0008-risk-governance-policy-as-code.md)
 
 Further decisions:
 

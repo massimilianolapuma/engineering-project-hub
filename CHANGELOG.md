@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Security exceptions with a mandatory expiry: an optional, reviewed `config/exceptions.yaml` (owner, reason, `created`, `expires`, optional ticket; selectors `alert`, `rule` with an optional `tool`, `advisory`; secret scanning accepts only `alert`). The hub never dismisses alerts on GitHub: an accepted finding keeps `status: open`, is listed apart ("Accepted by exception") and leaves the counts and the Security status until the exception expires. Four states (active, expired, stale, not verifiable); an unreadable source never reads as accepted. For non-public repositories under a public audience the rule or advisory, tool, reason and ticket are withheld. JSON Schemas `exceptions.schema.json` and `policy-case.schema.json`, kept in sync with Zod by a test.
+- Remediation SLAs per severity (`remediation`: critical 7, high 30, medium 90, low 180, secret 7 days), computed from the alert's creation time; an active exception pauses overdue without resetting the clock; an unknown age is never "within SLA". Informative by default (`remediation.overdue.<class>: info`), with opt-in escalation to amber or red.
+- `npm run policy:check`: validates policies and exceptions, explains every decision with the policy key behind each reason, runs decision cases (`config/policy-cases/*.yaml`, eight shipped) with the real engines, and with `--snapshot <dir>` re-evaluates a snapshot read-only (never writes). A `policy-check` CI job runs it on every pull request; `/config/exceptions.yaml` has an explicit CODEOWNERS entry.
+- Risk UI: a remediation line, SLA meta line and Overdue / Accepted pills on project alerts, an Exceptions table, a Remediation queue and overdue / accepted totals on the Security page, a Security exceptions card on Data quality, an "Exceptions and remediation SLAs" section in How to read. EN and IT.
+- "What changed" lists newly overdue alerts and expired exceptions (`newlyOverdue`, `expiredExceptions` in `changes.json`), the trend table gains an Overdue column, and the CSV files gain `overdue`, `overdue_critical_high`, `accepted`, `exception_issues` (portfolio) and `overdue`, `accepted` (findings summary).
+- ADR 0008 (EN and IT), and EN/IT documentation for exceptions, SLAs and `policy:check`.
+
+### Changed
+
+- Snapshot `schemaVersion` 1.6 (exceptions, per-finding `exception` and `sla`, risk summaries, run metadata). Upgrade note: an existing 1.5 `public/data` fails validation until it is re-collected; `npm run ci:build` overwrites `public/data` with mock data.
+- History schema 1.2 (optional `risk` counts per point; 1.0 and 1.1 are still read).
+- The demo `config/policies.yaml` opts in to SLA escalation (`remediation.overdue.critical: red` and `high: red`), so Platform is red in the demo.
+
 ## [0.8.0] - 2026-10-21
 
 ### Added
