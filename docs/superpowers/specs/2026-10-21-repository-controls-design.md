@@ -115,6 +115,8 @@ The collector parses workflow text in memory and discards it. The text never lea
 
 **`getFile` allow-list.** It is extended by one pattern: `.github/workflows/<name>` where `<name>` matches the regex above. `..`, slashes in the name and any other path are rejected before the call.
 
+A workflow file name longer than 100 characters (the published bound) is never read: it counts as unreadable, so the pinning check is `unknown`.
+
 ### 5.2 Workflow reference parsing (`collector/src/normalizers/workflow-refs.ts`)
 
 - The file is parsed with the existing `yaml` dependency. `maxAliasCount: 100`, and `uniqueKeys` is not enforced. A file that fails to parse makes the repository's action data `partial` (`unparsable` +1).
@@ -136,6 +138,7 @@ The collector parses workflow text in memory and discards it. The text never lea
   - repo: `^[A-Za-z0-9._-]{1,100}$`;
   - path segments: `^[A-Za-z0-9._-]{1,100}$`, at most 5 segments;
   - ref: `^[A-Za-z0-9._/-]{1,100}$`.
+- Length bounds: a rebuilt `target` longer than 200 characters, a `ref` or docker tag longer than 100, or any part that `scrubIdentifier` would alter makes the reference `invalid` (counted as unknown). An identifier is never truncated, so a published one is never a garbled prefix and never fails the snapshot schema.
 - `exemptActionOwners` (policies, default `[]`) lists owners whose unpinned actions count as pinned. A typical value is `["actions", "github"]`, but the default stays strict **(BC)**.
 
 ### 5.3 Reusable workflow currency
@@ -155,7 +158,7 @@ For each distinct `(owner/repo, ref)` among the `reusable-workflow` references:
 | `ref` is a major alias whose major is lower                                      | `behind`                                     |
 | Anything else (a branch such as `main`)                                          | `floating`                                   |
 
-A referenced repository that is **not public** is treated as not visible (`unknown`, no `latest`, no URL, no tags) unless `publication.audience: restricted`, so a private shared repository never leaks its name state or versions to a public site. `latest` and any tag name pass through `scrubIdentifier`.
+A referenced repository that is **not public** is treated as not visible (`unknown`, no `latest`, no URL, no tags) unless `publication.audience: restricted`, so a private shared repository never leaks its name state or versions to a public site. `latest` and tag names are kept only when they are at most 100 characters and unchanged by `scrubIdentifier`; otherwise they are dropped (`latest: null`, status `unknown`), never truncated.
 
 `latest` is `normaliseVersion(release.tagName)` or `normaliseVersion(tag.name)`. Comparison uses `compareVersions` from `collector/src/util/semver.ts`.
 

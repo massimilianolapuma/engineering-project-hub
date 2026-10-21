@@ -115,6 +115,8 @@ Il collector analizza il testo dei workflow in memoria e lo scarta. Il testo non
 
 **Allow-list di `getFile`.** Si estende con un solo pattern: `.github/workflows/<nome>` dove `<nome>` rispetta la regex qui sopra. `..`, barre nel nome e qualsiasi altro percorso sono rifiutati prima della chiamata.
 
+Un nome di file di workflow più lungo di 100 caratteri (il limite pubblicato) non viene mai letto: conta come illeggibile, quindi il controllo di pinning è `unknown`.
+
 ### 5.2 Analisi dei riferimenti nei workflow (`collector/src/normalizers/workflow-refs.ts`)
 
 - Il file si analizza con la dipendenza `yaml` esistente. `maxAliasCount: 100` e `uniqueKeys` non è imposto. Un file che non si analizza rende `partial` i dati delle action del repository (`unparsable` +1).
@@ -136,6 +138,7 @@ Il collector analizza il testo dei workflow in memoria e lo scarta. Il testo non
   - repo: `^[A-Za-z0-9._-]{1,100}$`;
   - segmenti di percorso: `^[A-Za-z0-9._-]{1,100}$`, al massimo 5 segmenti;
   - ref: `^[A-Za-z0-9._/-]{1,100}$`.
+- Limiti di lunghezza: un `target` ricostruito più lungo di 200 caratteri, un `ref` o un tag docker più lungo di 100, o una parte che `scrubIdentifier` modificherebbe rendono il riferimento `invalid` (contato come unknown). Un identificativo non viene mai troncato, quindi quello pubblicato non è mai un prefisso alterato e non fa mai fallire lo schema dello snapshot.
 - `exemptActionOwners` (policy, default `[]`) elenca gli owner le cui action non pinnate contano come pinnate. Un valore tipico è `["actions", "github"]`, ma il default resta rigoroso **(SB)**.
 
 ### 5.3 Aggiornamento dei workflow riutilizzabili
@@ -155,7 +158,7 @@ Per ogni coppia distinta `(owner/repo, ref)` tra i riferimenti `reusable-workflo
 | `ref` è un alias di major con major minore                                                    | `behind`                                           |
 | Qualsiasi altra cosa (un branch come `main`)                                                  | `floating`                                         |
 
-Un repository referenziato **non pubblico** è trattato come non visibile (`unknown`, nessun `latest`, nessun URL, nessun tag) salvo `publication.audience: restricted`, così un repository condiviso privato non espone mai stato o versioni a un sito pubblico. `latest` e ogni nome di tag passano per `scrubIdentifier`.
+Un repository referenziato **non pubblico** è trattato come non visibile (`unknown`, nessun `latest`, nessun URL, nessun tag) salvo `publication.audience: restricted`, così un repository condiviso privato non espone mai stato o versioni a un sito pubblico. `latest` e i nomi dei tag si tengono solo se lunghi al massimo 100 caratteri e non modificati da `scrubIdentifier`; altrimenti si scartano (`latest: null`, stato `unknown`), mai troncati.
 
 `latest` è `normaliseVersion(release.tagName)` o `normaliseVersion(tag.name)`. Il confronto usa `compareVersions` di `collector/src/util/semver.ts`.
 

@@ -1,5 +1,5 @@
 import { parse } from 'yaml';
-import { scrubIdentifier } from '../sanitizers/sanitize';
+import { exactIdentifier } from '../sanitizers/sanitize';
 import { WORKFLOW_FILE } from '../providers/types';
 import { compareVersions, normaliseVersion, parseVersion } from '../util/semver';
 
@@ -30,6 +30,9 @@ export const MAX_REFS_PER_FILE = 200;
 export const MAX_REFS_PER_REPO = 1000;
 const MAX_WORKFLOW_TEXT = 256 * 1024;
 const MAX_USES_LENGTH = 400;
+/** Published bounds (snapshot schema): `unpinnedRefs[].target` and every `ref`. */
+export const MAX_TARGET_LENGTH = 200;
+export const MAX_REF_LENGTH = 100;
 
 const OWNER = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 const REPO = /^[A-Za-z0-9._-]{1,100}$/;
@@ -37,7 +40,7 @@ const SEGMENT = /^[A-Za-z0-9._-]{1,100}$/;
 const REF = /^[A-Za-z0-9._/-]{1,100}$/;
 const FULL_SHA = /^[0-9a-f]{40}$/;
 const DOCKER_IMAGE = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$/;
-const DOCKER_TAG = /^[A-Za-z0-9_][A-Za-z0-9._-]{0,127}$/;
+const DOCKER_TAG = /^[A-Za-z0-9_][A-Za-z0-9._-]{0,99}$/;
 /** Segments after the owner (repository included). */
 const MAX_SEGMENTS_AFTER_OWNER = 5;
 
@@ -72,8 +75,9 @@ function classifyDocker(rest: string): UsesRef {
     }
   }
   if (!DOCKER_IMAGE.test(image) || image.includes('..') || image.includes('//')) return invalid();
-  const target = scrubIdentifier(`docker://${image}`, 250);
-  const safeRef = ref === null ? null : scrubIdentifier(ref, 100);
+  // Over-long or altered by scrubbing: invalid (unknown), never a truncated identifier.
+  const target = exactIdentifier(`docker://${image}`, MAX_TARGET_LENGTH);
+  const safeRef = ref === null ? null : exactIdentifier(ref, MAX_REF_LENGTH);
   if (!target || (ref !== null && !safeRef)) return invalid();
   return { kind: 'docker', target, owner: null, repo: null, ref: safeRef, pinned };
 }
@@ -103,8 +107,8 @@ export function classifyUses(raw: unknown): UsesRef {
     if (path.length !== 3 || !WORKFLOW_FILE.test(path[2]!)) return invalid();
     kind = 'reusable-workflow';
   }
-  const target = scrubIdentifier([owner, repo, ...path].join('/'), 250);
-  const safeRef = scrubIdentifier(ref, 100);
+  const target = exactIdentifier([owner, repo, ...path].join('/'), MAX_TARGET_LENGTH);
+  const safeRef = exactIdentifier(ref, MAX_REF_LENGTH);
   if (!target || !safeRef) return invalid();
   return {
     kind,

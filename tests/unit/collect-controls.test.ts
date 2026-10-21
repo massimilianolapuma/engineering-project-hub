@@ -81,6 +81,25 @@ describe('repository controls collection', () => {
     );
   });
 
+  it('never reads a workflow file whose name is over 100 characters, and counts it as omitted', async () => {
+    const long = `${'w'.repeat(97)}.yml`; // 101 characters
+    const max = `${'m'.repeat(96)}.yml`; // 100 characters
+    const provider = stub({
+      listDirectory: vi.fn(async () =>
+        ok([
+          { name: long, type: 'file' },
+          { name: max, type: 'file' },
+        ]),
+      ),
+    });
+    const data = await collect(context(provider));
+    expect([...data.controls!.workflowFiles.keys()]).toEqual([max]);
+    expect(data.controls!.omittedFiles).toBe(1);
+    expect((provider.getFile as Mock).mock.calls.map((c) => c[1])).not.toContain(
+      `.github/workflows/${long}`,
+    );
+  });
+
   it('a 404 on the directory reads no files and makes no file call', async () => {
     const provider = stub();
     const data = await collect(context(provider));

@@ -2,6 +2,8 @@ import type { AuthenticationMode, DataSource, ErrorClassification } from '@model
 
 /** A workflow file name under `.github/workflows/` that the collector may read. */
 export const WORKFLOW_FILE = /^[A-Za-z0-9._-]+\.ya?ml$/;
+/** Published bound of a workflow file name (snapshot schema). */
+export const MAX_WORKFLOW_FILE_NAME = 100;
 
 /*
  * Provider-neutral DTOs. Providers project API responses onto these minimal shapes

@@ -93,6 +93,16 @@ export function scrubIdentifier(input: string | null | undefined, maxLength = 10
 }
 
 /**
+ * Identifiers that must stay exact (workflow targets, refs, tag and file names): the input is
+ * returned unchanged when it is at most `maxLength` characters and scrubbing leaves it intact;
+ * otherwise null. Never truncates, so a published identifier is never a garbled prefix.
+ */
+export function exactIdentifier(input: string | null | undefined, maxLength = 100): string | null {
+  if (input === null || input === undefined || input.length > maxLength) return null;
+  return scrubIdentifier(input, maxLength) === input ? input : null;
+}
+
+/**
  * Final publication gate: the serialised document must not contain any secret pattern
  * or the value of a credential present in the environment.
  */

@@ -5,12 +5,13 @@ import {
   type TrackedWorkflowConfig,
 } from '@model/index';
 import { associateSubmodules } from '../normalizers/association';
-import { scrubIdentifier } from '../sanitizers/sanitize';
+import { exactIdentifier } from '../sanitizers/sanitize';
 import { memoize } from '../util/concurrency';
 import { parseGitmodules, type GitmoduleEntry } from '../util/gitmodules';
 import type { TargetVersions } from '../normalizers/workflow-refs';
 import {
   fail,
+  MAX_WORKFLOW_FILE_NAME,
   WORKFLOW_FILE,
   type BranchRuleDTO,
   type ClassicProtectionDTO,
@@ -61,7 +62,7 @@ export interface RepoControlsData {
   workflowDir: ProviderResult<DirectoryEntryDTO[]>;
   /** Workflow file text by file name (the first `maxWorkflowFiles`, sorted). Never published. */
   workflowFiles: Map<string, ProviderResult<FileDTO>>;
-  /** Workflow files left unread because of `maxWorkflowFiles`. */
+  /** Workflow files left unread: over `maxWorkflowFiles`, or a name over 100 characters. */
   omittedFiles: number;
   rules: ProviderResult<BranchRuleDTO[]>;
   /** null = not read (readClassicProtection is off). */
@@ -277,11 +278,13 @@ async function collectControls(
   const workflowFiles = new Map<string, ProviderResult<FileDTO>>();
   let omittedFiles = 0;
   if (workflowDir.ok) {
-    const names = workflowDir.data
+    const all = workflowDir.data
       .filter((e) => e.type === 'file' && WORKFLOW_FILE.test(e.name))
       .map((e) => e.name)
       .sort();
-    omittedFiles = Math.max(0, names.length - pc.maxWorkflowFiles);
+    // A name longer than the published bound is never read: it counts as unreadable.
+    const names = all.filter((n) => n.length <= MAX_WORKFLOW_FILE_NAME);
+    omittedFiles = all.length - names.length + Math.max(0, names.length - pc.maxWorkflowFiles);
     await Promise.all(
       names.slice(0, pc.maxWorkflowFiles).map(async (name) => {
         workflowFiles.set(
@@ -342,13 +345,15 @@ export async function collectReusableTargets(
         ? await call(ctx, `tags:${repository}`, () => p.listTags(repository))
         : null;
       result.set(key, {
-        latest: scrubIdentifier(
+        // Tag names come from repositories the hub does not monitor: kept only when exact
+        // (at most 100 characters, unchanged by scrubbing), never truncated.
+        latest: exactIdentifier(
           release.ok ? release.data.tagName : tag?.ok ? tag.data.name : null,
           100,
         ),
         tags: tags?.ok
           ? tags.data.flatMap((t) => {
-              const name = scrubIdentifier(t.name, 100);
+              const name = exactIdentifier(t.name, 100);
               return name ? [{ ...t, name }] : [];
             })
           : null,

@@ -1,8 +1,8 @@
 import type { RepositoryCheckId } from '@model/index';
 import type { RepoControlsInput } from '../evaluators/repository-controls';
 import type { RawProjectData, RepoControlsData, RepoData } from '../collectors/collect';
-import { fail } from '../providers/types';
-import { scrubIdentifier } from '../sanitizers/sanitize';
+import { fail, MAX_WORKFLOW_FILE_NAME, WORKFLOW_FILE } from '../providers/types';
+import { exactIdentifier } from '../sanitizers/sanitize';
 import { link, recordError, type BuildContext } from './model';
 import { isPublicDetail } from './security-model';
 import { parseWorkflow, type ParsedWorkflow, type TargetVersions } from './workflow-refs';
@@ -28,8 +28,11 @@ export function parsedWorkflows(controls: RepoControlsData): ParsedRepoWorkflows
   let unreadable = controls.omittedFiles;
   for (const name of [...controls.workflowFiles.keys()].sort()) {
     const result = controls.workflowFiles.get(name)!;
-    // The file name is published (unpinned reference lists): scrub it like any identifier.
-    const safeName = scrubIdentifier(name, 100);
+    // The file name is published (unpinned reference lists). A name the schema would refuse
+    // (over 100 characters, or altered by scrubbing) is unreadable, never renamed.
+    const safeName = WORKFLOW_FILE.test(name)
+      ? exactIdentifier(name, MAX_WORKFLOW_FILE_NAME)
+      : null;
     if (!result.ok || !safeName) {
       unreadable++;
       continue;
