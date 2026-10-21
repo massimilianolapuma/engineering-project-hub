@@ -1,5 +1,8 @@
 import type { AuthenticationMode, DataSource, ErrorClassification } from '@model/index';
 
+/** A workflow file name under `.github/workflows/` that the collector may read. */
+export const WORKFLOW_FILE = /^[A-Za-z0-9._-]+\.ya?ml$/;
+
 /*
  * Provider-neutral DTOs. Providers project API responses onto these minimal shapes
  * (allowlist): raw payloads never leave the provider layer.
