@@ -15,7 +15,7 @@ import UnknownValue from '../../components/UnknownValue.astro';
 import Base from '../../layouts/Base.astro';
 import { displayVersion, shortSha } from '../../lib/format';
 import { pageContext } from '../../lib/page';
-import { href, localeParams } from '../../lib/routes';
+import { exportHref, href, localeParams } from '../../lib/routes';
 import { driftTone, type Tone } from '../../lib/tones';
 import {
   compareVersionCards,
@@ -138,6 +138,11 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
       <header class="page-head">
         <h1>{v.title}</h1>
         <p class="vlead">{lead}</p>
+        <p class="page-export">
+          <a class="btn btn--ghost" href={exportHref('versions.csv')} download>
+            {d.exports.versions}
+          </a>
+        </p>
       </header>
 
       <div class="vcards">

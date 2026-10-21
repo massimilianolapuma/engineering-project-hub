@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- History: each collection is kept as a compact point in `history.json` (`kind: hub-history`, schema `1.0`, with the baseline needed for the next diff), bounded by the new optional `history` policies (`enabled`, `maxEntries` 120, `maxAgeDays` 90). The `hub-history` artifact (90 days) is restored at the start of the `collect` job from the hub's own repository with `GITHUB_TOKEN` and `actions: read` (default branch, not a fork, not the current run, at most 5 MiB), treated as untrusted input and rewritten by the collector. A failed restore never overwrites the chain (nothing is uploaded), and the `fresh-history` dispatch input resets it on purpose. A mock run never restores and starts from a synthetic fixture. New collector flags `--history-from`, `--history-fixture`, `--fresh-history` and env `HISTORY_FROM`, `HISTORY_RESTORE_STATE`.
+- "What changed" page (`/changes/`, `changes.json`, `kind: hub-changes`, schema `1.0`): status changes, score, new and resolved critical/high alerts (compared only where the source was readable and monitored in both collections), version moves and collection errors per project, with plurals and spans in hours that read correctly. A fresh or unrestorable history says so and never reads as "no changes".
+- Trend column on the Portfolio and Trend block on the project page: score sparkline on a fixed 0 to 100 scale (gaps are never drawn as 0), overall status strip and the history as a table.
+- CSV exports under `exports/` (`portfolio.csv`, `findings-summary.csv`, `versions.csv`): UTF-8 with BOM, RFC 4180, `unknown` for unreadable values, protection against CSV injection.
+- Data quality "History" card, How to read "Trends, changes and CSV" section, EN/IT docs and ADR 0006.
+
+### Changed
+
+- The `collect` job has `actions: read` (own repository only) and runs under the concurrency group `hub-collect` without cancelling; the caller job in `deploy-pages.yml` gets the same permission.
+- `scan:output` now scans `.csv` files.
+
+### Note
+
+- Snapshot schema unchanged (1.4): no re-collect is needed. History starts with the first v0.7.0 collection, so "What changed" appears from the second one.
+
 ### Fixed
 
 - The `codeQuality` capability no longer drops to "partial" when a repository has more than 300 open findings: the call answered, so the permission works (the count stays "unknown").

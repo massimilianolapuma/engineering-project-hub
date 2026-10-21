@@ -17,7 +17,7 @@ import StatusDot from '../../components/StatusDot.astro';
 import UnknownValue from '../../components/UnknownValue.astro';
 import Base from '../../layouts/Base.astro';
 import { pageContext } from '../../lib/page';
-import { href, localeParams } from '../../lib/routes';
+import { exportHref, href, localeParams } from '../../lib/routes';
 import { scoreSortKey } from '../../lib/score';
 import { severityTone } from '../../lib/tones';
 
@@ -118,6 +118,11 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
         <h1>{t.title}</h1>
         <p class="sec-lead">{lead}</p>
         <p class="muted sec-summary">{t.summary}</p>
+        <p class="page-export">
+          <a class="btn btn--ghost" href={exportHref('findings-summary.csv')} download>
+            {d.exports.findings}
+          </a>
+        </p>
       </header>
 
       <section class="sec-totals" aria-labelledby="h-sec-totals" data-security-totals>

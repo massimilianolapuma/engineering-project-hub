@@ -6,6 +6,7 @@ export const en = {
   },
   nav: {
     portfolio: 'Portfolio',
+    changes: 'What changed',
     workflows: 'Workflows',
     versions: 'Versions',
     security: 'Security',
@@ -610,6 +611,13 @@ export const en = {
     seeDataQuality: 'See in Data quality',
   },
   dataQualityPage: {
+    history: {
+      title: 'History',
+      restored: 'Restored {count} previous collections (oldest {date}).',
+      fixture: 'Demo history: {count} synthetic previous collections.',
+      fresh: 'Started fresh: {reason}',
+      retention: 'Kept: up to {maxEntries} collections, at most {maxAgeDays} days. Now {entries}.',
+    },
     title: 'Data quality',
     intro:
       'Whatever is missing here is shown as "we do not know" on every other page, never as zero.',
@@ -1018,10 +1026,95 @@ export const en = {
       minutes: 'minutes',
     },
     none: 'None',
+    trendsTitle: 'Trends, changes and CSV',
+    trendsPoint:
+      'A point is one collection: the overall status, the score and the six dimension statuses of a project at that time.',
+    trendsGaps:
+      'A gap is a collection where the score could not be measured. It is never drawn as 0 and values are never joined across it.',
+    trendsRetention:
+      'History keeps up to {maxEntries} collections and at most {maxAgeDays} days (from the history policies).',
+    trendsAlerts:
+      'What changed compares only alert sources that were monitored and readable in both collections, so an unreadable or removed source never shows as resolved and a newly readable or newly added one never shows as new.',
+    trendsCsv:
+      'CSV files are UTF-8 with a BOM, comma-separated. "unknown" means not readable and is never 0; "n/a" means not applicable; a leading apostrophe protects text that starts with =, +, - or @.',
     docsTitle: 'More detail',
     docsText:
       'Every policy, its default and how to change it is described in the configuration reference.',
     docsLink: 'Configuration reference',
+  },
+  changes: {
+    title: 'What changed since last collection',
+    lede: 'What moved between the last two collections, worst first.',
+    compared: 'Compared with the collection of {date} ({relative}).',
+    earlierHours: '{n} h earlier',
+    earlierDays: '{n} days earlier',
+    synthetic: 'Demo data: earlier collections are synthetic.',
+    summary:
+      '{statusChanges} status changes · {newFindings} new and {resolvedFindings} resolved critical/high alerts · {versionMoves} version moves · {newErrors} new collection errors',
+    statusChanges: 'Status changes',
+    score: 'Score',
+    newFindings: 'New critical/high alerts',
+    resolvedFindings: 'Resolved critical/high alerts',
+    truncated: 'and {n} more',
+    versionMoves: 'Version moves',
+    coordinator: 'Coordinator',
+    errors: 'Collection errors',
+    resolvedErrorsOne: '{n} error no longer occurs',
+    resolvedErrorsOther: '{n} errors no longer occur',
+    projectNone: 'No changes.',
+    projectNonePartial: 'No changes in what could be compared.',
+    to: 'to',
+    added: 'New in this collection: nothing to compare.',
+    missing:
+      'No change data in this snapshot (collected before v0.7.0 or with history turned off).',
+    invalid: 'The change data could not be read.',
+    findingsPartial:
+      'Some alerts were not compared: their source was unreadable or not monitored in one of the two collections, or the previous list of alerts was too long to keep. They are never counted as new or resolved.',
+    basis: {
+      none: 'This is the first collection with history. Changes appear after the next collection.',
+      'restore-failed':
+        'The previous history could not be restored, so changes cannot be computed. This does not mean "no changes".',
+      unreadable:
+        'The previous history file was not valid and was set aside. History starts again from this collection.',
+      incompatible:
+        'The previous history uses a format this version does not read. History starts again from this collection.',
+      'source-changed':
+        'The previous history came from another data source (mock or GitHub). History starts again from this collection.',
+    },
+  },
+  trend: {
+    title: 'Trend',
+    col: 'Trend',
+    up: 'Score up {points} over {span} ({count} collections)',
+    down: 'Score down {points} over {span} ({count} collections)',
+    flat: 'Score unchanged over {span} ({count} collections)',
+    pointOne: '{n} point',
+    pointOther: '{n} points',
+    spanDaysOne: '{n} day',
+    spanDaysOther: '{n} days',
+    spanHoursOne: '{n} hour',
+    spanHoursOther: '{n} hours',
+    shortDays: '{n} d',
+    shortHours: '{n} h',
+    short: '{sign}{n} · {span}',
+    none: 'No history yet',
+    invalid: 'History could not be read',
+    notEnough: 'Not enough measured points',
+    gapNote:
+      'Gaps are collections where the score could not be measured; they are never drawn as 0.',
+    strip: 'Overall status per collection',
+    summary: 'From {first} on {firstDate} to {last} on {lastDate}, {count} collections.',
+    table: 'Show history as a table',
+    date: 'Collected',
+    notTracked: 'not tracked',
+    changesLink: 'What changed for this project',
+    openHigh: 'Open critical / high',
+  },
+  exports: {
+    findings: 'Alert summary (CSV)',
+    versions: 'Versions (CSV)',
+    portfolio: 'Download CSV',
+    hint: 'UTF-8 CSV with BOM, comma-separated. "unknown" means not readable, never 0.',
   },
   errorsPage: {
     title: 'Snapshot data unavailable',

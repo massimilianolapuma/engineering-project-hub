@@ -348,6 +348,9 @@ interventi sul codice o sul frontend.
 | `score.points`                          | green 100, amber 60, red 20                                                  | Punti di una dimensione misurata per stato. Il grigio non è misurato, mai 0.                                                                       |
 | `score.caps`                            | red 49, amber 89, grey 89                                                    | Punteggio massimo consentito per ogni stato complessivo.                                                                                           |
 | `score.minMeasuredRatio`                | 0.5                                                                          | Sotto questa quota di dimensioni obbligatorie misurate il punteggio è "dati insufficienti".                                                        |
+| `history.enabled`                       | true                                                                         | `false` non scrive né `history.json` né `changes.json`; le pagine dicono che lo storico è disattivato.                                             |
+| `history.maxEntries`                    | 120                                                                          | Raccolte conservate (intero da 2 a 1000). 120 sono circa 30 giorni con la pianificazione ogni 6 ore.                                               |
+| `history.maxAgeDays`                    | 90                                                                           | Le raccolte più vecchie vengono scartate (intero da 1 a 400).                                                                                      |
 | `publication.audience`                  | public                                                                       | `public` omette titoli dei finding e rule id dei repository non pubblici. `restricted` richiede Pages con controllo degli accessi.                 |
 | `publication.allowedLinkHosts`          | [github.com]                                                                 | Vengono pubblicati solo i link verso questi host.                                                                                                  |
 
@@ -527,6 +530,54 @@ repository è stato leggibile o ha risposto che Code Quality non è attivo; altr
 (un errore di raccolta), mai un conteggio parziale. GitHub non espone alcun endpoint per la
 percentuale di copertura: per questo la copertura arriva dal riepilogo della CI.
 
+## Storico ed esportazione CSV
+
+Dalla v0.7.0 il collector conserva uno storico compatto di ogni raccolta e pubblica due
+file in più accanto allo snapshot, più tre file CSV. Lo schema dello snapshot non cambia
+(1.4), quindi dopo l'aggiornamento non serve raccogliere di nuovo: lo storico parte dalla
+prima raccolta della v0.7.0. Come viene conservato in Actions è descritto in
+[Operatività](operations.md#storico-tra-le-esecuzioni).
+
+| File                           | Contenuto                                                                                                                        |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `history.json`                 | `kind: hub-history`, schema `1.0`: un punto compatto per progetto e raccolta, più la base per calcolare il confronto successivo. |
+| `changes.json`                 | `kind: hub-changes`, schema `1.0`: cosa si è mosso rispetto alla raccolta precedente, o perché non si può dire.                  |
+| `exports/portfolio.csv`        | Una riga per progetto, con stato e punteggio della raccolta precedente.                                                          |
+| `exports/findings-summary.csv` | Una riga per progetto e repository: alert aperti per severità, senza titoli.                                                     |
+| `exports/versions.csv`         | Una riga per coordinator, componente e ambiente.                                                                                 |
+
+I due file JSON hanno una versione separata da quella dello snapshot, così lo storico
+sopravvive a un cambio di schema dello snapshot. Un file mancante o non valido non
+interrompe mai la build del sito: le pagine ne spiegano il motivo. `npm run
+validate:snapshots` invece fallisce su un file non valido.
+
+### Flag del collector
+
+| Flag                       | Significato                                                                                                                                      |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--history-from <dir>`     | Directory con il `history.json` precedente. Predefinito: `$HISTORY_FROM`, poi la directory di `--out` (un valore vuoto vale come non impostato). |
+| `--history-fixture <file>` | Solo sorgente mock: lo storico sintetico da cui partire (predefinito `fixtures/history/history.json`).                                           |
+| `--fresh-history`          | Ignora lo storico precedente e riparte da questa raccolta (stato `none`).                                                                        |
+
+Un'esecuzione mock non ripristina mai lo storico reale: parte sempre dalla fixture
+sintetica, così storico mock e reale non si incontrano. Uno storico precedente scritto
+dall'altra fonte dati viene scartato (`source-changed`).
+
+### File CSV
+
+Formato: RFC 4180, separatore virgola, CRLF dopo ogni riga, UTF-8 con BOM (così Excel legge
+gli accenti), intestazioni in inglese snake_case, booleani `true` / `false`, date ISO.
+`unknown` significa che il valore non era leggibile e non è mai 0; `n/a` significa che la
+colonna non si applica alla riga. Una cella di testo che inizia con `=`, `+`, `-`, `@`, TAB
+o CR riceve un `'` iniziale, così un foglio di calcolo non la esegue mai come formula. I
+numeri non hanno mai prefissi. Excel con separatore di elenco `;`: usa Dati, Da testo/CSV.
+
+- `portfolio.csv`: `project_id, project_name, business_unit, lifecycle, overall, score, score_measured, score_required, delivery, version, security, controls_coverage, controls_coverage_percent, governance, quality, quality_percent, open_critical, open_high, open_medium, open_low, counts_complete, open_secret_alerts, failed_critical_workflows, collection_errors, collected_at, previous_overall, previous_score, previous_collected_at`. Le colonne `previous_*` sono `n/a` quando non c'è una raccolta precedente.
+- `findings-summary.csv`: `project_id, component_id, repository, open_critical, open_high, open_medium, open_low, open_informational, open_unknown, sources_complete`. Tutti i conteggi sono `unknown` quando nessuna fonte di alert era leggibile; quando solo alcune lo erano, i conteggi sono un limite inferiore e `sources_complete` è `false`.
+- `versions.csv`: `row_type (coordinator|component|environment), project_id, item_id, item_name, repository, version, version_source, declared_version, latest_release, drift, manifest_consistency, pin_status, environment_status`.
+
+Se i dati dello snapshot mancano o non sono validi, ogni CSV contiene l'intestazione e una sola riga che inizia con `data unavailable` e ha `unknown` nelle altre colonne. Non è mai un file con la sola intestazione, che si leggerebbe come "nessun progetto".
+
 ## Variabili d'ambiente
 
 | Variabile                                                   | Dove                             | Scopo                                                                                                                                                                                                     |
@@ -539,3 +590,5 @@ percentuale di copertura: per questo la copertura arriva dal riepilogo della CI.
 | `SITE_URL`, `BASE_PATH`                                     | impostate dal workflow di deploy | `site` e `base` di Astro (da configure-pages)                                                                                                                                                             |
 | `SNAPSHOT_DIR`                                              | locale / test                    | Directory alternativa degli snapshot per la build del sito                                                                                                                                                |
 | `POLICIES_FILE`                                             | build del sito                   | Policy spiegate nella pagina "Come leggere" (predefinito `config/policies.yaml`; valori predefiniti dello schema solo se manca il file predefinito; un file illeggibile o non valido fa fallire la build) |
+| `HISTORY_FROM`                                              | job collect / locale             | Directory con il `history.json` precedente (impostata dal workflow a `.history-restore`)                                                                                                                  |
+| `HISTORY_RESTORE_STATE`                                     | job collect                      | `none` o `failed`, dallo step di ripristino; ogni altro valore legge il file                                                                                                                              |

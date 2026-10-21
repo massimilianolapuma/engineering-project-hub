@@ -1,0 +1,364 @@
+---
+/*
+ * "What changed since last collection": the diff between the last two collections, computed by
+ * the collector (changes.json). A fresh history is never shown as "no changes": every state
+ * other than "compared" shows its own sentence instead of per-project cards.
+ */
+import type { ChangesFile } from '@model/index';
+import ErrorState from '../../components/ErrorState.astro';
+import ExtLink from '../../components/ExtLink.astro';
+import Pill from '../../components/Pill.astro';
+import StatusBadge from '../../components/StatusBadge.astro';
+import UnknownValue from '../../components/UnknownValue.astro';
+import Base from '../../layouts/Base.astro';
+import { loadChanges } from '../../lib/data';
+import { healthRank } from '../../lib/format';
+import { pageContext } from '../../lib/page';
+import { href, localeParams } from '../../lib/routes';
+import { severityTone } from '../../lib/tones';
+import { plural } from '../../lib/workflows';
+
+export const getStaticPaths = localeParams;
+const { locale } = Astro.props;
+const { i18n, data, index, alternates } = pageContext(locale, 'changes');
+const { d, f } = i18n;
+const c = d.changes;
+const changes = loadChanges();
+
+type Card = ChangesFile['projects'][number];
+const HOUR_MS = 3_600_000;
+const DAY_MS = 24 * HOUR_MS;
+
+const snapshots = new Map((data.ok ? data.data.projects : []).map((p) => [p.project.id, p]));
+const nameOf = (id: string) => snapshots.get(id)?.project.name ?? id;
+const componentName = (projectId: string, componentId: string | null) =>
+  componentId === null
+    ? c.coordinator
+    : (snapshots.get(projectId)?.components.find((x) => x.id === componentId)?.name ?? componentId);
+
+const scoreMoved = (p: Card) => p.previous !== null && p.previous.score !== p.current.score;
+const changed = (p: Card) =>
+  Number(scoreMoved(p)) +
+    p.statusChanges.length +
+    p.newFindings.length +
+    p.resolvedFindings.length +
+    p.versionMoves.length +
+    p.newErrors.length +
+    p.resolvedErrors >
+  0;
+/** Projects with changes first, then worst current status first, then by name. */
+const cards: Card[] =
+  changes.ok && changes.data.basis.state === 'compared'
+    ? [...changes.data.projects].sort(
+        (a, b) =>
+          Number(changed(b)) - Number(changed(a)) ||
+          healthRank(a.current.overall) - healthRank(b.current.overall) ||
+          nameOf(a.id).localeCompare(nameOf(b.id)),
+      )
+    : [];
+
+/* The first card that has each kind of change: the anchor of the totals in the summary. */
+const KINDS = [
+  'statusChanges',
+  'newFindings',
+  'resolvedFindings',
+  'versionMoves',
+  'newErrors',
+] as const;
+type Kind = (typeof KINDS)[number];
+const firstOf = (k: Kind) => cards.find((p) => p[k].length > 0)?.id ?? null;
+const first = Object.fromEntries(KINDS.map((k) => [k, firstOf(k)])) as Record<Kind, string | null>;
+const isFirst = (k: Kind, id: string) => first[k] === id;
+
+type Part = { kind: Kind; value: number } | { text: string };
+const summaryParts: Part[] = changes.ok
+  ? c.summary.split(/(\{\w+\})/).map((part) => {
+      const key = /^\{(\w+)\}$/.exec(part)?.[1] as Kind | undefined;
+      return key && KINDS.includes(key)
+        ? { kind: key, value: changes.data.totals[key] }
+        : { text: part };
+    })
+  : [];
+
+const basis = changes.ok ? changes.data.basis : null;
+const earlier = (() => {
+  if (!changes.ok || !basis?.previousCollectedAt) return '';
+  const gap = Date.parse(changes.data.generatedAt) - Date.parse(basis.previousCollectedAt);
+  return gap >= 2 * DAY_MS
+    ? f(c.earlierDays, { n: Math.round(gap / DAY_MS) })
+    : f(c.earlierHours, { n: Math.max(1, Math.round(gap / HOUR_MS)) });
+})();
+const date = (iso: string) => i18n.date(iso);
+---
+
+<Base i18n={i18n} title={c.title} page="changes" alternates={alternates} index={index}>
+  {!data.ok && <ErrorState error={data.error} i18n={i18n} />}
+  {data.ok && (
+    <div class="chg">
+      <header class="page-head">
+        <h1>{c.title}</h1>
+        {!changes.ok ? (
+          <p class="chg__lede" data-changes-state={changes.error.kind}>
+            {changes.error.kind === 'missing' ? c.missing : c.invalid}
+          </p>
+        ) : basis!.state !== 'compared' ? (
+          <p class="chg__lede" data-changes-state={basis!.state}>
+            {c.basis[basis!.state]}
+          </p>
+        ) : (
+          <>
+            <p class="chg__lede">{c.lede}</p>
+            <p class="muted">
+              {f(c.compared, { date: date(basis!.previousCollectedAt!), relative: earlier })}
+              {basis!.synthetic && <> {c.synthetic}</>}
+            </p>
+          </>
+        )}
+      </header>
+
+      {changes.ok && basis!.state === 'compared' && (
+        <>
+          <p class="chg__summary" data-changes-summary>
+            {summaryParts.map((part) =>
+              'kind' in part ? (
+                first[part.kind] && part.value > 0 ? (
+                  <a href={`#first-${part.kind}`}>{part.value}</a>
+                ) : (
+                  <span>{part.value}</span>
+                )
+              ) : (
+                part.text
+              ),
+            )}
+          </p>
+
+          {cards.map((p) => (
+            <article class="card chg-card" id={`p-${p.id}`} aria-labelledby={`h-${p.id}`}>
+              <header class="chg-card__head">
+                <h2 id={`h-${p.id}`}>
+                  <a href={href(locale, `projects/${p.id}`)}>{nameOf(p.id)}</a>
+                </h2>
+                <StatusBadge
+                  status={p.current.overall}
+                  i18n={i18n}
+                  context={d.dimensions.overall}
+                  size="sm"
+                />
+              </header>
+
+              {p.added ? (
+                <p class="muted">{c.added}</p>
+              ) : (
+                <>
+                  {!changed(p) && <p>{p.findingsPartial ? c.projectNonePartial : c.projectNone}</p>}
+
+                  {(p.statusChanges.length > 0 || scoreMoved(p)) && (
+                    <section aria-labelledby={`h-${p.id}-status`}>
+                      <h3 id={`h-${p.id}-status`}>
+                        <span
+                          id={isFirst('statusChanges', p.id) ? 'first-statusChanges' : undefined}
+                        >
+                          {c.statusChanges}
+                        </span>
+                      </h3>
+                      <ul class="chg-list">
+                        {p.statusChanges.map((s) => (
+                          <li data-change="status">
+                            <span class="chg-dim">{i18n.dimension(s.dimension)}:</span>{' '}
+                            <StatusBadge
+                              status={s.from}
+                              i18n={i18n}
+                              context={i18n.dimension(s.dimension)}
+                              size="sm"
+                            />
+                            <span aria-hidden="true"> → </span>
+                            <span class="visually-hidden"> {c.to} </span>
+                            <StatusBadge
+                              status={s.to}
+                              i18n={i18n}
+                              context={i18n.dimension(s.dimension)}
+                              size="sm"
+                            />
+                          </li>
+                        ))}
+                        {scoreMoved(p) && p.previous && (
+                          <li data-change="score">
+                            <span class="chg-dim">{c.score}:</span>{' '}
+                            {p.previous.score === null ? (
+                              <UnknownValue i18n={i18n} />
+                            ) : (
+                              p.previous.score
+                            )}
+                            {' → '}
+                            {p.current.score === null ? (
+                              <UnknownValue i18n={i18n} />
+                            ) : (
+                              p.current.score
+                            )}
+                          </li>
+                        )}
+                      </ul>
+                    </section>
+                  )}
+
+                  {p.newFindings.length > 0 && (
+                    <section aria-labelledby={`h-${p.id}-new`}>
+                      <h3 id={`h-${p.id}-new`}>
+                        <span id={isFirst('newFindings', p.id) ? 'first-newFindings' : undefined}>
+                          {c.newFindings}
+                        </span>
+                      </h3>
+                      <ul class="chg-list">
+                        {p.newFindings.map((x) => (
+                          <li data-change="new-finding">
+                            <Pill tone={severityTone(x.severity)} label={d.severity[x.severity]} />{' '}
+                            <ExtLink href={x.htmlUrl} i18n={i18n} label={x.id} />{' '}
+                            <span class="muted">{x.title ?? d.common.privateWithheld}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+
+                  {p.resolvedFindings.length > 0 && (
+                    <section aria-labelledby={`h-${p.id}-resolved`}>
+                      <h3 id={`h-${p.id}-resolved`}>
+                        <span
+                          id={
+                            isFirst('resolvedFindings', p.id) ? 'first-resolvedFindings' : undefined
+                          }
+                        >
+                          {c.resolvedFindings}
+                        </span>
+                      </h3>
+                      <ul class="chg-list">
+                        {p.resolvedFindings.map((x) => (
+                          <li data-change="resolved-finding">
+                            <Pill tone={severityTone(x.severity)} label={d.severity[x.severity]} />{' '}
+                            <ExtLink href={x.htmlUrl} i18n={i18n} label={x.id} />
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+
+                  {p.findingsTruncated > 0 && (
+                    <p class="muted">{f(c.truncated, { n: p.findingsTruncated })}</p>
+                  )}
+
+                  {p.versionMoves.length > 0 && (
+                    <section aria-labelledby={`h-${p.id}-versions`}>
+                      <h3 id={`h-${p.id}-versions`}>
+                        <span id={isFirst('versionMoves', p.id) ? 'first-versionMoves' : undefined}>
+                          {c.versionMoves}
+                        </span>
+                      </h3>
+                      <ul class="chg-list">
+                        {p.versionMoves.map((v) => (
+                          <li data-change="version">
+                            {componentName(p.id, v.componentId)}: <span class="mono">{v.from}</span>{' '}
+                            → <span class="mono">{v.to}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+
+                  {(p.newErrors.length > 0 || p.resolvedErrors > 0) && (
+                    <section aria-labelledby={`h-${p.id}-errors`}>
+                      <h3 id={`h-${p.id}-errors`}>
+                        <span id={isFirst('newErrors', p.id) ? 'first-newErrors' : undefined}>
+                          {c.errors}
+                        </span>
+                      </h3>
+                      <ul class="chg-list">
+                        {p.newErrors.map((e) => (
+                          <li data-change="error">
+                            <span class="mono">{e.repository}</span> · {d.errorSource[e.source]} ·{' '}
+                            {d.errorClass[e.classification]}
+                          </li>
+                        ))}
+                        {p.resolvedErrors > 0 && (
+                          <li class="muted">
+                            {plural(
+                              { one: c.resolvedErrorsOne, other: c.resolvedErrorsOther },
+                              p.resolvedErrors,
+                            )}
+                          </li>
+                        )}
+                      </ul>
+                    </section>
+                  )}
+
+                  {p.findingsPartial && <p class="muted chg-partial">{c.findingsPartial}</p>}
+                </>
+              )}
+            </article>
+          ))}
+        </>
+      )}
+    </div>
+  )}
+</Base>
+
+<style>
+  .chg {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  .chg :global(.page-head) {
+    margin-bottom: 0;
+  }
+  .chg__lede {
+    margin: var(--space-2) 0 0;
+    font-size: var(--fs-lead);
+    font-weight: 600;
+  }
+  .chg__summary {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .chg__summary a,
+  .chg__summary span {
+    font-weight: 700;
+  }
+  .chg-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: 0;
+  }
+  .chg-card__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-3);
+  }
+  .chg-card h2 {
+    margin: 0;
+    font-size: var(--fs-lg);
+    overflow-wrap: anywhere;
+  }
+  .chg-card h3 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--fs-md);
+  }
+  .chg-card p {
+    margin: 0;
+  }
+  .chg-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .chg-dim {
+    font-weight: 600;
+  }
+</style>

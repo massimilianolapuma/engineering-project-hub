@@ -14,6 +14,7 @@ const TEXT_EXT = new Set([
   '.mjs',
   '.css',
   '.json',
+  '.csv',
   '.txt',
   '.xml',
   '.md',

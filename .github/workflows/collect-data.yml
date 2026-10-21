@@ -21,7 +21,17 @@
 #   3. The workflow GITHUB_TOKEN (contents: read on this repository only)
 #   Secrets are passed via env ONLY to the "Collect" step and never printed.
 #
-# Permissions: contents: read (the only GITHUB_TOKEN scope in this workflow).
+# History: the previous history.json is restored from this repository's OWN newest
+#   "hub-history" artifact (default branch, same repository, deploy/collect workflow
+#   only; scripts/restore-history.ts) and the new one is uploaded again (90 days).
+#   Only the workflow GITHUB_TOKEN is used for this (actions: read). A failed restore
+#   starts a fresh history for the run; it never fails the collection, and that fresh
+#   history is NOT uploaded, so the previous artifact stays the newest and the chain survives.
+#   workflow_dispatch input fresh-history=true skips the restore on purpose (reason recorded)
+#   and uploads the fresh history: this is the way to reset the chain from CI.
+#
+# Permissions: contents: read; actions: read (list/download this repository's own
+#   "hub-history" artifact — GET only, never any write).
 #
 # Local test (nektos/act with podman as the container engine):
 #   act workflow_dispatch --workflows .github/workflows/collect-data.yml \
@@ -71,6 +81,11 @@ on:
           - mock
           - github
         default: mock
+      fresh-history:
+        description: 'Start history from scratch (skip the restore; the new history replaces the chain)'
+        required: false
+        type: boolean
+        default: false
   repository_dispatch:
     types: [collect-data]
 
@@ -84,6 +99,11 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
+      actions: read # restores this repository's own hub-history artifact
+    # Serialises collections so the history chain is never forked by two parallel runs.
+    concurrency:
+      group: hub-collect
+      cancel-in-progress: false
     outputs:
       artifact-name: ${{ steps.artifact.outputs.name }}
       data-source: ${{ steps.source.outputs.data-source }}
@@ -130,6 +150,30 @@ jobs:
         run: npm run validate:config
 
       # ------------------------------------------------------------------
+      # Operator reset: fresh-history=true (workflow_dispatch only) skips the restore.
+      - name: Start history fresh (requested)
+        id: fresh
+        if: ${{ steps.source.outputs.data-source == 'github' && inputs.fresh-history == true }}
+        run: |
+          set -euo pipefail
+          { echo "state=none"; echo "reason=fresh-history"; } >> "$GITHUB_OUTPUT"
+          echo "::notice title=History::fresh-history requested: the restore is skipped and history starts from this collection"
+          echo "History: started fresh on request (fresh-history)" >> "$GITHUB_STEP_SUMMARY"
+
+      # ------------------------------------------------------------------
+      # Restores the previous history from this repository's own newest "hub-history"
+      # artifact (default branch, same repository, deploy/collect workflow only).
+      # Uses only the workflow GITHUB_TOKEN (actions: read); collector secrets are not passed.
+      - name: Restore previous history
+        id: history
+        if: ${{ steps.source.outputs.data-source == 'github' && steps.fresh.outputs.state != 'none' }}
+        # A crash before the script's own handler must not fail the collection (state stays empty).
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: npm run --silent history:restore -- --out .history-restore
+
+      # ------------------------------------------------------------------
       # The only step with credentials. Values are never echoed or printed.
       - name: Collect
         env:
@@ -140,6 +184,8 @@ jobs:
           GH_APP_INSTALLATION_ID: ${{ secrets.GH_APP_INSTALLATION_ID }}
           GH_READ_TOKEN: ${{ secrets.GH_READ_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
+          HISTORY_FROM: .history-restore
+          HISTORY_RESTORE_STATE: ${{ steps.history.outputs.state || steps.fresh.outputs.state }}
         run: npm run collect
 
       - name: Validate snapshots
@@ -168,3 +214,14 @@ jobs:
           path: public/data
           retention-days: 14
           if-no-files-found: error
+
+      # Never after a failed (or crashed, empty state) restore: the fresh one-entry history would
+      # become the newest artifact and the previous chain would be dropped for good.
+      - name: Upload history artifact
+        if: ${{ steps.source.outputs.data-source == 'github' && (steps.history.outputs.state == 'restored' || steps.history.outputs.state == 'none' || steps.fresh.outputs.state == 'none') }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: hub-history
+          path: public/data/history.json
+          retention-days: 90
+          if-no-files-found: warn

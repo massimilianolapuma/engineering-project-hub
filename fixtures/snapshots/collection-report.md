@@ -7,6 +7,7 @@
 | Authentication | mock |
 | Duration | 0 ms |
 | Repositories | 12 total · 7 ok · 3 with errors · 2 unavailable |
+| History | fixture · 13 entries |
 
 ### Projects
 

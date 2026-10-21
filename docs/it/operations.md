@@ -150,6 +150,79 @@ Note:
 - La copertura è letta dagli attributi radice Cobertura `lines-covered` e `lines-valid`. Per
   gli altri formati calcola i due numeri e imposta `format` di conseguenza.
 
+## Storico tra le esecuzioni
+
+Ogni raccolta aggiunge a `history.json` un punto compatto per progetto, e il collector lo
+confronta con il precedente per scrivere `changes.json` (la pagina "Cosa è cambiato"). Il
+runner parte vuoto ogni volta, quindi è GitHub Actions a portare lo storico:
+
+- il job `collect` esegue prima `npm run history:restore`. Legge l'artifact `hub-history`
+  più recente del **proprio** repository con `GITHUB_TOKEN` e `actions: read` (mai con le
+  credenziali del collector); poi il collector aggiunge e scrive il nuovo file;
+- il job carica un nuovo artifact `hub-history` (solo `history.json`, 90 giorni), solo con
+  `data-source: github` e solo se il ripristino è finito in `restored` o `none`. Dopo un
+  ripristino `failed` (o uno step di ripristino andato in errore) non si carica nulla: lo
+  storico nuovo, di una sola voce, diventerebbe l'artifact più recente e farebbe perdere
+  tutta la catena, quindi resta il più recente quello precedente e la prossima esecuzione
+  riprova. Un'esecuzione mock manuale non può mai rompere la catena reale;
+- un'esecuzione mock non ripristina mai: parte dal `fixtures/history/history.json`
+  sintetico.
+
+Il ripristino scorre fino a 500 artifact (5 pagine da 100), dal più recente, e se un artifact
+affidabile non è un archivio valido prova il successivo (fino a 3 archivi non validi) prima
+di arrendersi con `bad-archive`.
+
+Sono accettati solo artifact del branch predefinito, di questo repository (non di un
+fork), di un'altra esecuzione, fino a 5 MiB e del workflow di deploy o di raccolta. Tutto il
+resto non viene usato.
+
+### Stati del ripristino
+
+Lo stato è in `history.json` (`restore.state`), in `changes.json` (`basis.state`), nella
+scheda "Storico" di Qualità dei dati e nel riepilogo del job. Uno stato diverso da
+`restored` non fa mai fallire la raccolta, e la pagina "Cosa è cambiato" lo spiega invece di
+dire "nessun cambiamento".
+
+| Stato            | Significato                                                                                                    | Cosa fare                                                                                                                                                          |
+| ---------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `restored`       | Lo storico precedente è stato letto ed esteso.                                                                 | Niente.                                                                                                                                                            |
+| `fixture`        | Esecuzione mock, partita dalla fixture sintetica.                                                              | Niente. Dati demo.                                                                                                                                                 |
+| `none`           | Nessuno storico precedente (prima esecuzione, artifact scaduti, `--fresh-history`).                            | Niente. I cambiamenti compaiono dopo la prossima raccolta.                                                                                                         |
+| `restore-failed` | Non è stato possibile scaricare l'artifact (non autorizzato, archivio non valido, errore API).                 | Verifica che il job `collect` abbia `actions: read` (il log del workflow stampa il codice del motivo). Non si carica nulla, quindi la prossima esecuzione riprova. |
+| `unreadable`     | Il file precedente era troppo grande, non JSON, non valido per lo schema o non pubblicabile; è stato scartato. | Di solito è un caso isolato. Se si ripete, controlla l'esecuzione precedente.                                                                                      |
+| `incompatible`   | Il file precedente usa una versione di schema che questa versione non legge.                                   | Niente: lo storico riparte da questa raccolta.                                                                                                                     |
+| `source-changed` | Lo storico precedente veniva dall'altra fonte dati (mock o GitHub).                                            | Niente: lo storico riparte da questa raccolta. Voci più vecchie dell'altra fonte, dietro un'ultima voce corrispondente, vengono scartate con una nota.             |
+
+Lo storico non blocca mai gli snapshot. Se lo storico ripristinato supera i controlli ma non
+è comunque pubblicabile, viene scartato (stato `unreadable`). Se non si riesce a costruire
+nemmeno uno storico da zero, `history.json` e `changes.json` non vengono scritti per
+quell'esecuzione, gli snapshot sì, e il riepilogo del job mostra
+`History | not written this run` con il motivo sotto "History notes".
+
+Limiti: lo storico copre al massimo 500 progetti (un catalogo più grande non ha storico e
+riceve una nota). Per progetto tiene al massimo 500 repository, alert critici/alti aperti,
+fonti illeggibili e chiavi di errore, e 200 versioni. Un elenco al limite può essere stato
+tagliato, quindi il "Cosa è cambiato" successivo non elenca alert (o errori) nuovi per quel
+progetto e lo segna come parziale. Se `history.json` supera gli 8 MiB letti dall'esecuzione
+successiva, le raccolte più vecchie vengono scartate con una nota.
+
+### Azzerare lo storico
+
+Avvia a mano il workflow **Collect — Data snapshots** (`workflow_dispatch`) con
+`data-source: github` e `fresh-history: true`. Salta il ripristino, registra il motivo
+`fresh-history` nel riepilogo del job e il nuovo storico sostituisce la catena. In
+alternativa, elimina tutti gli artifact `hub-history` (repository, Actions, Artifacts): la
+raccolta successiva riparte da zero (stato `none`). Impostare `history.enabled: false`
+**non** azzera nulla: non si carica nessun nuovo artifact, quindi quello vecchio viene
+ripristinato di nuovo quando lo riattivi.
+
+### Concorrenza e scadenza
+
+Il job `collect` gira nel gruppo di concorrenza `hub-collect` con
+`cancel-in-progress: false`, così due raccolte non ripristinano mai la stessa base
+sovrascrivendosi a vicenda. L'artifact dura 90 giorni: se nessuna raccolta gira per più
+tempo, la catena si perde e lo storico riparte (stato `none`).
+
 ## Dati locali e `ci:build`
 
 `npm run ci:build` esegue `collect:mock`, che sovrascrive `public/data`. Uno snapshot locale
@@ -160,6 +233,10 @@ con dati reali (per esempio da `collect:github`) va raccolto di nuovo dopo di es
 raccolto di nuovo (`collect:github`, o la prossima esecuzione pianificata). Ricorda che
 `npm run ci:build` sovrascrive `public/data` con dati mock.
 
+Un `npm run collect:github` locale aggiunge a `public/data/history.json` (il percorso
+predefinito dello storico è la directory di output), quindi uno storico locale con dati reali
+cresce tra le esecuzioni come quello della CI. `npm run ci:build` ci scrive sopra lo storico mock.
+
 ## Conservazione degli artifact
 
 | Artifact                                              | Conservazione           | Contenuto                                  |
@@ -169,6 +246,7 @@ raccolto di nuovo (`collect:github`, o la prossima esecuzione pianificata). Rico
 | `github-pages`                                        | default di GitHub       | Artifact di deployment di Pages            |
 | Report di coverage CI                                 | default upstream        | Coverage di Vitest (`coverage/`)           |
 | `hub-quality-summary` (in ogni repository monitorato) | 30 giorni (consigliato) | `quality-summary.json`: solo conteggi      |
+| `hub-history`                                         | 90 giorni               | `history.json`: solo punti compatti        |
 
 Gli artifact contengono solo dati sanitizzati e pubblicabili. Non contengono mai
 credenziali, file temporanei o payload grezzi.

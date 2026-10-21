@@ -35,6 +35,7 @@
     "ci:test": "vitest run --coverage",
     "test:e2e": "playwright test",
     "scan:output": "tsx scripts/scan-output.ts",
+    "history:restore": "tsx scripts/restore-history.ts",
     "fixtures:update": "tsx scripts/update-golden-snapshots.ts",
     "schema:generate": "tsx scripts/generate-json-schema.ts"
   },

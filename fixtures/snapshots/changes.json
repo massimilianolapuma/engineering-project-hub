@@ -1,0 +1,151 @@
+{
+  "kind": "hub-changes",
+  "schemaVersion": "1.0",
+  "generatedAt": "2026-01-15T12:00:00.000Z",
+  "basis": {
+    "state": "compared",
+    "previousCollectedAt": "2026-01-14T12:00:00.000Z",
+    "synthetic": true
+  },
+  "totals": {
+    "statusChanges": 4,
+    "newFindings": 1,
+    "resolvedFindings": 1,
+    "versionMoves": 1,
+    "newErrors": 1
+  },
+  "projects": [
+    {
+      "id": "platform",
+      "added": false,
+      "previous": {
+        "overall": "amber",
+        "score": 82
+      },
+      "current": {
+        "overall": "amber",
+        "score": 82
+      },
+      "statusChanges": [],
+      "newFindings": [],
+      "resolvedFindings": [],
+      "findingsTruncated": 0,
+      "findingsPartial": false,
+      "versionMoves": [],
+      "newErrors": [],
+      "resolvedErrors": 0
+    },
+    {
+      "id": "project-alpha",
+      "added": false,
+      "previous": {
+        "overall": "amber",
+        "score": 76
+      },
+      "current": {
+        "overall": "amber",
+        "score": 78
+      },
+      "statusChanges": [
+        {
+          "dimension": "delivery",
+          "from": "amber",
+          "to": "green"
+        }
+      ],
+      "newFindings": [],
+      "resolvedFindings": [
+        {
+          "id": "example-org/project-alpha-backend#code-scanning#9",
+          "severity": "high",
+          "componentId": "backend",
+          "repository": "example-org/project-alpha-backend",
+          "htmlUrl": "https://github.com/example-org/project-alpha-backend/security/code-scanning/9"
+        }
+      ],
+      "findingsTruncated": 0,
+      "findingsPartial": false,
+      "versionMoves": [
+        {
+          "kind": "component",
+          "componentId": "frontend",
+          "from": "2.0.3",
+          "to": "2.1.0"
+        }
+      ],
+      "newErrors": [],
+      "resolvedErrors": 0
+    },
+    {
+      "id": "project-beta",
+      "added": false,
+      "previous": {
+        "overall": "amber",
+        "score": 58
+      },
+      "current": {
+        "overall": "red",
+        "score": 40
+      },
+      "statusChanges": [
+        {
+          "dimension": "overall",
+          "from": "amber",
+          "to": "red"
+        },
+        {
+          "dimension": "delivery",
+          "from": "amber",
+          "to": "red"
+        },
+        {
+          "dimension": "security",
+          "from": "amber",
+          "to": "red"
+        }
+      ],
+      "newFindings": [
+        {
+          "id": "example-org/project-beta-api#code-scanning#3",
+          "severity": "critical",
+          "componentId": "api",
+          "repository": "example-org/project-beta-api",
+          "htmlUrl": "https://github.com/example-org/project-beta-api/security/code-scanning/3",
+          "title": null
+        }
+      ],
+      "resolvedFindings": [],
+      "findingsTruncated": 0,
+      "findingsPartial": true,
+      "versionMoves": [],
+      "newErrors": [
+        {
+          "repository": "example-org/project-beta-web",
+          "source": "secret-scanning",
+          "classification": "not-authorised"
+        }
+      ],
+      "resolvedErrors": 0
+    },
+    {
+      "id": "project-gamma",
+      "added": false,
+      "previous": {
+        "overall": "grey",
+        "score": null
+      },
+      "current": {
+        "overall": "grey",
+        "score": null
+      },
+      "statusChanges": [],
+      "newFindings": [],
+      "resolvedFindings": [],
+      "findingsTruncated": 0,
+      "findingsPartial": true,
+      "versionMoves": [],
+      "newErrors": [],
+      "resolvedErrors": 0
+    }
+  ]
+}

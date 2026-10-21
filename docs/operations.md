@@ -144,6 +144,77 @@ Notes:
 - Coverage is read from the Cobertura root attributes `lines-covered` and `lines-valid`.
   For other formats, compute the two numbers and set `format` accordingly.
 
+## History between runs
+
+Each collection appends one compact point per project to `history.json`, and the collector
+diffs it against the previous one to write `changes.json` (the "What changed" page). The
+runner starts empty every time, so GitHub Actions carries the history:
+
+- the `collect` job runs `npm run history:restore` first. It reads the hub's **own** newest
+  `hub-history` artifact with `GITHUB_TOKEN` and `actions: read` (never the collector
+  credentials), then the collector appends and writes the new file;
+- the job uploads a new `hub-history` artifact (only `history.json`, 90 days), only for
+  `data-source: github` and only when the restore ended `restored` or `none`. After a
+  `failed` restore (or a restore step that crashed) nothing is uploaded: the fresh
+  one-entry history would become the newest artifact and drop the whole chain, so the
+  previous artifact stays newest and the next run tries again. A manual mock run can never
+  break the real chain;
+- a mock run never restores: it starts from the synthetic `fixtures/history/history.json`.
+
+The restore pages through up to 500 artifacts (5 pages of 100), newest first, and if a
+trusted artifact is not a valid archive it tries the next trusted one (up to 3 bad archives)
+before giving up with `bad-archive`.
+
+Only artifacts of the default branch, of this repository (not a fork), from another run, up
+to 5 MiB and from the deploy or collect workflow are accepted. Anything else is not used.
+
+### Restore states
+
+The state is in `history.json` (`restore.state`), in `changes.json` (`basis.state`), in the
+Data quality "History" card and in the job summary. A state other than `restored` never
+fails the collection, and the "What changed" page then explains it instead of saying "no
+changes".
+
+| State            | Meaning                                                                                                   | What to do                                                                                                                                      |
+| ---------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `restored`       | The previous history was read and extended.                                                               | Nothing.                                                                                                                                        |
+| `fixture`        | Mock run, started from the synthetic fixture.                                                             | Nothing. Demo data.                                                                                                                             |
+| `none`           | No previous history (first run, expired artifacts, `--fresh-history`).                                    | Nothing. Changes appear after the next collection.                                                                                              |
+| `restore-failed` | The artifact could not be fetched (not authorised, bad archive, API error).                               | Check that the `collect` job has `actions: read` (the workflow log prints the reason code). Nothing is uploaded, so the next run retries.       |
+| `unreadable`     | The previous file was too large, not JSON, failed the schema or could not be published; it was set aside. | Usually a one-off. Check the previous run if it repeats.                                                                                        |
+| `incompatible`   | The previous file uses a schema version this version does not read.                                       | Nothing: history starts again from this collection.                                                                                             |
+| `source-changed` | The previous history came from the other data source (mock or GitHub).                                    | Nothing: history starts again from this collection. Older entries from the other source, behind a matching last entry, are dropped with a note. |
+
+History never blocks the snapshots. If the restored history passes the checks but still
+cannot be published, it is set aside (state `unreadable`). If even a fresh history cannot be
+built, `history.json` and `changes.json` are not written for that run, the snapshots are,
+and the job summary shows `History | not written this run` with the reason under "History
+notes".
+
+Limits: history covers at most 500 projects (a larger catalog gets no history and a note).
+Per project it keeps at most 500 repositories, open critical/high alerts, unreadable sources
+and error keys, and 200 versions. A list at its limit may have been cut, so the next "What
+changed" lists no new alerts (or errors) for that project and marks it partial. If
+`history.json` would exceed the 8 MiB the next run reads, the oldest collections are dropped
+with a note.
+
+### Resetting history
+
+Run the **Collect — Data snapshots** workflow manually (`workflow_dispatch`) with
+`data-source: github` and `fresh-history: true`. It skips the restore, records the reason
+`fresh-history` in the job summary, and its new history replaces the chain. Alternatively,
+delete all the `hub-history` artifacts (repository, Actions, Artifacts); the next
+collection starts fresh (state `none`). Setting `history.enabled: false` does **not** reset
+anything: no new artifact is uploaded, so the old one is restored again when you turn it
+back on.
+
+### Concurrency and expiry
+
+The `collect` job runs under the concurrency group `hub-collect` with
+`cancel-in-progress: false`, so two collections never restore the same base and overwrite
+each other. The artifact lives 90 days: if no collection runs for longer, the chain is lost
+and history starts again (state `none`).
+
 ## Local data and `ci:build`
 
 `npm run ci:build` runs `collect:mock`, which overwrites `public/data`. A local real-data
@@ -154,6 +225,10 @@ An existing 1.3 `public/data` fails validation until it is re-collected (`collec
 the next scheduled run). Remember that `npm run ci:build` overwrites `public/data` with mock
 data.
 
+A local `npm run collect:github` appends to `public/data/history.json` (the default history
+path is the output directory), so a local real-data history grows between runs like the CI one.
+`npm run ci:build` writes mock history over it.
+
 ## Artifact retention
 
 | Artifact                                             | Retention             | Content                                 |
@@ -163,6 +238,7 @@ data.
 | `github-pages`                                       | GitHub default        | Pages deployment artifact               |
 | CI coverage report                                   | upstream default      | Vitest coverage (`coverage/`)           |
 | `hub-quality-summary` (in each monitored repository) | 30 days (recommended) | `quality-summary.json`: counts only     |
+| `hub-history`                                        | 90 days               | `history.json`: compact points only     |
 
 Artifacts contain only sanitised, publishable data. They never contain credentials,
 temporary files or raw payloads.

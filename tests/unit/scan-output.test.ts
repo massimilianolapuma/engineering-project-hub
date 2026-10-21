@@ -18,6 +18,12 @@ describe('scan-output (publication gate)', () => {
     expect(findings.join()).not.toContain('ghp_exampleSecretValue');
   });
 
+  it('a .csv file with a ghp_ token is reported', async () => {
+    await writeFile(join(dir, 'export.csv'), '\uFEFFa,b\r\nghp_exampleSecretValue,1\r\n');
+    const { findings } = await scan([dir]);
+    expect(findings).toContain(`${join(dir, 'export.csv')}: github-token`);
+  });
+
   it('fails closed on files too large to scan instead of skipping them', async () => {
     const big = join(dir, 'big.json');
     await writeFile(big, Buffer.alloc(MAX_SCAN_BYTES + 1, 'a'));

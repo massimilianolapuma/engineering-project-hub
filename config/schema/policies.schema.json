@@ -435,6 +435,29 @@
       },
       "additionalProperties": false
     },
+    "history": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "type": "boolean"
+        },
+        "maxEntries": {
+          "default": 120,
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 1000
+        },
+        "maxAgeDays": {
+          "default": 90,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 400
+        }
+      },
+      "additionalProperties": false
+    },
     "publication": {
       "type": "object",
       "properties": {

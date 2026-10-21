@@ -1,0 +1,262 @@
+---
+/**
+ * Project trend: a 320x56 score sparkline with 0 and 100 guides, an overall status strip, a
+ * sentence with the numbers, and the whole history as a table (the full text alternative).
+ * Missing and invalid history say so; a gap is a collection where the score was not measured.
+ */
+import { DimensionSchema, type HistoryFile } from '@model/index';
+import { useI18n, type Locale } from '../i18n';
+import { href } from '../lib/routes';
+import { seriesFor, summarise, trendText } from '../lib/trend';
+import type { Loaded } from '../lib/validate';
+import Sparkline from './Sparkline.astro';
+import StatusBadge from './StatusBadge.astro';
+import StatusStrip from './StatusStrip.astro';
+import UnknownValue from './UnknownValue.astro';
+interface Props {
+  projectId: string;
+  history: Loaded<HistoryFile>;
+  locale: Locale;
+}
+const { projectId, history, locale } = Astro.props;
+const i18n = useI18n(locale);
+const { d, f } = i18n;
+/** Retention maximum: the project page shows every point kept. */
+const MAX_POINTS = 120;
+const points = history.ok ? seriesFor(history.data, projectId, MAX_POINTS) : [];
+const summary = summarise(points);
+const text = summary ? trendText(i18n, summary) : null;
+const tally = (['green', 'amber', 'red', 'grey'] as const).map((s) => ({
+  status: s,
+  n: points.filter((p) => p.overall === s).length,
+}));
+const stripSummary = tally
+  .filter((t) => t.n > 0)
+  .map((t) => `${i18n.status(t.status)} ${t.n}`)
+  .join(' · ');
+const date = (iso: string) => i18n.date(iso).replace(/, \d{1,2}:\d{2} UTC$/, '');
+const first = points.find((p) => p.score !== null);
+const last = points.findLast((p) => p.score !== null);
+const sentence =
+  summary && first && last
+    ? f(d.trend.summary, {
+        first: summary.first,
+        last: summary.last,
+        firstDate: date(first.at),
+        lastDate: date(last.at),
+        count: summary.count,
+      })
+    : null;
+---
+
+<section id="trend" class="block trend" aria-labelledby="h-trend">
+  <h2 id="h-trend">{d.trend.title}</h2>
+  {!history.ok ? (
+    <p class="trend__state">{history.error.kind === 'missing' ? d.trend.none : d.trend.invalid}</p>
+  ) : points.length === 0 ? (
+    <p class="trend__state">{d.trend.none}</p>
+  ) : (
+    <div class="card trend__card">
+      <div class="trend__chart">
+        {text ? (
+          <div class="trend__spark">
+            <div class="trend__guides" aria-hidden="true">
+              <span>100</span>
+              <span>0</span>
+            </div>
+            <Sparkline
+              scores={points.map((p) => p.score)}
+              width={320}
+              height={56}
+              label={text.label}
+              guides
+            />
+          </div>
+        ) : (
+          <p class="trend__state">{d.trend.notEnough}</p>
+        )}
+        <div class="trend__strip">
+          <p class="trend__striplabel">{d.trend.strip}</p>
+          <StatusStrip points={points} />
+          <p class="trend__stripsummary">{stripSummary}</p>
+        </div>
+      </div>
+      {text && (
+        <p class="trend__sentence">
+          <strong>
+            <span aria-hidden="true">{text.arrow} </span>
+            {text.short}
+          </strong>
+          {' · '}
+          {sentence}
+        </p>
+      )}
+      <p class="trend__note">{d.trend.gapNote}</p>
+      <details class="disclosure trend__details">
+        <summary>{d.trend.table}</summary>
+        <div class="trend__scroll">
+          <table class="trend__table">
+            <caption class="visually-hidden">{d.trend.title}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{d.trend.date}</th>
+                <th scope="col">{d.dimensions.overall}</th>
+                <th scope="col">{d.score.label}</th>
+                {DimensionSchema.options.map((k) => (
+                  <th scope="col">{i18n.dimension(k)}</th>
+                ))}
+                <th scope="col">{d.trend.openHigh}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...points].reverse().map((p) => (
+                <tr data-trend-row>
+                  <th scope="row">
+                    <time datetime={p.at}>{i18n.date(p.at)}</time>
+                  </th>
+                  <td>
+                    <StatusBadge
+                      status={p.overall}
+                      i18n={i18n}
+                      context={d.dimensions.overall}
+                      size="sm"
+                    />
+                  </td>
+                  <td class="trend__num">
+                    {p.score === null ? <UnknownValue i18n={i18n} /> : p.score}
+                  </td>
+                  {DimensionSchema.options.map((k) => (
+                    <td>
+                      {p.dimensions[k] ? (
+                        <StatusBadge
+                          status={p.dimensions[k]}
+                          i18n={i18n}
+                          context={i18n.dimension(k)}
+                          size="sm"
+                        />
+                      ) : (
+                        <span class="trend__untracked">{d.trend.notTracked}</span>
+                      )}
+                    </td>
+                  ))}
+                  <td class="trend__num">
+                    {p.open.critical === null || p.open.high === null ? (
+                      <UnknownValue i18n={i18n} />
+                    ) : (
+                      `${p.open.critical} · ${p.open.high}`
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+  )}
+  {history.ok && points.length > 0 && (
+    <p class="trend__link">
+      <a href={`${href(locale, 'changes')}#p-${projectId}`}>{d.trend.changesLink}</a>
+    </p>
+  )}
+</section>
+
+<style>
+  .trend {
+    margin-bottom: var(--space-6);
+  }
+  .trend h2 {
+    margin: 0 0 var(--space-3);
+  }
+  .trend__state,
+  .trend__note,
+  .trend__stripsummary,
+  .trend__striplabel {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+  }
+  .trend__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: 0;
+  }
+  .trend__chart {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4) var(--space-6);
+    align-items: flex-end;
+  }
+  .trend__spark {
+    display: flex;
+    gap: var(--space-2);
+    align-items: stretch;
+    max-width: 100%;
+  }
+  .trend__guides {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-size: var(--fs-xs);
+    line-height: 1;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .trend__strip {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    flex: 1 1 200px;
+    min-width: 0;
+  }
+  .trend__sentence {
+    margin: 0;
+  }
+  .trend__details > summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    color: var(--text-muted);
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .trend__scroll {
+    overflow-x: auto;
+    margin-top: var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+  .trend__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--fs-sm);
+    font-variant-numeric: tabular-nums;
+  }
+  .trend__table th,
+  .trend__table td {
+    padding: 8px var(--space-3);
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+  .trend__table thead th {
+    background: var(--surface-2);
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+  }
+  .trend__table tbody tr:last-child > * {
+    border-bottom: 0;
+  }
+  .trend__num {
+    text-align: right;
+  }
+  .trend__untracked {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  .trend__link {
+    margin: var(--space-3) 0 0;
+  }
+</style>

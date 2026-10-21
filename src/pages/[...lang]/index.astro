@@ -5,13 +5,16 @@ import ErrorState from '../../components/ErrorState.astro';
 import Legend from '../../components/Legend.astro';
 import ScoreBadge from '../../components/ScoreBadge.astro';
 import StatusBadge from '../../components/StatusBadge.astro';
+import Sparkline from '../../components/Sparkline.astro';
 import StatusDot from '../../components/StatusDot.astro';
 import Base from '../../layouts/Base.astro';
+import { loadHistory } from '../../lib/data';
 import { healthRank } from '../../lib/format';
 import { pageContext } from '../../lib/page';
 import { loadSitePolicies } from '../../lib/policies';
-import { href, localeParams } from '../../lib/routes';
+import { exportHref, href, localeParams } from '../../lib/routes';
 import { scoreSortKey } from '../../lib/score';
+import { seriesFor, summarise, trendText } from '../../lib/trend';
 
 export const getStaticPaths = localeParams;
 const { locale } = Astro.props;
@@ -77,6 +80,25 @@ const searchText = (p: Project) => {
     ? [s.coordinator.repository.fullName, ...s.components.map((c) => c.repository.fullName)]
     : [];
   return [p.name, ...new Set(repos)].join(' ').toLowerCase();
+};
+const history = loadHistory();
+/** Portfolio sparklines show the last 30 collections. */
+const TREND_POINTS = 30;
+const trendOf = (p: Project) => {
+  const points = history.ok ? seriesFor(history.data, p.id, TREND_POINTS) : [];
+  const summary = summarise(points);
+  return {
+    scores: points.map((x) => x.score),
+    text: summary ? trendText(i18n, summary) : null,
+    /** The sentence shown instead of a chart. */
+    note: !history.ok
+      ? history.error.kind === 'missing'
+        ? d.trend.none
+        : d.trend.invalid
+      : points.length === 0
+        ? d.trend.none
+        : d.trend.notEnough,
+  };
 };
 const collectedAt = index ? i18n.date(index.generatedAt) : null;
 ---
@@ -220,6 +242,9 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
               >
                 {d.portfolio.scoreColumn}
               </th>
+              <th role="columnheader" scope="col" class="plist__c-trend">
+                {d.trend.col}
+              </th>
               <th role="columnheader" scope="col" class="plist__c-dims">
                 <span class="visually-hidden">{d.portfolio.dimensionsColumn}</span>
                 <DimensionBars variant="header" dimensions={DIMS} locale={locale} />
@@ -233,6 +258,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
             {sorted.map((p) => {
               const none = unmeasured(p);
               const reason = mainReason(p);
+              const trend = trendOf(p);
               return (
                 <tr
                   role="row"
@@ -262,6 +288,23 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
                   </th>
                   <td role="cell" class="plist__score">
                     <ScoreBadge score={p.score} locale={locale} />
+                  </td>
+                  <td role="cell" class="plist__trend" data-trend>
+                    {trend.text ? (
+                      <>
+                        <Sparkline
+                          scores={trend.scores}
+                          width={96}
+                          height={20}
+                          label={trend.text.label}
+                        />
+                        <span class="plist__delta" aria-hidden="true">
+                          {trend.text.arrow} {trend.text.short}
+                        </span>
+                      </>
+                    ) : (
+                      <span class="plist__trendnote">{trend.note}</span>
+                    )}
                   </td>
                   <td role="cell" class="plist__dims">
                     {/* Phone and tablet: the header row is hidden, so label the bars here. */}
@@ -325,6 +368,13 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
       </div>
 
       <Legend i18n={i18n} />
+
+      <p class="portfolio__export">
+        <a class="btn btn--ghost" href={exportHref('portfolio.csv')} download>
+          {d.exports.portfolio}
+        </a>
+        <span>{d.exports.hint}</span>
+      </p>
 
       <p class="portfolio__foot">
         {collectedAt && <span>{i18n.f(d.portfolio.collectedAt, { date: collectedAt })}</span>}
@@ -512,6 +562,34 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
   .plist__c-score {
     width: 150px;
   }
+  .plist__c-trend {
+    width: 150px;
+  }
+  .plist__trend {
+    min-width: 130px;
+  }
+  .plist__trend :global(.spark) {
+    margin-bottom: 2px;
+  }
+  .plist__delta {
+    display: block;
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .plist__trendnote {
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+  }
+  .portfolio__export {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    margin: 0;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+  }
   /* Six 32px bars with 4px gaps (212px) plus the cell padding. */
   .plist__c-dims {
     width: 244px;
@@ -593,6 +671,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
       grid-template-columns: 18px minmax(0, 1fr) auto;
       grid-template-areas:
         'dot name score'
+        'trend trend trend'
         'dims dims dims'
         'reason reason reason';
       align-items: center;
@@ -632,6 +711,16 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     }
     .plist__score :global(.score__conf) {
       text-wrap: balance;
+    }
+    .plist__trend {
+      grid-area: trend;
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      min-width: 0;
+    }
+    .plist__c-trend {
+      width: auto;
     }
     .plist__dims {
       grid-area: dims;

@@ -4,6 +4,8 @@
  *   npm run fixtures:update
  */
 import { loadConfig } from '../collector/src/config/load';
+import { buildHistoryExtras } from '../collector/src/history/extras';
+import { loadPreviousHistory } from '../collector/src/history/load';
 import { MockProvider } from '../collector/src/providers/mock/mock-provider';
 import { runCollection } from '../collector/src/run';
 import { fixedClock } from '../collector/src/util/clock';
@@ -19,11 +21,23 @@ const result = await runCollection({
   provider: new MockProvider('fixtures/github', clock),
   clock,
 });
+// Mock history always starts from the fixture, never from the previous golden output, so
+// running this twice gives the same files.
+const now = new Date(result.index.generatedAt);
+const previous = await loadPreviousHistory({
+  dataSource: 'mock',
+  historyFrom: 'fixtures/snapshots',
+  fixturePath: 'fixtures/history/history.json',
+  catalog,
+  policies,
+  now,
+});
 await writeSnapshots(
   'fixtures/snapshots',
   result.index,
   result.projects,
   catalog,
   result.discovery,
+  buildHistoryExtras(previous, result.index, result.projects, catalog, policies, now),
 );
 console.log('✔ fixtures/snapshots regenerated');

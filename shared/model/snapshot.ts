@@ -19,6 +19,7 @@ import {
   SeveritySchema,
   SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS,
 } from './enums';
+import { httpsUrl, isoDate, nullableCount, shortText } from './primitives';
 
 /*
  * Normalised, provider-neutral snapshot model. Every object is `.strict()`: unknown keys are
@@ -26,13 +27,7 @@ import {
  * model can reach GitHub Pages.
  */
 
-const isoDate = z.iso.datetime({ offset: true });
 const sha = z.string().regex(/^[0-9a-f]{40}$/);
-/** Links are sanitised before validation; this only re-checks the shape. */
-const httpsUrl = z.url({ protocol: /^https$/ }).max(500);
-const shortText = z.string().max(200);
-/** null means "unknown" — never the same as 0. */
-const nullableCount = z.number().int().min(0).nullable();
 
 export const SchemaVersionSchema = z.enum(SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS);
 

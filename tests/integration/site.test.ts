@@ -46,6 +46,7 @@ afterAll(async () => {
 
 const VIEWS = [
   '',
+  'changes',
   'workflows',
   'versions',
   'security',
@@ -790,6 +791,291 @@ describe('static site', () => {
     expect(html).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>/);
     const { findings } = await scan([dist]);
     expect(findings).toEqual([]);
+  });
+
+  describe('CSV exports', () => {
+    const csv = (name: string) => readFile(join(dist, 'exports', name), 'utf8');
+
+    it('portfolio.csv exists, starts with the BOM and the header', async () => {
+      const text = await csv('portfolio.csv');
+      expect(text.startsWith('\uFEFFproject_id,project_name,')).toBe(true);
+      expect(text.split('\r\n').filter(Boolean)).toHaveLength(5);
+      expect(text.endsWith('\r\n')).toBe(true);
+      const beta = text.split('\r\n').find((r) => r.startsWith('project-beta,'))!;
+      expect(beta).toContain(',amber,58,2026-01-14T12:00:00.000Z');
+    });
+
+    it('findings-summary.csv and versions.csv exist with their headers', async () => {
+      expect((await csv('findings-summary.csv')).startsWith('\uFEFFproject_id,component_id,')).toBe(
+        true,
+      );
+      expect((await csv('versions.csv')).startsWith('\uFEFFrow_type,project_id,item_id,')).toBe(
+        true,
+      );
+    });
+
+    it("no CSV cell begins with = + - @ unless prefixed by '", async () => {
+      for (const name of ['portfolio.csv', 'findings-summary.csv', 'versions.csv']) {
+        const rows = (await csv(name)).replace('\uFEFF', '').split('\r\n').filter(Boolean);
+        for (const row of rows)
+          for (const cell of row.split(',')) expect(cell).not.toMatch(/^[=+\-@]/);
+      }
+    });
+  });
+
+  describe('trend', () => {
+    const rowOf = (html: string, name: string) => {
+      const from = html.slice(html.indexOf(`data-name="${name}"`));
+      return from.slice(0, from.indexOf('</tr>'));
+    };
+
+    it.each([
+      ['', 'Trend'],
+      ['it', 'Andamento'],
+    ])('portfolio /%s has a Trend column header', async (v, label) => {
+      const html = await page(v);
+      expect(html).toMatch(
+        new RegExp(`<th role="columnheader" scope="col"[^>]*>\\s*${label}\\s*</th>`),
+      );
+    });
+
+    it('draws a sparkline with a text label and delta for project alpha', async () => {
+      const row = rowOf(await page(''), 'project alpha');
+      expect(row).toMatch(
+        /<svg[^>]*role="img"[^>]*aria-label="Score up 14 points over 12 days \(13 collections\)"[\s\S]*?<path/,
+      );
+      expect(row).toContain('+14 · 12 d');
+      // Direction is never colour alone: an arrow glyph comes with the number.
+      expect(row).toMatch(/▲/);
+      expect(rowOf(await page('it'), 'project alpha')).toContain(
+        'Punteggio in aumento di 14 punti in 12 giorni (13 raccolte)',
+      );
+    });
+
+    it('says "Not enough measured points" for gamma and draws no path', async () => {
+      const row = rowOf(await page(''), 'project gamma');
+      expect(row).toContain('Not enough measured points');
+      expect(row).not.toContain('spark__line');
+    });
+
+    it('links to exports/portfolio.csv with a download attribute', async () => {
+      const html = await page('');
+      expect(html).toMatch(/<a[^>]*href="[^"]*exports\/portfolio\.csv"[^>]*download/);
+      expect(html).toContain('Download CSV');
+      expect(html).toContain('never 0');
+      expect(await page('it')).toContain('Scarica CSV');
+    });
+
+    it('project alpha has #trend with a table of 13 rows and one unknown score', async () => {
+      const html = await page('projects/project-alpha');
+      const at = html.indexOf('id="trend"');
+      expect(at).toBeGreaterThan(html.indexOf('class="dimcards"'));
+      const block = html.slice(at, html.indexOf('</section>', at));
+      expect(block).toMatch(/<details[^>]*>\s*<summary[^>]*>Show history as a table/);
+      expect(block.match(/data-trend-row/g)).toHaveLength(13);
+      const gap = block.slice(block.indexOf('datetime="2026-01-09T12:00:00.000Z"'));
+      const cells = gap.slice(0, gap.indexOf('</tr>'));
+      expect(cells).toContain('unknown-value');
+      expect(block).toContain('Gaps are collections where the score could not be measured');
+      expect(block).toMatch(/role="img"[^>]*aria-label="[^"]*\d/);
+      expect(block).toContain('changes/#p-project-alpha');
+    });
+
+    it('project platform has 10 rows: no invented points', async () => {
+      const html = await page('projects/platform');
+      const at = html.indexOf('id="trend"');
+      expect(html.slice(at, html.indexOf('</section>', at)).match(/data-trend-row/g)).toHaveLength(
+        10,
+      );
+    });
+
+    it('IT project page shows the gap note in Italian', async () => {
+      expect(await page('it/projects/project-alpha')).toContain('I vuoti sono raccolte');
+    });
+
+    it('reads "not tracked", never grey, for a dimension missing from an older entry', async () => {
+      const data = join(work, 'untracked');
+      await cp('fixtures/snapshots', data, { recursive: true });
+      const file = join(data, 'history.json');
+      const json = JSON.parse(await readFile(file, 'utf8')) as {
+        entries: { collectedAt: string; projects: { id: string; dimensions: object }[] }[];
+      };
+      const oldest = json.entries[0]!;
+      const point = oldest.projects.find((p) => p.id === 'project-alpha')!;
+      delete (point.dimensions as Record<string, unknown>).quality;
+      await writeFile(file, JSON.stringify(json));
+      const out = join(work, 'dist-untracked');
+      await buildSite(data, out);
+      /** The quality cell of the oldest table row: date, overall, score, six dimensions. */
+      const qualityCell = (html: string) => {
+        const rows = html.match(/<tr data-trend-row[\s\S]*?<\/tr>/g) ?? [];
+        const row = rows.at(-1) ?? ''; // newest first, so the last row is the oldest collection
+        return (row.match(/<td[\s\S]*?<\/td>/g) ?? [])[7] ?? '';
+      };
+      const enCell = qualityCell(
+        await readFile(join(out, 'projects/project-alpha/index.html'), 'utf8'),
+      );
+      expect(enCell).toContain('not tracked');
+      expect(enCell).not.toContain('badge');
+      const itCell = qualityCell(
+        await readFile(join(out, 'it/projects/project-alpha/index.html'), 'utf8'),
+      );
+      expect(itCell).toContain('non rilevato');
+      expect(itCell).not.toContain('badge');
+      // An entry that tracked quality keeps its badge.
+      const html = await readFile(join(out, 'projects/project-alpha/index.html'), 'utf8');
+      const tracked = (html.match(/<tr data-trend-row[\s\S]*?<\/tr>/g) ?? []).find(
+        (r) => !r.includes(`datetime="${oldest.collectedAt}"`),
+      )!;
+      expect((tracked.match(/<td[\s\S]*?<\/td>/g) ?? [])[7]).toContain('badge');
+    }, 180_000);
+
+    it('renders portfolio and project pages without history.json and changes.json', async () => {
+      const data = join(work, 'no-history');
+      await cp('fixtures/snapshots', data, { recursive: true });
+      await rm(join(data, 'history.json'));
+      await rm(join(data, 'changes.json'));
+      const out = join(work, 'dist-no-history');
+      await buildSite(data, out);
+      const home = await readFile(join(out, 'index.html'), 'utf8');
+      expect(home).toContain('No history yet');
+      expect(home).not.toContain('spark__line');
+      const proj = await readFile(join(out, 'projects/project-alpha/index.html'), 'utf8');
+      expect(proj).toContain('No history yet');
+      expect(proj).not.toContain('data-trend-row');
+    }, 180_000);
+  });
+
+  describe('what changed', () => {
+    const navLinks = (html: string) => {
+      const nav = /<nav class="mainnav"[\s\S]*?<\/nav>/.exec(html)?.[0] ?? '';
+      return [...nav.matchAll(/<a [^>]*>([\s\S]*?)<\/a>/g)].map((m) => textOf(m[1]!).trim());
+    };
+    const card = (html: string, id: string) => {
+      const at = html.indexOf(`id="p-${id}"`);
+      return html.slice(at, html.indexOf('</article>', at));
+    };
+    const text = (html: string) => textOf(html).replace(/\s+/g, ' ');
+
+    it('lists "What changed" right after Portfolio, in both languages', async () => {
+      expect(navLinks(await page(''))[1]).toBe('What changed');
+      expect(navLinks(await page('it'))[1]).toBe('Cosa è cambiato');
+      expect(navLinks(await page(''))[0]).toBe('Portfolio');
+    });
+
+    it('shows the five totals with their labels', async () => {
+      const t = text(await page('changes'));
+      expect(t).toContain(
+        '4 status changes · 1 new and 1 resolved critical/high alerts · 1 version moves · 1 new collection errors',
+      );
+      expect(text(await page('it/changes'))).toContain(
+        '4 cambi di stato · 1 alert critici/alti nuovi e 1 risolti · 1 versioni cambiate · 1 nuovi errori di raccolta',
+      );
+      expect(t).toContain('Compared with the collection of 14 Jan 2026');
+      expect(t).toContain('Demo data: earlier collections are synthetic.');
+    });
+
+    it('puts project beta first with its status changes, new alert and partial note', async () => {
+      const html = await page('changes');
+      expect(html.indexOf('id="p-project-beta"')).toBeLessThan(
+        html.indexOf('id="p-project-alpha"'),
+      );
+      const articles = [...html.matchAll(/<article[^>]*id="p-([\w-]+)"/g)].map((m) => m[1]);
+      expect(articles[0]).toBe('project-beta');
+      const beta = card(html, 'project-beta');
+      for (const dim of ['Overall', 'Delivery', 'Security risk'])
+        expect(text(beta)).toMatch(new RegExp(`${dim}:? .*Attention.*→.*Critical`));
+      expect(text(beta)).toContain('58 → 40');
+      expect(beta).toContain(
+        'href="https://github.com/example-org/project-beta-api/security/code-scanning/3"',
+      );
+      expect(text(beta)).toContain('Details withheld');
+      expect(text(beta)).toContain('Some alerts were not compared');
+      expect(text(beta)).toContain('Secret scanning');
+      expect(text(beta)).toContain('example-org/project-beta-web');
+    });
+
+    it('lists the version move and the resolved alert of project alpha', async () => {
+      const alpha = card(await page('changes'), 'project-alpha');
+      expect(text(alpha)).toContain('Frontend: 2.0.3 → 2.1.0');
+      expect(text(alpha)).toContain('example-org/project-alpha-backend#code-scanning#9');
+    });
+
+    it('says "No changes." for platform and gamma', async () => {
+      const html = await page('changes');
+      expect(text(card(html, 'platform'))).toContain('No changes.');
+      expect(text(card(html, 'project-alpha'))).not.toContain('No changes.');
+    });
+
+    it('does not say "No changes." when a project\'s alerts could not be compared', async () => {
+      const gamma = text(card(await page('changes'), 'project-gamma'));
+      expect(gamma).toContain('No changes in what could be compared.');
+      expect(gamma).not.toContain('No changes.');
+    });
+
+    it('shows the restore-failed sentence and never "No changes"', async () => {
+      const data = join(work, 'changes-basis');
+      await cp('fixtures/snapshots', data, { recursive: true });
+      const file = join(data, 'changes.json');
+      const json = JSON.parse(await readFile(file, 'utf8'));
+      json.basis = { state: 'restore-failed', previousCollectedAt: null, synthetic: false };
+      for (const p of json.projects) {
+        p.previous = null;
+        p.statusChanges = [];
+        p.newFindings = [];
+        p.resolvedFindings = [];
+        p.versionMoves = [];
+        p.newErrors = [];
+      }
+      json.totals = Object.fromEntries(Object.keys(json.totals).map((k) => [k, 0]));
+      await writeFile(file, JSON.stringify(json));
+      const out = join(work, 'dist-changes-basis');
+      await buildSite(data, out);
+      const html = await readFile(join(out, 'changes/index.html'), 'utf8');
+      expect(text(html)).toContain(esc(en.changes.basis['restore-failed']));
+      expect(text(html)).not.toContain('No changes.');
+      expect(html).not.toContain('<article');
+      const it = await readFile(join(out, 'it/changes/index.html'), 'utf8');
+      expect(text(it)).toContain(esc(itDict.changes.basis['restore-failed']));
+    }, 180_000);
+
+    it('says so when changes.json is missing', async () => {
+      const data = join(work, 'no-changes');
+      await cp('fixtures/snapshots', data, { recursive: true });
+      await rm(join(data, 'changes.json'));
+      const out = join(work, 'dist-no-changes');
+      await buildSite(data, out);
+      const html = await readFile(join(out, 'changes/index.html'), 'utf8');
+      expect(text(html)).toContain('No change data in this snapshot');
+      expect(html).not.toContain('<article');
+    }, 180_000);
+
+    it('has a History card on data quality and a #trends section on how to read', async () => {
+      const dq = text(await page('data-quality'));
+      expect(dq).toContain('Demo history: 12 synthetic previous collections');
+      expect(dq).toContain('up to 120 collections, at most 90 days');
+      expect(text(await page('it/data-quality'))).toContain(
+        'Storico demo: 12 raccolte precedenti sintetiche',
+      );
+      const htr = await page('how-to-read');
+      const at = htr.indexOf('id="trends"');
+      expect(at).toBeGreaterThan(-1);
+      const section = text(htr.slice(at, htr.indexOf('</section>', at)));
+      expect(section).toContain('never 0');
+      expect(section).toContain('UTF-8');
+      expect(section).toContain('up to 120 collections and at most 90 days');
+      expect(text(await page('it/how-to-read'))).toContain('Andamento, cambiamenti e CSV');
+    });
+
+    it('links the CSV exports from security and versions', async () => {
+      expect(await page('security')).toMatch(
+        /<a[^>]*href="[^"]*exports\/findings-summary\.csv"[^>]*download[^>]*>\s*Alert summary \(CSV\)/,
+      );
+      expect(await page('versions')).toMatch(
+        /<a[^>]*href="[^"]*exports\/versions\.csv"[^>]*download[^>]*>\s*Versions \(CSV\)/,
+      );
+      expect(await page('it/versions')).toContain('Versioni (CSV)');
+    });
   });
 
   it.each(['catalog', 'it/catalog'])(

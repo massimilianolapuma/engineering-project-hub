@@ -49,6 +49,17 @@ describe('loadSitePolicies', () => {
     expect(policies.freshness.workflowRunStaleDays).toBe(14);
   });
 
+  it('exposes the history retention defaults (120, 90) when the file omits the block', async () => {
+    const file = join(dir, 'policies.yaml');
+    await writeFile(file, minimal());
+    process.env.POLICIES_FILE = file;
+    expect(loadSitePolicies().policies.history).toEqual({
+      enabled: true,
+      maxEntries: 120,
+      maxAgeDays: 90,
+    });
+  });
+
   it('honours POLICIES_FILE', async () => {
     const file = join(dir, 'policies.yaml');
     await writeFile(file, minimal('score: { weights: { security: 50 }, caps: { grey: 79 } }'));

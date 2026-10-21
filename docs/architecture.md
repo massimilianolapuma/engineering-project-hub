@@ -90,24 +90,35 @@ flowchart TB
 7. **Sanitise and validate**: free text is scrubbed and links are filtered. Every document
    is parsed with the strict schemas (allowlist), then the serialised JSON goes through the
    credential gate. Any failure stops the run before anything is written.
-8. **Write** `public/data/index.json`, `projects/<id>.json`, `collection-report.json` and
-   `collection-report.md`.
-9. **Build** the site. The pages load and re-validate the snapshots at build time. An
-   unsupported `schemaVersion` renders a controlled error page.
-10. **Scan the output** (`dist/`, `public/data/`) for credential patterns and for the
+8. **Append and diff**: the previous history is loaded (see below), the current run is
+   appended with retention, and the diff against the previous baseline is computed.
+9. **Write** `public/data/index.json`, `projects/<id>.json`, `history.json`,
+   `changes.json`, `collection-report.json` and `collection-report.md`.
+10. **Build** the site. The pages load and re-validate the snapshots at build time, and
+    write the three CSV exports. An unsupported `schemaVersion` renders a controlled error
+    page. A missing or invalid `history.json` or `changes.json` never fails the build.
+11. **Scan the output** (`dist/`, `public/data/`) for credential patterns and for the
     values of credentials in the environment, then publish.
+
+**History, in CI:** restore → collect → append → diff → publish. Before step 1 the
+`collect` job restores the hub's own newest `hub-history` artifact into `.history-restore/`
+(own repository, default branch, not a fork; see [Operations](operations.md#history-between-runs)).
+The collector treats it as untrusted input, re-validates and rewrites it, and the job
+uploads the new `history.json` as the next `hub-history` artifact (90 days). A mock run
+never restores: it starts from `fixtures/history/history.json`.
 
 ## Trust boundaries
 
-| Boundary                 | Controls                                                                                                                                                                                                           |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| GitHub API → collector   | Read-only credentials. Only allow-listed DTO fields are mapped. Raw payloads never leave the provider.                                                                                                             |
-| Collector → snapshots    | Strict Zod schemas (unknown keys rejected), text scrubbing, URL host allowlist, credential gate.                                                                                                                   |
-| CI artifact → collector  | Only the `hub-quality-summary` artifact of a default-branch run from the same repository is read: zip ≤ 64 KB, one file, strict schema, `repository` must match. Failure means `invalid` and nothing is published. |
-| Collect job → build job  | Only the sanitised `snapshots` artifact crosses. The build job has no secrets.                                                                                                                                     |
-| Build → GitHub Pages     | Output scan. Deploy uses OIDC (`pages: write`, `id-token: write`) only in the deploy job.                                                                                                                          |
-| Pages → browser          | Static files only. CSP `default-src 'self'` with no inline scripts. No GitHub API calls. No tokens in storage.                                                                                                     |
-| Browser → GitHub (links) | GitHub applies its own authorisation. The portal never proxies or bypasses it.                                                                                                                                     |
+| Boundary                               | Controls                                                                                                                                                                                                                                                                                                      |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GitHub API → collector                 | Read-only credentials. Only allow-listed DTO fields are mapped. Raw payloads never leave the provider.                                                                                                                                                                                                        |
+| Collector → snapshots                  | Strict Zod schemas (unknown keys rejected), text scrubbing, URL host allowlist, credential gate.                                                                                                                                                                                                              |
+| CI artifact → collector                | Only the `hub-quality-summary` artifact of a default-branch run from the same repository is read: zip ≤ 64 KB, one file, strict schema, `repository` must match. Failure means `invalid` and nothing is published.                                                                                            |
+| Actions artifact → collector (history) | Only the hub's own `hub-history` artifact of a default-branch run of the deploy or collect workflow, not from a fork, not the current run, at most 5 MiB. The collector then parses it strictly (8 MiB cap), re-sanitises links and text, and rewrites it. Failure starts history fresh, never fails the run. |
+| Collect job → build job                | Only the sanitised `snapshots` artifact crosses. The build job has no secrets.                                                                                                                                                                                                                                |
+| Build → GitHub Pages                   | Output scan. Deploy uses OIDC (`pages: write`, `id-token: write`) only in the deploy job.                                                                                                                                                                                                                     |
+| Pages → browser                        | Static files only. CSP `default-src 'self'` with no inline scripts. No GitHub API calls. No tokens in storage.                                                                                                                                                                                                |
+| Browser → GitHub (links)               | GitHub applies its own authorisation. The portal never proxies or bypasses it.                                                                                                                                                                                                                                |
 
 ## Snapshot model
 
@@ -120,6 +131,12 @@ flowchart TB
 - `projects[]`: a `ProjectSummary` for each project. It holds every dimension status,
   coverage summary, open counts (`null` = unknown), the secret scanning state, failed
   critical workflows, error counts, unresolved submodules and the project `score`.
+
+`history.json` (`kind: hub-history`) and `changes.json` (`kind: hub-changes`) are versioned
+separately (both `1.0`) from the snapshot (`1.4`), so history survives a snapshot schema
+bump and an existing `public/data` stays readable. `history.json` has one compact point per
+project and collection plus the baseline of the latest run; `changes.json` is the diff
+the site renders. Unknown is never 0: a null score is a gap.
 
 `projects/<id>.json` (`ProjectSnapshot`) has these fields:
 
@@ -231,6 +248,7 @@ universal risk ratings.
 - [ADR 0003: Reusable CI building blocks and a collect/build/deploy split](architecture/adr/0003-ci-building-blocks-and-collect-deploy-split.md)
 - [ADR 0004: Configuration store, discovery and the path to a backend](architecture/adr/0004-configuration-store-and-discovery.md)
 - [ADR 0005: Test coverage from a CI summary artifact, not from Sonar or GitHub UI](architecture/adr/0005-test-coverage-from-ci-summary-artifact.md)
+- [ADR 0006: History persisted through the hub's own Actions artifacts](architecture/adr/0006-history-persisted-through-own-actions-artifacts.md)
 
 Further decisions:
 

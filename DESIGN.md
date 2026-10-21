@@ -329,6 +329,14 @@ Six 32px bars with a 4px gap and 4px corners, bottom-aligned in a 12px box, in a
 
 The pattern for a percentage measured against a threshold (test coverage): an 8px track, 180px wide (full width in the summary tile), with a fill in the status colour and a 2px tick at the threshold. It is decorative (`aria-hidden`): the number always sits right next to it, so colour and length are never the only carriers. Unknown is a dashed track with no fill and no tick, never an empty bar that would read as 0%, and the row shows the "?" symbol; not applicable shows "–". A stale report keeps its fill and adds the ⧖ symbol with its age.
 
+### Sparkline and status strip
+
+The trend pattern. The sparkline is inline SVG on a fixed 0 to 100 scale (so two projects compare and small moves do not look dramatic), a 2px ink line with round caps: 96x20 in the Portfolio Trend column, 320x56 with dashed 0 and 100 guides on the project page. A null score is a gap: the line breaks, never drops to 0, and a lone point is a dot. The numbers always sit next to it ("▲ +14 · 12 d" and a sentence with the first and last score), and the SVG has an accessible name that sums up the values. The status strip is one cell per collection, 6px wide with a 2px gap and 24px high: height repeats the status as in the dimension bars (critical full, attention two thirds, healthy one third) and unknown is a dashed full-height outline with no fill, with a text tally beside it. The project page keeps the full history in a "Show history as a table" disclosure; a dimension missing from an old entry reads "not tracked", never unknown.
+
+### What changed page
+
+One card per project (the same surface card), projects with changes first, then worst status first. Each change is a short row: dimension, from badge, arrow, to badge; score "58 → 40"; new and resolved critical/high alerts with a severity pill and a GitHub link; version moves in monospace. Totals sit in one sentence under the lede, each number linking to its first occurrence. A basis other than a real comparison replaces the cards with one sentence and never says "no changes".
+
 ### Score
 
 The score in 700 tabular figures with the confidence as visible secondary text ("measured 4 of 5"), so it is readable without hover. With insufficient data: an em dash and "insufficient data · measured 1 of 5". Header size adds "/ 100".

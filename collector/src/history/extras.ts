@@ -1,0 +1,72 @@
+import type { Catalog, PortfolioIndex, Policies, ProjectSnapshot } from '@model/index';
+import { SanitizationError } from '../sanitizers/sanitize';
+import {
+  serialiseHistoryFiles,
+  SnapshotValidationError,
+  type HistoryExtras,
+} from '../writers/write-snapshots';
+import { appendHistory, fitHistory } from './append';
+import { computeChanges } from './changes';
+import type { PreviousHistory } from './load';
+
+/** One line for the report: the reason, never the offending value. */
+export function describeHistoryError(e: unknown): string {
+  if (e instanceof SnapshotValidationError)
+    return `${e.message.split('\n')[0]} ${e.issues.slice(0, 3).join('; ')}`.slice(0, 300);
+  if (e instanceof SanitizationError) return e.message.slice(0, 300);
+  const err = e as Error | undefined;
+  return `${err?.name ?? 'Error'}: ${String(err?.message ?? '').split('\n')[0]}`.slice(0, 300);
+}
+
+/**
+ * history.json and changes.json for this run, already validated and gated. History must never
+ * block the snapshots: when a restored history cannot be used it is set aside and the run
+ * starts fresh ("unreadable"); when even a fresh history cannot be built, neither file is
+ * written. Each fallback adds a note to the collection report.
+ */
+export function buildHistoryExtras(
+  previous: PreviousHistory,
+  index: PortfolioIndex,
+  projects: ProjectSnapshot[],
+  catalog: Catalog,
+  policies: Policies,
+  now: Date,
+): HistoryExtras {
+  const notes: string[] = [];
+  const attempt = (p: PreviousHistory): HistoryExtras => {
+    const loadNotes = p.file ? (p.notes ?? []) : [];
+    const fitted = fitHistory(appendHistory(p, index, projects, catalog, policies, now));
+    const extras: HistoryExtras = {
+      history: fitted.file,
+      changes: computeChanges(p, index, projects),
+    };
+    serialiseHistoryFiles(extras);
+    const sizeNotes = [];
+    if (fitted.dropped)
+      sizeNotes.push(
+        `Dropped the ${fitted.dropped} oldest collections so that history.json stays under the 8 MiB the next run reads.`,
+      );
+    if (!fitted.fits)
+      sizeNotes.push(
+        'history.json is larger than the 8 MiB the next run reads, even with only this collection: the next run will start fresh (unreadable).',
+      );
+    return { ...extras, notes: [...loadNotes, ...notes, ...sizeNotes] };
+  };
+  let basis = previous;
+  if (basis.file) {
+    try {
+      return attempt(basis);
+    } catch (e) {
+      notes.push(
+        `The restored history could not be used and was set aside; history starts fresh (${describeHistoryError(e)}).`,
+      );
+      basis = { state: 'unreadable', file: null };
+    }
+  }
+  try {
+    return attempt(basis);
+  } catch (e) {
+    notes.push(`History and changes were not written for this run (${describeHistoryError(e)}).`);
+    return { history: null, changes: null, notes };
+  }
+}

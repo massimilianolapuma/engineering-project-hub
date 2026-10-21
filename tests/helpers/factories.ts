@@ -1,5 +1,13 @@
 import { deflateRawSync } from 'node:zlib';
-import { PoliciesSchema, type Policies, type WorkflowStatus } from '@model/index';
+import {
+  PoliciesSchema,
+  type HistoryEntry,
+  type HistoryFile,
+  type HistoryProjectPoint,
+  type Policies,
+  type ProjectSummary,
+  type WorkflowStatus,
+} from '@model/index';
 import { parse } from 'yaml';
 import { readFileSync } from 'node:fs';
 import type { RepoData } from '../../collector/src/collectors/collect';
@@ -115,4 +123,103 @@ export function makeZip(entries: { name: string; data: string; method?: 0 | 8 }[
   eocd.writeUInt32LE(cd.length, 12);
   eocd.writeUInt32LE(offset, 16);
   return new Uint8Array(Buffer.concat([...locals, cd, eocd]));
+}
+
+/** A green, fully measured project summary; override what a test cares about. */
+export function projectSummary(partial: Partial<ProjectSummary> = {}): ProjectSummary {
+  return {
+    id: 'project-alpha',
+    name: 'Project Alpha',
+    businessUnit: 'Example Unit',
+    lifecycle: 'production',
+    overall: 'green',
+    score: { value: 100, measured: 6, required: 6 },
+    delivery: 'green',
+    version: 'green',
+    security: 'green',
+    coverage: { status: 'green', percentage: 100, required: 4, available: 4 },
+    governance: 'green',
+    quality: { status: 'green', percentage: 90, measured: 4, applicable: 4 },
+    freshness: 'green',
+    openCounts: {
+      critical: 0,
+      high: 0,
+      medium: 0,
+      low: 0,
+      informational: 0,
+      unknown: 0,
+    },
+    countsComplete: true,
+    openSecretAlerts: 0,
+    secretScanning: 'enabled',
+    failedCriticalWorkflows: 0,
+    collectedAt: NOW.toISOString(),
+    collectionErrorCount: 0,
+    unresolvedSubmodules: 0,
+    ...partial,
+  };
+}
+
+export function historyPoint(partial: Partial<HistoryProjectPoint> = {}): HistoryProjectPoint {
+  return {
+    id: 'project-alpha',
+    overall: 'green',
+    score: 100,
+    scoreMeasured: 6,
+    scoreRequired: 6,
+    dimensions: {
+      delivery: 'green',
+      version: 'green',
+      security: 'green',
+      coverage: 'green',
+      governance: 'green',
+      quality: 'green',
+    },
+    open: { critical: 0, high: 0, medium: 0, low: 0 },
+    countsComplete: true,
+    collectionErrors: 0,
+    ...partial,
+  };
+}
+
+export function historyEntry(
+  collectedAt: string,
+  partial: Partial<HistoryEntry> = {},
+): HistoryEntry {
+  return {
+    collectedAt,
+    dataSource: 'github',
+    authenticationMode: 'github-token',
+    collectorVersion: '0.7.0',
+    projects: [historyPoint()],
+    ...partial,
+  };
+}
+
+/** A valid history file whose baseline (empty, for the listed projects) matches the last entry. */
+export function historyFile(
+  entries: HistoryEntry[] = [historyEntry(daysAgo(1))],
+  partial: Partial<HistoryFile> = {},
+): HistoryFile {
+  const last = entries.at(-1)!;
+  return {
+    kind: 'hub-history',
+    schemaVersion: '1.0',
+    generatedAt: last.collectedAt,
+    retention: { maxEntries: 120, maxAgeDays: 90 },
+    restore: { state: 'none', previousEntries: 0 },
+    entries,
+    baseline: {
+      collectedAt: last.collectedAt,
+      projects: last.projects.map((p) => ({
+        id: p.id,
+        repositories: [],
+        findings: [],
+        unreadable: [],
+        versions: [],
+        errors: [],
+      })),
+    },
+    ...partial,
+  };
 }

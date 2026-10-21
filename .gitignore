@@ -226,6 +226,8 @@ node_modules/
 dist/
 coverage/
 public/data/
+# Previous history restored from the hub's own Actions artifacts (never published as is)
+.history-restore/
 test-results/
 playwright-report/
 .env.*
