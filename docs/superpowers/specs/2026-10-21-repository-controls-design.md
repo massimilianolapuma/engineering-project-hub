@@ -145,18 +145,19 @@ A workflow file name longer than 100 characters (the published bound) is never r
 
 For each distinct `(owner/repo, ref)` among the `reusable-workflow` references:
 
-| Situation                                                                        | `status`                                     |
-| -------------------------------------------------------------------------------- | -------------------------------------------- |
-| Referenced repository not visible (403 / 404 / error), or over the 50-repo bound | `unknown`                                    |
-| Neither a release nor a tag readable                                             | `unknown`                                    |
-| `ref` is a 40-hex SHA equal to the commit of a tag in `listTags`                 | resolved to that tag, then compared          |
-| `ref` is a 40-hex SHA with no matching tag                                       | `untagged`                                   |
-| `ref` parses as semver (after `normaliseVersion`) and equals latest              | `current`                                    |
-| `ref` parses as semver and is lower than latest                                  | `behind`                                     |
-| `ref` parses as semver and is higher than latest (pre-release)                   | `current`                                    |
-| `ref` is a major alias `v2` whose major equals the latest's major                | `current` (floating major; pinning flags it) |
-| `ref` is a major alias whose major is lower                                      | `behind`                                     |
-| Anything else (a branch such as `main`)                                          | `floating`                                   |
+| Situation                                                                                           | `status`                                     |
+| --------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| Referenced repository not visible (403 / 404 / error), or over the 50-repo bound                    | `unknown`                                    |
+| Neither a release nor a tag readable                                                                | `unknown`                                    |
+| `ref` is a 40-hex SHA equal to the commit of a tag in `listTags`                                    | resolved to that tag, then compared          |
+| `ref` is a 40-hex SHA with no matching tag                                                          | `untagged`                                   |
+| `ref` parses as semver (after `normaliseVersion`) and equals latest                                 | `current`                                    |
+| `ref` parses as semver and is lower than latest                                                     | `behind`                                     |
+| `ref` is a stable version (or major alias) lower than a latest that is a pre-release (tag fallback) | `unknown` (a newer stable version may exist) |
+| `ref` parses as semver and is higher than latest (pre-release)                                      | `current`                                    |
+| `ref` is a major alias `v2` whose major equals the latest's major                                   | `current` (floating major; pinning flags it) |
+| `ref` is a major alias whose major is lower                                                         | `behind`                                     |
+| Anything else (a branch such as `main`)                                                             | `floating`                                   |
 
 A referenced repository that is **not public** is treated as not visible (`unknown`, no `latest`, no URL, no tags) unless `publication.audience: restricted`, so a private shared repository never leaks its name state or versions to a public site. `latest` and tag names are kept only when they are at most 100 characters and unchanged by `scrubIdentifier`; otherwise they are dropped (`latest: null`, status `unknown`), never truncated.
 

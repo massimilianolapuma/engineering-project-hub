@@ -145,18 +145,19 @@ Un nome di file di workflow più lungo di 100 caratteri (il limite pubblicato) n
 
 Per ogni coppia distinta `(owner/repo, ref)` tra i riferimenti `reusable-workflow`:
 
-| Situazione                                                                                    | `status`                                           |
-| --------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Repository referenziato non visibile (403 / 404 / errore), o oltre il limite di 50 repository | `unknown`                                          |
-| Né release né tag leggibili                                                                   | `unknown`                                          |
-| `ref` è uno SHA di 40 hex uguale al commit di un tag in `listTags`                            | risolto in quel tag, poi confrontato               |
-| `ref` è uno SHA di 40 hex senza tag corrispondente                                            | `untagged`                                         |
-| `ref` è semver (dopo `normaliseVersion`) e uguale all'ultima                                  | `current`                                          |
-| `ref` è semver e minore dell'ultima                                                           | `behind`                                           |
-| `ref` è semver e maggiore dell'ultima (pre-release)                                           | `current`                                          |
-| `ref` è un alias di major `v2` con la stessa major dell'ultima                                | `current` (major flottante; il pinning lo segnala) |
-| `ref` è un alias di major con major minore                                                    | `behind`                                           |
-| Qualsiasi altra cosa (un branch come `main`)                                                  | `floating`                                         |
+| Situazione                                                                                                      | `status`                                                  |
+| --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Repository referenziato non visibile (403 / 404 / errore), o oltre il limite di 50 repository                   | `unknown`                                                 |
+| Né release né tag leggibili                                                                                     | `unknown`                                                 |
+| `ref` è uno SHA di 40 hex uguale al commit di un tag in `listTags`                                              | risolto in quel tag, poi confrontato                      |
+| `ref` è uno SHA di 40 hex senza tag corrispondente                                                              | `untagged`                                                |
+| `ref` è semver (dopo `normaliseVersion`) e uguale all'ultima                                                    | `current`                                                 |
+| `ref` è semver e minore dell'ultima                                                                             | `behind`                                                  |
+| `ref` è una versione stabile (o un alias di major) minore di un'ultima che è una pre-release (fallback sui tag) | `unknown` (può esistere una versione stabile più recente) |
+| `ref` è semver e maggiore dell'ultima (pre-release)                                                             | `current`                                                 |
+| `ref` è un alias di major `v2` con la stessa major dell'ultima                                                  | `current` (major flottante; il pinning lo segnala)        |
+| `ref` è un alias di major con major minore                                                                      | `behind`                                                  |
+| Qualsiasi altra cosa (un branch come `main`)                                                                    | `floating`                                                |
 
 Un repository referenziato **non pubblico** è trattato come non visibile (`unknown`, nessun `latest`, nessun URL, nessun tag) salvo `publication.audience: restricted`, così un repository condiviso privato non espone mai stato o versioni a un sito pubblico. `latest` e i nomi dei tag si tengono solo se lunghi al massimo 100 caratteri e non modificati da `scrubIdentifier`; altrimenti si scartano (`latest: null`, stato `unknown`), mai troncati.
 

@@ -181,16 +181,23 @@ export function reusableStatus(
     effective = tag.name;
   }
 
+  const latestParsed = parseVersion(latest);
+  // A pre-release latest normally comes from the tag fallback (GitHub's latest release is never
+  // marked pre-release):
+  // a stable ref below it may well be on the newest stable version, so it is unknown, not behind.
+  const latestIsPre = latestParsed !== null && latestParsed.prerelease !== null;
   const version = normaliseVersion(effective);
-  if (version !== null && parseVersion(version)) {
+  const parsed = version !== null ? parseVersion(version) : null;
+  if (version !== null && parsed) {
     const cmp = compareVersions(version, latest);
     if (cmp === null) return unknown;
+    if (cmp < 0 && latestIsPre && parsed.prerelease === null) return unknown;
     return { status: cmp < 0 ? 'behind' : 'current', latest: latestRaw };
   }
   const alias = /^v?(\d+)$/i.exec(effective);
-  const latestParsed = parseVersion(latest);
   if (alias && latestParsed) {
     const major = Number(alias[1]);
+    if (major < latestParsed.major && latestIsPre) return unknown;
     return { status: major < latestParsed.major ? 'behind' : 'current', latest: latestRaw };
   }
   if (alias) return unknown;

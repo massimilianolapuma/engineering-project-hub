@@ -199,6 +199,15 @@ describe('reusableStatus', () => {
       'unknown',
     );
   });
+  it('a pre-release latest (tag fallback) never makes a stable ref behind: unknown', () => {
+    const pre: TargetVersions = { latest: 'v2.5.0-rc.1', tags: null, visible: true };
+    expect(reusableStatus('v2.4.0', pre)).toEqual({ status: 'unknown', latest: 'v2.5.0-rc.1' });
+    expect(reusableStatus('v1', pre).status).toBe('unknown');
+    expect(reusableStatus('v2', pre).status).toBe('current');
+    expect(reusableStatus('v2.5.0', pre).status).toBe('current');
+    // A pre-release ref older than the pre-release latest is still behind.
+    expect(reusableStatus('v2.5.0-rc.0', pre).status).toBe('behind');
+  });
   it('tag names without a v prefix and a latest from a prefixed tag compare', () => {
     expect(reusableStatus('2.4.0', target).status).toBe('current');
   });
