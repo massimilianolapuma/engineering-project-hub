@@ -1,0 +1,554 @@
+---
+/**
+ * Project page, "Repository controls" (body of the #repository-controls fold): three tiles
+ * (checks passed, not visible, OpenSSF Scorecard), a matrix of the six checks per repository
+ * and collapsible detail lists (unpinned references, reusable workflows, branch rules,
+ * Scorecard).
+ *
+ * Status is never carried by colour alone: every cell holds a glyph (pass, fail, "?" in a dashed
+ * outline, "–") plus visually hidden text. Unknown is never fail and never 0. Checks that are
+ * informative (the default) say so in their column header and never change the Governance
+ * status; the level comes from the policies via the snapshot.
+ */
+import type { ProjectSnapshot, RepositoryCheckId, RepositoryCheckState } from '@model/index';
+import type { I18n } from '../i18n';
+import ExtLink from './ExtLink.astro';
+import RelTime from './RelTime.astro';
+interface Props {
+  s: ProjectSnapshot;
+  i18n: I18n;
+}
+const { s, i18n } = Astro.props;
+const { d, f } = i18n;
+const t = d.project.repoControls;
+const rc = s.repositoryControls;
+
+const GLYPH: Record<RepositoryCheckState, string> = {
+  pass: '✓',
+  fail: '✕',
+  unknown: '?',
+  'not-applicable': '–',
+};
+const stateLabel = (state: RepositoryCheckState) => d.repositoryCheckState[state];
+const levelOf = (id: RepositoryCheckId) => rc.perCheck.find((c) => c.id === id)?.level ?? 'info';
+
+const applicable = rc.passed + rc.failed;
+const withheld = rc.repositories.filter(
+  (r) => r.actions.detailsWithheld && r.actions.state !== 'unknown',
+);
+const scorecardRepos = rc.repositories.filter((r) => r.scorecard.state === 'available');
+const scorecardFailing = scorecardRepos.reduce(
+  (n, r) => n + r.scorecard.failingChecks.length + r.scorecard.otherFailing,
+  0,
+);
+const withUnpinned = rc.repositories.filter((r) => r.actions.unpinnedRefs.length > 0);
+const withReusable = rc.repositories.filter((r) => r.reusableWorkflows.length > 0);
+const withScorecard = rc.repositories.filter((r) => r.scorecard.state === 'available');
+const repoName = (full: string) => full.slice(full.indexOf('/') + 1);
+const reusableTone = (status: string) =>
+  status === 'current' ? 'ok' : status === 'behind' ? 'bad' : 'unk';
+---
+
+{!rc.enabled ? (
+  <p class="note" data-repo-controls="off">
+    {t.off}
+  </p>
+) : (
+  <>
+    <div class="rc-tiles">
+      <div class="rc-tile" data-tile="passed">
+        <span class="rc-tile__label">{t.tilePassed}</span>
+        <span class="rc-tile__value">
+          <span class="rc-tile__big tabular">
+            {rc.ratio === null ? d.common.unknownValue : i18n.percent(rc.ratio)}
+          </span>
+          <span class="muted tabular">
+            {f(t.summary, {
+              passed: i18n.number(rc.passed),
+              applicable: i18n.number(applicable),
+              unknown: i18n.number(rc.unknown),
+            })}
+          </span>
+        </span>
+      </div>
+      <div class:list={['rc-tile', { 'rc-tile--unknown': rc.unknown > 0 }]} data-tile="unknown">
+        <span class="rc-tile__label">{t.tileUnknown}</span>
+        <span class="rc-tile__value">
+          <span
+            class="rc-sym rc-sym--unknown"
+            role="img"
+            aria-label={t.symbolUnknown}
+            title={t.symbolUnknown}
+          >
+            ?
+          </span>
+          <span class="rc-tile__big tabular">{i18n.number(rc.unknown)}</span>
+        </span>
+        <span class="rc-tile__foot">{t.tileUnknownFoot}</span>
+      </div>
+      <div class="rc-tile" data-tile="scorecard">
+        <span class="rc-tile__label">{t.tileScorecard}</span>
+        <span class="rc-tile__value">
+          <span class="rc-tile__big tabular">{i18n.number(scorecardRepos.length)}</span>
+        </span>
+        <span class="rc-tile__foot">
+          {f(t.scorecardFoot, {
+            n: i18n.number(scorecardRepos.length),
+            total: i18n.number(rc.repositories.length),
+            failing: i18n.number(scorecardFailing),
+          })}
+        </span>
+      </div>
+    </div>
+
+    <div class="table-wrap rc-wrap" tabindex="0" role="region" aria-label={t.matrixCaption}>
+      <table class="rc-table">
+        <caption class="visually-hidden">{t.matrixCaption}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{t.colRepository}</th>
+            {rc.perCheck.map((c) => (
+              <th scope="col" data-check={c.id}>
+                <span class="rc-th__name">{d.repositoryCheck[c.id]}</span>
+                <span class="tag rc-th__tag">
+                  {levelOf(c.id) === 'info' ? t.informative : t.enforced}
+                </span>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rc.repositories.map((r) => (
+            <tr data-repository={r.repository}>
+              <th scope="row">
+                <code class="rc-repo">{repoName(r.repository)}</code>
+                <span class="sub rc-comps">
+                  {r.componentIds
+                    .map((id) =>
+                      id === 'coordinator'
+                        ? d.common.coordinator
+                        : (s.components.find((c) => c.id === id)?.name ?? id),
+                    )
+                    .join(', ')}
+                </span>
+              </th>
+              {r.checks.map((c) => (
+                <td data-state={c.state} data-check={c.id}>
+                  <span class={`rc-sym rc-sym--${c.state}`} aria-hidden="true">
+                    {GLYPH[c.state]}
+                  </span>
+                  <span class="visually-hidden">{stateLabel(c.state)}</span>
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note rc-legend">{t.legend}</p>
+
+    {withheld.length > 0 && (
+      <p class="note" data-withheld>
+        <span class="rc-sym rc-sym--na" aria-hidden="true">
+          –
+        </span>{' '}
+        {t.withheld}:{' '}
+        <span class="mono">{withheld.map((r) => repoName(r.repository)).join(', ')}</span>
+      </p>
+    )}
+
+    <details class="disclosure rc-detail" data-detail="unpinned">
+      <summary>{t.unpinnedTitle}</summary>
+      {withUnpinned.length === 0 ? (
+        <p class="muted">{t.unpinnedNone}</p>
+      ) : (
+        withUnpinned.map((r) => (
+          <div class="rc-block">
+            <p class="rc-block__head">
+              <code>{repoName(r.repository)}</code>
+            </p>
+            <div
+              class="table-wrap rc-wrap"
+              tabindex="0"
+              role="region"
+              aria-label={`${t.unpinnedTitle}: ${repoName(r.repository)}`}
+            >
+              <table class="rc-table rc-table--list">
+                <thead>
+                  <tr>
+                    <th scope="col">{t.colWorkflow}</th>
+                    <th scope="col">{t.colTarget}</th>
+                    <th scope="col">{t.colRef}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {r.actions.unpinnedRefs.map((u) => (
+                    <tr>
+                      <td>
+                        <code>{u.workflow}</code>
+                      </td>
+                      <td class="rc-break">
+                        <code>{u.target}</code>
+                      </td>
+                      <td>
+                        <code>{u.ref}</code>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {r.actions.truncated > 0 && (
+              <p class="sub">{f(t.unpinnedMore, { n: i18n.number(r.actions.truncated) })}</p>
+            )}
+          </div>
+        ))
+      )}
+    </details>
+
+    <details class="disclosure rc-detail" data-detail="reusable">
+      <summary>{t.reusableTitle}</summary>
+      {withReusable.length === 0 ? (
+        <p class="muted">{t.reusableNone}</p>
+      ) : (
+        withReusable.map((r) => (
+          <div class="rc-block">
+            <p class="rc-block__head">
+              <code>{repoName(r.repository)}</code>
+            </p>
+            <div
+              class="table-wrap rc-wrap"
+              tabindex="0"
+              role="region"
+              aria-label={`${t.reusableTitle}: ${repoName(r.repository)}`}
+            >
+              <table class="rc-table rc-table--list">
+                <thead>
+                  <tr>
+                    <th scope="col">{t.colTarget}</th>
+                    <th scope="col">{t.colRef}</th>
+                    <th scope="col">{t.colLatest}</th>
+                    <th scope="col">{t.colStatus}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {r.reusableWorkflows.map((w) => (
+                    <tr data-status={w.status}>
+                      <td class="rc-break">
+                        {w.url ? (
+                          <ExtLink href={w.url} i18n={i18n}>
+                            <code>{w.target}</code>
+                          </ExtLink>
+                        ) : (
+                          <code>{w.target}</code>
+                        )}
+                      </td>
+                      <td>
+                        <code>{w.ref}</code>
+                      </td>
+                      <td>
+                        {w.latest ? (
+                          <code>{w.latest}</code>
+                        ) : (
+                          <span class="muted">
+                            {d.common.unknownValue}
+                            <span class="visually-hidden">{d.common.unknown}</span>
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        <span class={`rc-status rc-status--${reusableTone(w.status)}`}>
+                          <span aria-hidden="true">
+                            {w.status === 'current' ? '✓' : w.status === 'behind' ? '✕' : '?'}
+                          </span>{' '}
+                          {d.reusableStatus[w.status]}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))
+      )}
+    </details>
+
+    <details class="disclosure rc-detail" data-detail="rules">
+      <summary>{t.branchTitle}</summary>
+      <ul class="rc-list">
+        {rc.repositories.map((r) => (
+          <li data-repository={r.repository}>
+            <code>{repoName(r.repository)}</code>
+            {r.branchRules.branch && (
+              <>
+                {' '}
+                · <code>{r.branchRules.branch}</code>
+              </>
+            )}
+            {' · '}
+            {t.branchSource}: {d.ruleSource[r.branchRules.source]}
+            {r.branchRules.state !== 'available' && (
+              <>
+                {' · '}
+                {d.availability[r.branchRules.state]}
+              </>
+            )}
+            {r.branchRules.requiredApprovals !== null && (
+              <>
+                {' · '}
+                {f(t.branchApprovals, { n: r.branchRules.requiredApprovals })}
+              </>
+            )}
+            <span class="rc-tokens">
+              {r.branchRules.ruleTypes.length === 0 && r.branchRules.otherRules === 0 ? (
+                <span class="sub">{t.branchNoTypes}</span>
+              ) : (
+                <>
+                  {r.branchRules.ruleTypes.map((x) => (
+                    <code class="rc-token">{x}</code>
+                  ))}
+                  {r.branchRules.otherRules > 0 && (
+                    <span class="sub">
+                      {f(t.branchOther, { n: i18n.number(r.branchRules.otherRules) })}
+                    </span>
+                  )}
+                </>
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </details>
+
+    <details class="disclosure rc-detail" data-detail="scorecard">
+      <summary>{t.scorecardTitle}</summary>
+      {withScorecard.length === 0 ? (
+        <p class="muted">{t.scorecardNone}</p>
+      ) : (
+        <ul class="rc-list">
+          {withScorecard.map((r) => (
+            <li data-repository={r.repository}>
+              <code>{repoName(r.repository)}</code> · {t.scorecardLast}:{' '}
+              {r.scorecard.lastAnalysisAt ? (
+                <RelTime iso={r.scorecard.lastAnalysisAt} i18n={i18n} />
+              ) : (
+                d.common.unknown
+              )}
+              <span class="rc-tokens">
+                <span class="sub">{t.scorecardBelow}:</span>
+                {r.scorecard.failingChecks.length === 0 && r.scorecard.otherFailing === 0 ? (
+                  <span class="sub">{t.scorecardNoFailing}</span>
+                ) : (
+                  <>
+                    {r.scorecard.failingChecks.map((x) => (
+                      <code class="rc-token">{x}</code>
+                    ))}
+                    {r.scorecard.otherFailing > 0 && (
+                      <span class="sub">
+                        {f(t.scorecardOther, { n: i18n.number(r.scorecard.otherFailing) })}
+                      </span>
+                    )}
+                  </>
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </details>
+
+    <p class="note">
+      <a href="#workflows" class="rc-wf-link">
+        {t.standardWorkflowsLink}
+      </a>
+    </p>
+  </>
+)}
+
+<style>
+  .rc-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    gap: var(--space-3);
+  }
+  .rc-tile {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+    padding: var(--space-4);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow-wrap: anywhere;
+  }
+  /* Something we cannot see: dashed, like every unknown on the site. */
+  .rc-tile--unknown {
+    border: 1.5px dashed var(--unknown);
+  }
+  .rc-tile__label {
+    color: var(--text-muted);
+  }
+  .rc-tile__value {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+  }
+  .rc-tile__big {
+    font-size: var(--fs-score);
+    line-height: 34px;
+    font-weight: 700;
+  }
+  .rc-tile__foot {
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+  }
+
+  /* The matrix scrolls inside its own box; the page never scrolls sideways. */
+  .rc-wrap {
+    position: relative; /* clips the visually hidden labels inside the scroll box */
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .rc-table {
+    width: 100%;
+    min-width: 640px;
+    border-collapse: collapse;
+    font-size: var(--fs-md);
+  }
+  .rc-table--list {
+    min-width: 480px;
+  }
+  .rc-table th,
+  .rc-table td {
+    padding: var(--space-2) var(--space-3);
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--border);
+  }
+  .rc-table thead th {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .rc-table tbody th {
+    font-weight: 600;
+  }
+  .rc-th__name {
+    display: block;
+  }
+  .rc-th__tag {
+    margin-left: 0;
+    margin-top: var(--space-1);
+  }
+  .rc-repo,
+  .rc-comps {
+    display: block;
+    font-weight: 400;
+  }
+  .rc-break {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .rc-legend {
+    margin: 0;
+  }
+
+  .rc-sym {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    line-height: 1;
+  }
+  .rc-sym--pass {
+    background: var(--green-tint);
+    color: var(--green-text);
+  }
+  .rc-sym--fail {
+    background: var(--red-tint);
+    color: var(--red-text);
+  }
+  .rc-sym--unknown {
+    color: var(--text-muted);
+    border: 1.5px dashed var(--unknown);
+  }
+  .rc-sym--not-applicable,
+  .rc-sym--na {
+    color: var(--text-muted);
+  }
+  .rc-status {
+    font-weight: 600;
+  }
+  .rc-status--ok {
+    color: var(--green-text);
+  }
+  .rc-status--bad {
+    color: var(--red-text);
+  }
+  .rc-status--unk {
+    color: var(--text-muted);
+  }
+
+  .rc-detail {
+    border-top: 1px solid var(--border);
+    padding-top: var(--space-2);
+  }
+  .rc-detail > summary {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+  }
+  .rc-block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+  }
+  .rc-block__head {
+    margin: 0;
+  }
+  .rc-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    list-style: none;
+    overflow-wrap: anywhere;
+  }
+  .rc-tokens {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-2);
+    margin-top: var(--space-1);
+  }
+  .rc-token {
+    padding: 1px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: var(--surface-2);
+    font-size: var(--fs-xs);
+  }
+  .rc-wrap:focus-visible {
+    outline: 2px solid var(--focus, currentColor);
+    outline-offset: 2px;
+  }
+  @media (forced-colors: active) {
+    .rc-sym {
+      border: 1px solid CanvasText;
+    }
+    .rc-sym--unknown {
+      border-style: dashed;
+    }
+  }
+</style>

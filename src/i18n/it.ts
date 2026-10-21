@@ -162,6 +162,26 @@ export const it: Dict = {
     'force-push-blocked': 'Force push bloccato',
     'status-checks-required': 'Status check obbligatori',
   },
+  repositoryCheckState: {
+    pass: 'Superato',
+    fail: 'Fallito',
+    unknown: 'Non visibile',
+    'not-applicable': 'Non applicabile',
+  },
+  reusableStatus: {
+    current: 'Aggiornato',
+    behind: 'Indietro',
+    untagged: 'SHA senza tag',
+    floating: 'Flottante (branch)',
+    unknown: 'Non visibile',
+  },
+  ruleSource: {
+    rulesets: 'Ruleset',
+    classic: 'Protezione classica',
+    both: 'Ruleset e protezione classica',
+    none: 'Nessuna regola',
+    unknown: 'Non visibile',
+  },
   controlState: {
     enabled: 'Attivo',
     'not-configured': 'Non configurato',
@@ -460,6 +480,51 @@ export const it: Dict = {
       legend:
         'Sano da {green}% · attenzione da {amber}% · critico sotto {amber}% · senza report = non visibile, mai 0% · le soglie vengono dalle policy',
     },
+    repoControls: {
+      title: 'Controlli repository',
+      summary: '{passed} di {applicable} controlli superati · {unknown} non visibili',
+      informative: 'Informativo',
+      enforced: 'Conta per Governance',
+      legend:
+        'I controlli informativi non cambiano mai lo stato di Governance. Non visibile non significa fallito.',
+      withheld: 'Dettagli nascosti per i repository non pubblici',
+      off: 'I controlli repository sono spenti nelle policy.',
+      scorecardBelow: 'Check sotto il minimo della tua policy Scorecard',
+      standardWorkflowsLink: 'Workflow standard →',
+      tilePassed: 'Controlli superati',
+      tileUnknown: 'Non visibili',
+      tileUnknownFoot: 'Non visibile non viene mai contato come fallito.',
+      tileScorecard: 'OpenSSF Scorecard',
+      scorecardFoot: '{n} di {total} repository analizzati · {failing} check falliti',
+      matrixCaption: 'Controlli per repository',
+      colRepository: 'Repository',
+      cellLabel: '{check}: {state}',
+      unpinnedTitle: 'Action non fissate a uno SHA di commit',
+      unpinnedNone: 'Nessun riferimento non fissato.',
+      unpinnedMore: 'e altri {n}',
+      colWorkflow: 'Workflow',
+      colTarget: 'Destinazione',
+      colRef: 'Riferimento',
+      colLatest: 'Ultima',
+      colStatus: 'Stato',
+      reusableTitle: 'Workflow riutilizzabili',
+      reusableNone: 'Nessun workflow riutilizzabile.',
+      branchTitle: 'Regole del branch',
+      branchSource: 'Origine',
+      branchApprovals: 'Approvazioni richieste: {n}',
+      branchOther: '{n} altre regole',
+      branchNoTypes: 'Nessuna regola con nome.',
+      scorecardTitle: 'OpenSSF Scorecard',
+      scorecardLast: 'Ultima analisi',
+      scorecardNone: 'Nessuna analisi pubblicata.',
+      scorecardNoFailing: 'Nessun check fallito elencato.',
+      scorecardOther: 'e altri {n}',
+      symbolPass: 'Superato',
+      symbolFail: 'Fallito',
+      symbolUnknown: 'Non visibile',
+      symbolNa: 'Non applicabile',
+      dimLine: 'Controlli {passed}/{applicable}',
+    },
   },
   workflowsPage: {
     title: 'Workflow',
@@ -697,6 +762,14 @@ export const it: Dict = {
       invalid: 'Il riepilogo non rispetta il contratto.',
       'not-authorised': 'Concedi Actions: read sul repository.',
       unknown: "Non è stato possibile leggere l'elenco degli artifact.",
+    },
+    repoControls: {
+      title: 'Controlli repository',
+      intro:
+        'Repository di cui non è stato possibile leggere i file dei workflow o le regole del branch. I loro controlli risultano non visibili, mai falliti.',
+      none: 'Ogni repository ha esposto i file dei workflow e le regole del branch.',
+      workflows: 'file dei workflow',
+      rules: 'regole del branch',
     },
     runSummary: 'Dettagli della raccolta: {date} · {source} · collector {version}',
     run: 'Esecuzione collector',
@@ -1014,7 +1087,7 @@ export const it: Dict = {
       security: 'Alert aperti per gravità, alert di secret scanning e controlli richiesti falliti.',
       coverage: 'Quota dei controlli di sicurezza richiesti attivi e visibili.',
       governance:
-        'Standard dei repository: workflow standard, repository archiviati, file di stato sicurezza, branch predefinito.',
+        'Standard dei repository: workflow standard, repository archiviati, file di stato sicurezza, branch di default e i controlli repository che scegli di rendere vincolanti.',
       quality:
         'Copertura delle righe dei test, dal riepilogo pubblicato dalla CI di ogni repository. Un componente senza report leggibile è non visibile, mai 0%.',
     },
@@ -1063,6 +1136,23 @@ export const it: Dict = {
       'Cosa è cambiato confronta solo le fonti di alert monitorate e leggibili in entrambe le raccolte: una fonte illeggibile o rimossa non risulta mai risolta e una appena leggibile o appena aggiunta non risulta mai nuova.',
     trendsCsv:
       'I file CSV sono UTF-8 con BOM, separati da virgole. "unknown" significa non leggibile e non è mai 0; "n/a" significa non applicabile; un apostrofo iniziale protegge il testo che inizia con =, +, - o @.',
+    repoTitle: 'Controlli repository',
+    repoIntro:
+      'Sei controlli di sola lettura per repository, dai file dei workflow e dalle regole del branch. Sono informativi per impostazione predefinita: non cambiano mai uno stato finché il proprietario non li rende vincolanti nelle policy.',
+    repoChecks: {
+      'actions-pinned':
+        'Ogni action e ogni workflow riutilizzabile è referenziato con lo SHA completo del commit, non con un tag o un branch.',
+      'reusable-workflows-current':
+        'I workflow riutilizzabili sono chiamati all’ultima release, o al commit di un tag che è l’ultimo.',
+      'branch-protected': 'Il branch di default ha almeno una regola attiva.',
+      'pull-request-required': 'Le modifiche al branch di default richiedono una pull request.',
+      'force-push-blocked': 'I force push sul branch di default sono bloccati.',
+      'status-checks-required': 'Gli status check devono passare prima del merge.',
+    },
+    repoUnknown:
+      'Non visibile non significa fallito: le credenziali potrebbero non leggere le regole o i file dei workflow. Non viene mai contato come fallito né come superato.',
+    repoInformative:
+      'I controlli "Informativo" compaiono solo nella pagina del progetto. I controlli "Conta per Governance" spostano lo stato di Governance.',
     docsTitle: 'Più dettagli',
     docsText:
       'Ogni policy, il suo valore predefinito e come cambiarla sono descritti nel riferimento di configurazione.',

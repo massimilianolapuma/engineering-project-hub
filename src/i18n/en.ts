@@ -160,6 +160,26 @@ export const en = {
     'force-push-blocked': 'Force push blocked',
     'status-checks-required': 'Status checks required',
   },
+  repositoryCheckState: {
+    pass: 'Pass',
+    fail: 'Fail',
+    unknown: 'Not visible',
+    'not-applicable': 'Not applicable',
+  },
+  reusableStatus: {
+    current: 'Up to date',
+    behind: 'Behind',
+    untagged: 'Untagged SHA',
+    floating: 'Floating (branch)',
+    unknown: 'Not visible',
+  },
+  ruleSource: {
+    rulesets: 'Rulesets',
+    classic: 'Classic protection',
+    both: 'Rulesets and classic protection',
+    none: 'No rule',
+    unknown: 'Not visible',
+  },
   controlState: {
     enabled: 'Enabled',
     'not-configured': 'Not configured',
@@ -458,6 +478,51 @@ export const en = {
       legend:
         'Healthy from {green}% · attention from {amber}% · critical below {amber}% · without a report = not visible, never 0% · thresholds come from the policies',
     },
+    repoControls: {
+      title: 'Repository controls',
+      summary: '{passed} of {applicable} checks pass · {unknown} not visible',
+      informative: 'Informative',
+      enforced: 'Counts for Governance',
+      legend:
+        'Informative checks never change the Governance status. Not visible does not mean failing.',
+      withheld: 'Details withheld for non-public repositories',
+      off: 'Repository controls are turned off in the policies.',
+      scorecardBelow: 'Checks below your Scorecard policy minimum',
+      standardWorkflowsLink: 'Standard workflows →',
+      tilePassed: 'Checks passed',
+      tileUnknown: 'Not visible',
+      tileUnknownFoot: 'Not visible is never counted as fail.',
+      tileScorecard: 'OpenSSF Scorecard',
+      scorecardFoot: '{n} of {total} repositories analysed · {failing} failing checks',
+      matrixCaption: 'Repository checks per repository',
+      colRepository: 'Repository',
+      cellLabel: '{check}: {state}',
+      unpinnedTitle: 'Actions not pinned to a commit SHA',
+      unpinnedNone: 'No unpinned reference.',
+      unpinnedMore: 'and {n} more',
+      colWorkflow: 'Workflow',
+      colTarget: 'Target',
+      colRef: 'Reference',
+      colLatest: 'Latest',
+      colStatus: 'Status',
+      reusableTitle: 'Reusable workflows',
+      reusableNone: 'No reusable workflow.',
+      branchTitle: 'Branch rules',
+      branchSource: 'Source',
+      branchApprovals: 'Approvals required: {n}',
+      branchOther: '{n} other rules',
+      branchNoTypes: 'No named rule.',
+      scorecardTitle: 'OpenSSF Scorecard',
+      scorecardLast: 'Last analysis',
+      scorecardNone: 'No analysis published.',
+      scorecardNoFailing: 'No failing check listed.',
+      scorecardOther: 'and {n} more',
+      symbolPass: 'Pass',
+      symbolFail: 'Fail',
+      symbolUnknown: 'Not visible',
+      symbolNa: 'Not applicable',
+      dimLine: 'Checks {passed}/{applicable}',
+    },
   },
   workflowsPage: {
     title: 'Workflows',
@@ -689,6 +754,14 @@ export const en = {
       invalid: 'The summary does not match the contract.',
       'not-authorised': 'Grant Actions: read on the repository.',
       unknown: 'The artifact list could not be read.',
+    },
+    repoControls: {
+      title: 'Repository controls',
+      intro:
+        'Repositories whose workflow files or branch rules could not be read. Their checks show as not visible, never as failing.',
+      none: 'Every repository exposed its workflow files and branch rules.',
+      workflows: 'workflow files',
+      rules: 'branch rules',
     },
     runSummary: 'Run details: {date} · {source} · collector {version}',
     run: 'Collector run',
@@ -1004,7 +1077,7 @@ export const en = {
       security: 'Open alerts by severity, secret scanning alerts and failed required controls.',
       coverage: 'Share of the required security controls that are enabled and visible.',
       governance:
-        'Repository standards: standard workflows, archived repositories, security status file, default branch.',
+        'Repository standards: standard workflows, archived repositories, security status file, default branch, and the repository checks you choose to enforce.',
       quality:
         'Line coverage of the tests, from the summary each repository’s CI publishes. A component without a readable report is not visible, never 0%.',
     },
@@ -1053,6 +1126,23 @@ export const en = {
       'What changed compares only alert sources that were monitored and readable in both collections, so an unreadable or removed source never shows as resolved and a newly readable or newly added one never shows as new.',
     trendsCsv:
       'CSV files are UTF-8 with a BOM, comma-separated. "unknown" means not readable and is never 0; "n/a" means not applicable; a leading apostrophe protects text that starts with =, +, - or @.',
+    repoTitle: 'Repository controls',
+    repoIntro:
+      'Six read-only checks per repository, from its workflow files and its branch rules. They are informative by default: they never change a status until the owner enforces them in the policies.',
+    repoChecks: {
+      'actions-pinned':
+        'Every action and reusable workflow is referenced by a full commit SHA, not a tag or a branch.',
+      'reusable-workflows-current':
+        'Reusable workflows are called at the latest release, or at the commit of a tag that is the latest.',
+      'branch-protected': 'The default branch has at least one active rule.',
+      'pull-request-required': 'Changes to the default branch need a pull request.',
+      'force-push-blocked': 'Force pushes to the default branch are blocked.',
+      'status-checks-required': 'Status checks must pass before merging.',
+    },
+    repoUnknown:
+      'Not visible is not failing: the credentials may not read rules or workflow files. It is never counted as a fail and never as a pass.',
+    repoInformative:
+      '"Informative" checks show on the project page only. "Counts for Governance" checks move the Governance status.',
     docsTitle: 'More detail',
     docsText:
       'Every policy, its default and how to change it is described in the configuration reference.',

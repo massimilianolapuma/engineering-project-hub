@@ -78,10 +78,12 @@ test('adds a discovered single repository as a new project proposed on GitHub', 
 }) => {
   await page.goto('/catalog/');
   const region = discovered(page);
-  await expect(region.getByText(/10 repositories scanned/)).toBeVisible();
+  await expect(region.getByText(/12 repositories scanned/)).toBeVisible();
   await expect(region.getByRole('heading', { name: 'Single repositories (1)' })).toBeVisible();
   const docs = region.getByRole('listitem').filter({ hasText: 'example-org/docs-site' }).first();
   await expect(docs.getByText('Single repository', { exact: true })).toBeVisible();
+  await expect(docs.getByText('Suggested for project platform')).toBeVisible();
+  await expect(region.getByRole('heading', { name: 'Grouped by hints (1)' })).toBeVisible();
   await expect(docs.getByText('no submodules or workspace manifest')).toBeVisible();
   const platform = region
     .getByRole('listitem')
@@ -237,5 +239,5 @@ test('renders in Italian at /it/catalog/', async ({ page }) => {
   ).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Repository scoperti' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Modifiche in sospeso' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Aggiungi come progetto' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Aggiungi come progetto' }).first()).toBeVisible();
 });

@@ -170,6 +170,30 @@ test('project page: Quality card links to #quality', async ({ page }) => {
   expect(overflow).toBeLessThanOrEqual(0);
 });
 
+test('project page: Governance card opens #repository-controls', async ({ page }) => {
+  await page.goto('/projects/project-beta/');
+  const fold = page.locator('details#repository-controls');
+  await expect(fold).toHaveJSProperty('open', false);
+  await page.locator('a[data-dimension="governance"]').click();
+  await expect(page).toHaveURL(/#repository-controls$/);
+  await expect(fold).toHaveJSProperty('open', true);
+  await expect(fold.getByText('5 of 12 checks pass · 8 not visible').first()).toBeVisible();
+  await expect(fold.locator('table').first()).toBeVisible();
+});
+
+test('repository controls matrix stays inside the page at 412 px', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'phone layout only (Pixel 7 is 412 px wide)');
+  await page.goto('/projects/project-beta/#repository-controls');
+  await expect(page.locator('details#repository-controls')).toHaveJSProperty('open', true);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+  // The matrix scrolls inside its own region, reachable by keyboard.
+  const wrap = page.locator('details#repository-controls .rc-wrap').first();
+  await expect(wrap).toHaveAttribute('tabindex', '0');
+});
+
 test('project page has no horizontal scroll at phone width', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'phone layout only');
   for (const id of ['project-beta', 'project-gamma', 'platform']) {

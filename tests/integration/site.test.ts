@@ -207,13 +207,13 @@ describe('static site', () => {
         'governance',
         'quality',
       ]);
-      // Governance checks repository standards (standard workflows): not collection errors.
+      // Governance checks repository standards (repository controls, then the workflows).
       expect(cards.map((m) => m[1])).toEqual([
         'workflows',
         'environments',
         'security',
         'coverage',
-        'workflows',
+        'repository-controls',
         'quality',
       ]);
       for (const id of ['workflows', 'environments', 'security', 'coverage', 'quality'])
@@ -1220,6 +1220,93 @@ describe('static site', () => {
     );
     const { findings } = await scan([join(dist, v)]);
     expect(findings).toEqual([]);
+  });
+
+  describe('repository controls', () => {
+    const between = (html: string, from: string, to: string) =>
+      html.slice(html.indexOf(from), html.indexOf(to, html.indexOf(from)));
+    const rc = (html: string) => {
+      const start = html.search(/<details[^>]*\bid="repository-controls"/);
+      expect(start, 'details#repository-controls').toBeGreaterThan(-1);
+      const tail = html.slice(start);
+      return tail.slice(0, tail.search(/<section[^>]*\bid="quality"/));
+    };
+
+    it('project-beta has #repository-controls with its summary (EN and IT)', async () => {
+      const en = rc(await page('projects/project-beta'));
+      expect(textOf(en)).toContain('5 of 12 checks pass · 8 not visible');
+      expect(textOf(en)).toContain('Repository controls');
+      const it = rc(await page('it/projects/project-beta'));
+      expect(textOf(it)).toContain('5 di 12 controlli superati · 8 non visibili');
+    });
+
+    it('the beta matrix has 4 rows and 6 column headers, each with "Informative"', async () => {
+      const m = rc(await page('projects/project-beta'));
+      const table = m.slice(m.indexOf('<table'), m.indexOf('</table>'));
+      expect(table.match(/<th[^>]*scope="row"/g)).toHaveLength(4);
+      const cols = table.match(/<th[^>]*scope="col"[\s\S]*?<\/th>/g)!;
+      // First column is the repository; the six checks follow.
+      expect(cols).toHaveLength(7);
+      for (const c of cols.slice(1)) expect(textOf(c)).toContain('Informative');
+    });
+
+    it('every matrix cell has a visually hidden state label', async () => {
+      const m = rc(await page('projects/project-beta'));
+      const table = m.slice(m.indexOf('<table'), m.indexOf('</table>'));
+      const cells = table.match(/<td[\s\S]*?<\/td>/g)!;
+      expect(cells).toHaveLength(24);
+      for (const c of cells) {
+        expect(c).toMatch(/class="visually-hidden"[^>]*>(Pass|Fail|Not visible|Not applicable)</);
+      }
+    });
+
+    it('lists the behind reusable workflow, the unpinned action and the withheld details', async () => {
+      const beta = textOf(rc(await page('projects/project-beta')));
+      expect(beta).toContain('example-shared/ci-templates/.github/workflows/build.yml');
+      expect(beta).toContain('v2.1.0');
+      expect(beta).toContain('v2.4.0');
+      expect(beta).toContain('Behind');
+      expect(beta).toContain('Details withheld for non-public repositories');
+      const platform = textOf(rc(await page('projects/platform')));
+      expect(platform).toContain('pnpm/action-setup');
+      expect(platform).toContain('v4');
+    });
+
+    it('the Governance card links to #repository-controls', async () => {
+      const html = await page('projects/project-beta');
+      expect(between(html, 'data-dimension="governance"', '</a>')).toBeTruthy();
+      expect(html).toMatch(/<a[^>]*href="#repository-controls"[^>]*data-dimension="governance"/);
+    });
+
+    it('never publishes workflow text or unconfigured properties', async () => {
+      const { readdir } = await import('node:fs/promises');
+      const files = (await readdir(dist, { recursive: true })).filter((f) =>
+        /\.(html|json|csv|js|xml|txt)$/.test(f),
+      );
+      for (const f of files) {
+        const text = await readFile(join(dist, f), 'utf8');
+        expect(text, f).not.toMatch(/marker-step-7f3e|marker-run-7f3e|CC-1234/);
+      }
+    });
+
+    it('the catalog page shows grouped proposals and the suggested project', async () => {
+      const html = await page('catalog');
+      expect(html).toContain('Grouped by hints');
+      expect(html).toContain('Suggested for project {id}');
+      const it = await page('it/catalog');
+      expect(it).toContain('Raggruppato dai suggerimenti');
+    });
+
+    it('data quality lists the repository whose rules are not authorised', async () => {
+      const html = textOf(await page('data-quality'));
+      expect(html).toContain('project-beta-helm');
+      expect(html).toContain('Branch rules');
+    });
+
+    it('how to read explains repository controls (EN and IT)', async () => {
+      expect(textOf(await page('how-to-read'))).toContain('Repository controls');
+      expect(textOf(await page('it/how-to-read'))).toContain('Controlli repository');
+    });
   });
 
   it('fails in a controlled way on an unsupported snapshot schemaVersion', async () => {
