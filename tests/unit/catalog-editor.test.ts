@@ -23,6 +23,7 @@ import {
   missingFromProposal,
   pendingChanges,
   projectKind,
+  projectToDraft,
   projectToYaml,
   renameComponentId,
   safeGithubUrl,
@@ -492,5 +493,31 @@ describe('catalog editor: build-time helpers', () => {
     expect(json).not.toContain('<');
     expect(json).not.toContain('>');
     expect(JSON.parse(json)).toEqual({ name: '</script><script>alert(1)</script>&' });
+  });
+});
+
+describe('catalog editor: v0.8.0 override fields survive a round trip', () => {
+  it('keeps notApplicableChecks and testCoverage on the coordinator and components', () => {
+    const base = snapshot.catalog.projects[0]!;
+    const withOverrides = base;
+    const input = {
+      ...withOverrides,
+      coordinator: {
+        ...withOverrides.coordinator,
+        notApplicableChecks: ['pull-request-required'],
+        testCoverage: 'not-applicable',
+      },
+      components: withOverrides.components.map((c, i) =>
+        i === 0
+          ? { ...c, notApplicableChecks: ['actions-pinned'], testCoverage: 'not-applicable' }
+          : c,
+      ),
+    };
+    const parsed = ProjectConfigSchema.parse(input);
+    const out = ProjectConfigSchema.parse(toProjectInput(projectToDraft(parsed)));
+    expect(out.coordinator.notApplicableChecks).toEqual(['pull-request-required']);
+    expect(out.coordinator.testCoverage).toEqual(parsed.coordinator.testCoverage);
+    expect(out.components[0]!.notApplicableChecks).toEqual(['actions-pinned']);
+    expect(out.components[0]!.testCoverage).toEqual(parsed.components[0]!.testCoverage);
   });
 });
