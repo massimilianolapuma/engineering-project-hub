@@ -74,9 +74,11 @@ flowchart TB
    `GITHUB_TOKEN`, poi mock solo se selezionato esplicitamente.
 3. **Raccolta per repository**: metadati, poi head del branch, ultima release (con
    fallback sull'ultimo tag), file di stato sicurezza, alert di code scanning e ultima
-   analisi, alert Dependabot e alert di secret scanning (`hide_secret=true`). Se la
-   chiamata dei metadati fallisce, le chiamate dipendenti vengono saltate ed ereditano il
-   suo errore classificato.
+   analisi, alert Dependabot e alert di secret scanning (`hide_secret=true`), l'artifact
+   `hub-quality-summary` (l'esecuzione più recente sul branch predefinito dello stesso
+   repository; zip limitato a 64 KB) e i finding e la configurazione di GitHub Code
+   Quality. Se la chiamata dei metadati fallisce, le chiamate dipendenti vengono saltate ed
+   ereditano il suo errore classificato.
 4. **Raccolta per progetto**: il release manifest e `.gitmodules` dal coordinator, gli SHA
    dei submodule e le esecuzioni dei workflow monitorati (le ultime 20 sul branch
    predefinito), più i nomi del job e dello step falliti nell'ultima esecuzione fallita. Ogni
@@ -85,8 +87,8 @@ flowchart TB
    release (avanti / indietro / divergente).
 5. **Normalizzazione**: i valori dei provider diventano gli enum del modello.
    `originalSeverity` e `originalStatus` vengono conservati.
-6. **Valutazione**: delivery, versioni, rischio sicurezza, copertura, governance,
-   aggiornamento dei dati e stato complessivo.
+6. **Valutazione**: delivery, versioni, rischio sicurezza, copertura (controlli),
+   governance, qualità (copertura dei test), aggiornamento dei dati e stato complessivo.
 7. **Sanitizzazione e validazione**: il testo libero viene ripulito e i link vengono
    filtrati. Ogni documento è sottoposto a parsing con gli schemi strict (allowlist), poi il
    JSON serializzato passa per il gate delle credenziali. Qualsiasi errore interrompe
@@ -101,14 +103,15 @@ flowchart TB
 
 ## Confini di fiducia
 
-| Confine                 | Controlli                                                                                                                        |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| API GitHub → collector  | Credenziali in sola lettura. Vengono mappati solo i campi DTO in allowlist. I payload grezzi non escono mai dal provider.        |
-| Collector → snapshot    | Schemi Zod strict (chiavi sconosciute rifiutate), pulizia del testo, allowlist degli host URL, gate delle credenziali.           |
-| Job collect → job build | Passa solo l'artifact sanitizzato `snapshots`. Il job build non ha secret.                                                       |
-| Build → GitHub Pages    | Scansione dell'output. Il deploy usa OIDC (`pages: write`, `id-token: write`) solo nel job deploy.                               |
-| Pages → browser         | Solo file statici. CSP `default-src 'self'` senza script inline. Nessuna chiamata all'API di GitHub. Nessun token nello storage. |
-| Browser → GitHub (link) | GitHub applica la propria autorizzazione. Il portale non la inoltra né la aggira mai.                                            |
+| Confine                 | Controlli                                                                                                                                                                                                                                          |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API GitHub → collector  | Credenziali in sola lettura. Vengono mappati solo i campi DTO in allowlist. I payload grezzi non escono mai dal provider.                                                                                                                          |
+| Collector → snapshot    | Schemi Zod strict (chiavi sconosciute rifiutate), pulizia del testo, allowlist degli host URL, gate delle credenziali.                                                                                                                             |
+| Artifact CI → collector | Viene letto solo l'artifact `hub-quality-summary` di un'esecuzione sul branch predefinito dello stesso repository: zip ≤ 64 KB, un solo file, schema strict, `repository` deve coincidere. Un errore significa `invalid` e nulla viene pubblicato. |
+| Job collect → job build | Passa solo l'artifact sanitizzato `snapshots`. Il job build non ha secret.                                                                                                                                                                         |
+| Build → GitHub Pages    | Scansione dell'output. Il deploy usa OIDC (`pages: write`, `id-token: write`) solo nel job deploy.                                                                                                                                                 |
+| Pages → browser         | Solo file statici. CSP `default-src 'self'` senza script inline. Nessuna chiamata all'API di GitHub. Nessun token nello storage.                                                                                                                   |
+| Browser → GitHub (link) | GitHub applica la propria autorizzazione. Il portale non la inoltra né la aggira mai.                                                                                                                                                              |
 
 ## Modello degli snapshot
 
@@ -130,7 +133,12 @@ flowchart TB
 - `securityFindings[]` (`SecurityFinding`) e `securityControls[]` (repository × stato del
   controllo)
 - `deliveryHealth`, `versionHealth`, `securityHealth` (con conteggi e suddivisioni),
-  `securityCoverage`, `governanceHealth` e `overallHealth`
+  `securityCoverage`, `governanceHealth`, `qualityHealth` e `overallHealth`
+- `qualityHealth`: `{ status, reasons, percentage, linesCovered, linesValid, measured,
+applicable, notVisible, stale, collectedAt }`, `perComponent[]` (stato, percentuale,
+  righe, SHA del commit, data del report, strumento, link all'esecuzione) e `findings`
+  (conteggi di Code Quality per categoria e severità, con uno stato). I finding esistono
+  solo a livello di progetto.
 - `score`: `{ value, measured, required }`, calcolato dal collector (`value` è `null`
   quando i dati sono insufficienti; vedi [Configurazione](configuration.md#punteggio-del-progetto))
 - `dataFreshness` e `collectionErrors[]`
@@ -147,7 +155,7 @@ Enum normalizzati:
 | Classe di errore      | `not-found`, `not-authorised`, `not-configured`, `rate-limited`, `invalid-data`, `error`                                                 |
 
 Gli JSON Schema generati si trovano in `config/schema/`. Il sito supporta le versioni di
-snapshot elencate in `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS` (attualmente `1.0`).
+snapshot elencate in `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS` (attualmente `1.4`).
 
 ## Regole di salute (policy dell'MVP)
 
@@ -183,6 +191,20 @@ valutazioni del rischio universali.
   - verde quando tutti i controlli obbligatori sono disponibili
   - grigio senza percentuale quando nessun controllo obbligatorio è leggibile
   - ambra negli altri casi
+- **Qualità** (copertura dei test; da non confondere con la Copertura sopra, che la UI
+  chiama "Copertura controlli"):
+  - la copertura del progetto è la somma pesata per righe sui repository applicabili con
+    report leggibile o non aggiornato, ogni repository contato una sola volta; i componenti
+    senza report visibile non contano mai, e mai come 0%
+  - verde a partire da `quality.greenThresholdPercent` (80), ambra a partire da
+    `quality.amberThresholdPercent` (60), rosso sotto
+  - un report non aggiornato, o un componente applicabile non visibile con
+    `missingReportIsAmber` a true, limita il verde a ambra; un rosso resta rosso
+  - grigio quando nulla è applicabile o nulla è visibile
+  - non critica (un rosso conta come ambra nel complessivo) e opzionale per impostazione
+    predefinita (`overall.optionalDimensions`): ignorata quando è grigia, quindi non rende
+    grigio il progetto né abbassa il punteggio
+  - i finding di Code Quality sono mostrati ma non cambiano mai lo stato
 - **Governance**:
   - ambra per un workflow standard mancante, un repository archiviato, un file di stato
     mancante o non valido (quando sono richiesti controlli non nativi), oppure un branch
@@ -192,7 +214,9 @@ valutazioni del rischio universali.
   - rosso quando una dimensione critica (per impostazione predefinita delivery, versioni o
     sicurezza) è rossa
   - ambra quando una qualsiasi dimensione è ambra, oppure una dimensione non critica è rossa
-  - verde solo quando tutte le dimensioni obbligatorie sono verdi
+  - verde solo quando tutte le dimensioni obbligatorie sono verdi; una dimensione opzionale
+    misurata (per impostazione predefinita la Qualità) conta come una obbligatoria non
+    critica, una grigia viene ignorata
   - grigio negli altri casi, oppure ambra se `greyRequiredDimension: amber`
 
 ## Gestione degli errori
@@ -218,6 +242,7 @@ valutazioni del rischio universali.
 - [ADR 0002: Contratto degli snapshot e astrazione dei provider](architecture/adr/0002-snapshot-contract-and-provider-abstraction.md)
 - [ADR 0003: Mattoni CI riusabili e separazione collect/build/deploy](architecture/adr/0003-ci-building-blocks-and-collect-deploy-split.md)
 - [ADR 0004: Archivio della configurazione, scoperta e percorso verso un backend](architecture/adr/0004-configuration-store-and-discovery.md)
+- [ADR 0005: Copertura dei test da un artifact di riepilogo della CI, non da Sonar o dalla UI di GitHub](architecture/adr/0005-test-coverage-from-ci-summary-artifact.md)
 
 Altre decisioni:
 

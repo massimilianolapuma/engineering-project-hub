@@ -88,14 +88,76 @@ validate:snapshots`.
   accidentale](security.md#risposta-a-unesposizione-accidentale). Per prima cosa disabilita
   Pages.
 
+## Pubblicare il riepilogo di qualità dalla CI
+
+La dimensione Qualità legge l'artifact `hub-quality-summary` di ogni repository monitorato
+(contratto: [Configurazione](configuration.md#artifact-hub-quality-summary-ogni-repository-opzionale)).
+Un job minimo che trasforma un file Cobertura in `quality-summary.json` e lo carica, solo sul
+branch predefinito, con una conservazione di 30 giorni:
+
+```yaml
+quality-summary:
+  if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+  runs-on: ubuntu-latest
+  permissions:
+    contents: read
+  steps:
+    # ... esegui i test e scrivi prima coverage/cobertura.xml ...
+    - name: Scrivi quality-summary.json
+      run: |
+        python3 - <<'PY'
+        import json, os, datetime
+        import xml.etree.ElementTree as ET
+        root = ET.parse('coverage/cobertura.xml').getroot()
+        summary = {
+            'schemaVersion': '1.0',
+            'repository': os.environ['GITHUB_REPOSITORY'],
+            'ref': os.environ['GITHUB_REF'],
+            'commitSha': os.environ['GITHUB_SHA'],
+            'generatedAt': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+            'tool': 'coverlet',
+            'format': 'cobertura',
+            'lines': {
+                'covered': int(root.get('lines-covered')),
+                'valid': int(root.get('lines-valid')),
+            },
+        }
+        json.dump(summary, open('quality-summary.json', 'w'))
+        PY
+    - uses: actions/upload-artifact@<sha-completo-del-commit>
+      with:
+        name: hub-quality-summary
+        path: quality-summary.json
+        retention-days: 30
+```
+
+Note:
+
+- Fissa l'action a uno SHA completo, come ogni action di questo progetto.
+- Mantieni esattamente il nome dell'artifact e del file; lo zip deve restare sotto 64 KB.
+- Caricalo solo da esecuzioni sul branch predefinito del repository stesso: le esecuzioni da
+  fork o da altri branch sono ignorate dal collector.
+- La conservazione è anche l'orizzonte di aggiornamento: dopo il periodo l'artifact scade e
+  il report diventa `expired` (non visibile, mai 0%). I report più vecchi di
+  `freshness.qualityReportStaleDays` (14 per impostazione predefinita) risultano non
+  aggiornati.
+- La copertura è letta dagli attributi radice Cobertura `lines-covered` e `lines-valid`. Per
+  gli altri formati calcola i due numeri e imposta `format` di conseguenza.
+
+## Dati locali e `ci:build`
+
+`npm run ci:build` esegue `collect:mock`, che sovrascrive `public/data`. Uno snapshot locale
+con dati reali (per esempio da `collect:github`) va raccolto di nuovo dopo di esso.
+
 ## Conservazione degli artifact
 
-| Artifact              | Conservazione     | Contenuto                                  |
-| --------------------- | ----------------- | ------------------------------------------ |
-| `snapshots`           | 14 giorni         | JSON sanitizzato + collection report       |
-| `site`                | 1 giorno          | `dist/` generata, passata al job di deploy |
-| `github-pages`        | default di GitHub | Artifact di deployment di Pages            |
-| Report di coverage CI | default upstream  | Coverage di Vitest (`coverage/`)           |
+| Artifact                                              | Conservazione           | Contenuto                                  |
+| ----------------------------------------------------- | ----------------------- | ------------------------------------------ |
+| `snapshots`                                           | 14 giorni               | JSON sanitizzato + collection report       |
+| `site`                                                | 1 giorno                | `dist/` generata, passata al job di deploy |
+| `github-pages`                                        | default di GitHub       | Artifact di deployment di Pages            |
+| Report di coverage CI                                 | default upstream        | Coverage di Vitest (`coverage/`)           |
+| `hub-quality-summary` (in ogni repository monitorato) | 30 giorni (consigliato) | `quality-summary.json`: solo conteggi      |
 
 Gli artifact contengono solo dati sanitizzati e pubblicabili. Non contengono mai
 credenziali, file temporanei o payload grezzi.

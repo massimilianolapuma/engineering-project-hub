@@ -210,6 +210,36 @@ A run is **stale** when its last completed run is older than
 - **Pipeline controls**: container and IaC scanning, DAST, SBOM and artifact signature.
   These are read from the security status file.
 
+### Test coverage applicability (`testCoverage`)
+
+Test coverage (the Quality dimension) applies by default to the component types
+`service`, `webapp`, `worker` and `library`, and to the coordinator (treated like a
+`service`). It does not apply to `deployment`, `infrastructure` and `other`. Override it
+per component, or on the `coordinator` block, in `config/projects/<id>.yaml`:
+
+```yaml
+coordinator:
+  repository: example-org/project-beta
+  testCoverage: not-applicable # required | not-applicable
+components:
+  - id: api
+    repository: example-org/project-beta-api
+    type: service
+    testCoverage: required
+```
+
+The override always wins over the type default. Not applicable components are shown with
+"–" and never count as 0%.
+
+### Quality is optional by default
+
+`overall.optionalDimensions` defaults to `[quality]`: a measured Quality counts for the
+overall status and the score, a grey Quality is ignored, so projects stay stable until CI
+publishes summaries. Quality is not critical: a red Quality counts as amber overall. To
+make Quality required (a grey Quality is then treated like any other grey required dimension), set
+`optionalDimensions: []` and add `quality` to `requiredDimensions`. A dimension listed in
+both lists is rejected at validation.
+
 ### Adding a project (no code change)
 
 Preferred: open `/catalog/`, add a discovered proposal (or create a project), then
@@ -282,51 +312,57 @@ hand-written files are not preserved, so review the diff before committing.
 These are MVP policies, not universal risk ratings. Changing them needs no code or
 frontend change.
 
-| Key                                     | Default                                                          | Meaning                                                                                                                |
-| --------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `freshness.snapshotStaleHours`          | 24                                                               | The site flags the snapshot as stale (computed in the browser).                                                        |
-| `freshness.workflowRunStaleDays`        | 14                                                               | Last completed run older than this is stale.                                                                           |
-| `freshness.securityScanStaleDays`       | 7                                                                | Last code scanning analysis older than this is stale.                                                                  |
-| `freshness.securityStatusFileStaleDays` | 7                                                                | Pipeline status results older than this are stale.                                                                     |
-| `delivery.queuedThresholdMinutes`       | 60                                                               | Queued or running longer than this means Attention.                                                                    |
-| `delivery.missingCriticalWorkflow`      | amber                                                            | Status for a critical workflow that is missing or has never run.                                                       |
-| `delivery.failedCriticalWorkflow`       | red                                                              | Status for a failed or cancelled critical workflow.                                                                    |
-| `security.redOnSeverities`              | [critical]                                                       | Open findings at these severities make Security risk red.                                                              |
-| `security.amberOnSeverities`            | [high, medium, low]                                              | Open findings at these severities make Security risk amber.                                                            |
-| `security.openSecretAlertIsRed`         | true                                                             | An open secret scanning alert is red.                                                                                  |
-| `security.requiredControlFailedIsRed`   | true                                                             | A failed required control is red.                                                                                      |
-| `security.staleScanIsAmber`             | true                                                             | A stale required scan is amber.                                                                                        |
-| `security.incompleteCoverageIsAmber`    | true                                                             | Coverage that is not green makes Security risk amber.                                                                  |
-| `coverage.greenThresholdPercent`        | 100                                                              | Coverage is green at or above this percentage.                                                                         |
-| `version.componentDrift`                | amber                                                            | Declared version differs from the latest release.                                                                      |
-| `version.environmentBehind`             | amber                                                            | Environment behind, or mismatched with, the coordinator version.                                                       |
-| `version.unresolvableSubmodule`         | red                                                              | A configured submodule cannot be resolved.                                                                             |
-| `version.unknownManifestComponent`      | red                                                              | The manifest references an unknown component.                                                                          |
-| `version.unmappedSubmodule`             | amber                                                            | A submodule not mapped to any component.                                                                               |
-| `version.untaggedSubmodule`             | amber                                                            | The coordinator pins a SHA that is not a release tag of the component.                                                 |
-| `version.manifestSubmoduleMismatch`     | amber                                                            | The manifest declares a version different from the one pinned by the submodule.                                        |
-| `governance.*`                          | amber                                                            | Missing standard workflow, archived repository, missing or invalid status file, default branch mismatch.               |
-| `overall.criticalDimensions`            | [delivery, version, security]                                    | A red here makes the project red. A red elsewhere counts as amber.                                                     |
-| `overall.requiredDimensions`            | all five                                                         | All must be green for Overall to be green.                                                                             |
-| `overall.greyRequiredDimension`         | grey                                                             | Effect of an Unknown required dimension (grey or amber).                                                               |
-| `score.weights`                         | delivery 25, version 15, security 30, coverage 15, governance 15 | Weight of each dimension in the project score. See [Project score](#project-score).                                    |
-| `score.points`                          | green 100, amber 60, red 20                                      | Points of a measured dimension by status. Grey is not measured, never 0.                                               |
-| `score.caps`                            | red 49, amber 89, grey 89                                        | Highest score allowed for each overall status.                                                                         |
-| `score.minMeasuredRatio`                | 0.5                                                              | Below this share of measured required dimensions the score is "insufficient data".                                     |
-| `publication.audience`                  | public                                                           | `public` withholds finding titles and rule ids of non-public repositories. `restricted` needs access-controlled Pages. |
-| `publication.allowedLinkHosts`          | [github.com]                                                     | Only links to these hosts are published.                                                                               |
+| Key                                     | Default                                                                      | Meaning                                                                                                                |
+| --------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `freshness.snapshotStaleHours`          | 24                                                                           | The site flags the snapshot as stale (computed in the browser).                                                        |
+| `freshness.workflowRunStaleDays`        | 14                                                                           | Last completed run older than this is stale.                                                                           |
+| `freshness.securityScanStaleDays`       | 7                                                                            | Last code scanning analysis older than this is stale.                                                                  |
+| `freshness.securityStatusFileStaleDays` | 7                                                                            | Pipeline status results older than this are stale.                                                                     |
+| `freshness.qualityReportStaleDays`      | 14                                                                           | A test coverage report (`generatedAt`) older than this is stale: still counted, but capped at amber.                   |
+| `delivery.queuedThresholdMinutes`       | 60                                                                           | Queued or running longer than this means Attention.                                                                    |
+| `delivery.missingCriticalWorkflow`      | amber                                                                        | Status for a critical workflow that is missing or has never run.                                                       |
+| `delivery.failedCriticalWorkflow`       | red                                                                          | Status for a failed or cancelled critical workflow.                                                                    |
+| `security.redOnSeverities`              | [critical]                                                                   | Open findings at these severities make Security risk red.                                                              |
+| `security.amberOnSeverities`            | [high, medium, low]                                                          | Open findings at these severities make Security risk amber.                                                            |
+| `security.openSecretAlertIsRed`         | true                                                                         | An open secret scanning alert is red.                                                                                  |
+| `security.requiredControlFailedIsRed`   | true                                                                         | A failed required control is red.                                                                                      |
+| `security.staleScanIsAmber`             | true                                                                         | A stale required scan is amber.                                                                                        |
+| `security.incompleteCoverageIsAmber`    | true                                                                         | Coverage that is not green makes Security risk amber.                                                                  |
+| `coverage.greenThresholdPercent`        | 100                                                                          | Coverage is green at or above this percentage.                                                                         |
+| `quality.greenThresholdPercent`         | 80                                                                           | Line coverage is green at or above this percentage.                                                                    |
+| `quality.amberThresholdPercent`         | 60                                                                           | Amber at or above this percentage, red below.                                                                          |
+| `quality.missingReportIsAmber`          | true                                                                         | An applicable component without a visible report caps Quality at amber (a red stays red).                              |
+| `version.componentDrift`                | amber                                                                        | Declared version differs from the latest release.                                                                      |
+| `version.environmentBehind`             | amber                                                                        | Environment behind, or mismatched with, the coordinator version.                                                       |
+| `version.unresolvableSubmodule`         | red                                                                          | A configured submodule cannot be resolved.                                                                             |
+| `version.unknownManifestComponent`      | red                                                                          | The manifest references an unknown component.                                                                          |
+| `version.unmappedSubmodule`             | amber                                                                        | A submodule not mapped to any component.                                                                               |
+| `version.untaggedSubmodule`             | amber                                                                        | The coordinator pins a SHA that is not a release tag of the component.                                                 |
+| `version.manifestSubmoduleMismatch`     | amber                                                                        | The manifest declares a version different from the one pinned by the submodule.                                        |
+| `governance.*`                          | amber                                                                        | Missing standard workflow, archived repository, missing or invalid status file, default branch mismatch.               |
+| `overall.criticalDimensions`            | [delivery, version, security]                                                | A red here makes the project red. A red elsewhere counts as amber.                                                     |
+| `overall.requiredDimensions`            | [delivery, version, security, coverage, governance]                          | All must be green for Overall to be green.                                                                             |
+| `overall.optionalDimensions`            | [quality]                                                                    | Counted like a required non-critical dimension when measured, ignored when grey. A dimension cannot be in both lists.  |
+| `overall.greyRequiredDimension`         | grey                                                                         | Effect of an Unknown required dimension (grey or amber).                                                               |
+| `score.weights`                         | delivery 25, version 15, security 30, coverage 15, governance 15, quality 10 | Weight of each dimension in the project score. See [Project score](#project-score).                                    |
+| `score.points`                          | green 100, amber 60, red 20                                                  | Points of a measured dimension by status. Grey is not measured, never 0.                                               |
+| `score.caps`                            | red 49, amber 89, grey 89                                                    | Highest score allowed for each overall status.                                                                         |
+| `score.minMeasuredRatio`                | 0.5                                                                          | Below this share of measured required dimensions the score is "insufficient data".                                     |
+| `publication.audience`                  | public                                                                       | `public` withholds finding titles and rule ids of non-public repositories. `restricted` needs access-controlled Pages. |
+| `publication.allowedLinkHosts`          | [github.com]                                                                 | Only links to these hosts are published.                                                                               |
 
 ### Project score
 
 The collector computes a score from 0 to 100 for each project, to rank and compare
-projects in today's snapshot. The site only shows it; it never replaces the five
+projects in today's snapshot. The site only shows it; it never replaces the
 dimensions. The optional `score` block in `config/policies.yaml` changes the formula
 (policies `schemaVersion` stays `1.0`).
 
 - **Points** per measured dimension: green 100, amber 60, red 20. Grey (not measured) is
   left out, never counted as 0.
-- **Weighted mean** over the measured required dimensions (`overall.requiredDimensions`).
-  Default weights: delivery 25, version 15, security 30, coverage 15, governance 15.
+- **Weighted mean** over the measured required dimensions (`overall.requiredDimensions`)
+  and the measured optional ones (`overall.optionalDimensions`). Default weights: delivery
+  25, version 15, security 30, coverage 15, governance 15, quality 10.
 - **Caps** keep the number consistent with the status: overall red → at most 49; overall
   amber → at most 89; overall grey (some required dimension unknown, none red or amber) →
   at most 89, so a partly unreadable project never ranks with healthy ones. A red project
@@ -337,14 +373,18 @@ dimensions. The optional `score` block in `config/policies.yaml` changes the for
   nothing to measure (delivery reason `no-critical-workflows`) leaves both `measured` and
   `required`. Grey for any other reason (not authorised, unknown, collection failed)
   counts as not measured.
-- **Confidence** is `measured / required` ("measured 4 of 5").
+- **Optional dimensions** (`quality` by default) count when measured. When grey they are
+  left out of both `measured` and `required`, so a project without a coverage report does
+  not lose points and does not turn grey.
+- **Confidence** is `measured / required` ("measured 4 of 5"; "measured 6 of 6" when
+  Quality is measured).
 - **Insufficient data**: when fewer than `minMeasuredRatio` (default half) of the required
   dimensions are measured, `value` is `null` and the site shows "insufficient data".
 - The result is rounded to an integer.
 
-Snapshot schema 1.3 publishes it as `score: { value, measured, required }` on each
-project snapshot and on each project of `index.json`. With the mock data: Platform 88,
-Project Alpha 76, Project Beta 38, Project Gamma insufficient data.
+Snapshot schema 1.4 publishes it as `score: { value, measured, required }` on each
+project snapshot and on each project of `index.json`. With the mock data: Platform 82,
+Project Alpha 78, Project Beta 40, Project Gamma insufficient data.
 
 ## Contracts read from monitored repositories
 
@@ -412,6 +452,71 @@ The following count as Unknown and add an `invalid-data` collection error: a mis
 (when pipeline controls are required, this also shows as governance amber), an invalid
 file, or a file whose `repository` does not match.
 `reportUrl` is published only for allow-listed hosts.
+
+### `hub-quality-summary` artifact (each repository, optional)
+
+CI uploads a GitHub Actions artifact named **`hub-quality-summary`** that contains one file,
+**`quality-summary.json`**, on every run on the default branch. The collector reads it with
+the same credentials as the rest (**Actions: read**); no new secret is needed. See
+[Operations](operations.md#publishing-the-quality-summary-from-ci) for an example step.
+
+```json
+{
+  "schemaVersion": "1.0",
+  "repository": "example-org/project-beta-api",
+  "ref": "refs/heads/main",
+  "commitSha": "<40-hex sha>",
+  "generatedAt": "2026-01-14T10:00:00Z",
+  "tool": "coverlet",
+  "format": "cobertura",
+  "lines": { "covered": 5998, "valid": 8400 }
+}
+```
+
+- The schema is strict (unknown keys are rejected). `format` is one of `cobertura`,
+  `lcov`, `opencover`, `jacoco`, `other`. `tool` is a short identifier (at most 40
+  characters) and is scrubbed. `lines.covered` must not exceed `lines.valid`.
+- `repository` must match the repository being read (case-insensitive), otherwise the
+  report is `invalid`.
+- `lines.valid: 0` means "no testable code": the component is not applicable, never 0%.
+- JSON Schema: [`config/schema/quality-summary.schema.json`](../config/schema/quality-summary.schema.json)
+  (generated by `npm run schema:generate`).
+
+How the collector reads it:
+
+- It lists the repository's artifacts by name (up to 3 pages of 30) and takes the newest
+  non-expired artifact whose run is on the default branch **and** comes from the same
+  repository (a fork pull request run is never trusted).
+- The zip is capped at 64 KB (65 536 bytes). Only the file `quality-summary.json` is read.
+- One summary per repository. When several components share a repository (a monorepo, or a
+  coordinator that is also a component repository), each row shows the same report
+  ("shared repository report") and the project coverage counts that repository once.
+
+| Outcome                                                                 | State                                              |
+| ----------------------------------------------------------------------- | -------------------------------------------------- |
+| No artifact (404)                                                       | `missing`                                          |
+| Only expired artifacts                                                  | `expired` (reason `quality-report-expired`)        |
+| 403 on the artifact list                                                | `not-authorised`, never `missing`                  |
+| Invalid JSON or schema, other repository, zip too large or without file | `invalid`, plus an `invalid-data` collection error |
+| Network error or other failure                                          | `unknown`                                          |
+| Valid, `generatedAt` older than `freshness.qualityReportStaleDays`      | `stale` (still counted, always shown with its age) |
+| Valid and fresh                                                         | `readable`                                         |
+
+Project coverage is the sum of `covered` over the sum of `valid` across the applicable
+repositories whose report is readable or stale (weighted by lines). Components without a
+visible report never count, and never count as 0%. Status: grey when nothing applies or
+nothing is visible; otherwise green at or above `quality.greenThresholdPercent`, amber at or
+above `quality.amberThresholdPercent`, red below. Any stale report, or any applicable
+component without a visible report when `quality.missingReportIsAmber` is true, caps a green
+at amber (a red stays red).
+
+**GitHub Code Quality findings** are informative: open findings are counted per repository
+(by category `reliability` / `maintainability` and by severity `error` / `warning` / `note` /
+`none`) from `GET /repos/{owner}/{repo}/code-quality/findings?state=open`, with
+`GET .../code-quality/setup` telling "not enabled" from "not visible". They never change the
+Quality status. Counts are published only when every repository with Code Quality set up was
+readable; otherwise the state is `not-authorised` or `unknown`, never 0. GitHub exposes no
+endpoint for the coverage percentage, which is why coverage comes from the CI summary.
 
 ## Environment variables
 
