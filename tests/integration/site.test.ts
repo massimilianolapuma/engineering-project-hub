@@ -68,7 +68,7 @@ describe('static site', () => {
 
   it('shows separate health dimensions on the portfolio, with text + shape, not colour only', async () => {
     const html = await page('');
-    for (const label of ['Delivery', 'Version', 'Security risk', 'Security coverage'])
+    for (const label of ['Delivery', 'Version', 'Security risk', 'Controls coverage', 'Quality'])
       expect(html).toContain(label);
     expect(html).toMatch(/badge badge--red[^>]*>[\s\S]*?<svg[\s\S]*?Critical/);
     expect(html).toContain('data-project');
@@ -93,7 +93,7 @@ describe('static site', () => {
     const bars = [
       ...html.matchAll(/class="dimbars__bar dimbars__bar--(\w+) dimbars__bar--h(\d)"[^>]*>/g),
     ];
-    expect(bars.length).toBe(4 * 5);
+    expect(bars.length).toBe(4 * 6);
     // Worse is taller: critical full height, attention 2/3, healthy 1/3; unknown full height,
     // dashed outline, no fill.
     const HEIGHT: Record<string, string> = { red: '3', amber: '2', green: '1', grey: '3' };
@@ -151,7 +151,7 @@ describe('static site', () => {
       'platform (monorepo)',
     ]);
     const beta = html.slice(html.indexOf('data-name="project beta"'));
-    expect(beta.slice(0, beta.indexOf('>'))).toContain('data-score="38"');
+    expect(beta.slice(0, beta.indexOf('>'))).toContain('data-score="40"');
     expect(html).toMatch(/<option value="score" selected/);
     // One-line legend under the list, linking to "How to read".
     expect(html).toMatch(/<a class="legend__link"[^>]*href="[^"]*how-to-read\/"/);
@@ -182,8 +182,8 @@ describe('static site', () => {
     it('shows the score with its confidence and explains why it is critical', async () => {
       const html = await page('projects/project-beta');
       const head = between(html, '<main', 'id="h-why"');
-      expect(head).toMatch(/class="score__value"[^>]*>38</);
-      expect(head).toContain('measured 5 of 5');
+      expect(head).toMatch(/class="score__value"[^>]*>40</);
+      expect(head).toContain('measured 6 of 6');
       expect(head).toMatch(/badge badge--red/);
       expect(html).toMatch(/<h2[^>]*id="h-why"[^>]*>Why it is Critical</);
       const why = between(html, 'id="h-why"', '</section>');
@@ -195,7 +195,7 @@ describe('static site', () => {
       expect(why.indexOf('data-level="red"')).toBeLessThan(why.indexOf('data-level="amber"'));
     });
 
-    it('links the five dimension cards to their sections', async () => {
+    it('links the six dimension cards to their sections', async () => {
       const html = await page('projects/project-beta');
       const cards = [...html.matchAll(/<a[^>]*\bhref="#([\w-]+)"[^>]*\bdata-dimension="(\w+)"/g)];
       expect(cards.map((m) => m[2])).toEqual([
@@ -204,6 +204,7 @@ describe('static site', () => {
         'security',
         'coverage',
         'governance',
+        'quality',
       ]);
       // Governance checks repository standards (standard workflows): not collection errors.
       expect(cards.map((m) => m[1])).toEqual([
@@ -212,8 +213,9 @@ describe('static site', () => {
         'security',
         'coverage',
         'workflows',
+        'quality',
       ]);
-      for (const id of ['workflows', 'environments', 'security', 'coverage'])
+      for (const id of ['workflows', 'environments', 'security', 'coverage', 'quality'])
         expect(html).toMatch(new RegExp(`\\bid="${id}"`));
     });
 
@@ -282,15 +284,27 @@ describe('static site', () => {
       expect(why.indexOf('data-why-cause')).toBeLessThan(why.indexOf('data-all-unknown'));
       const visible = why.slice(0, why.indexOf('data-why-more'));
       expect(visible.match(/class="why__item"/g)).toHaveLength(1);
-      expect(between(visible, 'data-all-unknown', '</li>')).toContain('All 5 dimensions unknown');
+      expect(between(visible, 'data-all-unknown', '</li>')).toContain('All 6 dimensions unknown');
       // The single reasons stay one click away, never silently dropped.
       expect(why).toMatch(
         /<details class="why__more disclosure"[^>]*>\s*<summary[^>]*>Show 7 more reasons</,
       );
       expect(why).toContain('Repository not accessible');
       const it = between(await page('it/projects/project-gamma'), 'id="h-why"', '</section>');
-      expect(it).toContain('Tutte le 5 dimensioni sconosciute');
+      expect(it).toContain('Tutte le 6 dimensioni sconosciute');
       expect(it).toContain('Mostra altri 7 motivi');
+    });
+
+    it('a grey Quality adds no quality reason to the why box', async () => {
+      const gamma = JSON.parse(
+        readFileSync('fixtures/snapshots/projects/project-gamma.json', 'utf8'),
+      ) as { qualityHealth: { status: string } };
+      expect(gamma.qualityHealth.status).toBe('grey');
+      const why = between(await page('projects/project-gamma'), 'id="h-why"', '</section>');
+      expect(why).not.toContain('Quality report');
+      expect(why).not.toContain('href="#quality"');
+      const it = between(await page('it/projects/project-gamma'), 'id="h-why"', '</section>');
+      expect(it).not.toContain('Report di qualità');
     });
 
     it('lists the reasons beyond the first five in a disclosure inside the why box', async () => {
@@ -388,8 +402,124 @@ describe('static site', () => {
     it('renders the Italian project page in Italian', async () => {
       const html = await page('it/projects/project-beta');
       expect(html).toContain('Perché è critico');
-      expect(html).toContain('misurato 5 di 5');
+      expect(html).toContain('misurato 6 di 6');
       expect(html).toContain('Ambienti');
+    });
+  });
+
+  describe('quality dimension', () => {
+    const between = (html: string, from: string, to: string) =>
+      html.slice(html.indexOf(from), html.indexOf(to, html.indexOf(from)));
+    const section = (html: string) => {
+      const start = html.search(/<section[^>]*\bid="quality"/);
+      expect(start, 'section#quality').toBeGreaterThan(-1);
+      return html.slice(start, html.indexOf('</section>', start));
+    };
+
+    it('project-beta page has #quality with its percentage and "Does not mean 0%."', async () => {
+      const html = await page('projects/project-beta');
+      const q = section(html);
+      expect(q).toMatch(/<h2[^>]*>Code quality</);
+      expect(textOf(q)).toMatch(/67(\.2)?%/);
+      expect(textOf(q)).toContain('Does not mean 0%.');
+      // The blind spot is named; the not-applicable chart reads "–", never 0%.
+      expect(between(q, 'data-quality-component="web"', '</tr>')).toContain('Not visible');
+      expect(between(q, 'data-quality-component="helm"', '</tr>')).toContain('–');
+      expect(between(q, 'data-quality-component="helm"', '</tr>')).not.toMatch(/\b0%/);
+      // Findings are informative counts from GitHub Code Quality, with no link to a page there.
+      expect(textOf(q)).toContain('1 reliability');
+      expect(textOf(q)).toContain('9 maintainability');
+      expect(q).not.toMatch(/href="[^"]*code-quality/);
+      // The card line on the dimension card.
+      expect(between(html, 'data-dimension="quality"', '</a>')).toContain(
+        'Tests: 67.2% of lines · threshold 80%',
+      );
+      const it = section(await page('it/projects/project-beta'));
+      expect(it).toMatch(/<h2[^>]*>Qualità del codice</);
+      expect(textOf(it)).toContain('67,2%');
+      expect(textOf(it)).toContain('Non significa 0%.');
+    });
+
+    it('never shows an unmeasured project as 0% or "0 of 0 lines"', async () => {
+      const q = section(await page('projects/project-gamma'));
+      // "Does not mean 0%." and "never 0%" are the only 0% allowed.
+      const text = textOf(q).replace(/(does not mean|never) 0%/gi, '');
+      expect(text).not.toMatch(/(^|[^\d,.])0(\.0)?%/);
+      expect(text).not.toMatch(/\b0 of 0\b/);
+      expect(q).toMatch(
+        /class="[^"]*\bqsym\b[^"]*"[^>]*role="img"[^>]*aria-label="[^"]+"[^>]*>\s*\?/,
+      );
+      expect(q).toMatch(/class="meter meter--unknown"/);
+    });
+
+    it('marks a stale shared report with its age and the shared-report note', async () => {
+      const q = section(await page('projects/platform'));
+      expect(textOf(q)).toContain('Shared repository report');
+      expect(q).toContain('⧖');
+      expect(q).toContain('href="https://github.com/example-org/platform-mono/actions/runs/9501"');
+    });
+
+    it('label "Controls coverage" present and "Security coverage" absent on EN pages; "Copertura controlli" on IT', async () => {
+      for (const v of ['', 'security', 'how-to-read', 'projects/project-beta']) {
+        const html = await page(v);
+        expect(html, v).toContain('Controls coverage');
+        expect(html, v).not.toMatch(/security coverage/i);
+        const it = await page(`it/${v}`.replace(/\/$/, ''));
+        expect(it, v).toContain('Copertura controlli');
+        expect(it, v).not.toMatch(/copertura (di )?sicurezza/i);
+      }
+    });
+
+    it('portfolio row has six dimension bars', async () => {
+      const html = await page('');
+      for (const row of html.match(/<tr[^>]*data-project[\s\S]*?<\/tr>/g) ?? []) {
+        const dims = [...row.matchAll(/class="dimbars__bar [^"]*"[^>]*data-dimension="(\w+)"/g)];
+        expect(dims.map((m) => m[1])).toEqual([
+          'delivery',
+          'version',
+          'security',
+          'coverage',
+          'governance',
+          'quality',
+        ]);
+      }
+      expect(html).toMatch(/<abbr class="dimbars__label" title="Quality"/);
+    });
+
+    it('data-quality lists project-beta web as missing report', async () => {
+      const html = await page('data-quality');
+      const reports = html.slice(html.indexOf('id="h-quality-reports"'));
+      expect(reports.indexOf('id="h-quality-reports"')).toBe(0);
+      const row = between(reports, 'data-quality-report="project-beta:web"', '</li>');
+      expect(row).toContain('Project Beta');
+      expect(row).toContain('web');
+      expect(row).toContain('Missing');
+      expect(reports).toContain('data-quality-report="project-gamma:service"');
+      // Readable and not-applicable reports are not listed.
+      expect(reports).not.toContain('data-quality-report="project-beta:api"');
+      expect(reports).not.toContain('data-quality-report="project-beta:helm"');
+      expect(await page('it/data-quality')).toContain('Report di copertura non visibili');
+    });
+
+    it('percentages render with the number next to every meter', async () => {
+      for (const v of [
+        'projects/project-alpha',
+        'projects/project-beta',
+        'projects/platform',
+        'projects/project-gamma',
+        'it/projects/project-beta',
+      ]) {
+        const html = await page(v);
+        const parts = html.split(/<span class="meter[ "]/);
+        expect(parts.length, v).toBeGreaterThan(1);
+        for (const before of parts.slice(0, -1)) {
+          // The value (a percentage, or the "?" symbol) sits right before the meter.
+          expect(before.slice(-400), v).toMatch(
+            /class="qcov__value[^"]*"[^>]*>(?:\s*<[^>]+>)*\s*(\d+(?:[.,]\d)?%|\?)/,
+          );
+        }
+        expect(html, v).toMatch(/<span class="meter[^"]*"[^>]*aria-hidden="true"/);
+      }
     });
   });
 
@@ -495,7 +625,7 @@ describe('static site', () => {
       const start = html.lastIndexOf('<article', html.indexOf(`data-project="${id}"`));
       return html.slice(start, html.indexOf('</article>', start));
     };
-    expect(card('project-beta')).toContain('Coverage: 2 of 4 required');
+    expect(card('project-beta')).toContain('Controls coverage: 2 of 4 required');
     expect(card('project-beta')).toContain('Not authorised (403)');
     expect(card('project-beta')).toMatch(/data-state="stale"[\s\S]*?⧖[\s\S]*?Container scanning/);
     // Health is the shared status badge (health shape), alert severity the severity pill
@@ -519,7 +649,7 @@ describe('static site', () => {
       /<details(?![^>]*\bopen\b)[^>]*>\s*<summary[^>]*>[\s\S]*?Coverage by repository and control[\s\S]*?<table/,
     );
     const it = await page('it/security');
-    expect(it).toContain('Copertura: 2 di 4 richiesti');
+    expect(it).toContain('Copertura controlli: 2 di 4 richiesti');
     expect(it).toContain('Non significa zero alert.');
   });
 
@@ -773,12 +903,15 @@ describe('static site', () => {
       security: 30,
       coverage: 15,
       governance: 15,
+      quality: 10,
     });
     expect(caps).toEqual({ red: 49, amber: 89, grey: 89 });
     expect(minMeasuredRatio).toBe(0.5);
     const cell = (attr: string, value: number | string) =>
       expect(html).toMatch(new RegExp(`${attr}[^>]*>\\s*${value}\\s*<`));
     for (const [dim, w] of Object.entries(weights)) cell(`data-weight="${dim}"`, w);
+    // Quality is optional: its row says it counts only when measured.
+    expect(html).toContain(esc(h.optional));
     for (const [st, p] of Object.entries(points)) cell(`data-points="${st}"`, p);
     for (const [st, c] of Object.entries(caps)) cell(`data-cap="${st}"`, c);
     cell('data-min-measured', `${minMeasuredRatio * 100}%`);
@@ -809,7 +942,7 @@ describe('static site', () => {
     const idx = join(data, 'index.json');
     await writeFile(
       idx,
-      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.3"', '"schemaVersion": "9.0"'),
+      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.4"', '"schemaVersion": "9.0"'),
     );
     const out = join(work, 'dist-bad');
     await buildSite(data, out);

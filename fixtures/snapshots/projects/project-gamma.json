@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.4",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-gamma",
@@ -398,6 +398,63 @@
         }
       }
     ]
+  },
+  "qualityHealth": {
+    "status": "grey",
+    "reasons": [
+      {
+        "code": "quality-report-unknown",
+        "level": "info",
+        "params": {
+          "components": "coordinator, service"
+        }
+      }
+    ],
+    "percentage": null,
+    "linesCovered": 0,
+    "linesValid": 0,
+    "measured": 0,
+    "applicable": 2,
+    "notVisible": 2,
+    "stale": 0,
+    "collectedAt": "2026-01-15T12:00:00.000Z",
+    "perComponent": [
+      {
+        "componentId": "coordinator",
+        "state": "unknown",
+        "sharedRepository": false,
+        "percentage": null,
+        "linesCovered": null,
+        "linesValid": null,
+        "commitSha": null,
+        "generatedAt": null,
+        "tool": null,
+        "runUrl": null
+      },
+      {
+        "componentId": "service",
+        "state": "unknown",
+        "sharedRepository": false,
+        "percentage": null,
+        "linesCovered": null,
+        "linesValid": null,
+        "commitSha": null,
+        "generatedAt": null,
+        "tool": null,
+        "runUrl": null
+      }
+    ],
+    "findings": {
+      "state": "not-authorised",
+      "reliability": null,
+      "maintainability": null,
+      "bySeverity": {
+        "error": null,
+        "warning": null,
+        "note": null,
+        "none": null
+      }
+    }
   },
   "overallHealth": {
     "status": "grey",

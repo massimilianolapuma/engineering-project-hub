@@ -455,6 +455,11 @@ export function evaluateGovernance(
 // Overall
 // ---------------------------------------------------------------------------------------------
 
+/**
+ * Overall status. A red critical dimension is red, any other red or amber is amber, a grey
+ * required dimension is grey (or amber, by policy). An optional dimension (quality) counts like
+ * a required non-critical one when measured and is ignored when grey.
+ */
 export function evaluateOverall(
   dimensions: Record<Dimension, HealthStatus>,
   policies: Policies,
@@ -480,7 +485,10 @@ export function evaluateOverall(
   }
   const status = statusFrom(reasons);
   if (status === 'green') {
-    const allRequiredGreen = o.requiredDimensions.every((d) => dimensions[d] === 'green');
+    const measuredOptional = o.optionalDimensions.filter((d) => dimensions[d] !== 'grey');
+    const allRequiredGreen = [...o.requiredDimensions, ...measuredOptional].every(
+      (d) => dimensions[d] === 'green',
+    );
     if (!allRequiredGreen) return { status: 'grey', reasons };
     reasons.push(reason('all-dimensions-green', 'info'));
   }

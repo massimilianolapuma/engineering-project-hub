@@ -60,5 +60,23 @@
       "httpStatus": 403,
       "message": "Resource not accessible by integration"
     }
-  }
+  },
+  "qualitySummary": {
+    "summary": {
+      "schemaVersion": "1.0",
+      "repository": "example-org/project-beta-coordinator",
+      "ref": "refs/heads/main",
+      "commitSha": "971a7f034dadeeaea0d6daacfc265dd40cde39e8",
+      "generatedAt": "@now-2d",
+      "tool": "coverlet",
+      "format": "cobertura",
+      "lines": { "covered": 456, "valid": 1200 }
+    },
+    "createdAt": "@now-2d",
+    "runId": 9011
+  },
+  "codeQualityFindings": [
+    { "category": "maintainability", "severity": "warning" },
+    { "category": "maintainability", "severity": "note" }
+  ]
 }

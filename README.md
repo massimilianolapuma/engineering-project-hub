@@ -4,7 +4,8 @@
 
 A **static, GitHub-native portal** that shows software projects made of many GitHub
 repositories as **one logical unit**: delivery status, versions and drift, releases,
-environments, security alerts, security coverage, governance and data quality.
+environments, security alerts, security controls coverage, governance, test coverage
+(quality) and data quality.
 
 It runs entirely on GitHub: a TypeScript **collector** runs in GitHub Actions, reads the
 GitHub API with read-only credentials, writes **sanitised JSON snapshots**, and an
@@ -65,16 +66,16 @@ mode, with keyboard navigation. Each page opens with one sentence that says what
 then the list sorted worst first, and keeps the detail one click away. A one-line legend
 under each status list links to the **How to read** page.
 
-| View               | Path              | Content                                                                                                                                                                                                                                                                                                                                                                       |
-| ------------------ | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Portfolio**      | `/`               | One sentence ("3 of 4 projects need attention") and status counts that act as filters. A compact list, worst first: status dot, project, score with confidence ("measured 4 of 5"), five dimension bars (Delivery, Versions, Security, Coverage, Governance) and the main reason. Search, status, business unit and sort inline; lifecycle and severity under "More filters". |
-| **Project detail** | `/projects/<id>/` | Header with status, score and confidence; "Why it is critical / needs attention" in sentences, red reasons first; five dimension cards; environments as a DEV → UAT → PROD path; components table (version and drift, CI, alerts, coverage symbols); collapsible Workflows, Security (critical and high alerts listed), Coverage and Collection errors.                       |
-| **Security**       | `/security/`      | A summary sentence, portfolio severity totals (marked incomplete when a project is partly unreadable) and one card per project, worst first: coverage of required controls, severity counts, blind spots named as chips, control symbols and links to GitHub. The coverage matrix is a secondary, collapsed section.                                                          |
-| **Versions**       | `/versions/`      | A summary sentence and one card per project, worst first: coordinator version and its source, environments path, and a "To check" table with only the problems (manifest vs submodule vs latest release, unmapped submodules), each explained in a sentence; aligned components collapse into one line.                                                                       |
-| **Workflows**      | `/workflows/`     | Catalog-critical workflows only. Per project, worst first, the rows that need attention (failed, missing, stale, not visible) with workflow, repository, what happened and a link to the run; successful runs collapse into a count. The portal reads runs, it never triggers them.                                                                                           |
-| **Data quality**   | `/data-quality/`  | Repository counts (in catalog, fully read, partly read, unreadable), what could not be read grouped by cause (403, 404) with how to fix it, stale sources with their age, unmapped submodules, collection capabilities and run details.                                                                                                                                       |
-| **Catalog**        | `/catalog/`       | Catalog editor: projects, discovered repositories, a form for general data, project type, components, environments, workflows and security controls, and a proposal box that validates the change and proposes it as a pull request on GitHub (or downloads the YAML). Nothing is saved by the site.                                                                          |
-| **How to read**    | `/how-to-read/`   | What each state means, the six control symbols, unknown vs not authorised vs not configured vs not applicable, the score formula with its caps, and the thresholds from `policies.yaml`.                                                                                                                                                                                      |
+| View               | Path              | Content                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------ | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Portfolio**      | `/`               | One sentence ("3 of 4 projects need attention") and status counts that act as filters. A compact list, worst first: status dot, project, score with confidence ("measured 4 of 5"), six dimension bars (Delivery, Versions, Security, Controls, Governance, Quality) and the main reason. Search, status, business unit and sort inline; lifecycle and severity under "More filters".                                                                                                                                                                      |
+| **Project detail** | `/projects/<id>/` | Header with status, score and confidence; "Why it is critical / needs attention" in sentences, red reasons first; six dimension cards (the Quality card shows test coverage against its threshold); environments as a DEV → UAT → PROD path; components table (version and drift, CI, alerts, coverage symbols); collapsible Workflows, Security (critical and high alerts listed), Controls coverage, Code quality (aggregated line coverage with a threshold meter, open Code Quality findings, blind spots, per-component table) and Collection errors. |
+| **Security**       | `/security/`      | A summary sentence, portfolio severity totals (marked incomplete when a project is partly unreadable) and one card per project, worst first: coverage of required controls, severity counts, blind spots named as chips, control symbols and links to GitHub. The coverage matrix is a secondary, collapsed section.                                                                                                                                                                                                                                       |
+| **Versions**       | `/versions/`      | A summary sentence and one card per project, worst first: coordinator version and its source, environments path, and a "To check" table with only the problems (manifest vs submodule vs latest release, unmapped submodules), each explained in a sentence; aligned components collapse into one line.                                                                                                                                                                                                                                                    |
+| **Workflows**      | `/workflows/`     | Catalog-critical workflows only. Per project, worst first, the rows that need attention (failed, missing, stale, not visible) with workflow, repository, what happened and a link to the run; successful runs collapse into a count. The portal reads runs, it never triggers them.                                                                                                                                                                                                                                                                        |
+| **Data quality**   | `/data-quality/`  | Repository counts (in catalog, fully read, partly read, unreadable), what could not be read grouped by cause (403, 404) with how to fix it, stale sources with their age, test coverage reports that are not visible (missing, expired, invalid, not authorised or unknown), unmapped submodules, collection capabilities and run details.                                                                                                                                                                                                                 |
+| **Catalog**        | `/catalog/`       | Catalog editor: projects, discovered repositories, a form for general data, project type, components, environments, workflows and security controls, and a proposal box that validates the change and proposes it as a pull request on GitHub (or downloads the YAML). Nothing is saved by the site.                                                                                                                                                                                                                                                       |
+| **How to read**    | `/how-to-read/`   | What each state means, the six control symbols, unknown vs not authorised vs not configured vs not applicable, the score formula with its caps, and the thresholds from `policies.yaml`.                                                                                                                                                                                                                                                                                                                                                                   |
 
 Statuses: 🔴 **Critical**, 🟠 **Attention**, 🟢 **Healthy** and ⬜ **Unknown**. Each one is
 shown with a colour, a distinct shape, text and an accessible description; Unknown is drawn
@@ -83,6 +84,13 @@ The site also uses the labels "Not configured", "Not authorised", "Not applicabl
 open alerts" (only shown when collection succeeded) and "Collection failed". Control
 symbols: ✓ enabled · ! required but not configured · ⧖ stale scan · ✕ failed · ? not
 visible · – not required.
+
+**Quality** is test coverage: each repository's CI publishes a small summary as the
+`hub-quality-summary` artifact and the collector reads it with the permissions it already
+has (see [Configuration](docs/configuration.md#hub-quality-summary-artifact-each-repository-optional)
+and [ADR 0005](docs/architecture/adr/0005-test-coverage-from-ci-summary-artifact.md)). A
+component without a readable report is "not visible", never 0%. The older Coverage dimension
+(share of required security controls enabled) is now labelled "Controls coverage".
 
 The **score** (0–100) is computed by the collector from the measured dimensions (weights
 and points in `config/policies.yaml`) and capped by the status, so a critical project
@@ -228,17 +236,18 @@ JSON Schemas for editors and consumers are in `config/schema/`, generated with
 
 Create a GitHub App owned by the organisation and **install it only on the monitored
 repositories**. Give it these **read-only** repository permissions. Names were checked
-against the GitHub documentation on 2026-10-03.
+against the GitHub documentation on 2026-10-03; the Code quality row on 2026-10-21.
 
-| Permission (UI)        | API key                  | Used for                                                                                               |
-| ---------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------ |
-| Metadata               | `metadata`               | repository metadata, tags (mandatory, read-only)                                                       |
-| Contents               | `contents`               | branch head, releases, `.gitmodules`, manifest, status file, commit compare (submodule SHA vs release) |
-| Actions                | `actions`                | workflow runs and jobs (also lists environments, if used)                                              |
-| Code scanning alerts   | `security_events`        | code scanning alerts and analyses                                                                      |
-| Dependabot alerts      | `vulnerability_alerts`   | Dependabot alerts                                                                                      |
-| Secret scanning alerts | `secret_scanning_alerts` | secret scanning alerts (fetched with `hide_secret=true`)                                               |
-| Deployments            | `deployments`            | _not used by the MVP_ (roadmap)                                                                        |
+| Permission (UI)        | API key                  | Used for                                                                                                        |
+| ---------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| Metadata               | `metadata`               | repository metadata, tags (mandatory, read-only)                                                                |
+| Contents               | `contents`               | branch head, releases, `.gitmodules`, manifest, status file, commit compare (submodule SHA vs release)          |
+| Actions                | `actions`                | workflow runs and jobs (also lists environments, if used); the `hub-quality-summary` artifact                   |
+| Code scanning alerts   | `security_events`        | code scanning alerts and analyses                                                                               |
+| Dependabot alerts      | `vulnerability_alerts`   | Dependabot alerts                                                                                               |
+| Secret scanning alerts | `secret_scanning_alerts` | secret scanning alerts (fetched with `hide_secret=true`)                                                        |
+| Code quality (read)    | not documented           | GitHub Code Quality open findings (counts only); optional, see [Security](docs/security.md#authorisation-model) |
+| Deployments            | `deployments`            | _not used by the MVP_ (roadmap)                                                                                 |
 
 Do not grant any write permission, or Environments, Pages or organisation permissions.
 Then add these repository **Actions secrets** to this repository: `GH_APP_ID`,

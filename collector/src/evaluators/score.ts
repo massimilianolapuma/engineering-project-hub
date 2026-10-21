@@ -25,7 +25,8 @@ function isNotApplicable(result: HealthResult): boolean {
  * Project score (0–100) for ranking and comparing projects in one snapshot.
  *
  * - Weighted mean of the points of the measured required dimensions (grey is excluded,
- *   never counted as 0).
+ *   never counted as 0). A measured optional dimension counts as required; a grey one is left
+ *   out of both counts.
  * - Capped by the overall status so the number agrees with it (red ≤ 49, amber/grey ≤ 89 by
  *   default); a green project is therefore the only one that can reach 100.
  * - null ("insufficient data") when fewer than `minMeasuredRatio` of the required dimensions
@@ -37,7 +38,10 @@ export function evaluateScore(
   policies: Policies,
 ): ProjectScore {
   const { weights, points, caps, minMeasuredRatio } = policies.score;
-  const required = [...new Set(policies.overall.requiredDimensions)].filter(
+  const { requiredDimensions, optionalDimensions } = policies.overall;
+  // Optional dimensions (quality) count only when measured: grey leaves both counts.
+  const measuredOptional = optionalDimensions.filter((d) => dimensions[d].status !== 'grey');
+  const required = [...new Set([...requiredDimensions, ...measuredOptional])].filter(
     (d) => !isNotApplicable(dimensions[d]),
   );
   const measured = required.filter((d) => dimensions[d].status !== 'grey');

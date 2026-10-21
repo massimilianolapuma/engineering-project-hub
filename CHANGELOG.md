@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Quality dimension (test coverage): each repository's CI publishes a `hub-quality-summary` artifact (`quality-summary.json`, strict contract `1.0`, zip ≤ 64 KB, JSON Schema in `config/schema/quality-summary.schema.json`); the collector reads the newest default-branch, same-repository run with the existing Actions: read permission. Project coverage is line-weighted over readable or stale reports, each repository counted once; a component without a readable report is "not visible", never 0%, and `lines.valid: 0` is not applicable. New `quality` policies (green 80, amber 60, `missingReportIsAmber`), `freshness.qualityReportStaleDays` (14), catalog `testCoverage: required | not-applicable`, score weight 10, and `overall.optionalDimensions` (default `[quality]`: ignored when grey, so projects stay stable until CI publishes reports). Quality card, "Code quality" section and sixth portfolio bar with a threshold meter (EN/IT).
+- GitHub Code Quality open-findings counts by category and severity (informative, never change the Quality status), with the `codeQuality` capability; a 403 is "not authorised", an ambiguous 404 is "unknown", and more than 300 findings in a repository is "unknown" rather than an under-count. The Code Quality setup endpoint is not called (it needs Administration: write).
+- Data quality lists missing, expired, invalid, not authorised and unknown coverage reports; EN/IT docs for the contract, permissions and a CI example step; ADR 0005.
+
+### Changed
+
+- Snapshot `schemaVersion` 1.4: `qualityHealth`, the `quality` dimension on project snapshots and portfolio summaries, the `codeQuality` capability and the `quality-report` stale source. Older snapshots are not read.
+- Upgrade note (snapshot 1.4): an existing 1.3 `public/data` fails validation until it is re-collected; `npm run ci:build` overwrites `public/data` with mock data.
+- The existing Coverage dimension is labelled "Controls coverage" / "Copertura controlli" (share of required security controls enabled) so it no longer collides with test coverage; its id and policies are unchanged.
+
 ## [0.5.0] - 2026-10-20
 
 ### Added

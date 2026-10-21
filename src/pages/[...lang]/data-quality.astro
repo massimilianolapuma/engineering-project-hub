@@ -5,6 +5,7 @@ import {
   type Availability,
   type CollectionError,
   type ErrorClassification,
+  type QualityReportState,
 } from '@model/index';
 import ErrorState from '../../components/ErrorState.astro';
 import ErrorsTable from '../../components/ErrorsTable.astro';
@@ -113,6 +114,37 @@ const submodules = projects.flatMap((p) =>
   p.coordinator.submodules
     .filter((m) => m.association === 'unmapped' || m.status !== 'resolved')
     .map((m) => ({ project: p.project, ...m })),
+);
+/* Test coverage reports we cannot see: listed, never counted as 0%. Readable, stale and
+   not-applicable reports are not data-quality issues. */
+type HiddenReport = Exclude<QualityReportState, 'readable' | 'stale' | 'not-applicable'>;
+const HIDDEN: readonly HiddenReport[] = [
+  'missing',
+  'expired',
+  'invalid',
+  'not-authorised',
+  'unknown',
+];
+const isHidden = (state: QualityReportState): state is HiddenReport =>
+  (HIDDEN as readonly string[]).includes(state);
+const reportTone = (state: HiddenReport): Tone =>
+  state === 'not-authorised' || state === 'unknown' ? 'grey' : 'amber';
+const qualityReports = projects.flatMap((p) =>
+  p.qualityHealth.perComponent.flatMap((c) =>
+    isHidden(c.state)
+      ? [
+          {
+            project: p.project,
+            componentId: c.componentId,
+            name:
+              c.componentId === 'coordinator'
+                ? d.common.coordinator
+                : (p.components.find((x) => x.id === c.componentId)?.name ?? c.componentId),
+            state: c.state,
+          },
+        ]
+      : [],
+  ),
 );
 const [beforeFile, afterFile] = q.unmappedSentence.split('{file}');
 const [beforeDate, afterDate] = q.lastUpdate.split('{date}');
@@ -296,6 +328,40 @@ const lead = [
                     </>
                   )}
                 </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section class="card dq-card" aria-labelledby="h-quality-reports">
+        <h2 id="h-quality-reports">{q.qualityReports}</h2>
+        <p class="muted">{q.qualityReportsIntro}</p>
+        {qualityReports.length === 0 ? (
+          <p class="muted">{q.noQualityReports}</p>
+        ) : (
+          <ul class="dq-rows">
+            {qualityReports.map((r) => (
+              <li
+                class="dq-row"
+                id={anchor(r.project.id)}
+                data-quality-report={`${r.project.id}:${r.componentId}`}
+              >
+                <span>
+                  <a
+                    class="dq-project"
+                    href={`${href(locale, `projects/${r.project.id}`)}#quality`}
+                  >
+                    {r.project.name}
+                  </a>{' '}
+                  · {r.name}
+                </span>
+                <span class="dq-status">
+                  <span class="status-col">
+                    <Pill tone={reportTone(r.state)} label={q.qualityReportState[r.state]} />
+                  </span>
+                </span>
+                <span class="muted">{q.qualityReportFix[r.state]}</span>
               </li>
             ))}
           </ul>

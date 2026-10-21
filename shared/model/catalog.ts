@@ -24,6 +24,10 @@ const relativePath = z
   .max(255)
   .refine((p) => !p.startsWith('/') && !p.split('/').includes('..'), 'must be a relative path');
 
+/** Overrides whether test coverage applies (default by component type, see quality normaliser). */
+export const TestCoverageSchema = z.enum(['required', 'not-applicable']);
+export type TestCoverage = z.infer<typeof TestCoverageSchema>;
+
 const ControlRequirementSchema = z.object({ required: z.boolean() }).strict();
 
 export const SecurityControlsConfigSchema = z
@@ -48,6 +52,8 @@ export const CoordinatorConfigSchema = z
     manifestPath: relativePath.default('release-manifest.yaml'),
     /** Controls that make no sense for the coordinator (e.g. container scanning). */
     notApplicableControls: z.array(ControlIdSchema).default([]),
+    /** Test coverage applies to the coordinator like a service unless overridden. */
+    testCoverage: TestCoverageSchema.optional(),
   })
   .strict();
 
@@ -77,6 +83,8 @@ export const ComponentConfigSchema = z
      * - release: the component's latest release
      */
     versionSource: VersionSourceSchema.default('auto'),
+    /** Overrides the default applicability of test coverage for this component type. */
+    testCoverage: TestCoverageSchema.optional(),
   })
   .strict();
 export type ComponentConfig = z.infer<typeof ComponentConfigSchema>;

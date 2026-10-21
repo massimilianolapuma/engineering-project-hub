@@ -4,17 +4,18 @@
 
 ## Threat model (sintesi)
 
-| #   | Minaccia                                                                                        | Mitigazione                                                                                                                                                                                                                                                                                                                                                                                         |
-| --- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T1  | Una credenziale (token, chiave privata della App) finisce nel sito statico                      | I secret esistono solo nel job `collect`. I job build e deploy non ne hanno. Il gate delle credenziali viene eseguito sugli snapshot, e `scan-output` analizza `dist/` e `public/data/` alla ricerca dei pattern e dei valori esatti delle credenziali d'ambiente. Il logging di Octokit è disabilitato.                                                                                            |
-| T2  | Viene pubblicato il valore o la posizione di un alert di secret scanning                        | Gli alert sono richiesti con `hide_secret=true`. Il DTO non ha campi per valore, posizione, file o commit. Viene conservato solo il nome del _tipo_ di secret.                                                                                                                                                                                                                                      |
-| T3  | Vengono pubblicati un payload API grezzo, uno stack trace, un header o una variabile d'ambiente | Allowlist: proiezione sul DTO, poi schemi Zod strict che rifiutano le chiavi sconosciute. I messaggi di errore sono classificati e ripuliti (header, stack frame, query string e codice rimossi).                                                                                                                                                                                                   |
-| T4  | Dettagli di repository privati trapelano tramite una Page pubblica                              | `publication.audience: public` (predefinito) omette titoli e rule id dei finding nei repository non pubblici. Vedi più avanti le indicazioni sulle Pages private.                                                                                                                                                                                                                                   |
-| T5  | Dati malevoli nei repository monitorati (titoli di alert, tag, URL, manifest costruiti ad arte) | Il testo viene ripulito e troncato. I link devono essere `https` su host in allowlist (`github.com`), senza credenziali, query o fragment. I file di contratto sono validati con Zod. Astro effettua l'escape dell'HTML. La CSP blocca gli script inline e di terze parti.                                                                                                                          |
-| T6  | "Zero alert" interpretato come "sicuro"                                                         | La copertura è una dimensione separata. Unknown (Sconosciuto) non è mai 0. 403 significa Not authorised (Non autorizzato) e un 404 ambiguo significa Unknown (Sconosciuto). La sicurezza non è mai verde se la copertura non è completa.                                                                                                                                                            |
-| T7  | Credenziali con privilegi eccessivi                                                             | GitHub App con permessi in sola lettura, installata solo sui repository monitorati. Nessuno scope di scrittura in alcun punto del collector.                                                                                                                                                                                                                                                        |
-| T8  | Supply chain (action, npm)                                                                      | Le action sono fissate a SHA completi. Dependabot copre npm e le action. zizmor e Trivy vengono eseguiti in CI. `npm ci` usa il lockfile. I font sono self-hosted, senza CDN. Ogni deploy pubblica una SBOM CycloneDX (`/sbom.cdx.json`) e attestazioni firmate di provenienza e SBOM del bundle esatto (`gh attestation verify site.tar -R <owner>/<repo>`, bundle nell'artifact `site-attested`). |
-| T9  | Il portale viene usato per modificare qualcosa                                                  | Il collector esegue solo richieste GET. Non chiude alert, non avvia workflow e non scrive sui repository.                                                                                                                                                                                                                                                                                           |
+| #   | Minaccia                                                                                        | Mitigazione                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| --- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T1  | Una credenziale (token, chiave privata della App) finisce nel sito statico                      | I secret esistono solo nel job `collect`. I job build e deploy non ne hanno. Il gate delle credenziali viene eseguito sugli snapshot, e `scan-output` analizza `dist/` e `public/data/` alla ricerca dei pattern e dei valori esatti delle credenziali d'ambiente. Il logging di Octokit è disabilitato.                                                                                                                                     |
+| T2  | Viene pubblicato il valore o la posizione di un alert di secret scanning                        | Gli alert sono richiesti con `hide_secret=true`. Il DTO non ha campi per valore, posizione, file o commit. Viene conservato solo il nome del _tipo_ di secret.                                                                                                                                                                                                                                                                               |
+| T3  | Vengono pubblicati un payload API grezzo, uno stack trace, un header o una variabile d'ambiente | Allowlist: proiezione sul DTO, poi schemi Zod strict che rifiutano le chiavi sconosciute. I messaggi di errore sono classificati e ripuliti (header, stack frame, query string e codice rimossi).                                                                                                                                                                                                                                            |
+| T4  | Dettagli di repository privati trapelano tramite una Page pubblica                              | `publication.audience: public` (predefinito) omette titoli e rule id dei finding nei repository non pubblici. Vedi più avanti le indicazioni sulle Pages private.                                                                                                                                                                                                                                                                            |
+| T5  | Dati malevoli nei repository monitorati (titoli di alert, tag, URL, manifest costruiti ad arte) | Il testo viene ripulito e troncato. I link devono essere `https` su host in allowlist (`github.com`), senza credenziali, query o fragment. I file di contratto sono validati con Zod. Astro effettua l'escape dell'HTML. La CSP blocca gli script inline e di terze parti.                                                                                                                                                                   |
+| T6  | "Zero alert" interpretato come "sicuro"                                                         | La copertura è una dimensione separata. Unknown (Sconosciuto) non è mai 0. 403 significa Not authorised (Non autorizzato) e un 404 ambiguo significa Unknown (Sconosciuto). La sicurezza non è mai verde se la copertura non è completa.                                                                                                                                                                                                     |
+| T7  | Credenziali con privilegi eccessivi                                                             | GitHub App con permessi in sola lettura, installata solo sui repository monitorati. Nessuno scope di scrittura in alcun punto del collector.                                                                                                                                                                                                                                                                                                 |
+| T8  | Supply chain (action, npm)                                                                      | Le action sono fissate a SHA completi. Dependabot copre npm e le action. zizmor e Trivy vengono eseguiti in CI. `npm ci` usa il lockfile. I font sono self-hosted, senza CDN. Ogni deploy pubblica una SBOM CycloneDX (`/sbom.cdx.json`) e attestazioni firmate di provenienza e SBOM del bundle esatto (`gh attestation verify site.tar -R <owner>/<repo>`, bundle nell'artifact `site-attested`).                                          |
+| T9  | Il portale viene usato per modificare qualcosa                                                  | Il collector esegue solo richieste GET. Non chiude alert, non avvia workflow e non scrive sui repository.                                                                                                                                                                                                                                                                                                                                    |
+| T10 | Un riepilogo di qualità falsificato, enorme o fuorviante                                        | Vengono letti solo gli artifact di esecuzioni sul branch predefinito che provengono dallo stesso repository (l'esecuzione di una pull request da fork è ignorata). Lo zip è limitato a 64 KB e viene letto solo `quality-summary.json`. Il riepilogo è validato con uno schema strict e deve nominare il repository letto, altrimenti è `invalid` e nulla di esso viene pubblicato. Conteggi e percentuali sono ricalcolati solo da `lines`. |
 
 ## Dati pubblicati
 
@@ -30,6 +31,11 @@
   relativi report (solo host in allowlist).
 - Errori di raccolta classificati (repository, fonte, classe, stato HTTP, breve dettaglio
   ripulito).
+- Qualità: per repository, i conteggi di righe (`covered`, `valid`) e la percentuale
+  derivata, lo SHA del commit, la data del report (ISO), l'identificativo dello strumento
+  ripulito (al massimo 40 caratteri) e un link all'esecuzione di GitHub Actions (solo host in
+  allowlist). GitHub Code Quality: conteggi dei finding aperti per categoria e per severità.
+  Nient'altro.
 
 \* Omessi per i repository non pubblici quando `audience: public`.
 
@@ -39,6 +45,11 @@ Valori o frammenti di secret, path dei file e numeri di riga dei secret, contenu
 snippet di codice, contenuti dei commit, log, header HTTP, query string, payload API
 grezzi, stack trace, variabili d'ambiente, token, la chiave privata della App, gli actor
 dei workflow (non raccolti) e tutto ciò che è al di fuori degli schemi degli snapshot.
+
+Per la dimensione Qualità in particolare: path dei file e codice sorgente dei report di
+copertura, report grezzi, il `quality-summary.json` grezzo, messaggi, testo delle regole e
+posizioni nei file dei finding di Code Quality, payload API grezzi. Vengono pubblicati solo
+conteggi, percentuali, SHA, date ISO e link `https://github.com/...` in allowlist.
 
 ## Modello di autorizzazione
 
@@ -50,6 +61,29 @@ dei workflow (non raccolti) e tutto ciò che è al di fuori degli schemi degli s
   sono stati verificati sulla pagina GitHub
   [permissions-required-for-github-apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps)
   il 2026-10-03.
+- **Fonti Qualità** (riepilogo di copertura dei test e Code Quality). Verificate il
+  2026-10-21 sulla pagina GitHub
+  [permissions-required-for-github-apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps):
+  - Elencare e scaricare gli artifact (`GET /repos/{owner}/{repo}/actions/artifacts` e
+    `.../{artifact_id}/{archive_format}`) richiede **Actions: read**, già assegnato. Nessun
+    nuovo secret.
+  - Elencare i finding di Code Quality (`GET /repos/{owner}/{repo}/code-quality/findings`)
+    richiede il permesso di repository **Code quality: read**. Il nome della chiave API non
+    è documentato in quella pagina.
+  - L'endpoint di configurazione (`GET /repos/{owner}/{repo}/code-quality/setup`) richiede
+    **Administration: write**, quindi l'hub non lo chiama; un 404 sui finding è mostrato
+    come sconosciuto.
+  - Le pagine di riferimento REST di questi endpoint riportano solo gli scope dei token
+    classic, non i permessi fine-grained. I nomi sopra vengono dalla pagina dei permessi
+    delle GitHub App: ricontrollali sul tuo piano prima di concedere l'accesso.
+  - Comportamento osservato: un 403 sui finding è `not-authorised`, mai "mancante". Un 404
+    sui finding è ambiguo (Code Quality non attivo, o non visibile), quindi i finding del
+    progetto sono `unknown`, mai 0. Un 404 il cui messaggio dice che Code Quality non è
+    attivo esclude quel repository. Come per gli altri endpoint di sicurezza, un 404
+    dimostra comunque che il permesso funziona: la capability `codeQuality` è `available`
+    quando ogni chiamata ai finding risponde 200 o 404, `not-authorised` quando nessuna lo
+    fa e almeno una risponde 403, e `partial` quando lo fanno solo alcune. I finding di Code
+    Quality sono informativi: non cambiano mai lo stato della Qualità.
 - **Fallback (solo MVP): un PAT fine-grained** in `GH_READ_TOKEN`. Limitalo ai repository
   monitorati, assegnagli gli stessi permessi in sola lettura e usa una scadenza breve. È
   legato a una persona, quindi è preferibile la App.
@@ -173,7 +207,8 @@ immagini remote, quindi qui non è sfruttabile. Segui la fix upstream tramite De
   sito coincide con quello di Pages.
 - Nessun alert non significa nessuna vulnerabilità. La copertura dipende dai controlli
   configurati e da ciò che restituiscono le API (fino a 300 alert per fonte e per
-  repository).
+  repository). I finding di Code Quality hanno lo stesso limite di 300, ma oltre il limite
+  i finding del repository sono sconosciuti invece che contati in difetto.
 - I risultati degli scanner esterni sono considerati attendibili così come dichiarati in
   `.security/project-security-status.json`. Nell'MVP quel file non è firmato (roadmap:
   attestation).

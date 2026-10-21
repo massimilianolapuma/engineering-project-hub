@@ -21,7 +21,10 @@ const result = (status: HealthStatus, code?: ReasonCode): HealthResult => ({
   reasons: code ? [{ code, level: status === 'green' ? 'info' : status, params: {} }] : [],
 });
 
-/** Builds the five dimensions in order: delivery, version, security, coverage, governance. */
+/**
+ * Builds the five dimensions in order: delivery, version, security, coverage, governance.
+ * Quality (optional) is grey (no report) unless overridden.
+ */
 function dims(
   statuses: Dims,
   overrides: Partial<Record<Dimension, HealthResult>> = {},
@@ -32,6 +35,7 @@ function dims(
     out[d] =
       overrides[d] ?? result(s, s === 'grey' ? 'required-control-not-authorised' : undefined);
   });
+  out.quality = overrides.quality ?? result('grey', 'quality-report-missing');
   return out;
 }
 
@@ -113,6 +117,35 @@ describe('project score', () => {
     expect(typeof three.value).toBe('number');
   });
 
+  it('grey optional quality does not change value, measured or required', () => {
+    const five = ['green', 'amber', 'amber', 'amber', 'green'] as Dims;
+    const expected = { value: 76, measured: 5, required: 5 };
+    expect(evaluateScore(dims(five), 'amber', P)).toEqual(expected);
+    for (const quality of [
+      result('grey', 'quality-report-not-authorised'),
+      result('grey', 'quality-not-applicable'),
+      { status: 'grey', reasons: [] } as HealthResult,
+    ]) {
+      expect(evaluateScore(dims(five, { quality }), 'amber', P)).toEqual(expected);
+    }
+  });
+
+  it('measured quality counts with weight 10', () => {
+    const five = ['green', 'amber', 'amber', 'amber', 'green'] as Dims;
+    // 25·100 + 15·60 + 30·60 + 15·60 + 15·100 + 10·20 = 7800 / 110 = 70.9
+    expect(evaluateScore(dims(five, { quality: result('red') }), 'amber', P)).toEqual({
+      value: 71,
+      measured: 6,
+      required: 6,
+    });
+    // … + 10·100 = 8600 / 110 = 78.2
+    expect(evaluateScore(dims(five, { quality: result('green') }), 'amber', P)).toEqual({
+      value: 78,
+      measured: 6,
+      required: 6,
+    });
+  });
+
   it('only counts required dimensions', () => {
     const p = PoliciesSchema.parse({
       ...P,
@@ -127,7 +160,7 @@ describe('project score', () => {
     const custom = PoliciesSchema.parse({
       ...P,
       score: {
-        weights: { delivery: 0, version: 0, security: 100, coverage: 0, governance: 0 },
+        weights: { delivery: 0, version: 0, security: 100, coverage: 0, governance: 0, quality: 0 },
       },
     });
     expect(
@@ -142,7 +175,14 @@ describe('project score', () => {
     const { score: _omit, ...rest } = P;
     const p = PoliciesSchema.parse(rest);
     expect(p.score).toEqual({
-      weights: { delivery: 25, version: 15, security: 30, coverage: 15, governance: 15 },
+      weights: {
+        delivery: 25,
+        version: 15,
+        security: 30,
+        coverage: 15,
+        governance: 15,
+        quality: 10,
+      },
       points: { green: 100, amber: 60, red: 20 },
       caps: { red: 49, amber: 89, grey: 89 },
       minMeasuredRatio: 0.5,

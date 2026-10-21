@@ -1,0 +1,98 @@
+---
+/**
+ * Coverage meter: a 180×8 track, a fill and a tick at the threshold. Decorative only
+ * (aria-hidden): the caller always renders the number, or the "?" symbol, right before it, so
+ * colour and length are never the only carriers of the value. Unknown (no percentage) is a
+ * dashed track with no fill and no tick, never an empty bar that would read as 0%.
+ */
+import type { HealthStatus } from '@model/index';
+interface Props {
+  percentage: number | null;
+  status: HealthStatus | 'grey';
+  threshold: number;
+  /** Stretch to the container width (summary tile) instead of the fixed 180px. */
+  wide?: boolean;
+}
+const { percentage, status, threshold, wide = false } = Astro.props;
+const clamp = (n: number) => Math.min(100, Math.max(0, n));
+const unknown = percentage === null;
+---
+
+<span
+  class:list={['meter', { 'meter--unknown': unknown, 'meter--wide': wide }]}
+  aria-hidden="true"
+  data-meter={unknown ? 'unknown' : status}
+>
+  {!unknown && (
+    <>
+      <span class={`meter__fill meter__fill--${status}`} style={`width: ${clamp(percentage)}%`} />
+      <span class="meter__tick" style={`left: calc(${clamp(threshold)}% - 1px)`} />
+    </>
+  )}
+</span>
+
+<style>
+  .meter {
+    position: relative;
+    display: inline-block;
+    flex: 0 1 180px;
+    width: 180px;
+    max-width: 100%;
+    height: 8px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    box-shadow: inset 0 0 0 1px var(--border);
+    vertical-align: middle;
+  }
+  .meter--wide {
+    display: block;
+    flex-basis: auto;
+    width: 100%;
+  }
+  .meter--unknown {
+    background: transparent;
+    box-shadow: none;
+    border: 1.5px dashed var(--unknown);
+  }
+  .meter__fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    border-radius: var(--radius-sm);
+  }
+  .meter__fill--red {
+    background: var(--red);
+  }
+  .meter__fill--amber {
+    background: var(--amber);
+  }
+  .meter__fill--green {
+    background: var(--green);
+  }
+  .meter__fill--grey {
+    background: var(--unknown);
+  }
+  .meter__tick {
+    position: absolute;
+    top: -4px;
+    bottom: -4px;
+    width: 2px;
+    border-radius: 1px;
+    background: var(--text);
+  }
+  @media (forced-colors: active) {
+    .meter {
+      forced-color-adjust: none;
+      border: 1px solid CanvasText;
+      background: Canvas;
+    }
+    .meter__fill {
+      background: CanvasText;
+    }
+    .meter__tick {
+      background: Highlight;
+    }
+    .meter--unknown {
+      border-style: dashed;
+    }
+  }
+</style>

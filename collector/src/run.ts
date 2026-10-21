@@ -59,6 +59,7 @@ function capabilities(raws: RawProjectData[]): Record<Capability, Availability> 
       outcomes.codeScanning.push(r.codeScanning);
       outcomes.dependabot.push(r.dependabot);
       outcomes.secretScanning.push(r.secretScanning);
+      outcomes.codeQuality.push(r.codeQualityFindings);
     }
     outcomes.contents.push(raw.manifest, raw.gitmodules);
     for (const w of raw.workflows) outcomes.actions.push(w.runs);

@@ -9,6 +9,7 @@ import StatusDot from '../../components/StatusDot.astro';
 import Base from '../../layouts/Base.astro';
 import { healthRank } from '../../lib/format';
 import { pageContext } from '../../lib/page';
+import { loadSitePolicies } from '../../lib/policies';
 import { href, localeParams } from '../../lib/routes';
 import { scoreSortKey } from '../../lib/score';
 
@@ -30,9 +31,11 @@ const sorted = [...projects].sort(
   (a, b) => scoreSortKey(a.score) - scoreSortKey(b.score) || a.name.localeCompare(b.name),
 );
 
-const DIMS: Dimension[] = ['delivery', 'version', 'security', 'coverage', 'governance'];
+const DIMS: Dimension[] = ['delivery', 'version', 'security', 'coverage', 'governance', 'quality'];
+/** Optional dimensions (quality): when unknown they are left out of the overall status. */
+const OPTIONAL = new Set<Dimension>(loadSitePolicies().policies.overall.optionalDimensions);
 const statusOf = (p: Project, k: Dimension): HealthStatus =>
-  k === 'coverage' ? p.coverage.status : p[k];
+  k === 'coverage' || k === 'quality' ? p[k].status : p[k];
 const healthOf = (s: ProjectSnapshot | undefined, k: Dimension): HealthResult | undefined =>
   s &&
   {
@@ -41,6 +44,7 @@ const healthOf = (s: ProjectSnapshot | undefined, k: Dimension): HealthResult | 
     security: s.securityHealth,
     coverage: s.securityCoverage,
     governance: s.governanceHealth,
+    quality: s.qualityHealth,
   }[k];
 /** The reason that explains a dimension: one at the dimension's own level first. */
 const topReason = (status: HealthStatus, reasons: Reason[]): Reason | undefined =>
@@ -53,8 +57,12 @@ const unmeasured = (p: Project) => DIMS.every((k) => statusOf(p, k) === 'grey');
  */
 const mainReason = (p: Project): string | null => {
   const s = snapshots.get(p.id);
-  const worst = Math.min(...DIMS.map((k) => healthRank(statusOf(p, k))));
-  const sentences = DIMS.filter((k) => healthRank(statusOf(p, k)) === worst)
+  // An unknown optional dimension does not shape the overall status, so it never explains it.
+  const known = DIMS.filter((k) => !(OPTIONAL.has(k) && statusOf(p, k) === 'grey'));
+  const dims = known.length ? known : DIMS;
+  const worst = Math.min(...dims.map((k) => healthRank(statusOf(p, k))));
+  const sentences = dims
+    .filter((k) => healthRank(statusOf(p, k)) === worst)
     .map((k) => healthOf(s, k))
     .map((h) => (h ? topReason(h.status, h.reasons) : undefined))
     .filter((r): r is Reason => r !== undefined)
@@ -214,7 +222,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
               </th>
               <th role="columnheader" scope="col" class="plist__c-dims">
                 <span class="visually-hidden">{d.portfolio.dimensionsColumn}</span>
-                <DimensionBars variant="header" locale={locale} />
+                <DimensionBars variant="header" dimensions={DIMS} locale={locale} />
               </th>
               <th role="columnheader" scope="col">
                 {d.portfolio.reasonColumn}
@@ -258,7 +266,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
                   <td role="cell" class="plist__dims">
                     {/* Phone and tablet: the header row is hidden, so label the bars here. */}
                     <span class="plist__dimlabels" aria-hidden="true">
-                      <DimensionBars variant="header" locale={locale} />
+                      <DimensionBars variant="header" dimensions={DIMS} locale={locale} />
                     </span>
                     <DimensionBars
                       dims={DIMS.map((k) => ({ dimension: k, status: statusOf(p, k) }))}
@@ -504,8 +512,9 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
   .plist__c-score {
     width: 150px;
   }
+  /* Six 32px bars with 4px gaps (212px) plus the cell padding. */
   .plist__c-dims {
-    width: 212px;
+    width: 244px;
   }
   .plist__name {
     min-width: 160px;
