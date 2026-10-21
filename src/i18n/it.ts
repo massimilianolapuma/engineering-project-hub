@@ -137,6 +137,14 @@ export const it: Dict = {
     informational: 'Info',
     unknown: 'Sconosciuta',
   },
+  /** Classi SLA di remediation, minuscole per l'uso dentro una frase. */
+  slaClass: {
+    critical: 'critici',
+    high: 'alti',
+    medium: 'medi',
+    low: 'bassi',
+    secret: 'secret scanning',
+  },
   findingSource: {
     'github-code-scanning': 'Code scanning',
     'github-dependabot': 'Dependabot',
@@ -1248,6 +1256,13 @@ export const it: Dict = {
     'open-high-alerts': '{count} alert alto aperto',
     'open-medium-low-alerts': '{count} alert medio/basso aperto',
     'open-secret-alerts': '{count} alert secret scanning aperto',
+    'sla-overdue': '{count} alert aperto oltre lo SLA di {days} giorni ({severity})',
+    'sla-age-unknown': '{count} alert aperto con età sconosciuta (nessun controllo SLA)',
+    'security-exception-expired': '{count} eccezione di sicurezza scaduta: {ids}',
+    'security-exception-stale':
+      '{count} eccezione di sicurezza non corrisponde ad alcun alert aperto: {ids}',
+    'security-exception-unverifiable':
+      '{count} eccezione di sicurezza non verificabile (sorgente non leggibile): {ids}',
     'all-required-controls-available': "L'unico controllo obbligatorio è disponibile",
     'repository-check-failed': '{check} non è rispettato in {count} repository: {repositories}',
     'repository-check-unknown': '{check} non è verificabile in {count} repository: {repositories}',
@@ -1291,6 +1306,14 @@ export const it: Dict = {
     'security-data-unavailable': 'Alcuni dati di sicurezza non sono leggibili',
     'private-details-withheld': 'Dettagli dei repository non pubblici omessi',
     'no-open-alerts': 'Nessun alert aperto e copertura obbligatoria completa',
+    'sla-overdue': '{count} alert aperti oltre lo SLA di {days} giorni ({severity})',
+    'sla-age-unknown': '{count} alert aperti con età sconosciuta (nessun controllo SLA)',
+    'security-exception-active': '{count} problema accettato con eccezione di sicurezza',
+    'security-exception-expired': '{count} eccezioni di sicurezza scadute: {ids}',
+    'security-exception-stale':
+      '{count} eccezioni di sicurezza non corrispondono ad alcun alert aperto: {ids}',
+    'security-exception-unverifiable':
+      '{count} eccezioni di sicurezza non verificabili (sorgente non leggibile): {ids}',
     'required-control-not-configured': 'Controllo obbligatorio non configurato: {control}',
     'required-control-not-authorised': 'Controllo obbligatorio non autorizzato: {control}',
     'required-control-unknown': 'Controllo obbligatorio sconosciuto: {control}',

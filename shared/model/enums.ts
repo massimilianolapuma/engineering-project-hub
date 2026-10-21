@@ -278,6 +278,13 @@ export const REASON_CODES = [
   'security-data-unavailable',
   'private-details-withheld',
   'no-open-alerts',
+  // risk governance
+  'sla-overdue',
+  'sla-age-unknown',
+  'security-exception-active',
+  'security-exception-expired',
+  'security-exception-stale',
+  'security-exception-unverifiable',
   // coverage
   'required-control-not-configured',
   'required-control-not-authorised',
@@ -317,6 +324,10 @@ export const REASON_CODES = [
 ] as const;
 export const ReasonCodeSchema = z.enum(REASON_CODES);
 export type ReasonCode = z.infer<typeof ReasonCodeSchema>;
+
+/** What a rule does to a status when it applies: info = shown, never changes the status. */
+export const EnforcementLevelSchema = z.enum(['info', 'amber', 'red']);
+export type EnforcementLevel = z.infer<typeof EnforcementLevelSchema>;
 
 export const ReasonLevelSchema = z.enum(['red', 'amber', 'grey', 'info']);
 export type ReasonLevel = z.infer<typeof ReasonLevelSchema>;

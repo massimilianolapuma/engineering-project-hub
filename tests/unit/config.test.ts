@@ -375,3 +375,48 @@ describe('policies.yaml validation', () => {
     ).toThrow(/schemaVersion/);
   });
 });
+
+describe('policies: remediation and exceptions blocks', () => {
+  const parsePolicies = (text: string) => parseYamlWith(PoliciesSchema, text, 'policies.yaml');
+  // The shipped file opts in; the schema defaults come from the same file without the blocks.
+  const withoutBlocks = policiesText
+    .replace(/^remediation:[\s\S]*?(?=^\S)/m, '')
+    .replace(/^exceptions:[\s\S]*?(?=^\S)/m, '');
+
+  it('policies defaults: remediation days 7/30/90/180/7, overdue all info, enabled true; exceptions 180/14/true', () => {
+    const d = parsePolicies(withoutBlocks);
+    expect(d.remediation).toEqual({
+      enabled: true,
+      days: { critical: 7, high: 30, medium: 90, low: 180, secret: 7 },
+      overdue: { critical: 'info', high: 'info', medium: 'info', low: 'info', secret: 'info' },
+    });
+    expect(d.exceptions).toEqual({ maxDays: 180, expiringSoonDays: 14, expiredIsAmber: true });
+  });
+
+  it('remediation.days.high: null is accepted; 0 and 3651 are rejected', () => {
+    const withDays = (v: string) =>
+      PoliciesSchema.safeParse({
+        ...parsePolicies(withoutBlocks),
+        remediation: { days: { high: JSON.parse(v) } },
+      });
+    expect(withDays('null').success).toBe(true);
+    expect(withDays('0').success).toBe(false);
+    expect(withDays('3651').success).toBe(false);
+  });
+
+  it('exceptions.maxDays 367 is rejected', () => {
+    const p = parsePolicies(withoutBlocks);
+    expect(PoliciesSchema.safeParse({ ...p, exceptions: { maxDays: 367 } }).success).toBe(false);
+    expect(PoliciesSchema.safeParse({ ...p, exceptions: { maxDays: 366 } }).success).toBe(true);
+  });
+
+  it('config/policies.yaml sets overdue.critical and overdue.high to red, others info', () => {
+    expect(parsePolicies(policiesText).remediation.overdue).toEqual({
+      critical: 'red',
+      high: 'red',
+      medium: 'info',
+      low: 'info',
+      secret: 'info',
+    });
+  });
+});

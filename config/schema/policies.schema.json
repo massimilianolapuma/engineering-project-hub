@@ -362,6 +362,164 @@
       },
       "additionalProperties": false
     },
+    "remediation": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "type": "boolean"
+        },
+        "days": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "critical": {
+              "default": 7,
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 3650
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "high": {
+              "default": 30,
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 3650
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "medium": {
+              "default": 90,
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 3650
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "low": {
+              "default": 180,
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 3650
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "secret": {
+              "default": 7,
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 3650
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "overdue": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "critical": {
+              "default": "info",
+              "type": "string",
+              "enum": [
+                "info",
+                "amber",
+                "red"
+              ]
+            },
+            "high": {
+              "default": "info",
+              "type": "string",
+              "enum": [
+                "info",
+                "amber",
+                "red"
+              ]
+            },
+            "medium": {
+              "default": "info",
+              "type": "string",
+              "enum": [
+                "info",
+                "amber",
+                "red"
+              ]
+            },
+            "low": {
+              "default": "info",
+              "type": "string",
+              "enum": [
+                "info",
+                "amber",
+                "red"
+              ]
+            },
+            "secret": {
+              "default": "info",
+              "type": "string",
+              "enum": [
+                "info",
+                "amber",
+                "red"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "exceptions": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "maxDays": {
+          "default": 180,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 366
+        },
+        "expiringSoonDays": {
+          "default": 14,
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 90
+        },
+        "expiredIsAmber": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
     "overall": {
       "type": "object",
       "properties": {

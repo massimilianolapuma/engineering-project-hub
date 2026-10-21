@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ExceptionSourceSchema, ExceptionStateSchema } from './exceptions';
 import { CatalogSchema, ProjectConfigSchema, VersionSourceSchema } from './catalog';
 import {
   AuthenticationModeSchema,
@@ -205,6 +206,117 @@ export const SecurityFindingSchema = z
   })
   .strict();
 export type SecurityFinding = z.infer<typeof SecurityFindingSchema>;
+
+const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+/**
+ * Standalone risk-governance schemas (spec 5.6). Attached to findings, summaries and the run
+ * metadata below.
+ */
+export const FindingExceptionSchema = z
+  .object({
+    id: z.string().max(40),
+    state: z.enum(['active', 'expired']),
+    expires: day,
+  })
+  .strict();
+export type FindingException = z.infer<typeof FindingExceptionSchema>;
+
+export const FindingSlaSchema = z
+  .object({
+    state: z.enum(['within', 'overdue', 'paused', 'none', 'unknown']),
+    days: z.number().int().min(1).nullable(),
+    dueAt: isoDate.nullable(),
+    ageDays: z.number().int().min(0).nullable(),
+    overdueDays: z.number().int().min(0).nullable(),
+  })
+  .strict();
+export type FindingSla = z.infer<typeof FindingSlaSchema>;
+
+export const SecurityExceptionSchema = z
+  .object({
+    id: z.string().max(40),
+    repository: z.string().max(200),
+    source: ExceptionSourceSchema,
+    selector: z
+      .object({
+        kind: z.enum(['alert', 'rule', 'advisory']),
+        /** null = withheld (non-public repository under a public audience). */
+        value: z.string().max(200).nullable(),
+        tool: z.string().max(50).nullable(),
+      })
+      .strict(),
+    owner: z.string().max(65),
+    /** null = withheld. */
+    reason: shortText.nullable(),
+    created: day,
+    expires: day,
+    ticketUrl: httpsUrl.nullable(),
+    state: ExceptionStateSchema,
+    expiringSoon: z.boolean(),
+    /** null when unverifiable. */
+    matched: nullableCount,
+    findingIds: z.array(z.string().max(200)).max(50),
+  })
+  .strict();
+export type SecurityException = z.infer<typeof SecurityExceptionSchema>;
+
+const slaClassCounts = <T extends z.ZodType>(value: T) =>
+  z
+    .object({
+      critical: value,
+      high: value,
+      medium: value,
+      low: value,
+      secret: value,
+    })
+    .strict();
+
+export const RemediationSummarySchema = z
+  .object({
+    enabled: z.boolean(),
+    /** Echo of the policy, so the site never reads policies to label a row. */
+    slaDays: slaClassCounts(z.number().int().min(1).nullable()),
+    overdue: slaClassCounts(nullableCount),
+    oldestOverdueSince: isoDate.nullable(),
+    slaUnknown: z.number().int().min(0),
+  })
+  .strict();
+export type RemediationSummary = z.infer<typeof RemediationSummarySchema>;
+
+export const ExceptionStatesSchema = z
+  .object({
+    active: z.number().int().min(0),
+    expired: z.number().int().min(0),
+    stale: z.number().int().min(0),
+    unverifiable: z.number().int().min(0),
+    expiringSoon: z.number().int().min(0),
+  })
+  .strict();
+export type ExceptionStates = z.infer<typeof ExceptionStatesSchema>;
+
+export const ProjectRiskSchema = z
+  .object({
+    /** Sum of the five overdue classes. */
+    overdue: nullableCount,
+    overdueCriticalHigh: nullableCount,
+    /** Sum of acceptedCounts. */
+    accepted: nullableCount,
+    /** expired + stale + unverifiable. */
+    exceptionIssues: z.number().int().min(0),
+  })
+  .strict();
+export type ProjectRisk = z.infer<typeof ProjectRiskSchema>;
+
+export const RunExceptionsSchema = z
+  .object({
+    source: z.enum(['config', 'fixture', 'none']),
+    total: z.number().int().min(0),
+    /** Ids only, never the repository. */
+    orphaned: z.array(z.string().max(40)).max(100),
+  })
+  .strict();
+export type RunExceptions = z.infer<typeof RunExceptionsSchema>;
 
 export const ControlStatusSchema = z
   .object({

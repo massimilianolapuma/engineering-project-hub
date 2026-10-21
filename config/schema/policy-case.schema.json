@@ -1,0 +1,332 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "security",
+        "overall"
+      ]
+    },
+    "now": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+    },
+    "security": {
+      "type": "object",
+      "properties": {
+        "findings": {
+          "default": [],
+          "maxItems": 200,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9-]+\\/[A-Za-z0-9._-]+#(code-scanning|dependabot|secret-scanning)#\\d+$"
+              },
+              "severity": {
+                "type": "string",
+                "enum": [
+                  "critical",
+                  "high",
+                  "medium",
+                  "low",
+                  "informational",
+                  "unknown"
+                ]
+              },
+              "status": {
+                "default": "open",
+                "type": "string",
+                "enum": [
+                  "open",
+                  "fixed",
+                  "dismissed"
+                ]
+              },
+              "detectedAt": {
+                "default": null,
+                "anyOf": [
+                  {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      },
+                      {
+                        "type": "string",
+                        "pattern": "^@now([+-]\\d+[mhd])?$"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "ruleId": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "tool": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "advisoryIds": {
+                "maxItems": 10,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 100
+                }
+              }
+            },
+            "required": [
+              "id",
+              "severity"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "exceptions": {
+          "default": [],
+          "maxItems": 100,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,39}$"
+              },
+              "repository": {
+                "type": "string",
+                "maxLength": 200,
+                "pattern": "^[A-Za-z0-9-]+\\/[A-Za-z0-9._-]+$"
+              },
+              "source": {
+                "type": "string",
+                "enum": [
+                  "code-scanning",
+                  "dependabot",
+                  "secret-scanning"
+                ]
+              },
+              "match": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "alert": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "alert"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "rule": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                      },
+                      "tool": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 50
+                      }
+                    },
+                    "required": [
+                      "rule"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "advisory": {
+                        "type": "string",
+                        "pattern": "^(GHSA(-[A-Za-z0-9]{4}){3}|CVE-\\d{4}-\\d{4,})$"
+                      }
+                    },
+                    "required": [
+                      "advisory"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "owner": {
+                "type": "string",
+                "pattern": "^@?[A-Za-z0-9][A-Za-z0-9._/-]{0,63}$"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 10,
+                "maxLength": 300
+              },
+              "ticket": {
+                "type": "string",
+                "maxLength": 500,
+                "format": "uri"
+              },
+              "created": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^@now([+-]\\d+[mhd])?$"
+                  }
+                ]
+              },
+              "expires": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^@now([+-]\\d+[mhd])?$"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "repository",
+              "source",
+              "match",
+              "owner",
+              "reason",
+              "created",
+              "expires"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "unreadable": {
+          "default": [],
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9-]+\\/[A-Za-z0-9._-]+\\|(code-scanning|dependabot|secret-scanning)$"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "overall": {
+      "type": "object",
+      "properties": {
+        "dimensions": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "enum": [
+              "delivery",
+              "version",
+              "security",
+              "coverage",
+              "governance",
+              "quality"
+            ]
+          },
+          "additionalProperties": {
+            "type": "string",
+            "enum": [
+              "green",
+              "amber",
+              "red",
+              "grey"
+            ]
+          },
+          "required": [
+            "delivery",
+            "version",
+            "security",
+            "coverage",
+            "governance",
+            "quality"
+          ]
+        }
+      },
+      "required": [
+        "dimensions"
+      ],
+      "additionalProperties": false
+    },
+    "expect": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "green",
+            "amber",
+            "red",
+            "grey"
+          ]
+        },
+        "reasons": {
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 80
+          }
+        },
+        "absent": {
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 80
+          }
+        },
+        "score": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "name",
+    "kind",
+    "expect"
+  ],
+  "additionalProperties": false
+}

@@ -58,6 +58,10 @@ export function useI18n(locale: Locale) {
       if (typeof params.control === 'string' && params.control in d.control) {
         params.control = d.control[params.control as keyof Dict['control']];
       }
+      if (r.code === 'sla-overdue' && typeof params.severity === 'string') {
+        if (params.severity in d.slaClass)
+          params.severity = d.slaClass[params.severity as keyof Dict['slaClass']];
+      }
       if (typeof params.check === 'string' && params.check in d.repositoryCheck) {
         params.check = d.repositoryCheck[params.check as keyof Dict['repositoryCheck']];
       }

@@ -135,6 +135,14 @@ export const en = {
     informational: 'Info',
     unknown: 'Unknown',
   },
+  /** Remediation SLA classes, lower case for use inside a sentence. */
+  slaClass: {
+    critical: 'critical',
+    high: 'high',
+    medium: 'medium',
+    low: 'low',
+    secret: 'secret',
+  },
   findingSource: {
     'github-code-scanning': 'Code scanning',
     'github-dependabot': 'Dependabot',
@@ -1238,6 +1246,12 @@ export const en = {
     'open-high-alerts': '{count} open high alert',
     'open-medium-low-alerts': '{count} open medium/low alert',
     'open-secret-alerts': '{count} open secret scanning alert',
+    'sla-overdue': '{count} open {severity} alert past its {days}-day SLA',
+    'sla-age-unknown': '{count} open alert with unknown age (no SLA check)',
+    'security-exception-expired': '{count} security exception expired: {ids}',
+    'security-exception-stale': '{count} security exception matches no open alert: {ids}',
+    'security-exception-unverifiable':
+      '{count} security exception cannot be verified (source not readable): {ids}',
     'all-required-controls-available': 'The only required control is available',
     'repository-check-failed': '{check} fails on {count} repository: {repositories}',
     'repository-check-unknown':
@@ -1281,6 +1295,13 @@ export const en = {
     'security-data-unavailable': 'Some security data could not be read',
     'private-details-withheld': 'Details of non-public repositories withheld',
     'no-open-alerts': 'No open alerts and full required coverage',
+    'sla-overdue': '{count} open {severity} alerts past their {days}-day SLA',
+    'sla-age-unknown': '{count} open alerts with unknown age (no SLA check)',
+    'security-exception-active': '{count} finding accepted by a security exception',
+    'security-exception-expired': '{count} security exceptions expired: {ids}',
+    'security-exception-stale': '{count} security exceptions match no open alert: {ids}',
+    'security-exception-unverifiable':
+      '{count} security exceptions cannot be verified (source not readable): {ids}',
     'required-control-not-configured': 'Required control not configured: {control}',
     'required-control-not-authorised': 'Required control not authorised: {control}',
     'required-control-unknown': 'Required control unknown: {control}',

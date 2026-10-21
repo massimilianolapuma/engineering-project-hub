@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=./schema/exceptions.schema.json
+#
+# Engineering Project Hub — security exceptions (risk acceptances).
+# An accepted finding leaves the counts and the Security status until its exception expires.
+# It stays listed as "accepted until <date>". The hub never dismisses alerts on GitHub.
+# Real exceptions belong in a reviewed (ideally private) config repository.
+# Reference: docs/configuration.md (EN) · docs/it/configuration.md (IT)
+
+schemaVersion: '1.0'
+exceptions: []
+
+# Example (remove the leading "# " to use it):
+# exceptions:
+#   - id: EXC-0001 # unique, 3–40 characters
+#     repository: example-org/project-beta-api # owner/name
+#     source: code-scanning # code-scanning | dependabot | secret-scanning
+#     match: { rule: py/flask-debug, tool: CodeQL } # or { alert: 42 } or { advisory: GHSA-xxxx-xxxx-xxxx }
+#     owner: team-beta # a team or role, never an e-mail address
+#     reason: Debug mode is only reachable in the local profile; removal planned with the settings refactor.
+#     created: '2026-01-05' # review date, YYYY-MM-DD (UTC)
+#     expires: '2026-03-31' # last day the exception applies (inclusive, UTC); at most exceptions.maxDays after created
+#     ticket: https://github.com/example-org/project-beta-api/issues/12 # optional, host in publication.allowedLinkHosts

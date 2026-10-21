@@ -1,10 +1,16 @@
 import { z } from 'zod';
-import { DimensionSchema, REPOSITORY_CHECK_IDS, SeveritySchema } from './enums';
+import {
+  DimensionSchema,
+  EnforcementLevelSchema,
+  REPOSITORY_CHECK_IDS,
+  SeveritySchema,
+} from './enums';
 
 const NonGreenStatus = z.enum(['red', 'amber', 'grey']);
 const RedOrAmber = z.enum(['red', 'amber']);
-/** info = shown, never changes Governance. */
-const CheckLevel = z.enum(['info', 'amber', 'red']);
+/** info = shown, never changes the status. */
+const CheckLevel = EnforcementLevelSchema;
+const SlaDays = z.number().int().min(1).max(3650).nullable();
 
 /**
  * Health policies. These are MVP policies for this organisation, not universal risk
@@ -106,6 +112,51 @@ export const PoliciesSchema = z
         maxWorkflowFiles: z.number().int().min(1).max(100).default(30),
         /** true needs "Administration: read" on the credentials. */
         readClassicProtection: z.boolean().default(false),
+      })
+      .strict()
+      .prefault({}),
+    /**
+     * Remediation SLAs: calendar days from an alert's creation, per class. Overdue is
+     * informative by default; the owner opts in to amber or red per class. Optional block.
+     */
+    remediation: z
+      .object({
+        /** false = no SLA computed or shown ("not measured"). */
+        enabled: z.boolean().default(true),
+        /** null = no SLA for that class. */
+        days: z
+          .object({
+            critical: SlaDays.default(7),
+            high: SlaDays.default(30),
+            medium: SlaDays.default(90),
+            low: SlaDays.default(180),
+            /** Secret scanning alerts, whatever their severity. */
+            secret: SlaDays.default(7),
+          })
+          .strict()
+          .prefault({}),
+        overdue: z
+          .object({
+            critical: CheckLevel.default('info'),
+            high: CheckLevel.default('info'),
+            medium: CheckLevel.default('info'),
+            low: CheckLevel.default('info'),
+            secret: CheckLevel.default('info'),
+          })
+          .strict()
+          .prefault({}),
+      })
+      .strict()
+      .prefault({}),
+    /** Security exceptions (config/exceptions.yaml): limits and flags. Optional block. */
+    exceptions: z
+      .object({
+        /** Longest allowed created → expires span, in days. */
+        maxDays: z.number().int().min(1).max(366).default(180),
+        /** Active exceptions expiring within this many days are flagged. */
+        expiringSoonDays: z.number().int().min(0).max(90).default(14),
+        /** An expired exception adds an amber Security reason (otherwise info). */
+        expiredIsAmber: z.boolean().default(true),
       })
       .strict()
       .prefault({}),
