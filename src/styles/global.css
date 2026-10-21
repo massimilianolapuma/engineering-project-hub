@@ -490,6 +490,12 @@ select {
   color: var(--text-muted);
 }
 
+/* Link to a static CSV export, under a page head. */
+.page-export {
+  margin: var(--space-3) 0 0;
+  font-size: var(--fs-sm);
+}
+
 /* Tables */
 .table-wrap {
   overflow-x: auto;

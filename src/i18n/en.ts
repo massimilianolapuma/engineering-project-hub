@@ -611,6 +611,13 @@ export const en = {
     seeDataQuality: 'See in Data quality',
   },
   dataQualityPage: {
+    history: {
+      title: 'History',
+      restored: 'Restored {count} previous collections (oldest {date}).',
+      fixture: 'Demo history: {count} synthetic previous collections.',
+      fresh: 'Started fresh: {reason}',
+      retention: 'Kept: up to {maxEntries} collections, at most {maxAgeDays} days. Now {entries}.',
+    },
     title: 'Data quality',
     intro:
       'Whatever is missing here is shown as "we do not know" on every other page, never as zero.',
@@ -1019,10 +1026,59 @@ export const en = {
       minutes: 'minutes',
     },
     none: 'None',
+    trendsTitle: 'Trends, changes and CSV',
+    trendsPoint:
+      'A point is one collection: the overall status, the score and the six dimension statuses of a project at that time.',
+    trendsGaps:
+      'A gap is a collection where the score could not be measured. It is never drawn as 0 and values are never joined across it.',
+    trendsRetention:
+      'History keeps up to {maxEntries} collections and at most {maxAgeDays} days (from the history policies).',
+    trendsAlerts:
+      'What changed compares only alert sources that were readable in both collections, so an unreadable source never shows as resolved and a newly readable one never shows as new.',
+    trendsCsv:
+      'CSV files are UTF-8 with a BOM, comma-separated. "unknown" means not readable and is never 0; "n/a" means not applicable; a leading apostrophe protects text that starts with =, +, - or @.',
     docsTitle: 'More detail',
     docsText:
       'Every policy, its default and how to change it is described in the configuration reference.',
     docsLink: 'Configuration reference',
+  },
+  changes: {
+    title: 'What changed since last collection',
+    lede: 'What moved between the last two collections, worst first.',
+    compared: 'Compared with the collection of {date} ({relative}).',
+    earlierHours: '{n} h earlier',
+    earlierDays: '{n} days earlier',
+    synthetic: 'Demo data: earlier collections are synthetic.',
+    summary:
+      '{statusChanges} status changes · {newFindings} new and {resolvedFindings} resolved critical/high alerts · {versionMoves} version moves · {newErrors} new collection errors',
+    summaryLabel: 'Totals',
+    statusChanges: 'Status changes',
+    score: 'Score',
+    newFindings: 'New critical/high alerts',
+    resolvedFindings: 'Resolved critical/high alerts',
+    truncated: 'and {n} more',
+    versionMoves: 'Version moves',
+    coordinator: 'Coordinator',
+    newErrors: 'New collection errors',
+    resolvedErrors: '{n} errors no longer occur',
+    projectNone: 'No changes.',
+    added: 'New in this collection: nothing to compare.',
+    missing:
+      'No change data in this snapshot (collected before v0.7.0 or with history turned off).',
+    invalid: 'The change data could not be read.',
+    findingsPartial:
+      'Some alert sources could not be read in one of the two collections; their alerts are not compared.',
+    basis: {
+      none: 'This is the first collection with history. Changes appear after the next collection.',
+      'restore-failed':
+        'The previous history could not be restored, so changes cannot be computed. This does not mean "no changes".',
+      unreadable:
+        'The previous history file was not valid and was set aside. History starts again from this collection.',
+      incompatible:
+        'The previous history uses a format this version does not read. History starts again from this collection.',
+      'source-changed':
+        'The previous history came from another data source (mock or GitHub). History starts again from this collection.',
+    },
   },
   trend: {
     title: 'Trend',
@@ -1049,6 +1105,8 @@ export const en = {
     guideBottom: '0',
   },
   exports: {
+    findings: 'Alert summary (CSV)',
+    versions: 'Versions (CSV)',
     portfolio: 'Download CSV',
     hint: 'UTF-8 CSV with BOM, comma-separated. "unknown" means not readable, never 0.',
   },

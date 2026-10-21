@@ -616,6 +616,14 @@ export const it: Dict = {
     seeDataQuality: 'Vedi in Qualità dati',
   },
   dataQualityPage: {
+    history: {
+      title: 'Storico',
+      restored: 'Ripristinate {count} raccolte precedenti (la più vecchia del {date}).',
+      fixture: 'Storico demo: {count} raccolte precedenti sintetiche.',
+      fresh: 'Ripartito da zero: {reason}',
+      retention:
+        'Conservate: fino a {maxEntries} raccolte, al massimo {maxAgeDays} giorni. Ora {entries}.',
+    },
     title: 'Qualità dati',
     intro:
       'Ciò che qui manca è dichiarato come "non sappiamo" in tutte le altre pagine, mai come zero.',
@@ -1028,10 +1036,59 @@ export const it: Dict = {
       minutes: 'minuti',
     },
     none: 'Nessuno',
+    trendsTitle: 'Andamento, cambiamenti e CSV',
+    trendsPoint:
+      'Un punto è una raccolta: stato complessivo, punteggio e stato delle sei dimensioni di un progetto in quel momento.',
+    trendsGaps:
+      'Un vuoto è una raccolta in cui il punteggio non era misurabile. Non viene mai disegnato come 0 e i valori non vengono mai uniti attraverso il vuoto.',
+    trendsRetention:
+      'Lo storico conserva fino a {maxEntries} raccolte e al massimo {maxAgeDays} giorni (dalle policy dello storico).',
+    trendsAlerts:
+      'Cosa è cambiato confronta solo le fonti di alert leggibili in entrambe le raccolte: una fonte illeggibile non risulta mai risolta e una appena leggibile non risulta mai nuova.',
+    trendsCsv:
+      'I file CSV sono UTF-8 con BOM, separati da virgole. "unknown" significa non leggibile e non è mai 0; "n/a" significa non applicabile; un apostrofo iniziale protegge il testo che inizia con =, +, - o @.',
     docsTitle: 'Più dettagli',
     docsText:
       'Ogni policy, il suo valore predefinito e come cambiarla sono descritti nel riferimento di configurazione.',
     docsLink: 'Riferimento di configurazione',
+  },
+  changes: {
+    title: "Cosa è cambiato dall'ultima raccolta",
+    lede: 'Cosa si è mosso tra le ultime due raccolte, dal più grave.',
+    compared: 'Confronto con la raccolta del {date} ({relative}).',
+    earlierHours: '{n} h prima',
+    earlierDays: '{n} giorni prima',
+    synthetic: 'Dati demo: le raccolte precedenti sono sintetiche.',
+    summary:
+      '{statusChanges} cambi di stato · {newFindings} alert critici/alti nuovi e {resolvedFindings} risolti · {versionMoves} versioni cambiate · {newErrors} nuovi errori di raccolta',
+    summaryLabel: 'Totali',
+    statusChanges: 'Cambi di stato',
+    score: 'Punteggio',
+    newFindings: 'Nuovi alert critici/alti',
+    resolvedFindings: 'Alert critici/alti risolti',
+    truncated: 'e altri {n}',
+    versionMoves: 'Versioni cambiate',
+    coordinator: 'Coordinatore',
+    newErrors: 'Nuovi errori di raccolta',
+    resolvedErrors: '{n} errori non si verificano più',
+    projectNone: 'Nessun cambiamento.',
+    added: 'Nuovo in questa raccolta: nulla da confrontare.',
+    missing:
+      'Nessun dato sui cambiamenti in questo snapshot (raccolto prima della v0.7.0 o con lo storico disattivato).',
+    invalid: 'I dati sui cambiamenti non sono leggibili.',
+    findingsPartial:
+      'Alcune fonti di alert non erano leggibili in una delle due raccolte; i loro alert non vengono confrontati.',
+    basis: {
+      none: 'Questa è la prima raccolta con storico. I cambiamenti compariranno dopo la prossima raccolta.',
+      'restore-failed':
+        'Non è stato possibile ripristinare lo storico precedente, quindi i cambiamenti non si possono calcolare. Non significa "nessun cambiamento".',
+      unreadable:
+        'Il file dello storico precedente non era valido ed è stato scartato. Lo storico riparte da questa raccolta.',
+      incompatible:
+        'Lo storico precedente usa un formato che questa versione non legge. Lo storico riparte da questa raccolta.',
+      'source-changed':
+        "Lo storico precedente proveniva da un'altra fonte dati (mock o GitHub). Lo storico riparte da questa raccolta.",
+    },
   },
   trend: {
     title: 'Andamento',
@@ -1058,6 +1115,8 @@ export const it: Dict = {
     guideBottom: '0',
   },
   exports: {
+    findings: 'Riepilogo alert (CSV)',
+    versions: 'Versioni (CSV)',
     portfolio: 'Scarica CSV',
     hint: 'CSV UTF-8 con BOM, separato da virgole. "unknown" significa non leggibile, mai 0.',
   },

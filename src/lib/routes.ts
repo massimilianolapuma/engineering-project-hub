@@ -24,6 +24,7 @@ const PATHS: Record<PageKey, string> = {
 /** Main navigation in reading order. "How to read" is a header utility link, not a section. */
 export const NAV: readonly PageKey[] = [
   'portfolio',
+  'changes',
   'security',
   'versions',
   'workflows',

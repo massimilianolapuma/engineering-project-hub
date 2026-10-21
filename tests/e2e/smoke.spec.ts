@@ -261,3 +261,27 @@ test('project trend table opens with the keyboard', async ({ page }) => {
   );
   expect(overflow).toBeLessThanOrEqual(0);
 });
+
+test('nav reaches What changed', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'What changed' }).first().click();
+  await expect(page).toHaveURL(/\/changes\/$/);
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'What changed since last collection' }),
+  ).toBeVisible();
+  await expect(page.locator('article[id^="p-"]')).toHaveCount(4);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test('CSV link responds 200 and starts with the BOM', async ({ page }) => {
+  await page.goto('/');
+  const link = page.getByRole('link', { name: 'Download CSV' });
+  await expect(link).toHaveAttribute('href', '/exports/portfolio.csv');
+  const res = await page.request.get('/exports/portfolio.csv');
+  expect(res.status()).toBe(200);
+  const body = await res.body();
+  expect([...body.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
+});

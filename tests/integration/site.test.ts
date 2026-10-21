@@ -46,6 +46,7 @@ afterAll(async () => {
 
 const VIEWS = [
   '',
+  'changes',
   'workflows',
   'versions',
   'security',
@@ -906,6 +907,133 @@ describe('static site', () => {
       expect(proj).toContain('No history yet');
       expect(proj).not.toContain('data-trend-row');
     }, 180_000);
+  });
+
+  describe('what changed', () => {
+    const navLinks = (html: string) => {
+      const nav = /<nav class="mainnav"[\s\S]*?<\/nav>/.exec(html)?.[0] ?? '';
+      return [...nav.matchAll(/<a [^>]*>([\s\S]*?)<\/a>/g)].map((m) => textOf(m[1]!).trim());
+    };
+    const card = (html: string, id: string) => {
+      const at = html.indexOf(`id="p-${id}"`);
+      return html.slice(at, html.indexOf('</article>', at));
+    };
+    const text = (html: string) => textOf(html).replace(/\s+/g, ' ');
+
+    it('lists "What changed" right after Portfolio, in both languages', async () => {
+      expect(navLinks(await page(''))[1]).toBe('What changed');
+      expect(navLinks(await page('it'))[1]).toBe('Cosa è cambiato');
+      expect(navLinks(await page(''))[0]).toBe('Portfolio');
+    });
+
+    it('shows the five totals with their labels', async () => {
+      const t = text(await page('changes'));
+      expect(t).toContain(
+        '4 status changes · 1 new and 1 resolved critical/high alerts · 1 version moves · 1 new collection errors',
+      );
+      expect(text(await page('it/changes'))).toContain(
+        '4 cambi di stato · 1 alert critici/alti nuovi e 1 risolti · 1 versioni cambiate · 1 nuovi errori di raccolta',
+      );
+      expect(t).toContain('Compared with the collection of 14 Jan 2026');
+      expect(t).toContain('Demo data: earlier collections are synthetic.');
+    });
+
+    it('puts project beta first with its status changes, new alert and partial note', async () => {
+      const html = await page('changes');
+      expect(html.indexOf('id="p-project-beta"')).toBeLessThan(
+        html.indexOf('id="p-project-alpha"'),
+      );
+      const articles = [...html.matchAll(/<article[^>]*id="p-([\w-]+)"/g)].map((m) => m[1]);
+      expect(articles[0]).toBe('project-beta');
+      const beta = card(html, 'project-beta');
+      for (const dim of ['Overall', 'Delivery', 'Security risk'])
+        expect(text(beta)).toMatch(new RegExp(`${dim}:? .*Attention.*→.*Critical`));
+      expect(text(beta)).toContain('58 → 40');
+      expect(beta).toContain(
+        'href="https://github.com/example-org/project-beta-api/security/code-scanning/3"',
+      );
+      expect(text(beta)).toContain('Details withheld');
+      expect(text(beta)).toContain('Some alert sources could not be read in one of the two');
+      expect(text(beta)).toContain('Secret scanning');
+      expect(text(beta)).toContain('example-org/project-beta-web');
+    });
+
+    it('lists the version move and the resolved alert of project alpha', async () => {
+      const alpha = card(await page('changes'), 'project-alpha');
+      expect(text(alpha)).toContain('Frontend: 2.0.3 → 2.1.0');
+      expect(text(alpha)).toContain('example-org/project-alpha-backend#code-scanning#9');
+    });
+
+    it('says "No changes." for platform and gamma', async () => {
+      const html = await page('changes');
+      expect(text(card(html, 'platform'))).toContain('No changes.');
+      expect(text(card(html, 'project-gamma'))).toContain('No changes.');
+      expect(text(card(html, 'project-alpha'))).not.toContain('No changes.');
+    });
+
+    it('shows the restore-failed sentence and never "No changes"', async () => {
+      const data = join(work, 'changes-basis');
+      await cp('fixtures/snapshots', data, { recursive: true });
+      const file = join(data, 'changes.json');
+      const json = JSON.parse(await readFile(file, 'utf8'));
+      json.basis = { state: 'restore-failed', previousCollectedAt: null, synthetic: false };
+      for (const p of json.projects) {
+        p.previous = null;
+        p.statusChanges = [];
+        p.newFindings = [];
+        p.resolvedFindings = [];
+        p.versionMoves = [];
+        p.newErrors = [];
+      }
+      json.totals = Object.fromEntries(Object.keys(json.totals).map((k) => [k, 0]));
+      await writeFile(file, JSON.stringify(json));
+      const out = join(work, 'dist-changes-basis');
+      await buildSite(data, out);
+      const html = await readFile(join(out, 'changes/index.html'), 'utf8');
+      expect(text(html)).toContain(esc(en.changes.basis['restore-failed']));
+      expect(text(html)).not.toContain('No changes.');
+      expect(html).not.toContain('<article');
+      const it = await readFile(join(out, 'it/changes/index.html'), 'utf8');
+      expect(text(it)).toContain(esc(itDict.changes.basis['restore-failed']));
+    }, 180_000);
+
+    it('says so when changes.json is missing', async () => {
+      const data = join(work, 'no-changes');
+      await cp('fixtures/snapshots', data, { recursive: true });
+      await rm(join(data, 'changes.json'));
+      const out = join(work, 'dist-no-changes');
+      await buildSite(data, out);
+      const html = await readFile(join(out, 'changes/index.html'), 'utf8');
+      expect(text(html)).toContain('No change data in this snapshot');
+      expect(html).not.toContain('<article');
+    }, 180_000);
+
+    it('has a History card on data quality and a #trends section on how to read', async () => {
+      const dq = text(await page('data-quality'));
+      expect(dq).toContain('Demo history: 12 synthetic previous collections');
+      expect(dq).toContain('up to 120 collections, at most 90 days');
+      expect(text(await page('it/data-quality'))).toContain(
+        'Storico demo: 12 raccolte precedenti sintetiche',
+      );
+      const htr = await page('how-to-read');
+      const at = htr.indexOf('id="trends"');
+      expect(at).toBeGreaterThan(-1);
+      const section = text(htr.slice(at, htr.indexOf('</section>', at)));
+      expect(section).toContain('never 0');
+      expect(section).toContain('UTF-8');
+      expect(section).toContain('up to 120 collections and at most 90 days');
+      expect(text(await page('it/how-to-read'))).toContain('Andamento, cambiamenti e CSV');
+    });
+
+    it('links the CSV exports from security and versions', async () => {
+      expect(await page('security')).toMatch(
+        /<a[^>]*href="[^"]*exports\/findings-summary\.csv"[^>]*download[^>]*>\s*Alert summary \(CSV\)/,
+      );
+      expect(await page('versions')).toMatch(
+        /<a[^>]*href="[^"]*exports\/versions\.csv"[^>]*download[^>]*>\s*Versions \(CSV\)/,
+      );
+      expect(await page('it/versions')).toContain('Versioni (CSV)');
+    });
   });
 
   it.each(['catalog', 'it/catalog'])(

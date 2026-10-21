@@ -12,6 +12,7 @@ import ErrorsTable from '../../components/ErrorsTable.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import Pill from '../../components/Pill.astro';
 import Base from '../../layouts/Base.astro';
+import { loadHistory } from '../../lib/data';
 import { healthRank } from '../../lib/format';
 import { pageContext } from '../../lib/page';
 import { href, localeParams } from '../../lib/routes';
@@ -172,6 +173,21 @@ const capabilities = index
       .map((c, order) => ({ c, order, a: index.run.capabilities[c] }))
       .sort((x, y) => AVAIL_RANK[x.a] - AVAIL_RANK[y.a] || x.order - y.order)
   : [];
+
+/* History: how the previous collections were restored, and what is kept. */
+const history = loadHistory();
+const hq = q.history;
+const historyLine = (() => {
+  if (!history.ok) return history.error.kind === 'missing' ? d.trend.none : d.trend.invalid;
+  const { state, previousEntries } = history.data.restore;
+  if (state === 'restored')
+    return f(hq.restored, {
+      count: previousEntries,
+      date: day(history.data.entries[0]!.collectedAt),
+    });
+  if (state === 'fixture') return f(hq.fixture, { count: previousEntries });
+  return f(hq.fresh, { reason: d.changes.basis[state] });
+})();
 
 const lead = [
   unreadable > 0 &&
@@ -365,6 +381,20 @@ const lead = [
               </li>
             ))}
           </ul>
+        )}
+      </section>
+
+      <section class="card dq-card" aria-labelledby="h-history" data-history-card>
+        <h2 id="h-history">{hq.title}</h2>
+        <p>{historyLine}</p>
+        {history.ok && (
+          <p class="muted">
+            {f(hq.retention, {
+              maxEntries: history.data.retention.maxEntries,
+              maxAgeDays: history.data.retention.maxAgeDays,
+              entries: history.data.entries.length,
+            })}
+          </p>
         )}
       </section>
 

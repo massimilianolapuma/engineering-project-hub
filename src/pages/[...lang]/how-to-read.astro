@@ -160,6 +160,7 @@ const SECTIONS = [
   ['unknowns', h.termsTitle],
   ['score', h.scoreTitle],
   ['thresholds', h.thresholdsTitle],
+  ['trends', h.trendsTitle],
 ] as const;
 ---
 
@@ -444,6 +445,22 @@ const SECTIONS = [
     <p class="note">{h.staleSourceNote}</p>
   </section>
 
+  <section class="card htr-section" id="trends" aria-labelledby="trends-title">
+    <h2 id="trends-title">{h.trendsTitle}</h2>
+    <ul class="htr-points">
+      <li>{h.trendsPoint}</li>
+      <li>{h.trendsGaps}</li>
+      <li>
+        {f(h.trendsRetention, {
+          maxEntries: policies.history.maxEntries,
+          maxAgeDays: policies.history.maxAgeDays,
+        })}
+      </li>
+      <li>{h.trendsAlerts}</li>
+      <li>{h.trendsCsv}</li>
+    </ul>
+  </section>
+
   <section class="htr-docs" aria-labelledby="docs-title">
     <h2 id="docs-title">{h.docsTitle}</h2>
     <p>
@@ -586,6 +603,13 @@ const SECTIONS = [
   }
   .htr-measure strong {
     font-size: var(--fs-lg);
+  }
+  .htr-points {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding-left: 1.25rem;
   }
   .htr-docs {
     margin-top: var(--space-5);
