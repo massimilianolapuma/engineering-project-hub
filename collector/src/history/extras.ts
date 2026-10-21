@@ -5,7 +5,7 @@ import {
   SnapshotValidationError,
   type HistoryExtras,
 } from '../writers/write-snapshots';
-import { appendHistory } from './append';
+import { appendHistory, fitHistory } from './append';
 import { computeChanges } from './changes';
 import type { PreviousHistory } from './load';
 
@@ -34,12 +34,22 @@ export function buildHistoryExtras(
 ): HistoryExtras {
   const notes: string[] = [];
   const attempt = (p: PreviousHistory): HistoryExtras => {
+    const fitted = fitHistory(appendHistory(p, index, projects, catalog, policies, now));
     const extras: HistoryExtras = {
-      history: appendHistory(p, index, projects, catalog, policies, now),
+      history: fitted.file,
       changes: computeChanges(p, index, projects),
     };
     serialiseHistoryFiles(extras);
-    return { ...extras, notes };
+    const sizeNotes = [];
+    if (fitted.dropped)
+      sizeNotes.push(
+        `Dropped the ${fitted.dropped} oldest collections so that history.json stays under the 8 MiB the next run reads.`,
+      );
+    if (!fitted.fits)
+      sizeNotes.push(
+        'history.json is larger than the 8 MiB the next run reads, even with only this collection: the next run will start fresh (unreadable).',
+      );
+    return { ...extras, notes: [...notes, ...sizeNotes] };
   };
   let basis = previous;
   if (basis.file) {

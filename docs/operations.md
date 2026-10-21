@@ -183,6 +183,13 @@ built, `history.json` and `changes.json` are not written for that run, the snaps
 and the job summary shows `History | not written this run` with the reason under "History
 notes".
 
+Limits: history covers at most 500 projects (a larger catalog gets no history and a note).
+Per project it keeps at most 500 repositories, open critical/high alerts, unreadable sources
+and error keys, and 200 versions. A list at its limit may have been cut, so the next "What
+changed" lists no new alerts (or errors) for that project and marks it partial. If
+`history.json` would exceed the 8 MiB the next run reads, the oldest collections are dropped
+with a note.
+
 ### Resetting history
 
 Delete the `hub-history` artifacts (repository, Actions, Artifacts), or run one collection

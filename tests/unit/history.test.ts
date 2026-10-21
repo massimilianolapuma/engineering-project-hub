@@ -13,7 +13,7 @@ import {
   type ProjectSnapshot,
 } from '@model/index';
 import { loadConfig } from '../../collector/src/config/load';
-import { appendHistory, entryFromRun } from '../../collector/src/history/append';
+import { appendHistory, entryFromRun, fitHistory } from '../../collector/src/history/append';
 import { buildBaseline } from '../../collector/src/history/baseline';
 import { computeChanges } from '../../collector/src/history/changes';
 import {
@@ -24,7 +24,7 @@ import {
   type LoadHistoryOptions,
   type PreviousHistory,
 } from '../../collector/src/history/load';
-import { serialise } from '../../collector/src/writers/write-snapshots';
+import { serialise, SnapshotValidationError } from '../../collector/src/writers/write-snapshots';
 import { CANARIES } from '../helpers/canaries';
 import {
   daysAgo,
@@ -338,6 +338,50 @@ describe('appendHistory', () => {
   });
   const append = (previous: PreviousHistory, p: Policies = policies) =>
     appendHistory(previous, index(), [], catalog, p, NOW);
+
+  it('a project with 250 components keeps the first 200 versions instead of failing', () => {
+    const { project } = runOf('project-alpha');
+    const c0 = project.components[0]!;
+    for (let n = 0; n < 250; n++) project.components.push({ ...c0, id: `c${n}` });
+    const h = appendHistory(
+      { state: 'none', file: null },
+      index(),
+      [project],
+      catalog,
+      policies,
+      NOW,
+    );
+    expect(h.baseline.projects[0]!.versions).toHaveLength(200);
+  });
+
+  it('a schema failure is a SnapshotValidationError that names the failing path', () => {
+    const big = index();
+    const s0 = big.projects[0]!;
+    big.projects = Array.from({ length: 501 }, (_, n) => ({ ...s0, id: `p${n}` }));
+    expect(() =>
+      appendHistory({ state: 'none', file: null }, big, [], catalog, policies, NOW),
+    ).toThrow(SnapshotValidationError);
+    expect(() =>
+      appendHistory({ state: 'none', file: null }, big, [], catalog, policies, NOW),
+    ).toThrow(/entries\[0\]\.projects/);
+  });
+
+  it('fitHistory drops the oldest entries until the file fits the read cap; the current entry stays', () => {
+    const h = append(restored([5, 4, 3, 2, 1]));
+    const size = (f: HistoryFile) => Buffer.byteLength(`${JSON.stringify(f)}\n`);
+    const full = size(h);
+    const one = Buffer.byteLength(JSON.stringify(h.entries[0])) + 1;
+    const fitted = fitHistory(h, full - one);
+    expect(fitted.dropped).toBe(1);
+    expect(fitted.file.entries).toHaveLength(5);
+    expect(fitted.file.restore.previousEntries).toBe(4);
+    expect(size(fitted.file)).toBeLessThanOrEqual(full - one);
+    expect(fitted.file.entries.at(-1)!.collectedAt).toBe(NOW.toISOString());
+    const tiny = fitHistory(h, 10);
+    expect(tiny.file.entries).toHaveLength(1);
+    expect(tiny.fits).toBe(false);
+    expect(fitHistory(h).dropped).toBe(0);
+  });
 
   it('maxAgeDays 90: entries at now-100d, now-80d, now-1d + current → 3 entries (now-80d, now-1d, now)', () => {
     const f = append(restored([100, 80, 1]));

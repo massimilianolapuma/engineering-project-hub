@@ -70,4 +70,24 @@ describe('buildHistoryExtras', () => {
     expect(md).toContain('| History | started fresh (unreadable) · 1 entry |');
     expect(md).toContain('restored history could not be used');
   });
+
+  it('a catalog beyond the history limits writes no history, keeps a note and never throws', () => {
+    const { index, projects } = run();
+    const s0 = index.projects[0]!;
+    index.projects = Array.from({ length: 501 }, (_, n) => ({ ...s0, id: `p${n}` }));
+    const extras = buildHistoryExtras(
+      { state: 'none', file: null },
+      index,
+      projects,
+      catalog,
+      policies,
+      NOW,
+    );
+    expect(extras.history).toBeNull();
+    expect(extras.changes).toBeNull();
+    expect(extras.notes?.[0]).toMatch(/not written for this run .*entries\[0\]\.projects/);
+    const report = buildReport(index, projects, extras.history, extras.notes);
+    expect(report.history).toMatchObject({ state: 'not-written', entries: 0 });
+    expect(reportMarkdown(report)).toContain('| History | not written this run');
+  });
 });

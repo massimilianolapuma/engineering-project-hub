@@ -186,6 +186,7 @@ HistoryFileSchema = z.object({
   - `versions` sono la versione del coordinatore e l'`effectiveVersion` di ogni componente;
   - `errors` sono le chiavi deduplicate degli errori di raccolta.
 - Dimensione (stima del builder): circa 250 byte per progetto per voce. 50 progetti × 120 voci ≈ 1,5 MB, ben sotto il limite di scansione di 20 MB.
+- Limiti: una voce e la baseline contengono al massimo 500 progetti; per progetto la baseline tiene al massimo 500 repository, alert, coppie illeggibili e chiavi di errore, e 200 versioni (prima il coordinator). Un elenco oltre il limite viene tagliato, non fa mai fallire l'esecuzione, e il confronto tratta un elenco al limite come possibilmente tagliato (§5.3). Un catalogo con più di 500 progetti non ha storico: `history.json` e `changes.json` non vengono scritti e il report di raccolta spiega perché (§5.4).
 
 ### 5.3 Modello dei cambiamenti
 
@@ -308,7 +309,7 @@ Regole del confronto (funzione pura, `collector/src/history/changes.ts`):
 
 1. Prende le voci precedenti ripulite (vuote quando si riparte da zero).
 2. Aggiunge la voce attuale costruita da `index.projects` e `index.run`.
-3. Scarta le voci più vecchie di `now − maxAgeDays`, poi tiene le ultime `maxEntries`. La voce attuale sopravvive sempre (`maxEntries ≥ 2`).
+3. Scarta le voci più vecchie di `now − maxAgeDays`, poi tiene le ultime `maxEntries`. La voce attuale sopravvive sempre (`maxEntries ≥ 2`). Se il file compatto supera comunque gli 8 MiB letti dall'esecuzione successiva (§5.4), scarta le voci più vecchie finché non rientra, con una nota nel report di raccolta; un file troppo grande anche con la sola voce attuale viene scritto con una nota, e l'esecuzione successiva riparte da zero (`unreadable`).
 4. Sostituisce la baseline con quella dell'esecuzione attuale.
 5. Scrive `retention` (i valori effettivi) e `restore` (`state` e il numero di voci precedenti mantenute).
 

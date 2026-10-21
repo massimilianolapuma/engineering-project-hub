@@ -186,6 +186,7 @@ HistoryFileSchema = z.object({
   - `versions` are the coordinator version and each component's `effectiveVersion`;
   - `errors` are the de-duplicated collection error keys.
 - Size (builder's estimate): about 250 bytes per project per entry. 50 projects × 120 entries ≈ 1.5 MB, well under the 20 MB scan cap.
+- Limits: an entry and the baseline hold at most 500 projects; per project the baseline keeps at most 500 repositories, alerts, unreadable pairs and error keys, and 200 versions (coordinator first). A list beyond its cap is cut, never fails the run, and the diff treats a list at its cap as possibly cut (§5.3). A catalog with more than 500 projects gets no history: `history.json` and `changes.json` are not written and the collection report says why (§5.4).
 
 ### 5.3 Changes model
 
@@ -308,7 +309,7 @@ Diff rules (pure function, `collector/src/history/changes.ts`):
 
 1. Take the cleaned previous entries (empty when fresh).
 2. Append the current entry built from `index.projects` and `index.run`.
-3. Drop entries older than `now − maxAgeDays`, then keep the last `maxEntries`. The current entry always survives (`maxEntries ≥ 2`).
+3. Drop entries older than `now − maxAgeDays`, then keep the last `maxEntries`. The current entry always survives (`maxEntries ≥ 2`). If the compact file would still exceed the 8 MiB the next run reads (§5.4), drop the oldest entries until it fits, with a note in the collection report; a file that is too large even with only the current entry is written with a note, and the next run starts fresh (`unreadable`).
 4. Replace the baseline with the current run's baseline.
 5. Write `retention` (the effective values) and `restore` (`state` and the number of previous entries kept).
 

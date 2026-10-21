@@ -191,6 +191,13 @@ nemmeno uno storico da zero, `history.json` e `changes.json` non vengono scritti
 quell'esecuzione, gli snapshot sì, e il riepilogo del job mostra
 `History | not written this run` con il motivo sotto "History notes".
 
+Limiti: lo storico copre al massimo 500 progetti (un catalogo più grande non ha storico e
+riceve una nota). Per progetto tiene al massimo 500 repository, alert critici/alti aperti,
+fonti illeggibili e chiavi di errore, e 200 versioni. Un elenco al limite può essere stato
+tagliato, quindi il "Cosa è cambiato" successivo non elenca alert (o errori) nuovi per quel
+progetto e lo segna come parziale. Se `history.json` supera gli 8 MiB letti dall'esecuzione
+successiva, le raccolte più vecchie vengono scartate con una nota.
+
 ### Azzerare lo storico
 
 Elimina gli artifact `hub-history` (repository, Actions, Artifacts), oppure esegui una

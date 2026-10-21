@@ -33,6 +33,8 @@ export const FINDING_PAIR_SOURCE: Record<FindingSource, PairSource> = {
  * the next diff must not treat a missing item as "not there before" (see changes.ts).
  */
 export const BASELINE_LIST_CAP = 500;
+/** Versions per project (coordinator first). A version beyond it is simply not compared. */
+export const BASELINE_VERSIONS_CAP = 200;
 
 export const pairKey = (repository: string, source: PairSource): string =>
   `${repository}|${source}`;
@@ -110,7 +112,7 @@ export function buildBaseline(index: PortfolioIndex, projects: ProjectSnapshot[]
           componentId: c.id,
           version: c.effectiveVersion,
         })),
-      ],
+      ].slice(0, BASELINE_VERSIONS_CAP),
       errors: [...new Set(p.collectionErrors.map(errorKey))].sort().slice(0, BASELINE_LIST_CAP),
     })),
   };
