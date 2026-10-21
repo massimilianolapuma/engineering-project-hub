@@ -121,6 +121,24 @@ describe('policy:check decision cases and validation', () => {
   });
 });
 
+describe('policy:check decision case readability', () => {
+  it('an unreadable pair written in another letter case still makes the exception unverifiable', async () => {
+    const dir = join(tempDir(), 'cases');
+    cpSync('config/policy-cases', dir, { recursive: true });
+    const file = join(dir, 'unverifiable-exception.yaml');
+    writeFileSync(
+      file,
+      readFileSync(file, 'utf8').replace(
+        'example-org/project-beta-web|secret-scanning',
+        'Example-Org/Project-Beta-Web|secret-scanning',
+      ),
+    );
+    const r = await run({ casesDir: dir });
+    expect(r.exitCode).toBe(0);
+    expect(r.lines.join('\n')).toContain('security-exception-unverifiable');
+  });
+});
+
 describe('policy:check --snapshot (read-only what-if)', () => {
   const base = {
     snapshotDir: 'fixtures/snapshots',

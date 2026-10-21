@@ -1,0 +1,221 @@
+---
+/**
+ * Risk panel of the project page, inside the Security fold: the remediation line first, the
+ * counted alerts (slot), the alerts accepted by an exception, then the exceptions table.
+ * Every state has text and a symbol; nothing relies on colour. Withheld values keep the
+ * "withheld" text, so a private repository never leaks its rule or reason.
+ */
+import { countsAsOpen, type ProjectSnapshot, type SecurityException } from '@model/index';
+import type { I18n } from '../i18n';
+import { severityTone, type Tone } from '../lib/tones';
+import ExtLink from './ExtLink.astro';
+import Pill from './Pill.astro';
+import SlaMeta from './SlaMeta.astro';
+import UnknownValue from './UnknownValue.astro';
+interface Props {
+  s: ProjectSnapshot;
+  i18n: I18n;
+}
+const { s, i18n } = Astro.props;
+const { d, f } = i18n;
+const r = d.risk;
+const rem = s.securityHealth.remediation;
+const classes = ['critical', 'high', 'medium', 'low', 'secret'] as const;
+const totalOverdue = Object.values(rem.overdue).every((v) => v === null)
+  ? null
+  : Object.values(rem.overdue).reduce<number>((n, v) => n + (v ?? 0), 0);
+const lowerBound = !s.securityHealth.countsComplete;
+const list = classes
+  .filter((c) => (rem.overdue[c] ?? 0) > 0)
+  .map((c) => `${lowerBound ? '≥ ' : ''}${rem.overdue[c]} ${d.slaClass[c]}`)
+  .join(', ');
+const line = !rem.enabled
+  ? r.slaOff
+  : totalOverdue === null
+    ? r.overdueUnknown
+    : totalOverdue === 0
+      ? r.nothingOverdue
+      : f(r.remediationLine, { list, date: i18n.day(rem.oldestOverdueSince) });
+
+/** Accepted critical and high alerts: listed apart, never mixed with the counted ones. */
+const accepted = s.securityFindings.filter(
+  (x) =>
+    x.status === 'open' && !countsAsOpen(x) && (x.severity === 'critical' || x.severity === 'high'),
+);
+
+const stateOf = (e: SecurityException): { tone: Tone; label: string } => {
+  const date = { date: i18n.day(e.expires) };
+  if (e.state === 'expired') return { tone: 'amber', label: f(r.state.expired, date) };
+  if (e.state === 'stale') return { tone: 'amber', label: r.state.stale };
+  if (e.state === 'unverifiable') return { tone: 'grey', label: r.state.unverifiable };
+  return e.expiringSoon
+    ? { tone: 'amber', label: f(r.state.expiring, date) }
+    : { tone: 'info', label: f(r.state.active, date) };
+};
+const scopeOf = (e: SecurityException) =>
+  e.selector.value === null
+    ? f(r.selector.withheld, { kind: r.kind[e.selector.kind] })
+    : f(r.selector[e.selector.kind], { value: e.selector.value });
+const repoName = (full: string) => full.slice(full.indexOf('/') + 1);
+const exceptions = s.securityExceptions;
+---
+
+<div class="risk" data-risk-panel>
+  <p class="risk__line" data-remediation-line>
+    {line}
+  </p>
+  <slot />
+  {accepted.length > 0 && (
+    <div class="risk__accepted">
+      <h3>{r.acceptedHeading}</h3>
+      <ul class="alerts">
+        {accepted.map((x) => (
+          <li class="alerts__item" data-finding-id={x.id} data-sla-state={x.sla?.state ?? 'none'}>
+            <span class="status-col">
+              <Pill tone={severityTone(x.severity)} label={d.severity[x.severity]} />
+            </span>
+            <span class="alerts__text">
+              <span>{x.title && !x.repositoryPrivate ? x.title : d.common.privateWithheld}</span>
+              <span class="sub">
+                {d.findingSource[x.source]} · <code>{x.repository}</code>
+              </span>
+              <span class="risk__meta">
+                <SlaMeta finding={x} i18n={i18n} now={s.generatedAt} />
+              </span>
+            </span>
+            <ExtLink href={x.htmlUrl} i18n={i18n} label={d.project.openInGitHub} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
+  <div class="risk__exceptions" id="exceptions">
+    <h3>{r.exceptionsTitle}</h3>
+    {exceptions.length === 0 ? (
+      <p class="muted">{r.noExceptions}</p>
+    ) : (
+      <>
+        <div class="table-wrap">
+          <table role="table" class="table risk__table">
+            <caption class="visually-hidden">{r.exceptionsTitle}</caption>
+            <thead role="rowgroup">
+              <tr role="row">
+                <th role="columnheader" scope="col">
+                  {r.col.id}
+                </th>
+                <th role="columnheader" scope="col">
+                  {r.col.scope}
+                </th>
+                <th role="columnheader" scope="col">
+                  {r.col.owner}
+                </th>
+                <th role="columnheader" scope="col">
+                  {r.col.reason}
+                </th>
+                <th role="columnheader" scope="col">
+                  {r.col.state}
+                </th>
+                <th role="columnheader" scope="col">
+                  {r.col.matched}
+                </th>
+                <th role="columnheader" scope="col">
+                  {r.col.ticket}
+                </th>
+              </tr>
+            </thead>
+            <tbody role="rowgroup">
+              {exceptions.map((e) => {
+                const st = stateOf(e);
+                return (
+                  <tr role="row" data-exception={e.id} data-exception-state={e.state}>
+                    <th role="rowheader" scope="row">
+                      <span class="mono">{e.id}</span>
+                    </th>
+                    <td role="cell" data-label={r.col.scope}>
+                      <span class="cell">
+                        {r.source[e.source]} · <code>{repoName(e.repository)}</code> ·{' '}
+                        <span class:list={{ muted: e.selector.value === null }}>{scopeOf(e)}</span>
+                      </span>
+                    </td>
+                    <td role="cell" data-label={r.col.owner}>
+                      {e.owner}
+                    </td>
+                    <td role="cell" data-label={r.col.reason}>
+                      {e.reason ?? <span class="muted">{r.withheld}</span>}
+                    </td>
+                    <td role="cell" data-label={r.col.state}>
+                      <Pill tone={st.tone} label={st.label} />
+                    </td>
+                    <td role="cell" data-label={r.col.matched}>
+                      {e.matched === null ? <UnknownValue i18n={i18n} /> : e.matched}
+                    </td>
+                    <td role="cell" data-label={r.col.ticket}>
+                      {e.ticketUrl ? (
+                        <ExtLink href={e.ticketUrl} i18n={i18n} label={r.ticketOpen} />
+                      ) : (
+                        <span class="muted">{d.common.none}</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p class="note">{r.exceptionsLegend}</p>
+      </>
+    )}
+  </div>
+</div>
+
+<style>
+  .risk {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+  .risk__line {
+    margin: 0;
+    font-weight: 600;
+  }
+  .risk h3 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--fs-md);
+  }
+  .risk__exceptions {
+    scroll-margin-top: var(--space-4);
+    min-width: 0;
+  }
+  .risk__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-2);
+  }
+  .risk__table td,
+  .risk__table th {
+    overflow-wrap: anywhere;
+  }
+  .alerts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .alerts__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-3);
+  }
+  .alerts__text {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 240px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+</style>

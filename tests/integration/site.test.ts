@@ -948,6 +948,166 @@ describe('static site', () => {
     }, 180_000);
   });
 
+  describe('risk governance (exceptions, SLAs, remediation queue)', () => {
+    const t = (html: string) => textOf(html).replace(/\s+/g, ' ');
+    /** The element that carries `data-finding-id="<id>"` (an <li> or a <tr>), as a fragment. */
+    const finding = (html: string, id: string) => {
+      const at = html.indexOf(`data-finding-id="${id}"`);
+      expect(at, id).toBeGreaterThan(-1);
+      const start = Math.max(html.lastIndexOf('<li', at), html.lastIndexOf('<tr', at));
+      const tag = html.startsWith('<li', start) ? '</li>' : '</tr>';
+      return html.slice(start, html.indexOf(tag, at));
+    };
+    const exceptionRows = (html: string) => {
+      const at = html.indexOf('id="exceptions"');
+      const table = html.slice(at, html.indexOf('</table>', at));
+      return table.match(/<tr[^>]*data-exception="[^"]+"[\s\S]*?<\/tr>/g) ?? [];
+    };
+    const filesUnder = async (dir: string): Promise<string[]> => {
+      const { readdir } = await import('node:fs/promises');
+      const entries = await readdir(dir, { recursive: true, withFileTypes: true });
+      return entries.filter((e) => e.isFile()).map((e) => join(e.parentPath, e.name));
+    };
+
+    it('platform: the overdue high alert has data-sla-state, the pill and the under-a-day text', async () => {
+      const row = finding(
+        await page('projects/platform'),
+        'example-org/platform-mono#code-scanning#2',
+      );
+      expect(row).toContain('data-sla-state="overdue"');
+      expect(t(row)).toContain('Overdue');
+      expect(t(row)).toContain('overdue for less than a day');
+    });
+
+    it('beta: the critical alert is within its SLA, due in 4 d', async () => {
+      const row = finding(
+        await page('projects/project-beta'),
+        'example-org/project-beta-api#code-scanning#3',
+      );
+      expect(row).toContain('data-sla-state="within"');
+      expect(t(row)).toContain('due in 4 d');
+    });
+
+    it('platform page: the remediation line names the overdue count and the oldest date', async () => {
+      const html = await page('projects/platform');
+      expect(t(html)).toContain('Overdue: 1 high · oldest since 14 Jan 2026');
+      expect(t(await page('projects/project-alpha'))).toContain('Nothing overdue');
+    });
+
+    it('alpha: #exceptions has 2 body rows with their states', async () => {
+      const rows = exceptionRows(await page('projects/project-alpha'));
+      expect(rows).toHaveLength(2);
+      const byId = (id: string) => rows.find((r) => r.includes(`data-exception="${id}"`))!;
+      expect(t(byId('EXC-ALPHA-001'))).toContain('Active until');
+      expect(t(byId('EXC-ALPHA-002'))).toContain('Stale: matches nothing');
+    });
+
+    it('alpha lists #15 under "Accepted by exception" with "Accepted until", apart from the counted ones', async () => {
+      const html = await page('projects/project-alpha');
+      const at = html.indexOf('Accepted by exception');
+      expect(at).toBeGreaterThan(-1);
+      const accepted = html.slice(at, html.indexOf('</ul>', at));
+      expect(accepted).toContain('example-org/project-alpha-backend#code-scanning#15');
+      expect(t(accepted)).toContain('Accepted until');
+      expect(accepted).not.toContain('dependabot#7');
+    });
+
+    it('beta: EXC-BETA-001 shows the withheld text; the rule and the reason marker appear in no built file', async () => {
+      const rows = exceptionRows(await page('projects/project-beta'));
+      const row = rows.find((r) => r.includes('data-exception="EXC-BETA-001"'))!;
+      expect(t(row)).toContain('Withheld (non-public repository)');
+      for (const file of await filesUnder(dist)) {
+        const body = await readFile(file, 'utf8').catch(() => '');
+        expect(body.includes('py/flask-debug'), file).toBe(false);
+        expect(body.includes('marker-reason-b7c1'), file).toBe(false);
+      }
+    });
+
+    it('security page: the remediation queue lists the critical and high alerts in order', async () => {
+      const html = await page('security');
+      const at = html.indexOf('class="sec-queue');
+      expect(at).toBeGreaterThan(-1);
+      const queue = html.slice(at, html.indexOf('</details>', at));
+      const ids = [...queue.matchAll(/<tr[^>]*data-finding-id="([^"]+)"/g)].map((m) => m[1]);
+      expect(ids).toEqual([
+        'example-org/platform-mono#code-scanning#2',
+        'example-org/project-beta-api#code-scanning#3',
+        'example-org/platform-mono#code-scanning#4',
+        'example-org/project-alpha-frontend#dependabot#7',
+        'example-org/project-beta-web#dependabot#11',
+        'example-org/project-beta-api#code-scanning#901',
+        'example-org/project-alpha-backend#code-scanning#15',
+      ]);
+      expect(queue).toContain('data-sla-state="paused"');
+    });
+
+    it('security page totals carry overdue 1 and accepted 3', async () => {
+      const html = await page('security');
+      expect(html).toMatch(/data-total="overdue"[^>]*data-value="1"/);
+      expect(html).toMatch(/data-total="accepted"[^>]*data-value="3"/);
+    });
+
+    it('data quality: the exceptions card lists each kind', async () => {
+      const html = await page('data-quality');
+      const at = html.indexOf('id="h-exceptions"');
+      expect(at).toBeGreaterThan(-1);
+      const card = html.slice(at, html.indexOf('</section>', at));
+      const kind = (name: string, id: string) =>
+        expect(card, id).toMatch(new RegExp(`data-exception-kind="${name}"[\\s\\S]*?${id}`));
+      kind('expired', 'EXC-PLAT-001');
+      kind('stale', 'EXC-ALPHA-002');
+      kind('unverifiable', 'EXC-BETA-002');
+      kind('orphaned', 'EXC-LEGACY-001');
+      kind('expiringSoon', 'EXC-PLAT-002');
+    });
+
+    it('how to read: #risk explains exceptions and the SLA table shows 30 days for high', async () => {
+      const en = await page('how-to-read');
+      const at = en.indexOf('id="risk"');
+      expect(at).toBeGreaterThan(-1);
+      const section = en.slice(at, en.indexOf('</section>', at));
+      expect(t(section)).toContain('Exceptions and remediation SLAs');
+      expect(t(section)).toMatch(/high[^|]*30/i);
+      expect(await page('it/how-to-read')).toContain('Eccezioni e SLA di remediation');
+    });
+
+    it('Italian pages carry the risk strings', async () => {
+      expect(await page('it/projects/platform')).toContain('In ritardo');
+      expect(await page('it/projects/project-alpha')).toContain('Accettato fino al');
+    });
+
+    it('every Overdue / Accepted pill has visible text', async () => {
+      for (const v of ['projects/platform', 'projects/project-alpha', 'security']) {
+        const html = await page(v);
+        const pills = html.match(/<[^>]*data-risk-pill[^>]*>[\s\S]*?<\/span>\s*<\/span>/g) ?? [];
+        expect(pills.length, v).toBeGreaterThan(0);
+        for (const p of pills) expect(t(p).trim().length, v).toBeGreaterThan(0);
+      }
+    });
+
+    it('the Security bar tooltip on the portfolio carries the overdue and accepted counts', async () => {
+      const html = await page('');
+      expect(html).toMatch(/title="Security risk: [^"]*1 overdue · 1 accepted"/);
+    });
+
+    it('an accepted high never hides an external high (listed / unlisted split)', async () => {
+      const data = join(work, 'risk-unlisted');
+      await cp('fixtures/snapshots', data, { recursive: true });
+      const file = join(data, 'projects/project-alpha.json');
+      const json = JSON.parse(await readFile(file, 'utf8'));
+      // One more counted high that has no finding record (e.g. container scanning).
+      json.securityHealth.openCounts.high += 1;
+      await writeFile(file, JSON.stringify(json));
+      const out = join(work, 'dist-risk-unlisted');
+      await buildSite(data, out);
+      const html = await readFile(join(out, 'projects/project-alpha/index.html'), 'utf8');
+      expect(html).toContain('data-unlisted-crit-high');
+      // The accepted alert is not in the counted list.
+      const counted = html.slice(html.indexOf('aria-label="Open critical and high alerts"'));
+      expect(counted.slice(0, counted.indexOf('</ul>'))).not.toContain('code-scanning#15');
+    }, 180_000);
+  });
+
   describe('what changed', () => {
     const navLinks = (html: string) => {
       const nav = /<nav class="mainnav"[\s\S]*?<\/nav>/.exec(html)?.[0] ?? '';

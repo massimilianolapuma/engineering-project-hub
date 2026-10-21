@@ -1,6 +1,7 @@
 ---
 import {
   CONTROL_IDS,
+  countsAsOpen,
   type CollectionError,
   type ControlId,
   type ControlState,
@@ -14,6 +15,7 @@ import Pill from '../../components/Pill.astro';
 import RelTime from '../../components/RelTime.astro';
 import StatusBadge from '../../components/StatusBadge.astro';
 import StatusDot from '../../components/StatusDot.astro';
+import RiskPill from '../../components/RiskPill.astro';
 import UnknownValue from '../../components/UnknownValue.astro';
 import Base from '../../layouts/Base.astro';
 import { pageContext } from '../../lib/page';
@@ -100,8 +102,67 @@ const controlDetail = (p: ProjectSnapshot, control: ControlId, state: ControlSta
 };
 const allRequiredEnabled = (p: ProjectSnapshot) =>
   requiredControls(p).every((c) => c.state === 'enabled');
+/** Counted critical alerts: one accepted by an exception is listed in the queue, not here. */
 const criticalFindings = (p: ProjectSnapshot) =>
-  p.securityFindings.filter((x) => x.status === 'open' && x.severity === 'critical');
+  p.securityFindings.filter((x) => countsAsOpen(x) && x.severity === 'critical');
+
+/** Portfolio total of a risk figure; null (unknown, never 0) when no project measured it. */
+const riskTotal = (pick: (p: ProjectSnapshot) => number | null) => {
+  const vals = projects.map(pick);
+  return vals.every((v) => v === null) ? null : vals.reduce<number>((a, v) => a + (v ?? 0), 0);
+};
+const sumKnown = (values: (number | null)[]) =>
+  values.every((v) => v === null) ? null : values.reduce<number>((a, v) => a + (v ?? 0), 0);
+const riskTotals = [
+  [
+    'overdue',
+    d.risk.totalOverdue,
+    riskTotal((p) => sumKnown(Object.values(p.securityHealth.remediation.overdue))),
+  ],
+  [
+    'accepted',
+    d.risk.totalAccepted,
+    riskTotal((p) => sumKnown(Object.values(p.securityHealth.acceptedCounts))),
+  ],
+] as const;
+const orUnknown = (n: number | null) => (n === null ? d.common.unknown : i18n.number(n));
+
+/**
+ * Remediation queue: every open critical and high alert, counted or accepted, overdue first,
+ * then within SLA by due date, then accepted, then unknown age.
+ */
+const QUEUE_CAP = 100;
+const STATE_RANK = { overdue: 0, within: 1, paused: 2, unknown: 3, none: 4 } as const;
+const queueAll = projects
+  .flatMap((p) =>
+    p.securityFindings
+      .filter((x) => x.status === 'open' && (x.severity === 'critical' || x.severity === 'high'))
+      .map((x) => ({ p, x, state: x.sla?.state ?? ('none' as const) })),
+  )
+  .sort(
+    (a, b) =>
+      STATE_RANK[a.state] - STATE_RANK[b.state] ||
+      (a.x.sla?.dueAt ?? '￿').localeCompare(b.x.sla?.dueAt ?? '￿') ||
+      a.x.id.localeCompare(b.x.id),
+  );
+const queue = queueAll.slice(0, QUEUE_CAP);
+const queueMore = queueAll.length - queue.length;
+const stateText = (row: (typeof queueAll)[number]) =>
+  row.state === 'paused' && row.x.exception
+    ? f(d.risk.queueState.paused, { date: i18n.day(row.x.exception.expires) })
+    : d.risk.queueState[row.state];
+const queuePill = (row: (typeof queueAll)[number]) =>
+  row.state === 'overdue'
+    ? ('overdue' as const)
+    : row.state === 'paused'
+      ? ('accepted' as const)
+      : null;
+const days = (n: number | null | undefined) =>
+  n === null || n === undefined ? d.common.unknown : f(d.risk.days, { n });
+const issuesOf = (p: ProjectSnapshot) => {
+  const e = p.securityHealth.exceptionStates;
+  return e.expired + e.stale + e.unverifiable;
+};
 const githubSecurity = (p: ProjectSnapshot) =>
   p.coordinator.repository.url ? `${p.coordinator.repository.url}/security` : null;
 const componentName = (p: ProjectSnapshot, cid: string) =>
@@ -153,6 +214,24 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
                 )}
               </span>
               <span class="muted">{d.severity[k]}</span>
+            </li>
+          ))}
+          {riskTotals.map(([key, label, n]) => (
+            <li class="card sec-total" data-total={key} data-value={n ?? ''}>
+              <span class:list={['sec-total__num', { 'sec-total__num--unknown': n === null }]}>
+                {n === null ? (
+                  <UnknownValue i18n={i18n} />
+                ) : lowerBound ? (
+                  <>
+                    <span aria-hidden="true">≥</span>
+                    <span class="visually-hidden">{t.atLeast} </span>
+                    {i18n.number(n)}
+                  </>
+                ) : (
+                  i18n.number(n)
+                )}
+              </span>
+              <span class="muted">{label}</span>
             </li>
           ))}
         </ul>
@@ -244,6 +323,16 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
                       ))}
                   </ul>
 
+                  <p class="sec-risk" data-risk-line>
+                    <a href={`${projectHref}#exceptions`}>
+                      {f(d.risk.securityCardLine, {
+                        overdue: orUnknown(sumKnown(Object.values(h.remediation.overdue))),
+                        accepted: orUnknown(sumKnown(Object.values(h.acceptedCounts))),
+                        issues: issuesOf(p),
+                      })}
+                    </a>
+                  </p>
+
                   {criticalFindings(p).length > 0 && (
                     <div class="sec-crit">
                       <h4 class="sec-crit__title">{t.criticalAlerts}</h4>
@@ -304,6 +393,92 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
           );
         })}
       </section>
+
+      <details class="sec-queue disclosure" open>
+        <summary>
+          <span class="sec-queue__title">{d.risk.queueTitle}</span>
+          <span class="sec-queue__hint">{f(d.risk.queueHint, { n: queueAll.length })}</span>
+        </summary>
+        <div class="sec-queue__body">
+          {queue.length === 0 ? (
+            <p class="muted">{d.risk.queueEmpty}</p>
+          ) : (
+            <div class="table-wrap">
+              <table role="table" class="table table--queue">
+                <caption class="visually-hidden">{d.risk.queueTitle}</caption>
+                <thead role="rowgroup">
+                  <tr role="row">
+                    <th role="columnheader" scope="col">
+                      {d.risk.queueCol.severity}
+                    </th>
+                    <th role="columnheader" scope="col">
+                      {d.risk.queueCol.alert}
+                    </th>
+                    <th role="columnheader" scope="col">
+                      {d.risk.queueCol.project}
+                    </th>
+                    <th role="columnheader" scope="col">
+                      {d.risk.queueCol.age}
+                    </th>
+                    <th role="columnheader" scope="col">
+                      {d.risk.queueCol.sla}
+                    </th>
+                    <th role="columnheader" scope="col">
+                      {d.risk.queueCol.due}
+                    </th>
+                    <th role="columnheader" scope="col">
+                      {d.risk.queueCol.state}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody role="rowgroup">
+                  {queue.map((row) => {
+                    const { p, x } = row;
+                    const pill = queuePill(row);
+                    return (
+                      <tr role="row" data-finding-id={x.id} data-sla-state={row.state}>
+                        <td role="cell" data-label={d.risk.queueCol.severity}>
+                          <Pill tone={severityTone(x.severity)} label={d.severity[x.severity]} />
+                        </td>
+                        <td role="cell" data-label={d.risk.queueCol.alert}>
+                          <span class="cell">
+                            {x.title && !x.repositoryPrivate ? (
+                              x.title
+                            ) : (
+                              <span class="muted">{d.common.privateWithheld}</span>
+                            )}
+                            <code class="sub">{x.repository}</code>
+                            <ExtLink href={x.htmlUrl} i18n={i18n} />
+                          </span>
+                        </td>
+                        <td role="cell" data-label={d.risk.queueCol.project}>
+                          <a href={href(locale, `projects/${p.project.id}`)}>{p.project.name}</a>
+                        </td>
+                        <td role="cell" class="num" data-label={d.risk.queueCol.age}>
+                          {days(x.sla?.ageDays)}
+                        </td>
+                        <td role="cell" class="num" data-label={d.risk.queueCol.sla}>
+                          {x.sla?.days ? days(x.sla.days) : d.common.none}
+                        </td>
+                        <td role="cell" data-label={d.risk.queueCol.due}>
+                          {x.sla?.dueAt ? i18n.day(x.sla.dueAt) : d.common.unknown}
+                        </td>
+                        <td role="cell" data-label={d.risk.queueCol.state}>
+                          <span class="cell">
+                            {pill && <RiskPill kind={pill} i18n={i18n} />}
+                            <span class={pill ? 'sub' : undefined}>{stateText(row)}</span>
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {queueMore > 0 && <p class="note">{f(d.risk.queueMore, { n: queueMore })}</p>}
+        </div>
+      </details>
 
       <details class="sec-matrix disclosure">
         <summary>{t.coverageMatrix}</summary>
@@ -535,11 +710,16 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
     margin-left: var(--space-1);
     color: var(--text-muted);
   }
+  .sec-risk {
+    margin: 0;
+  }
+  .sec-queue,
   .sec-matrix {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
   }
+  .sec-queue > summary,
   .sec-matrix > summary {
     display: flex;
     align-items: center;
@@ -548,6 +728,19 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
     font-weight: 600;
     cursor: pointer;
   }
+  .sec-queue > summary {
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+  }
+  .sec-queue__title {
+    font-weight: 600;
+  }
+  .sec-queue__hint {
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+    font-weight: 400;
+  }
+  .sec-queue__body,
   .sec-matrix__body {
     display: flex;
     flex-direction: column;

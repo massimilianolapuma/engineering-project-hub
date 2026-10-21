@@ -170,6 +170,53 @@ const repoControls = projects.flatMap((p) =>
       })
     : [],
 );
+/* Security exceptions that need a decision, by kind; orphaned ones have no project. */
+const exceptionGroups = (() => {
+  const all = projects.flatMap((p) =>
+    p.securityExceptions.map((e) => ({
+      project: p.project,
+      id: e.id,
+      repository: e.repository,
+      expires: e.expires,
+      state: e.state,
+      expiringSoon: e.expiringSoon,
+    })),
+  );
+  const orphaned = index?.run.exceptions.orphaned ?? [];
+  return [
+    {
+      kind: 'expired',
+      label: q.exceptionLists.expired,
+      rows: all.filter((e) => e.state === 'expired'),
+      note: q.exceptionLists.expiredOn,
+    },
+    {
+      kind: 'stale',
+      label: q.exceptionLists.stale,
+      rows: all.filter((e) => e.state === 'stale'),
+      note: null,
+    },
+    {
+      kind: 'unverifiable',
+      label: q.exceptionLists.unverifiable,
+      rows: all.filter((e) => e.state === 'unverifiable'),
+      note: null,
+    },
+    {
+      kind: 'expiringSoon',
+      label: q.exceptionLists.expiringSoon,
+      rows: all.filter((e) => e.state === 'active' && e.expiringSoon),
+      note: q.exceptionLists.expiresOn,
+    },
+  ]
+    .filter((g) => g.rows.length > 0)
+    .map((g) => ({ ...g, orphans: [] as string[] }))
+    .concat(
+      orphaned.length > 0
+        ? [{ kind: 'orphaned', label: q.exceptionsOrphan, rows: [], note: null, orphans: orphaned }]
+        : [],
+    );
+})();
 const [beforeFile, afterFile] = q.unmappedSentence.split('{file}');
 const [beforeDate, afterDate] = q.lastUpdate.split('{date}');
 
@@ -449,6 +496,41 @@ const lead = [
         )}
       </section>
 
+      <section class="card dq-card" aria-labelledby="h-exceptions">
+        <h2 id="h-exceptions">{q.exceptions}</h2>
+        <p class="muted">{q.exceptionLists.intro}</p>
+        {exceptionGroups.length === 0 ? (
+          <p class="muted">{q.exceptionLists.none}</p>
+        ) : (
+          exceptionGroups.map((g) => (
+            <div class="dq-exc">
+              <h3 class="dq-exc__title">{g.label}</h3>
+              <ul class="dq-rows" data-exception-kind={g.kind}>
+                {g.rows.map((e) => (
+                  <li class="dq-row" id={anchor(e.project.id)}>
+                    <span>
+                      <a
+                        class="dq-project"
+                        href={`${href(locale, `projects/${e.project.id}`)}#exceptions`}
+                      >
+                        <span class="mono">{e.id}</span>
+                      </a>{' '}
+                      · {e.project.name} · <span class="mono">{repoName(e.repository)}</span>
+                    </span>
+                    {g.note && <span class="muted">{f(g.note, { date: day(e.expires) })}</span>}
+                  </li>
+                ))}
+                {g.orphans.map((id) => (
+                  <li class="dq-row">
+                    <span class="mono">{id}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        )}
+      </section>
+
       <section class="card dq-card" aria-labelledby="h-history" data-history-card>
         <h2 id="h-history">{hq.title}</h2>
         <p>{historyLine}</p>
@@ -660,6 +742,10 @@ const lead = [
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-1) var(--space-2);
+  }
+  .dq-exc__title {
+    margin: var(--space-2) 0 var(--space-1);
+    font-size: var(--fs-md);
   }
   .dq-fix {
     font-size: var(--fs-sm);

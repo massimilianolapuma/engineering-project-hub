@@ -19,7 +19,7 @@ import { seriesFor, summarise, trendText } from '../../lib/trend';
 export const getStaticPaths = localeParams;
 const { locale } = Astro.props;
 const { i18n, data, index, alternates } = pageContext(locale, 'portfolio');
-const { d } = i18n;
+const { d, f } = i18n;
 const projects = data.ok ? data.data.index.projects : [];
 type Project = (typeof projects)[number];
 const snapshots = new Map<string, ProjectSnapshot>(
@@ -37,6 +37,11 @@ const sorted = [...projects].sort(
 const DIMS: Dimension[] = ['delivery', 'version', 'security', 'coverage', 'governance', 'quality'];
 /** Optional dimensions (quality): when unknown they are left out of the overall status. */
 const OPTIONAL = new Set<Dimension>(loadSitePolicies().policies.overall.optionalDimensions);
+/** Security tooltip suffix: overdue and accepted counts, only when one is non-zero. */
+const riskNote = (p: Project): string | undefined =>
+  (p.risk.overdue ?? 0) + (p.risk.accepted ?? 0) > 0
+    ? f(d.risk.barSuffix, { overdue: p.risk.overdue ?? 0, accepted: p.risk.accepted ?? 0 })
+    : undefined;
 const statusOf = (p: Project, k: Dimension): HealthStatus =>
   k === 'coverage' || k === 'quality' ? p[k].status : p[k];
 const healthOf = (s: ProjectSnapshot | undefined, k: Dimension): HealthResult | undefined =>
@@ -312,7 +317,11 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
                       <DimensionBars variant="header" dimensions={DIMS} locale={locale} />
                     </span>
                     <DimensionBars
-                      dims={DIMS.map((k) => ({ dimension: k, status: statusOf(p, k) }))}
+                      dims={DIMS.map((k) => ({
+                        dimension: k,
+                        status: statusOf(p, k),
+                        note: k === 'security' ? riskNote(p) : undefined,
+                      }))}
                       locale={locale}
                     />
                   </td>

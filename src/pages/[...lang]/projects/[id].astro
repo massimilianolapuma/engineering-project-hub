@@ -3,14 +3,15 @@
  * Project page: one question first ("why is it in this state?"), then the six dimensions,
  * the environments path and the components; everything else is collapsed on demand.
  */
-import type {
-  ComponentSnapshot,
-  Dimension,
-  HealthResult,
-  HealthStatus,
-  Reason,
-  SeverityCounts,
-  WorkflowStatus,
+import {
+  countsAsOpen,
+  type ComponentSnapshot,
+  type Dimension,
+  type HealthResult,
+  type HealthStatus,
+  type Reason,
+  type SeverityCounts,
+  type WorkflowStatus,
 } from '@model/index';
 import ControlSymbol from '../../../components/ControlSymbol.astro';
 import ErrorsTable from '../../../components/ErrorsTable.astro';
@@ -20,7 +21,9 @@ import Pill from '../../../components/Pill.astro';
 import QualitySection from '../../../components/QualitySection.astro';
 import RepositoryControlsSection from '../../../components/RepositoryControlsSection.astro';
 import RelTime from '../../../components/RelTime.astro';
+import RiskPanel from '../../../components/RiskPanel.astro';
 import ScoreBadge from '../../../components/ScoreBadge.astro';
+import SlaMeta from '../../../components/SlaMeta.astro';
 import StatusBadge from '../../../components/StatusBadge.astro';
 import TrendSection from '../../../components/TrendSection.astro';
 import UnknownValue from '../../../components/UnknownValue.astro';
@@ -136,7 +139,18 @@ function dimSummary(dim: Dimension, health: HealthResult): string {
       other: otherCount(sum(c, OTHER_SEVERITIES)),
     });
     // Some sources unreadable: the counts are a lower bound, say so on the card too.
-    return s.securityHealth.countsComplete ? counts : `${counts} · ${d.project.alertsPartial}`;
+    const base = s.securityHealth.countsComplete
+      ? counts
+      : `${counts} · ${d.project.alertsPartial}`;
+    const overdue = Object.values(s.securityHealth.remediation.overdue).reduce<number>(
+      (n, v) => n + (v ?? 0),
+      0,
+    );
+    const accepted = Object.values(s.securityHealth.acceptedCounts).reduce<number>(
+      (n, v) => n + (v ?? 0),
+      0,
+    );
+    return overdue + accepted > 0 ? `${base} · ${f(d.risk.cardLine, { overdue, accepted })}` : base;
   }
   if (dim === 'coverage' && s.securityCoverage.required > 0) {
     return coverageLine(d.project.dimCoverage);
@@ -247,10 +261,14 @@ const gapsOf = (c: ComponentSnapshot) =>
   controlsOf(c).filter((x) => x.required && x.state !== 'enabled');
 const hasRequired = (c: ComponentSnapshot) => controlsOf(c).some((x) => x.required);
 
-/** Security: open critical and high alerts are listed; everything else is a count + GitHub. */
+/**
+ * Security: counted critical and high alerts are listed; everything else is a count + GitHub.
+ * An alert accepted by an exception stays "open" on GitHub but is listed apart (RiskPanel), so
+ * it never hides an external alert in the "unlisted" subtraction below.
+ */
 const listed = s
   ? s.securityFindings.filter(
-      (x) => x.status === 'open' && (x.severity === 'critical' || x.severity === 'high'),
+      (x) => countsAsOpen(x) && (x.severity === 'critical' || x.severity === 'high'),
     )
   : [];
 const openCounts = s?.securityHealth.openCounts;
@@ -708,28 +726,37 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
           </summary>
           <div class="fold__body">
             {!countsKnown && <p class="muted">{d.project.alertsUnknown}</p>}
-            {listed.length === 0 ? (
-              countsKnown && <p class="muted">{d.project.noCriticalHigh}</p>
-            ) : (
-              <ul class="alerts" aria-label={d.project.criticalHighCaption}>
-                {listed.map((x) => (
-                  <li class="alerts__item">
-                    <span class="status-col">
-                      <Pill tone={severityTone(x.severity)} label={d.severity[x.severity]} />
-                    </span>
-                    <span class="alerts__text">
-                      <span>
-                        {x.title && !x.repositoryPrivate ? x.title : d.common.privateWithheld}
+            <RiskPanel s={s} i18n={i18n}>
+              {listed.length === 0 ? (
+                countsKnown && <p class="muted">{d.project.noCriticalHigh}</p>
+              ) : (
+                <ul class="alerts" aria-label={d.project.criticalHighCaption}>
+                  {listed.map((x) => (
+                    <li
+                      class="alerts__item"
+                      data-finding-id={x.id}
+                      data-sla-state={x.sla?.state ?? 'none'}
+                    >
+                      <span class="status-col">
+                        <Pill tone={severityTone(x.severity)} label={d.severity[x.severity]} />
                       </span>
-                      <span class="sub">
-                        {d.findingSource[x.source]} · <code>{x.repository}</code>
+                      <span class="alerts__text">
+                        <span>
+                          {x.title && !x.repositoryPrivate ? x.title : d.common.privateWithheld}
+                        </span>
+                        <span class="sub">
+                          {d.findingSource[x.source]} · <code>{x.repository}</code>
+                        </span>
+                        <span class="alerts__risk">
+                          <SlaMeta finding={x} i18n={i18n} now={s.generatedAt} />
+                        </span>
                       </span>
-                    </span>
-                    <ExtLink href={x.htmlUrl} i18n={i18n} label={d.project.openInGitHub} />
-                  </li>
-                ))}
-              </ul>
-            )}
+                      <ExtLink href={x.htmlUrl} i18n={i18n} label={d.project.openInGitHub} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </RiskPanel>
             {countsKnown && unlisted.length > 0 && (
               <p class="alerts__unlisted" data-unlisted-crit-high>
                 {f(d.project.unlistedCritHigh, { alerts: unlistedText })}
@@ -1148,6 +1175,12 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
     flex-wrap: wrap;
     align-items: baseline;
     gap: var(--space-1) var(--space-3);
+  }
+  .alerts__risk {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-2);
   }
   .alerts__unlisted {
     font-weight: 600;

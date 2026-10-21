@@ -392,6 +392,11 @@ main section {
 .pill--sev-unknown {
   color: var(--text-muted);
 }
+/* Overdue is not a health state: the neutral pill with a clock, emphasised by weight and outline. */
+.pill--risk-overdue {
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
 /* Fixed-width column for a pill placed before text, so the text after it always aligns. */
 .status-col {
   display: inline-flex;

@@ -208,9 +208,19 @@ function securityDecision(c: PolicyCase, policies: Policies, now: Date): HealthR
   const exceptions: ExceptionEntry[] = resolved.exceptions.map((e) =>
     ExceptionEntrySchema.parse(e),
   );
-  const readability: SourceReadability = new Map(
-    input.unreadable.map((k) => [k, 'unreadable' as const]),
-  );
+  // A complete map (every repository x source in play), because a missing pair would read as
+  // readable inside the engine.
+  const unreadable = new Set(input.unreadable.map((k) => k.toLowerCase()));
+  const repositories = new Set([
+    ...input.findings.map((f) => f.id.split('#')[0]!),
+    ...exceptions.map((e) => e.repository),
+  ]);
+  const readability: SourceReadability = new Map();
+  for (const repository of repositories)
+    for (const source of Object.keys(NATIVE_SOURCE)) {
+      const key = `${repository}|${source}`;
+      readability.set(key, unreadable.has(key.toLowerCase()) ? 'unreadable' : 'readable');
+    }
   return decideSecurity({
     findings: matchable,
     exceptions,

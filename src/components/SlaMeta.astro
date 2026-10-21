@@ -1,0 +1,56 @@
+---
+/**
+ * The risk meta line of one finding: age, SLA and due date, or the exception that accepts it,
+ * with a pill (icon + text, never colour alone). The row that holds it carries
+ * `data-sla-state`. Overdue and paused are the only states with a pill.
+ */
+import type { SecurityFinding } from '@model/index';
+import type { I18n } from '../i18n';
+import RiskPill from './RiskPill.astro';
+interface Props {
+  finding: SecurityFinding;
+  i18n: I18n;
+  /** The collection time (ISO): "due in n d" is counted from it, never from the build clock. */
+  now: string;
+}
+const { finding, i18n, now } = Astro.props;
+const { d, f } = i18n;
+const r = d.risk;
+const sla = finding.sla;
+const exception = finding.exception;
+const DAY_MS = 86_400_000;
+
+let line: string | null = null;
+if (sla?.state === 'overdue') {
+  const base = f(r.ageSla, { age: sla.ageDays ?? '', sla: sla.days ?? '' });
+  line =
+    (sla.overdueDays ?? 0) >= 1
+      ? f(r.overdueSince, {
+          age: sla.ageDays ?? '',
+          sla: sla.days ?? '',
+          date: i18n.day(sla.dueAt),
+        })
+      : `${base} · ${r.overdueLessThanDay}`;
+} else if (sla?.state === 'within' && sla.dueAt) {
+  const left = Math.ceil((Date.parse(sla.dueAt) - Date.parse(now)) / DAY_MS);
+  line = left <= 0 ? r.dueToday : f(r.dueIn, { n: left });
+} else if (sla?.state === 'paused' && exception) {
+  line = f(r.acceptedUntil, { date: i18n.day(exception.expires), id: exception.id });
+} else if (sla?.state === 'unknown') {
+  line = r.ageUnknown;
+}
+const expired = exception?.state === 'expired' ? exception : null;
+---
+
+{sla?.state === 'overdue' && <RiskPill kind="overdue" i18n={i18n} />}
+{sla?.state === 'paused' && <RiskPill kind="accepted" i18n={i18n} />}
+{line && (
+  <span class="sub slameta" data-sla-line>
+    {line}
+  </span>
+)}
+{expired && (
+  <span class="sub slameta" data-exception-expired>
+    {f(r.expiredException, { id: expired.id, date: i18n.day(expired.expires) })}
+  </span>
+)}
