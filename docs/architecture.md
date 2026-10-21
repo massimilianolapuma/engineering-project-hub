@@ -74,8 +74,10 @@ flowchart TB
    then mock only when explicitly selected.
 3. **Collect per repository**: metadata, then branch head, latest release (falling back to
    the latest tag), security status file, code scanning alerts and latest analysis,
-   Dependabot alerts, and secret scanning alerts (`hide_secret=true`). When the metadata
-   call fails, dependent calls are skipped and inherit its classified error.
+   Dependabot alerts, and secret scanning alerts (`hide_secret=true`), the
+   `hub-quality-summary` artifact (newest default-branch, same-repository run; zip capped
+   at 64 KB) and the GitHub Code Quality findings. When the metadata call fails,
+   dependent calls are skipped and inherit its classified error.
 4. **Collect per project**: the release manifest and `.gitmodules` from the coordinator,
    the submodule SHAs, and the tracked workflow runs (the last 20 on the default branch),
    plus the failed job and step names of the last failed run. Each submodule linked to a
@@ -83,8 +85,8 @@ flowchart TB
    no tag matches, the SHA is compared with the latest release (ahead / behind / diverged).
 5. **Normalise**: provider values become the model's enums. `originalSeverity` and
    `originalStatus` are kept.
-6. **Evaluate**: delivery, version, security risk, coverage, governance, freshness and
-   overall.
+6. **Evaluate**: delivery, version, security risk, coverage (controls), governance, quality
+   (test coverage), freshness and overall.
 7. **Sanitise and validate**: free text is scrubbed and links are filtered. Every document
    is parsed with the strict schemas (allowlist), then the serialised JSON goes through the
    credential gate. Any failure stops the run before anything is written.
@@ -97,14 +99,15 @@ flowchart TB
 
 ## Trust boundaries
 
-| Boundary                 | Controls                                                                                                       |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| GitHub API → collector   | Read-only credentials. Only allow-listed DTO fields are mapped. Raw payloads never leave the provider.         |
-| Collector → snapshots    | Strict Zod schemas (unknown keys rejected), text scrubbing, URL host allowlist, credential gate.               |
-| Collect job → build job  | Only the sanitised `snapshots` artifact crosses. The build job has no secrets.                                 |
-| Build → GitHub Pages     | Output scan. Deploy uses OIDC (`pages: write`, `id-token: write`) only in the deploy job.                      |
-| Pages → browser          | Static files only. CSP `default-src 'self'` with no inline scripts. No GitHub API calls. No tokens in storage. |
-| Browser → GitHub (links) | GitHub applies its own authorisation. The portal never proxies or bypasses it.                                 |
+| Boundary                 | Controls                                                                                                                                                                                                           |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GitHub API → collector   | Read-only credentials. Only allow-listed DTO fields are mapped. Raw payloads never leave the provider.                                                                                                             |
+| Collector → snapshots    | Strict Zod schemas (unknown keys rejected), text scrubbing, URL host allowlist, credential gate.                                                                                                                   |
+| CI artifact → collector  | Only the `hub-quality-summary` artifact of a default-branch run from the same repository is read: zip ≤ 64 KB, one file, strict schema, `repository` must match. Failure means `invalid` and nothing is published. |
+| Collect job → build job  | Only the sanitised `snapshots` artifact crosses. The build job has no secrets.                                                                                                                                     |
+| Build → GitHub Pages     | Output scan. Deploy uses OIDC (`pages: write`, `id-token: write`) only in the deploy job.                                                                                                                          |
+| Pages → browser          | Static files only. CSP `default-src 'self'` with no inline scripts. No GitHub API calls. No tokens in storage.                                                                                                     |
+| Browser → GitHub (links) | GitHub applies its own authorisation. The portal never proxies or bypasses it.                                                                                                                                     |
 
 ## Snapshot model
 
@@ -125,7 +128,11 @@ flowchart TB
 - `securityFindings[]` (`SecurityFinding`) and `securityControls[]` (repository ×
   control state)
 - `deliveryHealth`, `versionHealth`, `securityHealth` (with counts and breakdowns),
-  `securityCoverage`, `governanceHealth` and `overallHealth`
+  `securityCoverage`, `governanceHealth`, `qualityHealth` and `overallHealth`
+- `qualityHealth`: `{ status, reasons, percentage, linesCovered, linesValid, measured,
+applicable, notVisible, stale, collectedAt }`, `perComponent[]` (state, percentage,
+  lines, commit SHA, report date, tool, run link) and `findings` (Code Quality counts by
+  category and severity, with a state). Findings exist only at project level.
 - `score`: `{ value, measured, required }`, computed by the collector (`value` is `null`
   when data is insufficient; see [Configuration](configuration.md#project-score))
 - `dataFreshness` and `collectionErrors[]`
@@ -142,7 +149,7 @@ Normalised enums:
 | Error class      | `not-found`, `not-authorised`, `not-configured`, `rate-limited`, `invalid-data`, `error`                                                 |
 
 Generated JSON Schemas are in `config/schema/`. The site supports the snapshot versions
-listed in `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS` (currently `1.0`).
+listed in `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS` (currently `1.4`).
 
 ## Health rules (MVP policies)
 
@@ -176,6 +183,20 @@ universal risk ratings.
   - green when all required controls are available
   - grey with no percentage when no required control is readable
   - amber otherwise
+- **Quality** (test coverage; not to be confused with Coverage above, which the UI calls
+  "Controls coverage"):
+  - project coverage is the line-weighted sum over the applicable repositories whose
+    report is readable or stale, each repository counted once; components without a
+    visible report never count, and never count as 0%
+  - green at or above `quality.greenThresholdPercent` (80), amber at or above
+    `quality.amberThresholdPercent` (60), red below
+  - a stale report, or a not-visible applicable component when `missingReportIsAmber`
+    is true, caps green at amber; a red stays red
+  - grey when nothing applies or nothing is visible
+  - not critical (a red counts as amber overall) and optional by default
+    (`overall.optionalDimensions`): ignored when grey, so it neither turns the project grey
+    nor lowers the score
+  - Code Quality findings are shown but never change the status
 - **Governance**:
   - amber for a missing standard workflow, an archived repository, a missing or invalid
     status file (when non-native controls are required), or a default branch mismatch
@@ -183,7 +204,8 @@ universal risk ratings.
 - **Overall**:
   - red when a critical dimension (delivery, version or security by default) is red
   - amber when any dimension is amber, or a non-critical dimension is red
-  - green only when all required dimensions are green
+  - green only when all required dimensions are green; a measured optional dimension
+    (Quality by default) counts like a required non-critical one, a grey one is ignored
   - grey otherwise, or amber if `greyRequiredDimension: amber`
 
 ## Error handling
@@ -208,6 +230,7 @@ universal risk ratings.
 - [ADR 0002: Snapshot contract and provider abstraction](architecture/adr/0002-snapshot-contract-and-provider-abstraction.md)
 - [ADR 0003: Reusable CI building blocks and a collect/build/deploy split](architecture/adr/0003-ci-building-blocks-and-collect-deploy-split.md)
 - [ADR 0004: Configuration store, discovery and the path to a backend](architecture/adr/0004-configuration-store-and-discovery.md)
+- [ADR 0005: Test coverage from a CI summary artifact, not from Sonar or GitHub UI](architecture/adr/0005-test-coverage-from-ci-summary-artifact.md)
 
 Further decisions:
 

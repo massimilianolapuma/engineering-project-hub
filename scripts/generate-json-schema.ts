@@ -11,6 +11,7 @@ import {
   PoliciesSchema,
   PortfolioIndexSchema,
   ProjectSnapshotSchema,
+  QualitySummarySchema,
   ReleaseManifestSchema,
   SecurityStatusFileSchema,
 } from '../shared/model';
@@ -24,6 +25,7 @@ const targets: [string, z.ZodType][] = [
   ['release-manifest.schema.json', ReleaseManifestSchema],
   ['snapshot-index.schema.json', PortfolioIndexSchema],
   ['project-snapshot.schema.json', ProjectSnapshotSchema],
+  ['quality-summary.schema.json', QualitySummarySchema],
 ];
 await mkdir('config/schema', { recursive: true });
 for (const [file, schema] of targets) {

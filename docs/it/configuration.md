@@ -208,6 +208,37 @@ vecchia di `freshness.workflowRunStaleDays`.
 - **Controlli di pipeline**: container e IaC scanning, DAST, SBOM e firma degli artifact.
   Vengono letti dal file di stato sicurezza.
 
+### Applicabilità della copertura dei test (`testCoverage`)
+
+La copertura dei test (dimensione Qualità) si applica per impostazione predefinita ai
+componenti di tipo `service`, `webapp`, `worker` e `library`, e al coordinator (trattato
+come un `service`). Non si applica a `deployment`, `infrastructure` e `other`. Si può
+forzare per componente, o nel blocco `coordinator`, in `config/projects/<id>.yaml`:
+
+```yaml
+coordinator:
+  repository: example-org/project-beta
+  testCoverage: not-applicable # required | not-applicable
+components:
+  - id: api
+    repository: example-org/project-beta-api
+    type: service
+    testCoverage: required
+```
+
+L'override prevale sempre sul default del tipo. I componenti non applicabili sono mostrati
+con "–" e non contano mai come 0%.
+
+### La Qualità è opzionale per impostazione predefinita
+
+`overall.optionalDimensions` vale `[quality]`: una Qualità misurata conta per lo stato
+complessivo e per il punteggio, una Qualità grigia viene ignorata, così i progetti restano
+stabili finché la CI non pubblica i riepiloghi. La Qualità non è critica: una Qualità rossa
+conta come ambra nel complessivo. Per renderla obbligatoria (una Qualità grigia è allora
+trattata come ogni altra dimensione obbligatoria grigia) imposta `optionalDimensions: []` e aggiungi `quality` a
+`requiredDimensions`. Una dimensione presente in entrambe le liste viene rifiutata in
+validazione.
+
 ### Aggiungere un progetto (senza modifiche al codice)
 
 Metodo consigliato: apri `/it/catalog/`, aggiungi una proposta scoperta (o crea un
@@ -281,51 +312,57 @@ commit.
 Sono policy dell'MVP, non valutazioni del rischio universali. Modificarle non richiede
 interventi sul codice o sul frontend.
 
-| Chiave                                  | Default                                                          | Significato                                                                                                                        |
-| --------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `freshness.snapshotStaleHours`          | 24                                                               | Il sito segnala lo snapshot come non aggiornato (calcolato nel browser).                                                           |
-| `freshness.workflowRunStaleDays`        | 14                                                               | Un'ultima esecuzione completata più vecchia di questo valore è non aggiornata.                                                     |
-| `freshness.securityScanStaleDays`       | 7                                                                | Un'ultima analisi di code scanning più vecchia di questo valore è non aggiornata.                                                  |
-| `freshness.securityStatusFileStaleDays` | 7                                                                | I risultati di stato delle pipeline più vecchi di questo valore sono non aggiornati.                                               |
-| `delivery.queuedThresholdMinutes`       | 60                                                               | In coda o in esecuzione da più di questo valore significa Attenzione (Attention).                                                  |
-| `delivery.missingCriticalWorkflow`      | amber                                                            | Stato per un workflow critico mancante o mai eseguito.                                                                             |
-| `delivery.failedCriticalWorkflow`       | red                                                              | Stato per un workflow critico fallito o annullato.                                                                                 |
-| `security.redOnSeverities`              | [critical]                                                       | I finding aperti con queste severità rendono rosso il Rischio sicurezza.                                                           |
-| `security.amberOnSeverities`            | [high, medium, low]                                              | I finding aperti con queste severità rendono ambra il Rischio sicurezza.                                                           |
-| `security.openSecretAlertIsRed`         | true                                                             | Un alert di secret scanning aperto è rosso.                                                                                        |
-| `security.requiredControlFailedIsRed`   | true                                                             | Un controllo obbligatorio fallito è rosso.                                                                                         |
-| `security.staleScanIsAmber`             | true                                                             | Una scansione obbligatoria non aggiornata è ambra.                                                                                 |
-| `security.incompleteCoverageIsAmber`    | true                                                             | Una copertura non verde rende ambra il Rischio sicurezza.                                                                          |
-| `coverage.greenThresholdPercent`        | 100                                                              | La copertura è verde a partire da questa percentuale.                                                                              |
-| `version.componentDrift`                | amber                                                            | La versione dichiarata differisce dall'ultima release.                                                                             |
-| `version.environmentBehind`             | amber                                                            | Ambiente indietro rispetto alla versione del coordinator, o non coerente con essa.                                                 |
-| `version.unresolvableSubmodule`         | red                                                              | Un submodule configurato non può essere risolto.                                                                                   |
-| `version.unknownManifestComponent`      | red                                                              | Il manifest fa riferimento a un componente sconosciuto.                                                                            |
-| `version.unmappedSubmodule`             | amber                                                            | Un submodule non associato ad alcun componente.                                                                                    |
-| `version.untaggedSubmodule`             | amber                                                            | Il coordinator fissa uno SHA che non è un tag di release del componente.                                                           |
-| `version.manifestSubmoduleMismatch`     | amber                                                            | Il manifest dichiara una versione diversa da quella fissata dal submodule.                                                         |
-| `governance.*`                          | amber                                                            | Workflow standard mancante, repository archiviato, file di stato mancante o non valido, branch predefinito non corrispondente.     |
-| `overall.criticalDimensions`            | [delivery, version, security]                                    | Un rosso in queste dimensioni rende rosso il progetto. Un rosso altrove conta come ambra.                                          |
-| `overall.requiredDimensions`            | tutte e cinque                                                   | Devono essere tutte verdi perché lo stato Complessivo sia verde.                                                                   |
-| `overall.greyRequiredDimension`         | grey                                                             | Effetto di una dimensione obbligatoria Unknown (Sconosciuto): grey o amber.                                                        |
-| `score.weights`                         | delivery 25, version 15, security 30, coverage 15, governance 15 | Peso di ogni dimensione nel punteggio del progetto. Vedi [Punteggio del progetto](#punteggio-del-progetto).                        |
-| `score.points`                          | green 100, amber 60, red 20                                      | Punti di una dimensione misurata per stato. Il grigio non è misurato, mai 0.                                                       |
-| `score.caps`                            | red 49, amber 89, grey 89                                        | Punteggio massimo consentito per ogni stato complessivo.                                                                           |
-| `score.minMeasuredRatio`                | 0.5                                                              | Sotto questa quota di dimensioni obbligatorie misurate il punteggio è "dati insufficienti".                                        |
-| `publication.audience`                  | public                                                           | `public` omette titoli dei finding e rule id dei repository non pubblici. `restricted` richiede Pages con controllo degli accessi. |
-| `publication.allowedLinkHosts`          | [github.com]                                                     | Vengono pubblicati solo i link verso questi host.                                                                                  |
+| Chiave                                  | Default                                                                      | Significato                                                                                                                                        |
+| --------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `freshness.snapshotStaleHours`          | 24                                                                           | Il sito segnala lo snapshot come non aggiornato (calcolato nel browser).                                                                           |
+| `freshness.workflowRunStaleDays`        | 14                                                                           | Un'ultima esecuzione completata più vecchia di questo valore è non aggiornata.                                                                     |
+| `freshness.securityScanStaleDays`       | 7                                                                            | Un'ultima analisi di code scanning più vecchia di questo valore è non aggiornata.                                                                  |
+| `freshness.securityStatusFileStaleDays` | 7                                                                            | I risultati di stato delle pipeline più vecchi di questo valore sono non aggiornati.                                                               |
+| `freshness.qualityReportStaleDays`      | 14                                                                           | Un report di copertura dei test (`generatedAt`) più vecchio di questo valore è non aggiornato: viene ancora contato, ma limita a ambra.            |
+| `delivery.queuedThresholdMinutes`       | 60                                                                           | In coda o in esecuzione da più di questo valore significa Attenzione (Attention).                                                                  |
+| `delivery.missingCriticalWorkflow`      | amber                                                                        | Stato per un workflow critico mancante o mai eseguito.                                                                                             |
+| `delivery.failedCriticalWorkflow`       | red                                                                          | Stato per un workflow critico fallito o annullato.                                                                                                 |
+| `security.redOnSeverities`              | [critical]                                                                   | I finding aperti con queste severità rendono rosso il Rischio sicurezza.                                                                           |
+| `security.amberOnSeverities`            | [high, medium, low]                                                          | I finding aperti con queste severità rendono ambra il Rischio sicurezza.                                                                           |
+| `security.openSecretAlertIsRed`         | true                                                                         | Un alert di secret scanning aperto è rosso.                                                                                                        |
+| `security.requiredControlFailedIsRed`   | true                                                                         | Un controllo obbligatorio fallito è rosso.                                                                                                         |
+| `security.staleScanIsAmber`             | true                                                                         | Una scansione obbligatoria non aggiornata è ambra.                                                                                                 |
+| `security.incompleteCoverageIsAmber`    | true                                                                         | Una copertura non verde rende ambra il Rischio sicurezza.                                                                                          |
+| `coverage.greenThresholdPercent`        | 100                                                                          | La copertura è verde a partire da questa percentuale.                                                                                              |
+| `quality.greenThresholdPercent`         | 80                                                                           | La copertura di righe è verde a partire da questa percentuale.                                                                                     |
+| `quality.amberThresholdPercent`         | 60                                                                           | Ambra a partire da questa percentuale, rosso sotto.                                                                                                |
+| `quality.missingReportIsAmber`          | true                                                                         | Un componente applicabile senza report visibile limita la Qualità a ambra (un rosso resta rosso).                                                  |
+| `version.componentDrift`                | amber                                                                        | La versione dichiarata differisce dall'ultima release.                                                                                             |
+| `version.environmentBehind`             | amber                                                                        | Ambiente indietro rispetto alla versione del coordinator, o non coerente con essa.                                                                 |
+| `version.unresolvableSubmodule`         | red                                                                          | Un submodule configurato non può essere risolto.                                                                                                   |
+| `version.unknownManifestComponent`      | red                                                                          | Il manifest fa riferimento a un componente sconosciuto.                                                                                            |
+| `version.unmappedSubmodule`             | amber                                                                        | Un submodule non associato ad alcun componente.                                                                                                    |
+| `version.untaggedSubmodule`             | amber                                                                        | Il coordinator fissa uno SHA che non è un tag di release del componente.                                                                           |
+| `version.manifestSubmoduleMismatch`     | amber                                                                        | Il manifest dichiara una versione diversa da quella fissata dal submodule.                                                                         |
+| `governance.*`                          | amber                                                                        | Workflow standard mancante, repository archiviato, file di stato mancante o non valido, branch predefinito non corrispondente.                     |
+| `overall.criticalDimensions`            | [delivery, version, security]                                                | Un rosso in queste dimensioni rende rosso il progetto. Un rosso altrove conta come ambra.                                                          |
+| `overall.requiredDimensions`            | [delivery, version, security, coverage, governance]                          | Devono essere tutte verdi perché lo stato Complessivo sia verde.                                                                                   |
+| `overall.optionalDimensions`            | [quality]                                                                    | Conta come una dimensione obbligatoria non critica quando è misurata, ignorata quando è grigia. Una dimensione non può stare in entrambe le liste. |
+| `overall.greyRequiredDimension`         | grey                                                                         | Effetto di una dimensione obbligatoria Unknown (Sconosciuto): grey o amber.                                                                        |
+| `score.weights`                         | delivery 25, version 15, security 30, coverage 15, governance 15, quality 10 | Peso di ogni dimensione nel punteggio del progetto. Vedi [Punteggio del progetto](#punteggio-del-progetto).                                        |
+| `score.points`                          | green 100, amber 60, red 20                                                  | Punti di una dimensione misurata per stato. Il grigio non è misurato, mai 0.                                                                       |
+| `score.caps`                            | red 49, amber 89, grey 89                                                    | Punteggio massimo consentito per ogni stato complessivo.                                                                                           |
+| `score.minMeasuredRatio`                | 0.5                                                                          | Sotto questa quota di dimensioni obbligatorie misurate il punteggio è "dati insufficienti".                                                        |
+| `publication.audience`                  | public                                                                       | `public` omette titoli dei finding e rule id dei repository non pubblici. `restricted` richiede Pages con controllo degli accessi.                 |
+| `publication.allowedLinkHosts`          | [github.com]                                                                 | Vengono pubblicati solo i link verso questi host.                                                                                                  |
 
 ### Punteggio del progetto
 
 Il collector calcola per ogni progetto un punteggio da 0 a 100, per ordinare e
 confrontare i progetti nello snapshot di oggi. Il sito si limita a mostrarlo; non
-sostituisce mai le cinque dimensioni. Il blocco opzionale `score` in
+sostituisce mai le dimensioni. Il blocco opzionale `score` in
 `config/policies.yaml` modifica la formula (lo `schemaVersion` delle policy resta `1.0`).
 
 - **Punti** per dimensione misurata: verde 100, ambra 60, rosso 20. Il grigio (non
   misurato) è escluso, mai contato come 0.
-- **Media pesata** sulle dimensioni obbligatorie misurate (`overall.requiredDimensions`).
-  Pesi predefiniti: delivery 25, version 15, security 30, coverage 15, governance 15.
+- **Media pesata** sulle dimensioni obbligatorie misurate (`overall.requiredDimensions`) e
+  su quelle opzionali misurate (`overall.optionalDimensions`). Pesi predefiniti: delivery
+  25, version 15, security 30, coverage 15, governance 15, quality 10.
 - **Tetti** che mantengono il numero coerente con lo stato: complessivo rosso → al massimo
   49; complessivo ambra → al massimo 89; complessivo grigio (una dimensione obbligatoria
   sconosciuta, nessuna rossa o ambra) → al massimo 89, così un progetto in parte illeggibile
@@ -337,14 +374,18 @@ sostituisce mai le cinque dimensioni. Il blocco opzionale `score` in
   misurare (motivo delivery `no-critical-workflows`) esce sia da `measured` sia da
   `required`. Il grigio per qualsiasi altro motivo (non autorizzato, sconosciuto, raccolta
   fallita) conta come non misurato.
-- **Affidabilità**: `measured / required` ("misurate 4 su 5").
+- **Dimensioni opzionali** (`quality` per impostazione predefinita) contano quando sono
+  misurate. Quando sono grigie escono sia da `measured` sia da `required`: un progetto senza
+  report di copertura non perde punti e non diventa grigio.
+- **Affidabilità**: `measured / required` ("misurate 4 su 5"; "misurate 6 su 6" quando la
+  Qualità è misurata).
 - **Dati insufficienti**: se è misurata meno di `minMeasuredRatio` (predefinito metà) delle
   dimensioni obbligatorie, `value` è `null` e il sito mostra "dati insufficienti".
 - Il risultato è arrotondato all'intero.
 
-Lo schema snapshot 1.3 lo pubblica come `score: { value, measured, required }` in ogni
-snapshot di progetto e in ogni progetto di `index.json`. Con i dati mock: Platform 88,
-Project Alpha 76, Project Beta 38, Project Gamma dati insufficienti.
+Lo schema snapshot 1.4 lo pubblica come `score: { value, measured, required }` in ogni
+snapshot di progetto e in ogni progetto di `index.json`. Con i dati mock: Platform 82,
+Project Alpha 78, Project Beta 40, Project Gamma dati insufficienti.
 
 ## Contratti letti dai repository monitorati
 
@@ -413,6 +454,78 @@ I seguenti casi contano come Unknown (Sconosciuto) e aggiungono un errore di rac
 anche come governance ambra), un file non valido, oppure un file il cui `repository` non
 corrisponde.
 `reportUrl` viene pubblicato solo per host in allowlist.
+
+### Artifact `hub-quality-summary` (ogni repository, opzionale)
+
+La CI carica un artifact di GitHub Actions chiamato **`hub-quality-summary`** che contiene un
+solo file, **`quality-summary.json`**, a ogni esecuzione sul branch predefinito. Il collector
+lo legge con le stesse credenziali del resto (**Actions: read**): non serve alcun nuovo
+secret. Un esempio di step è in
+[Operatività](operations.md#pubblicare-il-riepilogo-di-qualità-dalla-ci).
+
+```json
+{
+  "schemaVersion": "1.0",
+  "repository": "example-org/project-beta-api",
+  "ref": "refs/heads/main",
+  "commitSha": "<sha da 40 caratteri esadecimali>",
+  "generatedAt": "2026-01-14T10:00:00Z",
+  "tool": "coverlet",
+  "format": "cobertura",
+  "lines": { "covered": 5998, "valid": 8400 }
+}
+```
+
+- Lo schema è strict (le chiavi sconosciute sono rifiutate). `format` è uno tra `cobertura`,
+  `lcov`, `opencover`, `jacoco`, `other`. `tool` è un identificativo breve (al massimo 40
+  caratteri) e viene ripulito. `lines.covered` non può superare `lines.valid`.
+- `repository` deve coincidere con il repository letto (senza distinguere maiuscole e
+  minuscole), altrimenti il report è `invalid`.
+- `lines.valid: 0` significa "nessun codice testabile": il componente non è applicabile,
+  mai 0%.
+- JSON Schema: [`config/schema/quality-summary.schema.json`](../../config/schema/quality-summary.schema.json)
+  (generato da `npm run schema:generate`).
+
+Come lo legge il collector:
+
+- Elenca gli artifact del repository per nome (fino a 3 pagine da 30) e prende il più
+  recente non scaduto la cui esecuzione è sul branch predefinito **e** proviene dallo stesso
+  repository (l'esecuzione di una pull request da fork non è mai considerata affidabile).
+- Lo zip è limitato a 64 KB (65 536 byte). Viene letto solo il file `quality-summary.json`.
+- Un riepilogo per repository. Quando più componenti condividono un repository (un monorepo,
+  o un coordinator che è anche repository di un componente), ogni riga mostra lo stesso report
+  ("report del repository condiviso") e la copertura del progetto conta quel repository una
+  sola volta.
+
+| Esito                                                                      | Stato                                               |
+| -------------------------------------------------------------------------- | --------------------------------------------------- |
+| Nessun artifact (404)                                                      | `missing`                                           |
+| Solo artifact scaduti                                                      | `expired` (motivo `quality-report-expired`)         |
+| 403 sull'elenco degli artifact                                             | `not-authorised`, mai `missing`                     |
+| JSON o schema non validi, altro repository, zip troppo grande o senza file | `invalid`, più un errore di raccolta `invalid-data` |
+| Errore di rete o altro fallimento                                          | `unknown`                                           |
+| Valido, `generatedAt` più vecchio di `freshness.qualityReportStaleDays`    | `stale` (contato, sempre mostrato con la sua età)   |
+| Valido e aggiornato                                                        | `readable`                                          |
+
+La copertura del progetto è la somma di `covered` sulla somma di `valid` dei repository
+applicabili con report leggibile o non aggiornato (pesata per righe). I componenti senza
+report visibile non contano mai, e mai come 0%. Stato: grigio quando nulla è applicabile o
+nulla è visibile; altrimenti verde a partire da `quality.greenThresholdPercent`, ambra a
+partire da `quality.amberThresholdPercent`, rosso sotto. Un report non aggiornato, oppure un
+componente applicabile senza report visibile con `quality.missingReportIsAmber` a true,
+limita un verde a ambra (un rosso resta rosso). Quando la Qualità è grigia, i suoi motivi di
+report non visibile sono informativi, quindi non aggiungono righe al riquadro "perché" del
+progetto.
+
+I **finding di GitHub Code Quality** sono solo informativi: i finding aperti sono contati per
+repository (per categoria `reliability` / `maintainability` e per severità `error` /
+`warning` / `note` / `none`) da `GET /repos/{owner}/{repo}/code-quality/findings?state=open`.
+Non cambiano mai lo stato della Qualità. I conteggi sono pubblicati solo quando ogni
+repository è stato leggibile o ha risposto che Code Quality non è attivo; altrimenti lo stato
+è `not-authorised` o `unknown`, mai 0. Il collector legge al massimo 3 pagine da 100 finding
+(300) per repository. Se restano altre pagine, i finding di quel repository sono sconosciuti
+(un errore di raccolta), mai un conteggio parziale. GitHub non espone alcun endpoint per la
+percentuale di copertura: per questo la copertura arriva dal riepilogo della CI.
 
 ## Variabili d'ambiente
 

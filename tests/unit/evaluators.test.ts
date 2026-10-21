@@ -411,6 +411,7 @@ describe('overall health', () => {
       security: 'green',
       coverage: 'green',
       governance: 'green',
+      quality: 'grey',
       ...d,
     }) as never;
   it('red if a critical dimension is red', () =>
@@ -423,6 +424,22 @@ describe('overall health', () => {
     expect(evaluateOverall(dims(), P).status).toBe('green'));
   it('grey when a required dimension is undeterminable', () =>
     expect(evaluateOverall(dims({ version: 'grey' }), P).status).toBe('grey'));
+  it('red quality makes overall at most amber', () => {
+    const r = evaluateOverall(dims({ quality: 'red' }), P);
+    expect(r.status).toBe('amber');
+    expect(r.reasons).toEqual([
+      { code: 'dimension-red', level: 'amber', params: { dimension: 'quality' } },
+    ]);
+  });
+  it('amber quality makes overall amber', () =>
+    expect(evaluateOverall(dims({ quality: 'amber' }), P).status).toBe('amber'));
+  it('grey optional quality adds no reason and does not block green', () => {
+    const r = evaluateOverall(dims({ quality: 'grey' }), P);
+    expect(r.status).toBe('green');
+    expect(r.reasons.map((x) => x.code)).toEqual(['all-dimensions-green']);
+  });
+  it('measured green quality keeps overall green', () =>
+    expect(evaluateOverall(dims({ quality: 'green' }), P).status).toBe('green'));
   it('lists every contributing dimension', () => {
     const r = evaluateOverall(dims({ delivery: 'red', coverage: 'amber' }), P);
     expect(r.reasons.map((x) => `${x.code}:${x.params.dimension}`)).toEqual([

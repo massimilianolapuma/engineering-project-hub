@@ -45,6 +45,29 @@ describe('i18n', () => {
     expect(useI18n('en').errors(1)).toBe('1 collection error');
     expect(useI18n('it').errors(3)).toBe('3 errori di raccolta');
   });
+  it('formats percentages with the locale decimal separator', () => {
+    expect(useI18n('it').percent(67.2)).toBe('67,2%');
+    expect(useI18n('en').percent(67.2)).toBe('67.2%');
+    expect(useI18n('en').percent(80)).toBe('80%');
+    const below = {
+      code: 'quality-below-threshold',
+      level: 'amber',
+      params: { percentage: 67.2, threshold: 80, components: 'coordinator, api' },
+    } as const;
+    expect(useI18n('it').reason(below)).toBe(
+      'Copertura test 67,2%, sotto il 80% (coordinator, api)',
+    );
+    expect(useI18n('en').reason(below)).toBe('Test coverage 67.2%, below 80% (coordinator, api)');
+  });
+  it('lists the components in every quality reason', () => {
+    const r = (code: 'quality-not-applicable' | 'quality-all-above-threshold') =>
+      ({ code, level: 'info', params: { components: 'helm, docs', percentage: 84.7 } }) as const;
+    for (const locale of ['en', 'it'] as const) {
+      expect(useI18n(locale).reason(r('quality-not-applicable'))).toContain('helm, docs');
+      expect(useI18n(locale).reason(r('quality-all-above-threshold'))).toContain('helm, docs');
+    }
+    expect(useI18n('it').reason(r('quality-all-above-threshold'))).toContain('84,7%');
+  });
   it('formats durations with the locale decimal separator', () => {
     expect(useI18n('it').seconds(12_340)).toBe('12,3 s');
     expect(useI18n('en').seconds(12_340)).toBe('12.3 s');

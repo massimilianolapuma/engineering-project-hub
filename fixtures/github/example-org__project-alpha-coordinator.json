@@ -54,5 +54,20 @@
     "toolName": "CodeQL"
   },
   "dependabotAlerts": [],
-  "secretScanningAlerts": []
+  "secretScanningAlerts": [],
+  "qualitySummary": {
+    "summary": {
+      "schemaVersion": "1.0",
+      "repository": "example-org/project-alpha-coordinator",
+      "ref": "refs/heads/main",
+      "commitSha": "4e8100969f2ec6777df476c40eeedec80aca4380",
+      "generatedAt": "@now-2d",
+      "tool": "coverlet",
+      "format": "cobertura",
+      "lines": { "covered": 2100, "valid": 2500 }
+    },
+    "createdAt": "@now-2d",
+    "runId": 9001
+  },
+  "codeQualityFindings": []
 }

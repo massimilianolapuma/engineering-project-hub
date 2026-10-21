@@ -28,6 +28,11 @@
           "default": 7,
           "type": "number",
           "exclusiveMinimum": 0
+        },
+        "qualityReportStaleDays": {
+          "default": 14,
+          "type": "number",
+          "exclusiveMinimum": 0
         }
       },
       "additionalProperties": false
@@ -126,6 +131,29 @@
           "type": "number",
           "minimum": 0,
           "maximum": 100
+        }
+      },
+      "additionalProperties": false
+    },
+    "quality": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "greenThresholdPercent": {
+          "default": 80,
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "amberThresholdPercent": {
+          "default": 60,
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "missingReportIsAmber": {
+          "default": true,
+          "type": "boolean"
         }
       },
       "additionalProperties": false
@@ -253,7 +281,8 @@
               "version",
               "security",
               "coverage",
-              "governance"
+              "governance",
+              "quality"
             ]
           }
         },
@@ -273,7 +302,25 @@
               "version",
               "security",
               "coverage",
-              "governance"
+              "governance",
+              "quality"
+            ]
+          }
+        },
+        "optionalDimensions": {
+          "default": [
+            "quality"
+          ],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "delivery",
+              "version",
+              "security",
+              "coverage",
+              "governance",
+              "quality"
             ]
           }
         },
@@ -318,6 +365,11 @@
             },
             "governance": {
               "default": 15,
+              "type": "number",
+              "minimum": 0
+            },
+            "quality": {
+              "default": 10,
               "type": "number",
               "minimum": 0
             }

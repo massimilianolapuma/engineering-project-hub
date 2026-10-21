@@ -176,5 +176,19 @@
       "manifestPath": "services/worker/package.json"
     }
   ],
-  "secretScanningAlerts": []
+  "secretScanningAlerts": [],
+  "qualitySummary": {
+    "summary": {
+      "schemaVersion": "1.0",
+      "repository": "example-org/platform-mono",
+      "ref": "refs/heads/main",
+      "commitSha": "b85777552b25839b2cea3e76e5c15827386f60ac",
+      "generatedAt": "@now-20d",
+      "tool": "vitest",
+      "format": "lcov",
+      "lines": { "covered": 2900, "valid": 5000 }
+    },
+    "createdAt": "@now-20d",
+    "runId": 9501
+  }
 }

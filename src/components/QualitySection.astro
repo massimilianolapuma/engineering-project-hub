@@ -1,0 +1,493 @@
+---
+/**
+ * Project page, "Code quality": test coverage from each repository's CI summary. Three tiles
+ * (aggregated coverage with its threshold, open Code Quality findings, blind spots), one row
+ * per component and a legend sentence with the thresholds.
+ *
+ * Unknown is never 0%: a component without a readable report shows the "?" symbol and a dashed
+ * meter; a component without code to test shows "–". Every meter has its number right before
+ * it. Statuses and reason levels are the collector's; the thresholds (tick and legend) come from
+ * the policies read at build time, like on "How to read".
+ */
+import type { Policies, ProjectSnapshot, QualityReportState } from '@model/index';
+import type { I18n } from '../i18n';
+import { shortSha } from '../lib/format';
+import { href } from '../lib/routes';
+import CoverageMeter from './CoverageMeter.astro';
+import ExtLink from './ExtLink.astro';
+import Pill from './Pill.astro';
+import RelTime from './RelTime.astro';
+interface Props {
+  s: ProjectSnapshot;
+  i18n: I18n;
+  thresholds: Policies['quality'];
+}
+const { s, i18n, thresholds } = Astro.props;
+const { d, f } = i18n;
+const q = d.project.quality;
+const qh = s.qualityHealth;
+const green = thresholds.greenThresholdPercent;
+const amber = thresholds.amberThresholdPercent;
+
+type NotVisible = Exclude<QualityReportState, 'readable' | 'stale' | 'not-applicable'>;
+const isMeasured = (state: QualityReportState) => state === 'readable' || state === 'stale';
+const isNotVisible = (state: QualityReportState): state is NotVisible =>
+  !isMeasured(state) && state !== 'not-applicable';
+
+const nameOf = (componentId: string) =>
+  componentId === 'coordinator'
+    ? d.common.coordinator
+    : (s.components.find((c) => c.id === componentId)?.name ?? componentId);
+const repoOf = (componentId: string) =>
+  componentId === 'coordinator'
+    ? s.coordinator.repository.name
+    : (s.components.find((c) => c.id === componentId)?.repository.name ?? null);
+
+/** Tone of one component's percentage against the policy thresholds (text says it too). */
+const band = (pct: number) =>
+  pct >= green
+    ? { tone: 'green' as const, label: q.meetsThreshold }
+    : pct >= amber
+      ? { tone: 'amber' as const, label: q.belowThreshold }
+      : { tone: 'red' as const, label: f(q.belowRed, { threshold: i18n.pctNumber(amber) }) };
+
+const rows = qh.perComponent;
+const blind = rows.filter((r) => isNotVisible(r.state));
+/** Nothing measured: unknown when some component should have a report, else not applicable. */
+const overall: 'measured' | 'unknown' | 'na' =
+  qh.percentage !== null ? 'measured' : qh.applicable > 0 ? 'unknown' : 'na';
+const findings = qh.findings;
+---
+
+<section id="quality" class="card quality" aria-labelledby="h-quality" data-status={qh.status}>
+  <div class="quality__head">
+    <span class={`quality__dot quality__dot--${qh.status}`} aria-hidden="true"></span>
+    <h2 id="h-quality">{q.title}</h2>
+    <Pill tone={qh.status} label={i18n.status(qh.status)} />
+  </div>
+
+  <div class="quality__tiles">
+    <div class:list={['qtile', { 'qtile--unknown': overall === 'unknown' }]} data-tile="coverage">
+      <span class="qtile__label">{q.coverageTile}</span>
+      {overall === 'measured' && qh.percentage !== null && (
+        <>
+          <span class="qtile__value">
+            <span class="qcov__value qtile__big tabular">{i18n.percent(qh.percentage)}</span>
+            <span class="muted">{f(q.threshold, { threshold: i18n.pctNumber(green) })}</span>
+          </span>
+          <CoverageMeter percentage={qh.percentage} status={qh.status} threshold={green} wide />
+          <span class="qtile__foot">
+            {f(q.lines, {
+              covered: i18n.number(qh.linesCovered),
+              valid: i18n.number(qh.linesValid),
+            })}{' '}
+            · {f(q.weighted, { measured: qh.measured, applicable: qh.applicable })}
+          </span>
+          {qh.stale > 0 && (
+            <span class="qtile__foot qtile__stale">
+              <span class="qsym qsym--stale" role="img" aria-label={q.symStale} title={q.symStale}>
+                ⧖
+              </span>
+              {f(qh.stale === 1 ? q.staleOne : q.staleOther, { n: qh.stale })}
+            </span>
+          )}
+        </>
+      )}
+      {overall === 'unknown' && (
+        <>
+          <span class="qtile__value">
+            <span class="qcov__value">
+              <span
+                class="qsym qsym--unknown"
+                role="img"
+                aria-label={q.symUnknown}
+                title={q.symUnknown}
+              >
+                ?
+              </span>
+            </span>
+            <span class="qtile__state">{q.notVisible}</span>
+          </span>
+          <CoverageMeter percentage={null} status="grey" threshold={green} wide />
+          <span class="qtile__foot">
+            <strong>{q.notMeanZero}</strong>{' '}
+            {f(q.weighted, { measured: qh.measured, applicable: qh.applicable })}
+          </span>
+        </>
+      )}
+      {overall === 'na' && (
+        <>
+          <span class="qtile__value">
+            <span class="qsym qsym--na" aria-hidden="true">
+              –
+            </span>
+            <span class="qtile__state">{q.notApplicable}</span>
+          </span>
+          <span class="qtile__foot">{q.notApplicableAll}</span>
+        </>
+      )}
+    </div>
+
+    <div
+      class:list={[
+        'qtile',
+        { 'qtile--unknown': findings.state === 'unknown' || findings.state === 'not-authorised' },
+      ]}
+      data-tile="findings"
+    >
+      <span class="qtile__label">{q.findingsTile}</span>
+      {findings.state === 'available' ? (
+        <span class="qtile__counts">
+          <span>
+            <b class="qtile__count tabular">{findings.reliability ?? d.common.unknownValue}</b>{' '}
+            {q.reliability}
+          </span>
+          <span>
+            <b class="qtile__count tabular">{findings.maintainability ?? d.common.unknownValue}</b>{' '}
+            {q.maintainability}
+          </span>
+        </span>
+      ) : (
+        <span class="qtile__value qtile__value--message">
+          {findings.state === 'not-configured' ? (
+            <span class="qsym qsym--na" aria-hidden="true">
+              –
+            </span>
+          ) : (
+            <span
+              class="qsym qsym--unknown"
+              role="img"
+              aria-label={q.notVisible}
+              title={q.notVisible}
+            >
+              ?
+            </span>
+          )}
+          <span>{q.findingsState[findings.state]}</span>
+        </span>
+      )}
+      <span class="qtile__foot">{q.findingsSource}</span>
+    </div>
+
+    <div class:list={['qtile', { 'qtile--unknown': blind.length > 0 }]} data-tile="blind">
+      <span class="qtile__label">{q.blindTile}</span>
+      {blind.length === 0 ? (
+        <span>{q.blindNone}</span>
+      ) : (
+        <>
+          <ul class="qtile__list">
+            {blind.map((r) => (
+              <li>
+                <strong>{nameOf(r.componentId)}</strong>:{' '}
+                {isNotVisible(r.state) && q.state[r.state]}
+              </li>
+            ))}
+          </ul>
+          <span class="qtile__foot">
+            <strong>{q.notMeanZero}</strong> {q.blindWhy}
+          </span>
+        </>
+      )}
+    </div>
+  </div>
+
+  {rows.length > 0 && (
+    <div class="table-wrap">
+      <table role="table" class="table qtable">
+        <caption class="visually-hidden">{q.tableCaption}</caption>
+        <thead role="rowgroup">
+          <tr role="row">
+            <th role="columnheader" scope="col">
+              {d.common.component}
+            </th>
+            <th role="columnheader" scope="col">
+              {q.colCoverage}
+            </th>
+            <th role="columnheader" scope="col">
+              {q.colReport}
+            </th>
+          </tr>
+        </thead>
+        <tbody role="rowgroup">
+          {rows.map((r) => {
+            const repo = repoOf(r.componentId);
+            const b = r.percentage !== null ? band(r.percentage) : null;
+            return (
+              <tr role="row" data-quality-component={r.componentId} data-state={r.state}>
+                <th role="rowheader" scope="row">
+                  <span class="qtable__name">{nameOf(r.componentId)}</span>
+                  {repo && <code class="sub qtable__repo">{repo}</code>}
+                </th>
+                <td role="cell" data-label={q.colCoverage}>
+                  {isMeasured(r.state) && r.percentage !== null && b ? (
+                    <span class="qcov">
+                      <span class="qcov__value tabular">{i18n.percent(r.percentage)}</span>
+                      <CoverageMeter percentage={r.percentage} status={b.tone} threshold={green} />
+                      <Pill tone={b.tone} label={b.label} />
+                    </span>
+                  ) : r.state === 'not-applicable' ? (
+                    <span class="qcov">
+                      <span class="qsym qsym--na" aria-hidden="true">
+                        –
+                      </span>
+                      <span class="muted">{q.notApplicableRow}</span>
+                    </span>
+                  ) : (
+                    <span class="qcov">
+                      <span class="qcov__value">
+                        <span
+                          class="qsym qsym--unknown"
+                          role="img"
+                          aria-label={q.symUnknown}
+                          title={q.symUnknown}
+                        >
+                          ?
+                        </span>
+                      </span>
+                      <CoverageMeter percentage={null} status="grey" threshold={green} />
+                      <span class="muted">{q.notVisible}</span>
+                    </span>
+                  )}
+                </td>
+                <td role="cell" data-label={q.colReport}>
+                  {isMeasured(r.state) ? (
+                    <span class="qreport">
+                      <span>
+                        {r.state === 'stale' && (
+                          <span
+                            class="qsym qsym--stale qsym--inline"
+                            role="img"
+                            aria-label={q.symStale}
+                            title={q.symStale}
+                          >
+                            ⧖
+                          </span>
+                        )}
+                        {r.tool ?? d.common.unknownValue}
+                        {r.commitSha && (
+                          <>
+                            {' · '}
+                            <code>{shortSha(r.commitSha)}</code>
+                          </>
+                        )}
+                        {' · '}
+                        <RelTime iso={r.generatedAt} i18n={i18n} />
+                      </span>
+                      {r.runUrl && (
+                        <ExtLink href={r.runUrl} i18n={i18n} label={d.project.openRun} />
+                      )}
+                      {r.sharedRepository && <span class="sub">{q.shared}</span>}
+                    </span>
+                  ) : isNotVisible(r.state) ? (
+                    <span class="muted">{q.state[r.state]}</span>
+                  ) : (
+                    <span class="muted">
+                      <span aria-hidden="true">–</span>
+                      <span class="visually-hidden">{q.notApplicable}</span>
+                    </span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  )}
+
+  <p class="note quality__legend">
+    {f(q.legend, { green: i18n.pctNumber(green), amber: i18n.pctNumber(amber) })} ·{' '}
+    <a href={`${href(i18n.locale, 'howToRead')}#thresholds`}>{d.legend.howToRead}</a>
+  </p>
+</section>
+
+<style>
+  .quality {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    margin: 0;
+    scroll-margin-top: var(--space-4);
+    min-width: 0;
+  }
+  .quality__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) 10px;
+  }
+  .quality__head h2 {
+    margin: 0;
+    font-size: var(--fs-card);
+    line-height: 22px;
+    font-weight: 600;
+  }
+  .quality__dot {
+    flex: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .quality__dot--red {
+    background: var(--red);
+  }
+  .quality__dot--amber {
+    background: var(--amber);
+  }
+  .quality__dot--green {
+    background: var(--green);
+  }
+  .quality__dot--grey {
+    border: 2px solid var(--unknown);
+  }
+
+  .quality__tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+    gap: var(--space-3);
+  }
+  .qtile {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+    padding: var(--space-4);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow-wrap: anywhere;
+  }
+  /* Something we cannot see: dashed, like every unknown on the site. */
+  .qtile--unknown {
+    border: 1.5px dashed var(--unknown);
+  }
+  .qtile__label {
+    color: var(--text-muted);
+  }
+  .qtile__value {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+  }
+  /* Symbol and sentence stay side by side; the sentence wraps beside the symbol. */
+  .qtile__value--message {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+  }
+  .qtile__big {
+    font-size: var(--fs-score);
+    line-height: 34px;
+    font-weight: 700;
+  }
+  .qtile__state {
+    font-weight: 600;
+  }
+  .qtile__foot {
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+  }
+  .qtile__stale {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .qtile__counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) 18px;
+  }
+  .qtile__count {
+    font-size: var(--fs-count);
+  }
+  .qtile__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Wide screens: one row per component, scrolling inside its box if needed. Phones: the
+     global stacked-card table layout takes over, labelled by each cell's data-label. */
+  @media (min-width: 721px) {
+    .qtable {
+      min-width: 680px;
+    }
+  }
+  .qtable td {
+    vertical-align: middle;
+  }
+  .qtable__name {
+    font-weight: 600;
+  }
+  .qtable__repo {
+    display: block;
+    font-weight: 400;
+  }
+  .qcov {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    min-width: 0;
+  }
+  .qcov__value.tabular {
+    display: inline-block;
+    min-width: 3.5em;
+    font-weight: 700;
+  }
+  .qreport {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    overflow-wrap: anywhere;
+  }
+
+  .qsym {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    line-height: 1;
+    cursor: default;
+  }
+  .qsym--inline {
+    width: 20px;
+    height: 20px;
+    margin-right: var(--space-1);
+    vertical-align: middle;
+  }
+  .qsym--unknown {
+    color: var(--text-muted);
+    border: 1.5px dashed var(--unknown);
+  }
+  .qsym--stale {
+    background: var(--amber-tint);
+    color: var(--amber-text);
+  }
+  .qsym--na {
+    color: var(--text-muted);
+  }
+  .quality__legend {
+    margin: 0;
+  }
+  @media (forced-colors: active) {
+    .qsym {
+      border: 1px solid CanvasText;
+    }
+    .qsym--unknown {
+      border-style: dashed;
+    }
+    .quality__dot {
+      border: 1.5px solid CanvasText;
+    }
+  }
+</style>

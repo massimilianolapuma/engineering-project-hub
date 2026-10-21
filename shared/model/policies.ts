@@ -17,6 +17,8 @@ export const PoliciesSchema = z
         workflowRunStaleDays: z.number().positive().default(14),
         securityScanStaleDays: z.number().positive().default(7),
         securityStatusFileStaleDays: z.number().positive().default(7),
+        /** generatedAt of a hub-quality-summary older than this = stale (still counted). */
+        qualityReportStaleDays: z.number().positive().default(14),
       })
       .strict(),
     delivery: z
@@ -43,6 +45,20 @@ export const PoliciesSchema = z
         greenThresholdPercent: z.number().min(0).max(100).default(100),
       })
       .strict(),
+    /** Quality: line coverage from the CI hub-quality-summary artifact. Optional block. */
+    quality: z
+      .object({
+        greenThresholdPercent: z.number().min(0).max(100).default(80),
+        /** Below this percentage the status is red. */
+        amberThresholdPercent: z.number().min(0).max(100).default(60),
+        /** Some applicable components without a visible report → at most amber. */
+        missingReportIsAmber: z.boolean().default(true),
+      })
+      .strict()
+      .refine((q) => q.amberThresholdPercent <= q.greenThresholdPercent, {
+        message: 'amberThresholdPercent must not exceed greenThresholdPercent',
+      })
+      .prefault({}),
     version: z
       .object({
         componentDrift: RedOrAmber.default('amber'),
@@ -72,10 +88,19 @@ export const PoliciesSchema = z
         requiredDimensions: z
           .array(DimensionSchema)
           .default(['delivery', 'version', 'security', 'coverage', 'governance']),
+        /**
+         * Counted like a required non-critical dimension when measured; ignored when grey (it
+         * neither turns the project grey nor lowers the score's measured ratio).
+         */
+        optionalDimensions: z.array(DimensionSchema).default(['quality']),
         /** What an undeterminable required dimension does to the overall status. */
         greyRequiredDimension: z.enum(['grey', 'amber']).default('grey'),
       })
-      .strict(),
+      .strict()
+      .refine((o) => !o.requiredDimensions.some((d) => o.optionalDimensions.includes(d)), {
+        message: 'a dimension cannot be in both requiredDimensions and optionalDimensions',
+        path: ['optionalDimensions'],
+      }),
     /**
      * Project score (0–100) used to rank and compare projects. Optional: omitted, the
      * defaults below apply. Grey dimensions are never counted as 0 (see docs/configuration.md).
@@ -90,6 +115,7 @@ export const PoliciesSchema = z
             security: z.number().min(0).default(30),
             coverage: z.number().min(0).default(15),
             governance: z.number().min(0).default(15),
+            quality: z.number().min(0).default(10),
           })
           .strict()
           .prefault({}),

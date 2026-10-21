@@ -1,10 +1,10 @@
 {
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.4",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "run": {
     "dataSource": "mock",
     "authenticationMode": "mock",
-    "collectorVersion": "0.4.0",
+    "collectorVersion": "0.6.0",
     "startedAt": "2026-01-15T12:00:00.000Z",
     "finishedAt": "2026-01-15T12:00:00.000Z",
     "durationMs": 0,
@@ -14,7 +14,8 @@
       "actions": "available",
       "codeScanning": "available",
       "dependabot": "available",
-      "secretScanning": "partial"
+      "secretScanning": "partial",
+      "codeQuality": "available"
     },
     "inaccessibleSources": [
       {
@@ -63,9 +64,9 @@
       "lifecycle": "production",
       "overall": "amber",
       "score": {
-        "value": 88,
-        "measured": 5,
-        "required": 5
+        "value": 82,
+        "measured": 6,
+        "required": 6
       },
       "delivery": "green",
       "version": "green",
@@ -77,7 +78,13 @@
         "available": 3
       },
       "governance": "green",
-      "freshness": "green",
+      "quality": {
+        "status": "red",
+        "percentage": 58,
+        "measured": 4,
+        "applicable": 4
+      },
+      "freshness": "amber",
       "openCounts": {
         "critical": 0,
         "high": 1,
@@ -101,9 +108,9 @@
       "lifecycle": "production",
       "overall": "amber",
       "score": {
-        "value": 76,
-        "measured": 5,
-        "required": 5
+        "value": 78,
+        "measured": 6,
+        "required": 6
       },
       "delivery": "green",
       "version": "amber",
@@ -115,6 +122,12 @@
         "available": 3
       },
       "governance": "green",
+      "quality": {
+        "status": "green",
+        "percentage": 84.7,
+        "measured": 4,
+        "applicable": 4
+      },
       "freshness": "green",
       "openCounts": {
         "critical": 0,
@@ -139,9 +152,9 @@
       "lifecycle": "production",
       "overall": "red",
       "score": {
-        "value": 38,
-        "measured": 5,
-        "required": 5
+        "value": 40,
+        "measured": 6,
+        "required": 6
       },
       "delivery": "red",
       "version": "amber",
@@ -153,6 +166,12 @@
         "available": 2
       },
       "governance": "amber",
+      "quality": {
+        "status": "amber",
+        "percentage": 67.2,
+        "measured": 2,
+        "applicable": 3
+      },
       "freshness": "amber",
       "openCounts": {
         "critical": 1,
@@ -191,6 +210,12 @@
         "available": 0
       },
       "governance": "grey",
+      "quality": {
+        "status": "grey",
+        "percentage": null,
+        "measured": 0,
+        "applicable": 2
+      },
       "freshness": "grey",
       "openCounts": {
         "critical": null,

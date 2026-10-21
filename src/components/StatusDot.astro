@@ -1,6 +1,6 @@
 ---
 /**
- * Status dot: a 10px filled circle for red / amber / green, a dashed outline for grey
+ * Status dot: a 10px filled circle for red / amber / green, a hollow ring for grey
  * (unknown is never a fill, never calmer than a gap). It carries an accessible name, but it
  * always sits next to a text label or pill: colour is never the only carrier of status.
  */
@@ -38,16 +38,17 @@ const { status, label } = Astro.props;
   .dot--green {
     background: var(--green);
   }
+  /* A dashed 10px circle reads as a loading spinner: small marks use a hollow ring. */
   .dot--grey {
     background: transparent;
-    border: 2px dashed var(--unknown);
+    border: 2px solid var(--unknown);
   }
   @media (forced-colors: active) {
     .dot {
       border: 1.5px solid CanvasText;
     }
     .dot--grey {
-      border-style: dashed;
+      background: Canvas;
     }
   }
 </style>

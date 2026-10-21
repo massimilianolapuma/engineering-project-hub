@@ -30,7 +30,7 @@ test('status counts filter the list and unknown projects show insufficient data,
   await page.goto('/');
   const rows = page.locator('tr[data-project]:not([hidden])');
   // Default order: score, worst first; insufficient data right after red.
-  await expect(rows.first()).toHaveAttribute('data-score', '38');
+  await expect(rows.first()).toHaveAttribute('data-score', '40');
   await expect(rows.nth(1)).toHaveAttribute('data-score', '');
   const counts = page.getByRole('group', { name: 'Filter by overall status' });
   const critical = counts.getByRole('button', { name: /Critical/ });
@@ -142,7 +142,7 @@ test('project detail explains why it is critical and cards open their section', 
   await expect(
     page.locator('section.why').getByText('Continuous Integration failed on api (run #418)'),
   ).toBeVisible();
-  await expect(page.getByText('measured 5 of 5')).toBeVisible();
+  await expect(page.getByText('measured 6 of 6')).toBeVisible();
   const workflows = page.locator('details#workflows');
   await expect(workflows).toHaveJSProperty('open', false);
   await page.locator('a[data-dimension="delivery"]').click();
@@ -152,9 +152,27 @@ test('project detail explains why it is critical and cards open their section', 
   await expect(page.locator('details#coverage')).toHaveJSProperty('open', true);
 });
 
+test('project page: Quality card links to #quality', async ({ page }) => {
+  await page.goto('/projects/project-beta/');
+  const card = page.locator('a[data-dimension="quality"]');
+  await expect(card).toContainText('Tests: 67.2% of lines · threshold 80%');
+  await card.click();
+  await expect(page).toHaveURL(/#quality$/);
+  const section = page.locator('section#quality');
+  await expect(section.getByRole('heading', { level: 2, name: 'Code quality' })).toBeInViewport();
+  await expect(section.getByText('Does not mean 0%.')).toBeVisible();
+  // The meter is decorative: the number next to it carries the value.
+  await expect(section.locator('.meter').first()).toHaveAttribute('aria-hidden', 'true');
+  await expect(section.getByRole('img', { name: /not visible/i }).first()).toBeVisible();
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+});
+
 test('project page has no horizontal scroll at phone width', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'phone layout only');
-  for (const id of ['project-beta', 'project-gamma']) {
+  for (const id of ['project-beta', 'project-gamma', 'platform']) {
     await page.goto(`/projects/${id}/`);
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,
