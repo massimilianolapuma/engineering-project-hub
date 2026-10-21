@@ -64,8 +64,9 @@ export function useI18n(locale: Locale) {
         params.control = d.control[params.control as keyof Dict['control']];
       }
       if (r.code === 'sla-overdue' && typeof params.severity === 'string') {
-        if (params.severity in d.slaClass)
-          params.severity = d.slaClass[params.severity as keyof Dict['slaClass']];
+        const classes = params.count === 1 ? d.slaClassOne : d.slaClass;
+        if (params.severity in classes)
+          params.severity = classes[params.severity as keyof Dict['slaClass']];
       }
       if (typeof params.check === 'string' && params.check in d.repositoryCheck) {
         params.check = d.repositoryCheck[params.check as keyof Dict['repositoryCheck']];

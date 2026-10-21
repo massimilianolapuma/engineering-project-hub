@@ -32,6 +32,7 @@ import { loadHistory, loadSiteData } from '../../../lib/data';
 import { displayVersion } from '../../../lib/format';
 import { pageContext } from '../../../lib/page';
 import { loadSitePolicies } from '../../../lib/policies';
+import { riskLine, sumKnown } from '../../../lib/risk-line';
 import { href, localeParams } from '../../../lib/routes';
 import { driftTone, severityTone, workflowTone, type Tone } from '../../../lib/tones';
 
@@ -52,6 +53,7 @@ const s = data.ok ? (data.data.projects.find((p) => p.project.id === id) ?? null
 const staleHours = index?.run.policy.snapshotStaleHours ?? 24;
 /** Quality thresholds for the meter tick and the legend (as on "How to read"). */
 const qualityPolicy = loadSitePolicies().policies.quality;
+const exceptionPolicy = loadSitePolicies().policies.exceptions;
 
 const LEVEL_RANK: Record<Reason['level'], number> = { red: 0, amber: 1, grey: 2, info: 3 };
 const WHY_LIMIT = 5;
@@ -142,15 +144,12 @@ function dimSummary(dim: Dimension, health: HealthResult): string {
     const base = s.securityHealth.countsComplete
       ? counts
       : `${counts} · ${d.project.alertsPartial}`;
-    const overdue = Object.values(s.securityHealth.remediation.overdue).reduce<number>(
-      (n, v) => n + (v ?? 0),
-      0,
-    );
-    const accepted = Object.values(s.securityHealth.acceptedCounts).reduce<number>(
-      (n, v) => n + (v ?? 0),
-      0,
-    );
-    return overdue + accepted > 0 ? `${base} · ${f(d.risk.cardLine, { overdue, accepted })}` : base;
+    const risk = riskLine(i18n, {
+      overdue: sumKnown(Object.values(s.securityHealth.remediation.overdue)),
+      accepted: sumKnown(Object.values(s.securityHealth.acceptedCounts)),
+      complete: s.securityHealth.countsComplete,
+    });
+    return risk ? `${base} · ${risk}` : base;
   }
   if (dim === 'coverage' && s.securityCoverage.required > 0) {
     return coverageLine(d.project.dimCoverage);
@@ -725,8 +724,8 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
             <span class="fold__hint">{d.project.securityHint}</span>
           </summary>
           <div class="fold__body">
-            {!countsKnown && <p class="muted">{d.project.alertsUnknown}</p>}
-            <RiskPanel s={s} i18n={i18n}>
+            <RiskPanel s={s} i18n={i18n} expiredIsAmber={exceptionPolicy.expiredIsAmber}>
+              {!countsKnown && <p class="muted">{d.project.alertsUnknown}</p>}
               {listed.length === 0 ? (
                 countsKnown && <p class="muted">{d.project.noCriticalHigh}</p>
               ) : (
@@ -756,12 +755,12 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
                   ))}
                 </ul>
               )}
+              {countsKnown && unlisted.length > 0 && (
+                <p class="alerts__unlisted" data-unlisted-crit-high>
+                  {f(d.project.unlistedCritHigh, { alerts: unlistedText })}
+                </p>
+              )}
             </RiskPanel>
-            {countsKnown && unlisted.length > 0 && (
-              <p class="alerts__unlisted" data-unlisted-crit-high>
-                {f(d.project.unlistedCritHigh, { alerts: unlistedText })}
-              </p>
-            )}
             {countsKnown && otherAlerts > 0 && (
               <p>
                 {f(

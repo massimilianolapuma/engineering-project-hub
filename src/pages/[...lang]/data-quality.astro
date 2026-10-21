@@ -177,6 +177,7 @@ const exceptionGroups = (() => {
       project: p.project,
       id: e.id,
       repository: e.repository,
+      source: e.source,
       expires: e.expires,
       state: e.state,
       expiringSoon: e.expiringSoon,
@@ -200,7 +201,7 @@ const exceptionGroups = (() => {
       kind: 'unverifiable',
       label: q.exceptionLists.unverifiable,
       rows: all.filter((e) => e.state === 'unverifiable'),
-      note: null,
+      note: q.exceptionLists.sourceUnreadable,
     },
     {
       kind: 'expiringSoon',
@@ -517,7 +518,11 @@ const lead = [
                       </a>{' '}
                       · {e.project.name} · <span class="mono">{repoName(e.repository)}</span>
                     </span>
-                    {g.note && <span class="muted">{f(g.note, { date: day(e.expires) })}</span>}
+                    {g.note && (
+                      <span class="muted">
+                        {f(g.note, { date: day(e.expires), source: d.risk.source[e.source] })}
+                      </span>
+                    )}
                   </li>
                 ))}
                 {g.orphans.map((id) => (

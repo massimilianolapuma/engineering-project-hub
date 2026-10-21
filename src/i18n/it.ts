@@ -145,6 +145,14 @@ export const it: Dict = {
     low: 'bassi',
     secret: 'secret scanning',
   },
+  /** Le stesse classi per un conteggio pari a uno. */
+  slaClassOne: {
+    critical: 'critico',
+    high: 'alto',
+    medium: 'medio',
+    low: 'basso',
+    secret: 'secret scanning',
+  },
   findingSource: {
     'github-code-scanning': 'Code scanning',
     'github-dependabot': 'Dependabot',
@@ -712,6 +720,7 @@ export const it: Dict = {
       expiringSoon: 'In scadenza',
       expiredOn: 'scaduta il {date}',
       expiresOn: 'scade il {date}',
+      sourceUnreadable: '{source} non leggibile',
     },
     history: {
       title: 'Storico',
@@ -1293,6 +1302,7 @@ export const it: Dict = {
     ageUnknown: 'età sconosciuta',
     remediationLine: 'In ritardo: {list} · il più vecchio dal {date}',
     nothingOverdue: 'Niente in ritardo',
+    nothingOverdueLowerBound: 'Nessun alert in ritardo nelle sorgenti leggibili',
     overdueUnknown: 'Alert in ritardo: non misurato',
     slaOff: 'Gli SLA di remediation sono spenti nelle policy.',
     atLeast: '≥ {n}',
@@ -1352,12 +1362,14 @@ export const it: Dict = {
       none: 'Nessuno SLA',
     },
     days: '{n} g',
-    cardLine: '{overdue} in ritardo · {accepted} accettati',
+    cardOverdue: '{n} in ritardo',
+    cardOverdueUnknown: 'ritardo non misurato',
+    cardAccepted: '{n} accettati',
+    cardAcceptedOne: '{n} accettato',
     securityCardLine:
       'In ritardo {overdue} · Accettati {accepted} · Eccezioni da sistemare {issues}',
     totalOverdue: 'In ritardo',
     totalAccepted: 'Accettati',
-    barSuffix: '{overdue} in ritardo · {accepted} accettati',
   },
   exports: {
     findings: 'Riepilogo alert (CSV)',
@@ -1383,6 +1395,7 @@ export const it: Dict = {
     'open-secret-alerts': '{count} alert secret scanning aperto',
     'sla-overdue': '{count} alert aperto oltre lo SLA di {days} giorni ({severity})',
     'sla-age-unknown': '{count} alert aperto con età sconosciuta (nessun controllo SLA)',
+    'security-exception-active': '{count} problema accettato con eccezione di sicurezza',
     'security-exception-expired': '{count} eccezione di sicurezza scaduta: {ids}',
     'security-exception-stale':
       '{count} eccezione di sicurezza non corrisponde ad alcun alert aperto: {ids}',
@@ -1433,7 +1446,7 @@ export const it: Dict = {
     'no-open-alerts': 'Nessun alert aperto e copertura obbligatoria completa',
     'sla-overdue': '{count} alert aperti oltre lo SLA di {days} giorni ({severity})',
     'sla-age-unknown': '{count} alert aperti con età sconosciuta (nessun controllo SLA)',
-    'security-exception-active': '{count} problema accettato con eccezione di sicurezza',
+    'security-exception-active': '{count} problemi accettati con eccezioni di sicurezza',
     'security-exception-expired': '{count} eccezioni di sicurezza scadute: {ids}',
     'security-exception-stale':
       '{count} eccezioni di sicurezza non corrispondono ad alcun alert aperto: {ids}',

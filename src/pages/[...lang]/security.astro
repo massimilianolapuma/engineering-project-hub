@@ -19,6 +19,7 @@ import RiskPill from '../../components/RiskPill.astro';
 import UnknownValue from '../../components/UnknownValue.astro';
 import Base from '../../layouts/Base.astro';
 import { pageContext } from '../../lib/page';
+import { sumKnown } from '../../lib/risk-line';
 import { exportHref, href, localeParams } from '../../lib/routes';
 import { scoreSortKey } from '../../lib/score';
 import { severityTone } from '../../lib/tones';
@@ -111,8 +112,6 @@ const riskTotal = (pick: (p: ProjectSnapshot) => number | null) => {
   const vals = projects.map(pick);
   return vals.every((v) => v === null) ? null : vals.reduce<number>((a, v) => a + (v ?? 0), 0);
 };
-const sumKnown = (values: (number | null)[]) =>
-  values.every((v) => v === null) ? null : values.reduce<number>((a, v) => a + (v ?? 0), 0);
 const riskTotals = [
   [
     'overdue',

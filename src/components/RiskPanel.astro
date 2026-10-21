@@ -15,8 +15,10 @@ import UnknownValue from './UnknownValue.astro';
 interface Props {
   s: ProjectSnapshot;
   i18n: I18n;
+  /** exceptions.expiredIsAmber of the policies: an expired exception is amber only then. */
+  expiredIsAmber?: boolean;
 }
-const { s, i18n } = Astro.props;
+const { s, i18n, expiredIsAmber = true } = Astro.props;
 const { d, f } = i18n;
 const r = d.risk;
 const rem = s.securityHealth.remediation;
@@ -27,14 +29,20 @@ const totalOverdue = Object.values(rem.overdue).every((v) => v === null)
 const lowerBound = !s.securityHealth.countsComplete;
 const list = classes
   .filter((c) => (rem.overdue[c] ?? 0) > 0)
-  .map((c) => `${lowerBound ? '≥ ' : ''}${rem.overdue[c]} ${d.slaClass[c]}`)
+  .map((c) => {
+    const n = rem.overdue[c] ?? 0;
+    const name = n === 1 && !lowerBound ? d.slaClassOne[c] : d.slaClass[c];
+    return `${lowerBound ? '≥ ' : ''}${n} ${name}`;
+  })
   .join(', ');
 const line = !rem.enabled
   ? r.slaOff
   : totalOverdue === null
     ? r.overdueUnknown
     : totalOverdue === 0
-      ? r.nothingOverdue
+      ? lowerBound
+        ? r.nothingOverdueLowerBound
+        : r.nothingOverdue
       : f(r.remediationLine, { list, date: i18n.day(rem.oldestOverdueSince) });
 
 /** Accepted critical and high alerts: listed apart, never mixed with the counted ones. */
@@ -45,11 +53,14 @@ const accepted = s.securityFindings.filter(
 
 const stateOf = (e: SecurityException): { tone: Tone; label: string } => {
   const date = { date: i18n.day(e.expires) };
-  if (e.state === 'expired') return { tone: 'amber', label: f(r.state.expired, date) };
-  if (e.state === 'stale') return { tone: 'amber', label: r.state.stale };
+  // Tones follow the policy, like the reasons: only an expired exception can be amber, and
+  // only when exceptions.expiredIsAmber is on. Every other state is informative or unknown.
+  if (e.state === 'expired')
+    return { tone: expiredIsAmber ? 'amber' : 'info', label: f(r.state.expired, date) };
+  if (e.state === 'stale') return { tone: 'info', label: r.state.stale };
   if (e.state === 'unverifiable') return { tone: 'grey', label: r.state.unverifiable };
   return e.expiringSoon
-    ? { tone: 'amber', label: f(r.state.expiring, date) }
+    ? { tone: 'info', label: f(r.state.expiring, date) }
     : { tone: 'info', label: f(r.state.active, date) };
 };
 const scopeOf = (e: SecurityException) =>

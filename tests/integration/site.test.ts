@@ -1068,6 +1068,7 @@ describe('static site', () => {
       const section = en.slice(at, en.indexOf('</section>', at));
       expect(t(section)).toContain('Exceptions and remediation SLAs');
       expect(t(section)).toMatch(/high[^|]*30/i);
+      expect(en).toContain('href="#risk"');
       expect(await page('it/how-to-read')).toContain('Eccezioni e SLA di remediation');
     });
 
@@ -1088,6 +1089,104 @@ describe('static site', () => {
     it('the Security bar tooltip on the portfolio carries the overdue and accepted counts', async () => {
       const html = await page('');
       expect(html).toMatch(/title="Security risk: [^"]*1 overdue · 1 accepted"/);
+    });
+
+    it('unmeasured overdue never reads as "0 overdue" (card and portfolio tooltip)', async () => {
+      const data = join(work, 'risk-unmeasured');
+      await cp('fixtures/snapshots', data, { recursive: true });
+      const file = join(data, 'projects/project-alpha.json');
+      const json = JSON.parse(await readFile(file, 'utf8'));
+      // SLAs off: nothing was measured, but one finding is still accepted.
+      for (const k of Object.keys(json.securityHealth.remediation.overdue))
+        json.securityHealth.remediation.overdue[k] = null;
+      await writeFile(file, JSON.stringify(json));
+      const indexFile = join(data, 'index.json');
+      const index = JSON.parse(await readFile(indexFile, 'utf8'));
+      const summary = index.projects.find((p: { id: string }) => p.id === 'project-alpha');
+      summary.risk.overdue = null;
+      summary.risk.overdueCriticalHigh = null;
+      await writeFile(indexFile, JSON.stringify(index));
+      const out = join(work, 'dist-risk-unmeasured');
+      await buildSite(data, out);
+      const card = await readFile(join(out, 'projects/project-alpha/index.html'), 'utf8');
+      const home = await readFile(join(out, 'index.html'), 'utf8');
+      expect(t(card)).toContain('1 accepted');
+      expect(t(card)).not.toMatch(/\b0 overdue/);
+      expect(t(card)).toContain('overdue not measured');
+      // The card of project-alpha is the only one whose overdue count is unmeasured.
+      const tips = [...home.matchAll(/title="Security risk: ([^"]*)"/g)].map((m) => m[1]!);
+      const tip = tips.find((x) => x.includes('not measured'));
+      expect(tip).toContain('1 accepted');
+      expect(tip).not.toMatch(/\b0 overdue/);
+    }, 180_000);
+
+    it('incomplete counts never claim "Nothing overdue" (lower bound)', async () => {
+      const data = join(work, 'risk-lower-bound');
+      await cp('fixtures/snapshots', data, { recursive: true });
+      const file = join(data, 'projects/project-alpha.json');
+      const json = JSON.parse(await readFile(file, 'utf8'));
+      json.securityHealth.countsComplete = false;
+      await writeFile(file, JSON.stringify(json));
+      const out = join(work, 'dist-risk-lower-bound');
+      await buildSite(data, out);
+      const html = await readFile(join(out, 'projects/project-alpha/index.html'), 'utf8');
+      const line = /data-remediation-line[^>]*>([\s\S]*?)<\/p>/.exec(html)?.[1] ?? '';
+      expect(t(line).trim()).toBe('Nothing overdue in the sources that could be read');
+    }, 180_000);
+
+    it('Italian remediation line and reason agree in number (1 alto, not 1 alti)', async () => {
+      const html = await page('it/projects/platform');
+      const line = /data-remediation-line[^>]*>([\s\S]*?)<\/p>/.exec(html)?.[1] ?? '';
+      expect(t(line)).toContain('1 alto');
+      expect(t(line)).not.toContain('1 alti');
+      expect(t(html)).toContain('1 alert aperto oltre lo SLA di 30 giorni (alto)');
+    });
+
+    it('the unlisted note follows the counted list, before the exceptions table', async () => {
+      const data = join(work, 'risk-order');
+      await cp('fixtures/snapshots', data, { recursive: true });
+      const file = join(data, 'projects/project-alpha.json');
+      const json = JSON.parse(await readFile(file, 'utf8'));
+      json.securityHealth.openCounts.high += 1;
+      await writeFile(file, JSON.stringify(json));
+      const out = join(work, 'dist-risk-order');
+      await buildSite(data, out);
+      const html = await readFile(join(out, 'projects/project-alpha/index.html'), 'utf8');
+      const at = (needle: string) => html.indexOf(needle);
+      expect(at('data-remediation-line')).toBeGreaterThan(-1);
+      expect(at('data-unlisted-crit-high')).toBeGreaterThan(at('data-remediation-line'));
+      expect(at('data-unlisted-crit-high')).toBeLessThan(at('id="exceptions"'));
+    }, 180_000);
+
+    it('the expired exception pill follows exceptions.expiredIsAmber', async () => {
+      const pill = (html: string) =>
+        /<span class="pill (pill--\w+)"[^>]*>(?:(?!<\/span>)[\s\S])*?<\/svg>\s*<span>Expired on/.exec(
+          html,
+        )?.[1];
+      expect(pill(await page('projects/platform'))).toBe('pill--amber');
+      const policies = parse(readFileSync('config/policies.yaml', 'utf8'));
+      policies.exceptions = { expiredIsAmber: false };
+      const file = join(work, 'policies-no-amber.yaml');
+      await writeFile(file, JSON.stringify(policies));
+      process.env.POLICIES_FILE = file;
+      try {
+        const out = join(work, 'dist-risk-no-amber');
+        await buildSite(join(process.cwd(), 'fixtures/snapshots'), out);
+        const html = await readFile(join(out, 'projects/platform/index.html'), 'utf8');
+        expect(pill(html)).toBe('pill--info');
+      } finally {
+        delete process.env.POLICIES_FILE;
+      }
+    }, 180_000);
+
+    it('Data quality names the unreadable source of an unverifiable exception', async () => {
+      const list = (html: string) => {
+        const at = html.indexOf('data-exception-kind="unverifiable"');
+        return t(html.slice(at, html.indexOf('</ul>', at)));
+      };
+      expect(list(await page('data-quality'))).toContain('EXC-BETA-002');
+      expect(list(await page('data-quality'))).toContain('Secret scanning not readable');
+      expect(list(await page('it/data-quality'))).toContain('Secret scanning non leggibile');
     });
 
     it('an accepted high never hides an external high (listed / unlisted split)', async () => {

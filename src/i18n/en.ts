@@ -143,6 +143,14 @@ export const en = {
     low: 'low',
     secret: 'secret',
   },
+  /** The same classes for a count of exactly one. */
+  slaClassOne: {
+    critical: 'critical',
+    high: 'high',
+    medium: 'medium',
+    low: 'low',
+    secret: 'secret',
+  },
   findingSource: {
     'github-code-scanning': 'Code scanning',
     'github-dependabot': 'Dependabot',
@@ -707,6 +715,7 @@ export const en = {
       expiringSoon: 'Expiring soon',
       expiredOn: 'expired {date}',
       expiresOn: 'expires {date}',
+      sourceUnreadable: '{source} not readable',
     },
     history: {
       title: 'History',
@@ -1282,6 +1291,7 @@ export const en = {
     ageUnknown: 'age unknown',
     remediationLine: 'Overdue: {list} · oldest since {date}',
     nothingOverdue: 'Nothing overdue',
+    nothingOverdueLowerBound: 'Nothing overdue in the sources that could be read',
     overdueUnknown: 'Overdue alerts: not measured',
     slaOff: 'Remediation SLAs are off in the policies.',
     atLeast: '≥ {n}',
@@ -1341,12 +1351,14 @@ export const en = {
       none: 'No SLA',
     },
     days: '{n} d',
-    cardLine: '{overdue} overdue · {accepted} accepted',
+    cardOverdue: '{n} overdue',
+    cardOverdueUnknown: 'overdue not measured',
+    cardAccepted: '{n} accepted',
+    cardAcceptedOne: '{n} accepted',
     securityCardLine:
       'Overdue {overdue} · Accepted {accepted} · Exceptions needing attention {issues}',
     totalOverdue: 'Overdue',
     totalAccepted: 'Accepted',
-    barSuffix: '{overdue} overdue · {accepted} accepted',
   },
   exports: {
     findings: 'Alert summary (CSV)',
@@ -1372,6 +1384,7 @@ export const en = {
     'open-secret-alerts': '{count} open secret scanning alert',
     'sla-overdue': '{count} open {severity} alert past its {days}-day SLA',
     'sla-age-unknown': '{count} open alert with unknown age (no SLA check)',
+    'security-exception-active': '{count} finding accepted by a security exception',
     'security-exception-expired': '{count} security exception expired: {ids}',
     'security-exception-stale': '{count} security exception matches no open alert: {ids}',
     'security-exception-unverifiable':
@@ -1421,7 +1434,7 @@ export const en = {
     'no-open-alerts': 'No open alerts and full required coverage',
     'sla-overdue': '{count} open {severity} alerts past their {days}-day SLA',
     'sla-age-unknown': '{count} open alerts with unknown age (no SLA check)',
-    'security-exception-active': '{count} finding accepted by a security exception',
+    'security-exception-active': '{count} findings accepted by security exceptions',
     'security-exception-expired': '{count} security exceptions expired: {ids}',
     'security-exception-stale': '{count} security exceptions match no open alert: {ids}',
     'security-exception-unverifiable':

@@ -10,6 +10,7 @@ import StatusDot from '../../components/StatusDot.astro';
 import Base from '../../layouts/Base.astro';
 import { loadHistory } from '../../lib/data';
 import { healthRank } from '../../lib/format';
+import { riskLine } from '../../lib/risk-line';
 import { pageContext } from '../../lib/page';
 import { loadSitePolicies } from '../../lib/policies';
 import { exportHref, href, localeParams } from '../../lib/routes';
@@ -19,7 +20,7 @@ import { seriesFor, summarise, trendText } from '../../lib/trend';
 export const getStaticPaths = localeParams;
 const { locale } = Astro.props;
 const { i18n, data, index, alternates } = pageContext(locale, 'portfolio');
-const { d, f } = i18n;
+const { d } = i18n;
 const projects = data.ok ? data.data.index.projects : [];
 type Project = (typeof projects)[number];
 const snapshots = new Map<string, ProjectSnapshot>(
@@ -39,9 +40,11 @@ const DIMS: Dimension[] = ['delivery', 'version', 'security', 'coverage', 'gover
 const OPTIONAL = new Set<Dimension>(loadSitePolicies().policies.overall.optionalDimensions);
 /** Security tooltip suffix: overdue and accepted counts, only when one is non-zero. */
 const riskNote = (p: Project): string | undefined =>
-  (p.risk.overdue ?? 0) + (p.risk.accepted ?? 0) > 0
-    ? f(d.risk.barSuffix, { overdue: p.risk.overdue ?? 0, accepted: p.risk.accepted ?? 0 })
-    : undefined;
+  riskLine(i18n, {
+    overdue: p.risk.overdue,
+    accepted: p.risk.accepted,
+    complete: snapshots.get(p.id)?.securityHealth.countsComplete ?? true,
+  });
 const statusOf = (p: Project, k: Dimension): HealthStatus =>
   k === 'coverage' || k === 'quality' ? p[k].status : p[k];
 const healthOf = (s: ProjectSnapshot | undefined, k: Dimension): HealthResult | undefined =>
