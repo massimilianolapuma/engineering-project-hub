@@ -286,6 +286,9 @@ describe('sanitisation end to end', () => {
           htmlUrl: url,
         },
       ]),
+    getQualitySummary: async () => fail({ classification: 'not-found', httpStatus: 404 }),
+    listCodeQualityFindings: async () => fail({ classification: 'not-found', httpStatus: 404 }),
+    getCodeQualitySetup: async () => fail({ classification: 'not-found', httpStatus: 404 }),
     listSecretScanningAlerts: async () =>
       ok([
         {

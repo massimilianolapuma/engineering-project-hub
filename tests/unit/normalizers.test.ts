@@ -4,6 +4,7 @@ import {
   normaliseSeverity,
   normaliseStatus,
 } from '../../collector/src/normalizers/security';
+import { QualitySummarySchema } from '@model/index';
 import { compareVersions, normaliseVersion } from '../../collector/src/util/semver';
 import { githubRepositoryFromUrl, parseGitmodules } from '../../collector/src/util/gitmodules';
 
@@ -134,4 +135,33 @@ describe('workflow run selection', async () => {
     expect(branch.map((r) => r.runNumber)).toEqual([3, 2, 1]);
     expect(lastCompletedRun(branch)?.runNumber).toBe(2);
   });
+});
+
+describe('QualitySummarySchema', () => {
+  const valid = {
+    schemaVersion: '1.0',
+    repository: 'example-org/demo',
+    ref: 'refs/heads/main',
+    commitSha: 'a'.repeat(40),
+    generatedAt: '2026-01-15T12:00:00Z',
+    tool: 'cobertura',
+    format: 'cobertura',
+    lines: { covered: 80, valid: 100 },
+  };
+  it('accepts a valid summary', () =>
+    expect(QualitySummarySchema.safeParse(valid).success).toBe(true));
+  it('QualitySummarySchema rejects extra keys', () => {
+    expect(QualitySummarySchema.safeParse({ ...valid, files: ['a.ts'] }).success).toBe(false);
+    expect(
+      QualitySummarySchema.safeParse({ ...valid, lines: { ...valid.lines, branches: 1 } }).success,
+    ).toBe(false);
+  });
+  it('rejects covered > valid', () =>
+    expect(
+      QualitySummarySchema.safeParse({ ...valid, lines: { covered: 11, valid: 10 } }).success,
+    ).toBe(false));
+  it('rejects non-hex commitSha', () =>
+    expect(QualitySummarySchema.safeParse({ ...valid, commitSha: 'z'.repeat(40) }).success).toBe(
+      false,
+    ));
 });

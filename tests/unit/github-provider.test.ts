@@ -4,6 +4,7 @@ import {
   createGitHubClient,
   GitHubProvider,
 } from '../../collector/src/providers/github/github-provider';
+import { makeZip } from '../helpers/factories';
 import { AuthConfigError, resolveAuth } from '../../collector/src/providers/auth';
 
 const httpError = (status: number, message: string, headers: Record<string, string> = {}) => ({
@@ -64,7 +65,7 @@ describe('GitHub error classification', () => {
   });
 });
 
-type Route = { status: number; body: unknown; headers?: Record<string, string> };
+type Route = { status: number; body: unknown | Uint8Array; headers?: Record<string, string> };
 function fakeFetch(routes: Record<string, Route>, seen: string[] = []) {
   return async (input: string | URL | Request) => {
     const url = new URL(
@@ -73,6 +74,11 @@ function fakeFetch(routes: Record<string, Route>, seen: string[] = []) {
     seen.push(url.pathname + url.search);
     const route = Object.entries(routes).find(([p]) => decodeURIComponent(url.pathname) === p);
     const r = route?.[1] ?? { status: 404, body: { message: 'Not Found' } };
+    if (r.body instanceof Uint8Array)
+      return new Response(r.body as BodyInit, {
+        status: r.status,
+        headers: { 'content-type': 'application/zip', ...(r.headers ?? {}) },
+      });
     return new Response(JSON.stringify(r.body), {
       status: r.status,
       headers: { 'content-type': 'application/json', ...(r.headers ?? {}) },
@@ -279,5 +285,151 @@ describe('authentication priority', () => {
     } catch (e) {
       expect((e as Error).message).not.toContain('synthetic-key-value');
     }
+  });
+});
+
+describe('GitHubProvider quality calls', () => {
+  const art = (id: number, branch: string, created: string, extra: object = {}) => ({
+    id,
+    name: 'hub-quality-summary',
+    size_in_bytes: 300,
+    expired: false,
+    created_at: created,
+    workflow_run: { id: id * 10, head_branch: branch },
+    ...extra,
+  });
+  const list = (artifacts: unknown[]): Route => ({
+    status: 200,
+    body: { total_count: artifacts.length, artifacts },
+  });
+  const zipOf = (text: string): Route => ({
+    status: 200,
+    body: makeZip([{ name: 'quality-summary.json', data: text }]),
+  });
+
+  it('getQualitySummary picks newest artifact whose workflow_run.head_branch is the default branch', async () => {
+    const p = provider({
+      '/repos/o/a/actions/artifacts': list([
+        art(3, 'feature/x', '2026-01-15T10:00:00Z'),
+        art(1, 'main', '2026-01-10T10:00:00Z'),
+        art(2, 'main', '2026-01-12T10:00:00Z'),
+      ]),
+      '/repos/o/a/actions/artifacts/2/zip': zipOf('{"main":"newest"}'),
+      '/repos/o/a/actions/artifacts/1/zip': zipOf('{"main":"older"}'),
+      '/repos/o/a/actions/artifacts/3/zip': zipOf('{"feature":true}'),
+    });
+    expect(await p.getQualitySummary('o/a', 'main')).toEqual({
+      ok: true,
+      data: {
+        summaryText: '{"main":"newest"}',
+        createdAt: '2026-01-12T10:00:00Z',
+        runUrl: 'https://github.com/o/a/actions/runs/20',
+      },
+    });
+  });
+
+  it('getQualitySummary returns summaryText null when only expired artifacts exist on the branch', async () => {
+    const p = provider({
+      '/repos/o/a/actions/artifacts': list([
+        art(1, 'main', '2026-01-10T10:00:00Z', { expired: true }),
+        art(2, 'feature/x', '2026-01-11T10:00:00Z'),
+      ]),
+    });
+    expect(await p.getQualitySummary('o/a', 'main')).toMatchObject({
+      ok: true,
+      data: { summaryText: null, createdAt: '2026-01-10T10:00:00Z' },
+    });
+  });
+
+  it('getQualitySummary returns not-found when no artifact exists for the branch', async () => {
+    const p = provider({
+      '/repos/o/a/actions/artifacts': list([art(2, 'feature/x', '2026-01-11T10:00:00Z')]),
+    });
+    expect(await p.getQualitySummary('o/a', 'main')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-found', httpStatus: 404 },
+    });
+  });
+
+  it('getQualitySummary classifies 403 as not-authorised', async () => {
+    const p = provider({
+      '/repos/o/a/actions/artifacts': {
+        status: 403,
+        body: { message: 'Resource not accessible by integration' },
+      },
+    });
+    expect(await p.getQualitySummary('o/a', 'main')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-authorised' },
+    });
+  });
+
+  it('getQualitySummary rejects size_in_bytes > 65536 as invalid-data without downloading', async () => {
+    const seen: string[] = [];
+    const p = provider(
+      {
+        '/repos/o/a/actions/artifacts': list([
+          art(1, 'main', '2026-01-10T10:00:00Z', { size_in_bytes: 65_537 }),
+        ]),
+      },
+      seen,
+    );
+    expect(await p.getQualitySummary('o/a', 'main')).toMatchObject({
+      ok: false,
+      error: { classification: 'invalid-data' },
+    });
+    expect(seen.some((s) => s.includes('/zip'))).toBe(false);
+  });
+
+  it('getQualitySummary maps a corrupt archive to invalid-data', async () => {
+    const p = provider({
+      '/repos/o/a/actions/artifacts': list([art(1, 'main', '2026-01-10T10:00:00Z')]),
+      '/repos/o/a/actions/artifacts/1/zip': { status: 200, body: new Uint8Array([1, 2, 3]) },
+    });
+    expect(await p.getQualitySummary('o/a', 'main')).toMatchObject({
+      ok: false,
+      error: { classification: 'invalid-data' },
+    });
+  });
+
+  it('listCodeQualityFindings sends X-GitHub-Api-Version 2026-03-10 and maps rule.category / rule.severity only', async () => {
+    let version: string | null = null;
+    const base = fakeFetch({
+      '/repos/o/a/code-quality/findings': {
+        status: 200,
+        body: [
+          {
+            number: 1,
+            state: 'open',
+            message: 'secret message',
+            location: { path: 'src/a.ts' },
+            rule: { id: 'r1', category: 'reliability', severity: 'warning', description: 'text' },
+          },
+        ],
+      },
+    });
+    const p = new GitHubProvider(
+      createGitHubClient(
+        { mode: 'fine-grained-token', token: 'synthetic' },
+        {
+          fetch: (async (input: string | URL | Request, init?: RequestInit) => {
+            version = new Headers(init?.headers).get('x-github-api-version');
+            return base(input);
+          }) as typeof fetch,
+        },
+      ),
+      'fine-grained-token',
+    );
+    const r = await p.listCodeQualityFindings('o/a');
+    expect(version).toBe('2026-03-10');
+    expect(r).toEqual({ ok: true, data: [{ category: 'reliability', severity: 'warning' }] });
+    if (r.ok) expect(Object.keys(r.data[0]!).sort()).toEqual(['category', 'severity']);
+  });
+
+  it('getCodeQualitySetup maps state only', async () => {
+    const p = provider({
+      '/repos/o/a/code-quality/setup': { status: 200, body: { state: 'configured', extra: 1 } },
+    });
+    expect(await p.getCodeQualitySetup('o/a')).toEqual({ ok: true, data: { state: 'configured' } });
   });
 });

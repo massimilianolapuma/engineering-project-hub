@@ -7,6 +7,8 @@ import type { ResolvedAuth } from '../auth';
 import {
   fail,
   ok,
+  type CodeQualityFindingDTO,
+  type CodeQualitySetupDTO,
   type CodeScanningAlertDTO,
   type CodeScanningAnalysisDTO,
   type CommitRefDTO,
@@ -16,6 +18,7 @@ import {
   type DependabotAlertDTO,
   type FileDTO,
   type ProviderResult,
+  type QualitySummaryArtifactDTO,
   type ReleaseDTO,
   type RepositoryDTO,
   type RunFailureDTO,
@@ -25,6 +28,7 @@ import {
   type TagDTO,
   type WorkflowRunDTO,
 } from '../types';
+import { readZipEntry, ZipError } from '../../util/zip';
 import { classifyGitHubError } from './errors';
 
 const ThrottledOctokit = Octokit.plugin(throttling, retry);
@@ -34,6 +38,12 @@ type Client = InstanceType<typeof ThrottledOctokit>;
 const MAX_ALERT_PAGES = 3;
 /** Files above this size are not parsed (manifest / .gitmodules / status file are tiny). */
 const MAX_FILE_BYTES = 256 * 1024;
+
+/** Artifact name / file / size cap of the CI quality summary contract. */
+const QUALITY_ARTIFACT = 'hub-quality-summary';
+const QUALITY_FILE = 'quality-summary.json';
+const MAX_QUALITY_ZIP_BYTES = 65_536;
+const CODE_QUALITY_API_VERSION = '2026-03-10';
 
 const silentLog = { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} };
 
@@ -436,5 +446,83 @@ export class GitHubProvider implements SourceProvider {
         }),
       ),
     );
+  }
+
+  getQualitySummary(
+    repo: string,
+    branch: string,
+  ): Promise<ProviderResult<QualitySummaryArtifactDTO>> {
+    const { owner, repo: name } = split(repo);
+    return guard(async () => {
+      const { data } = await this.client.rest.actions.listArtifactsForRepo({
+        owner,
+        repo: name,
+        name: QUALITY_ARTIFACT,
+        per_page: 30,
+      });
+      const onBranch = data.artifacts
+        .filter((a) => a.workflow_run?.head_branch === branch)
+        .sort((a, b) => Date.parse(b.created_at ?? '') - Date.parse(a.created_at ?? ''));
+      const newest = onBranch[0];
+      if (!newest) throw Object.assign(new Error('no artifact'), { status: 404 });
+      const runUrlOf = (a: typeof newest) =>
+        a.workflow_run?.id != null
+          ? `https://github.com/${owner}/${name}/actions/runs/${a.workflow_run.id}`
+          : null;
+      const live = onBranch.find((a) => !a.expired);
+      if (!live)
+        return {
+          summaryText: null,
+          createdAt: newest.created_at ?? null,
+          runUrl: runUrlOf(newest),
+        };
+      if (live.size_in_bytes > MAX_QUALITY_ZIP_BYTES) throw new InvalidData('artifact too large');
+      const res = await this.client.rest.actions.downloadArtifact({
+        owner,
+        repo: name,
+        artifact_id: live.id,
+        archive_format: 'zip',
+      });
+      const bytes = new Uint8Array(res.data as ArrayBuffer);
+      if (bytes.byteLength > MAX_QUALITY_ZIP_BYTES) throw new InvalidData('artifact too large');
+      try {
+        return {
+          summaryText: readZipEntry(bytes, QUALITY_FILE, MAX_QUALITY_ZIP_BYTES),
+          createdAt: live.created_at ?? null,
+          runUrl: runUrlOf(live),
+        };
+      } catch (e) {
+        if (e instanceof ZipError) throw new InvalidData('invalid artifact archive');
+        throw e;
+      }
+    });
+  }
+
+  listCodeQualityFindings(repo: string): Promise<ProviderResult<CodeQualityFindingDTO[]>> {
+    type Finding = { rule?: { category?: string | null; severity?: string | null } | null };
+    return guard(() =>
+      this.paginate<Finding, CodeQualityFindingDTO>(
+        'GET /repos/{owner}/{repo}/code-quality/findings',
+        {
+          ...split(repo),
+          state: 'open',
+          headers: { 'X-GitHub-Api-Version': CODE_QUALITY_API_VERSION },
+        },
+        (f) => ({
+          category: f.rule?.category ?? 'unknown',
+          severity: f.rule?.severity ?? 'unknown',
+        }),
+      ),
+    );
+  }
+
+  getCodeQualitySetup(repo: string): Promise<ProviderResult<CodeQualitySetupDTO>> {
+    return guard(async () => {
+      const { data } = await this.client.request('GET /repos/{owner}/{repo}/code-quality/setup', {
+        ...split(repo),
+        headers: { 'X-GitHub-Api-Version': CODE_QUALITY_API_VERSION },
+      });
+      return { state: String((data as { state?: unknown }).state ?? 'unknown') };
+    });
   }
 }
