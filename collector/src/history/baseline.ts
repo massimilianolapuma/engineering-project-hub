@@ -28,7 +28,11 @@ export const FINDING_PAIR_SOURCE: Record<FindingSource, PairSource> = {
   'security-status-file': 'security-status-file',
 };
 
-const BASELINE_LIST_CAP = 500;
+/**
+ * Each baseline list keeps at most this many items. A list at the cap may have been cut, so
+ * the next diff must not treat a missing item as "not there before" (see changes.ts).
+ */
+export const BASELINE_LIST_CAP = 500;
 
 export const pairKey = (repository: string, source: PairSource): string =>
   `${repository}|${source}`;

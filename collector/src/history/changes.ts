@@ -7,6 +7,7 @@ import {
   type ProjectSnapshot,
 } from '@model/index';
 import {
+  BASELINE_LIST_CAP,
   dimensionsOf,
   errorKey,
   FINDING_PAIR_SOURCE,
@@ -160,11 +161,17 @@ function diffAlerts(
   const wasMonitored = new Set(before.repositories);
   const catalogChanged =
     nowMonitored.size !== wasMonitored.size || [...nowMonitored].some((r) => !wasMonitored.has(r));
+  // A previous list at its cap may have been cut: an alert missing from it may have been open
+  // (or unreadable) then, so nothing is reported as new. "Resolved" stays exact.
+  const wasCut =
+    before.findings.length >= BASELINE_LIST_CAP ||
+    before.unreadable.length >= BASELINE_LIST_CAP ||
+    before.repositories.length >= BASELINE_LIST_CAP;
   const current = openCriticalHigh(snapshot);
   const wasIds = new Set(before.findings.map((f) => f.id));
   const nowIds = new Set(current.map((f) => f.id));
 
-  const fresh = current
+  const fresh = (wasCut ? [] : current)
     .filter(
       (f) =>
         !wasIds.has(f.id) &&
@@ -199,7 +206,8 @@ function diffAlerts(
   entry.resolvedFindings = resolved.slice(0, LIST_CAP);
   entry.findingsTruncated =
     Math.max(0, fresh.length - LIST_CAP) + Math.max(0, resolved.length - LIST_CAP);
-  entry.findingsPartial = nowUnreadable.size > 0 || wasUnreadable.size > 0 || catalogChanged;
+  entry.findingsPartial =
+    nowUnreadable.size > 0 || wasUnreadable.size > 0 || catalogChanged || wasCut;
   return { new: fresh.length, resolved: resolved.length };
 }
 
@@ -225,11 +233,13 @@ function diffVersions(entry: ProjectChanges, before: Baseline, snapshot: Project
   }
 }
 
+/** A previous error list at its cap may have been cut: no error is then listed as new. */
 function diffErrors(entry: ProjectChanges, before: Baseline, snapshot: ProjectSnapshot): void {
   const was = new Set(before.errors);
+  const wasCut = before.errors.length >= BASELINE_LIST_CAP;
   const seen = new Map<string, ProjectSnapshot['collectionErrors'][number]>();
   for (const e of snapshot.collectionErrors) seen.set(errorKey(e), e);
-  entry.newErrors = [...seen.entries()]
+  entry.newErrors = (wasCut ? [] : [...seen.entries()])
     .filter(([key]) => !was.has(key))
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([, e]) => ({

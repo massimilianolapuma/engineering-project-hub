@@ -1077,7 +1077,7 @@ export const it: Dict = {
       'Nessun dato sui cambiamenti in questo snapshot (raccolto prima della v0.7.0 o con lo storico disattivato).',
     invalid: 'I dati sui cambiamenti non sono leggibili.',
     findingsPartial:
-      'Alcuni alert non sono stati confrontati: la loro fonte non era leggibile, o non era monitorata, in una delle due raccolte. Non vengono mai contati come nuovi o risolti.',
+      "Alcuni alert non sono stati confrontati: la loro fonte non era leggibile o non era monitorata in una delle due raccolte, oppure l'elenco precedente di alert era troppo lungo da conservare. Non vengono mai contati come nuovi o risolti.",
     basis: {
       none: 'Questa è la prima raccolta con storico. I cambiamenti compariranno dopo la prossima raccolta.',
       'restore-failed':

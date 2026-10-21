@@ -524,6 +524,52 @@ describe('computeChanges', () => {
     expect(c.totals.newFindings).toBe(0);
   });
 
+  it('a baseline cut at 500 alerts: the next run lists no new alerts and flags findingsPartial', () => {
+    const r = runOf('project-alpha');
+    r.index.generatedAt = daysAgo(1);
+    const template = r.project.securityFindings.find((f) => f.id === dependabot7.id)!;
+    for (let n = 1000; n < 1520; n++)
+      r.project.securityFindings.push({
+        ...template,
+        id: `example-org/project-alpha-frontend#dependabot#${n}`,
+      });
+    const history = appendHistory(
+      { state: 'none', file: null },
+      r.index,
+      [r.project],
+      catalog,
+      policies,
+      NOW,
+    );
+    expect(history.baseline.projects[0]!.findings).toHaveLength(500);
+    const next = structuredClone(r);
+    next.index.generatedAt = NOW.toISOString();
+    const c = computeChanges({ state: 'restored', file: history }, next.index, [next.project]);
+    expect(alphaOf(c).newFindings).toEqual([]);
+    expect(alphaOf(c).findingsPartial).toBe(true);
+    expect(c.totals.newFindings).toBe(0);
+  });
+
+  it('an unreadable list at its cap: no new alerts; findingsPartial true', () => {
+    const unreadable = Array.from({ length: 500 }, (_, n) => `example-org/r${n}|dependabot`);
+    const c = changesFor(previousOf(alphaNow(), { findings: [], unreadable }));
+    expect(alphaOf(c).newFindings).toEqual([]);
+    expect(alphaOf(c).findingsPartial).toBe(true);
+  });
+
+  it('an error list at its cap: no new errors listed', () => {
+    const errors = Array.from({ length: 500 }, (_, n) => `example-org/r${n}|dependabot|not-found`);
+    const c = changesFor(previousOf(alphaNow(), { errors }), ({ project }) => {
+      project.collectionErrors.push({
+        repository: 'example-org/project-alpha-web',
+        source: 'secret-scanning',
+        classification: 'not-authorised',
+      });
+    });
+    expect(alphaOf(c).newErrors).toEqual([]);
+    expect(c.totals.newErrors).toBe(0);
+  });
+
   it('61 new findings → 50 listed, findingsTruncated 11, totals.newFindings 61', () => {
     const c = changesFor(previousOf(alphaNow(), { findings: [dependabot7] }), ({ project }) => {
       const template = project.securityFindings.find((f) => f.id === dependabot7.id)!;
