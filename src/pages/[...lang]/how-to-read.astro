@@ -106,6 +106,22 @@ const thresholds: {
     numeric: true,
   },
   {
+    key: 'qualityGreenThresholdPercent',
+    value: i18n.percent(policies.quality.greenThresholdPercent),
+    numeric: true,
+  },
+  {
+    key: 'qualityAmberThresholdPercent',
+    value: i18n.percent(policies.quality.amberThresholdPercent),
+    numeric: true,
+  },
+  {
+    key: 'qualityReportStaleDays',
+    value: freshness.qualityReportStaleDays,
+    unit: h.units.days,
+    numeric: true,
+  },
+  {
     key: 'redOnSeverities',
     value: severities(policies.security.redOnSeverities),
     numeric: false,

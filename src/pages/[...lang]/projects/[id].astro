@@ -1,6 +1,6 @@
 ---
 /**
- * Project page: one question first ("why is it in this state?"), then the five dimensions,
+ * Project page: one question first ("why is it in this state?"), then the six dimensions,
  * the environments path and the components; everything else is collapsed on demand.
  */
 import type {
@@ -17,6 +17,7 @@ import ErrorsTable from '../../../components/ErrorsTable.astro';
 import ExtLink from '../../../components/ExtLink.astro';
 import Legend from '../../../components/Legend.astro';
 import Pill from '../../../components/Pill.astro';
+import QualitySection from '../../../components/QualitySection.astro';
 import RelTime from '../../../components/RelTime.astro';
 import ScoreBadge from '../../../components/ScoreBadge.astro';
 import StatusBadge from '../../../components/StatusBadge.astro';
@@ -25,6 +26,7 @@ import Base from '../../../layouts/Base.astro';
 import { loadSiteData } from '../../../lib/data';
 import { displayVersion } from '../../../lib/format';
 import { pageContext } from '../../../lib/page';
+import { loadSitePolicies } from '../../../lib/policies';
 import { href, localeParams } from '../../../lib/routes';
 import { driftTone, severityTone, workflowTone, type Tone } from '../../../lib/tones';
 
@@ -43,12 +45,14 @@ const { i18n, data, index, alternates } = pageContext(locale, `projects/${id}`);
 const { d, f } = i18n;
 const s = data.ok ? (data.data.projects.find((p) => p.project.id === id) ?? null) : null;
 const staleHours = index?.run.policy.snapshotStaleHours ?? 24;
+/** Quality thresholds for the meter tick and the legend (as on "How to read"). */
+const qualityPolicy = loadSitePolicies().policies.quality;
 
 const LEVEL_RANK: Record<Reason['level'], number> = { red: 0, amber: 1, grey: 2, info: 3 };
 const WHY_LIMIT = 5;
 const lower = (t: string) => t.toLocaleLowerCase(locale);
 
-/** The five dimensions, each with the section its card links to. */
+/** The six dimensions, each with the section its card links to. */
 const dims: { dim: Dimension; anchor: string; health: HealthResult }[] = s
   ? [
       { dim: 'delivery', anchor: 'workflows', health: s.deliveryHealth },
@@ -57,6 +61,7 @@ const dims: { dim: Dimension; anchor: string; health: HealthResult }[] = s
       { dim: 'coverage', anchor: 'coverage', health: s.securityCoverage },
       // Governance checks repository standards, chiefly the standard workflows.
       { dim: 'governance', anchor: 'workflows', health: s.governanceHealth },
+      { dim: 'quality', anchor: 'quality', health: s.qualityHealth },
     ]
   : [];
 
@@ -132,6 +137,13 @@ function dimSummary(dim: Dimension, health: HealthResult): string {
   }
   if (dim === 'coverage' && s.securityCoverage.required > 0) {
     return coverageLine(d.project.dimCoverage);
+  }
+  // Nothing measured: the top reason says why (not visible or not applicable), never 0%.
+  if (dim === 'quality' && s.qualityHealth.percentage !== null) {
+    return f(d.project.quality.cardLine, {
+      pct: i18n.pctNumber(s.qualityHealth.percentage),
+      threshold: i18n.pctNumber(qualityPolicy.greenThresholdPercent),
+    });
   }
   const r = topReason(health);
   return r ? i18n.reason(r) : d.common.unknownValue;
@@ -774,6 +786,8 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
             </p>
           </div>
         </details>
+
+        <QualitySection s={s} i18n={i18n} thresholds={qualityPolicy} />
 
         <details id="errors" class="fold disclosure">
           <summary>

@@ -21,6 +21,7 @@ const DEFAULTS_INPUT = {
   delivery: {},
   security: {},
   coverage: {},
+  quality: {},
   version: {},
   governance: {},
   overall: {},

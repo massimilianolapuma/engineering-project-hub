@@ -26,6 +26,11 @@ export function useI18n(locale: Locale) {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   });
+  /** Percentages keep at most one decimal, with the locale separator ("67,2" in Italian). */
+  const pctFmt = new Intl.NumberFormat(locale === 'it' ? 'it-IT' : 'en-GB', {
+    maximumFractionDigits: 1,
+    useGrouping: false,
+  });
   const dateFmt = new Intl.DateTimeFormat(locale === 'it' ? 'it-IT' : 'en-GB', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -53,11 +58,20 @@ export function useI18n(locale: Locale) {
       if (typeof params.control === 'string' && params.control in d.control) {
         params.control = d.control[params.control as keyof Dict['control']];
       }
+      // Percentages follow the locale decimal separator; the template adds the "%".
+      for (const k of ['percentage', 'threshold'] as const) {
+        const v = params[k];
+        if (typeof v === 'number') params[k] = pctFmt.format(v);
+      }
       // Singular wording when the reason counts exactly one thing ("1 open critical alert").
       const one = (d.reasonsOne as Partial<Record<string, string>>)[r.code];
       return format(params.count === 1 && one ? one : d.reasons[r.code], params);
     },
     number: (n: number) => numberFmt.format(n),
+    /** A percentage number without the sign, for templates that write "{pct}%". */
+    pctNumber: (n: number) => pctFmt.format(n),
+    /** A percentage with the locale decimal separator: "67,2%" in Italian, "67.2%" in English. */
+    percent: (n: number) => `${pctFmt.format(n)}%`,
     /** Collection error count with singular/plural wording. */
     errors: (count: number) =>
       format(count === 1 ? d.common.errorsOne : d.common.errors, { count }),
