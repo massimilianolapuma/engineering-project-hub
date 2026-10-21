@@ -160,6 +160,11 @@ export interface ProviderError {
    * count towards capability availability.
    */
   skipped?: boolean;
+  /**
+   * The call answered but the result was too large to read in full (page cap). The
+   * permission works; only the data is unknown.
+   */
+  incomplete?: boolean;
 }
 
 export type ProviderResult<T> = { ok: true; data: T } | { ok: false; error: ProviderError };

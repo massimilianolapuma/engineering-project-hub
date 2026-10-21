@@ -1,6 +1,6 @@
 # ADR 0003: Mattoni CI riusabili e separazione collect/build/deploy
 
-- **Stato:** Accepted
+- **Stato:** Accettata
 - **Data:** 2026-10-03
 - **Versione inglese:** [docs/architecture/adr/0003-ci-building-blocks-and-collect-deploy-split.md](../../../architecture/adr/0003-ci-building-blocks-and-collect-deploy-split.md)
 

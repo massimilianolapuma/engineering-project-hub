@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The `codeQuality` capability no longer drops to "partial" when a repository has more than 300 open findings: the call answered, so the permission works (the count stays "unknown").
+- Release v0.4.0 is now tagged on its release commit, so the 0.4.0 and 0.5.0 changelog links are compares like the others.
+- Docs: the "not enabled" skip also applies to a 403, the `unknown` capability case is documented, the Italian ADR 0003 status is translated, and the confidence examples match the UI and the sixth dimension (EN/IT).
+
 ## [0.6.0] - 2026-10-21
 
 ### Added
@@ -50,7 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2026-10-18
 
-Not tagged or deployed on its own: its changes ship with 0.5.0.
+Tagged after the fact (2026-10-21) and not deployed on its own: its changes ship with 0.5.0.
 
 ### Added
 
@@ -135,8 +141,8 @@ Not tagged or deployed on its own: its changes ship with 0.5.0.
 
 [Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.6.0...HEAD
 [0.6.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.5.0...v0.6.0
-[0.5.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.3.0...v0.5.0
-[0.4.0]: https://github.com/massimilianolapuma/engineering-project-hub/tree/ce13a1d2f4910960ee62a41c3e96b2b7b2b62934
+[0.5.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/massimilianolapuma/engineering-project-hub/releases/tag/v0.1.0

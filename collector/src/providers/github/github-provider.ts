@@ -104,6 +104,7 @@ async function guard<T>(
     return ok(await task());
   } catch (e) {
     const error = classifyGitHubError(e);
+    if (e instanceof FindingsPageCapExceeded) error.incomplete = true;
     if (notFoundAs && error.classification === 'not-found') return notFoundAs();
     return fail<T>(error);
   }

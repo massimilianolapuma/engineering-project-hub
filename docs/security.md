@@ -78,12 +78,14 @@ allow-listed `https://github.com/...` links are published.
     re-check them on your own plan before you grant access.
   - Observed behaviour: a findings 403 is `not-authorised`, never "missing". A findings 404
     is ambiguous (Code Quality not enabled, or not visible), so the project's findings are
-    `unknown`, never 0. A 404 whose message says Code Quality is not enabled skips that
-    repository. Like the other security endpoints, a 404 still proves the permission
-    works: the `codeQuality` capability is `available` when every findings call answers
-    200 or 404, `not-authorised` when none does and at least one answers 403, and
-    `partial` when only some do. Code Quality findings are informative: they never change
-    the Quality status.
+    `unknown`, never 0. A 403 or 404 whose message says Code Quality is not enabled skips
+    that repository. More than 300 open findings (three pages) also make the count
+    `unknown`, never an under-count. Like the other security endpoints, a 404, a "not
+    enabled" answer or a page-cap hit still proves the permission works: the
+    `codeQuality` capability is `available` when every findings call is usable,
+    `partial` when only some are, `not-authorised` when none is and at least one answers
+    403, and `unknown` when none is and none answers 403 (for example network errors
+    only). Code Quality findings are informative: they never change the Quality status.
 - **Fallback (MVP only): a fine-grained PAT** in `GH_READ_TOKEN`. Limit it to the monitored
   repositories, give it the same read-only permissions, and use a short expiry. It is tied
   to a person, so prefer the App.
