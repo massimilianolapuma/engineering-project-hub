@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-21
+
 ### Added
 
 - Repository controls: six read-only checks per repository (actions pinned to a commit SHA, reusable workflows up to date, default branch protected, pull request required, force push blocked, status checks required), from workflow files (Contents: read, parsed in memory, never published) and the branch rules API (Metadata: read). They are **informative by default** and feed Governance only when you set a level in the new optional `repositoryControls` policies (`enabled`, `checks`, `unknownEnforcedCheck`, `exemptActionOwners`, `maxWorkflowFiles`, `readClassicProtection`). Unknown is never a fail. A "Repository controls" section on the project page (matrix with symbols and text, detail lists), a How to read entry, Data quality rows and a `repositoryRules` capability. EN/IT docs and ADR 0007.
@@ -174,7 +176,8 @@ Tagged after the fact (2026-10-21) and not deployed on its own: its changes ship
 - Read-only by design: no write calls, alert dismissals or workflow triggers. Secret scanning alerts are fetched with `hide_secret=true` and only the secret type is kept.
 - The public demo publishes synthetic mock data only.
 
-[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.4.0...v0.5.0
