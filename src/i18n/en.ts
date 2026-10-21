@@ -497,7 +497,6 @@ export const en = {
       scorecardFoot: '{n} of {total} repositories analysed · {failing} checks below minimum',
       matrixCaption: 'Repository checks per repository',
       colRepository: 'Repository',
-      cellLabel: '{check}: {state}',
       unpinnedTitle: 'Actions not pinned to a commit SHA',
       unpinnedNone: 'No unpinned reference.',
       unpinnedMore: 'and {n} more',
@@ -520,10 +519,7 @@ export const en = {
       scorecardWithheld:
         'Check names are not published for non-public repositories; only their count is.',
       scorecardOther: 'and {n} more',
-      symbolPass: 'Pass',
-      symbolFail: 'Fail',
       symbolUnknown: 'Not visible',
-      symbolNa: 'Not applicable',
       dimLine: 'Checks {passed}/{applicable}',
     },
   },

@@ -499,7 +499,6 @@ export const it: Dict = {
       scorecardFoot: '{n} di {total} repository analizzati · {failing} check sotto il minimo',
       matrixCaption: 'Controlli per repository',
       colRepository: 'Repository',
-      cellLabel: '{check}: {state}',
       unpinnedTitle: 'Action non fissate a uno SHA di commit',
       unpinnedNone: 'Nessun riferimento non fissato.',
       unpinnedMore: 'e altri {n}',
@@ -522,10 +521,7 @@ export const it: Dict = {
       scorecardWithheld:
         'I nomi dei check non vengono pubblicati per i repository non pubblici; solo il loro numero.',
       scorecardOther: 'e altri {n}',
-      symbolPass: 'Superato',
-      symbolFail: 'Fallito',
       symbolUnknown: 'Non visibile',
-      symbolNa: 'Non applicabile',
       dimLine: 'Controlli {passed}/{applicable}',
     },
   },

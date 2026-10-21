@@ -434,7 +434,7 @@ const reusableTone = (status: string) =>
   }
   .rc-tile__big {
     font-size: var(--fs-score);
-    line-height: 34px;
+    line-height: 1.2;
     font-weight: 700;
   }
   .rc-tile__foot {
@@ -573,10 +573,6 @@ const reusableTone = (status: string) =>
     border-radius: var(--radius-pill);
     background: var(--surface-2);
     font-size: var(--fs-xs);
-  }
-  .rc-wrap:focus-visible {
-    outline: 2px solid var(--focus, currentColor);
-    outline-offset: 2px;
   }
   @media (forced-colors: active) {
     .rc-sym {
