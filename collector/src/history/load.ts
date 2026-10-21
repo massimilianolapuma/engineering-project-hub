@@ -32,6 +32,14 @@ export type PreviousHistory =
 
 export const HISTORY_MAX_BYTES = 8_388_608;
 
+/**
+ * Directory holding the previous history.json: --history-from, then $HISTORY_FROM, then --out.
+ * An empty value (an unset workflow input) falls through instead of meaning the working dir.
+ */
+export function historyDir(flag: string | undefined, env: string | undefined, out: string): string {
+  return flag || env || out;
+}
+
 export interface LoadHistoryOptions {
   dataSource: DataSource;
   /** Directory containing history.json. Never applies to the mock source. */

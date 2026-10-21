@@ -19,6 +19,7 @@ import { computeChanges } from '../../collector/src/history/changes';
 import {
   cleanHistory,
   HISTORY_MAX_BYTES,
+  historyDir,
   loadPreviousHistory,
   type CleanHistory,
   type LoadHistoryOptions,
@@ -93,6 +94,16 @@ async function loadGithub(
 /** A valid history of project-alpha, newest entry one day old. */
 const githubHistory = (): HistoryFile =>
   historyFile([historyEntry(daysAgo(2)), historyEntry(daysAgo(1))]);
+
+describe('historyDir', () => {
+  it('flag, then $HISTORY_FROM, then --out; an empty value falls through', () => {
+    expect(historyDir('a', 'b', 'out')).toBe('a');
+    expect(historyDir(undefined, 'b', 'out')).toBe('b');
+    expect(historyDir(undefined, undefined, 'out')).toBe('out');
+    expect(historyDir(undefined, '', 'out')).toBe('out');
+    expect(historyDir('', '', 'out')).toBe('out');
+  });
+});
 
 describe('loadPreviousHistory', () => {
   it('mock source reads the fixture and resolves @now-12d to 2026-01-03T12:00:00.000Z', async () => {

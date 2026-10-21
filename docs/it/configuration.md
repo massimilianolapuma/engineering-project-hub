@@ -553,11 +553,11 @@ validate:snapshots` invece fallisce su un file non valido.
 
 ### Flag del collector
 
-| Flag                       | Significato                                                                                            |
-| -------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `--history-from <dir>`     | Directory con il `history.json` precedente. Predefinito: `$HISTORY_FROM`, poi la directory di `--out`. |
-| `--history-fixture <file>` | Solo sorgente mock: lo storico sintetico da cui partire (predefinito `fixtures/history/history.json`). |
-| `--fresh-history`          | Ignora lo storico precedente e riparte da questa raccolta (stato `none`).                              |
+| Flag                       | Significato                                                                                                                                      |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--history-from <dir>`     | Directory con il `history.json` precedente. Predefinito: `$HISTORY_FROM`, poi la directory di `--out` (un valore vuoto vale come non impostato). |
+| `--history-fixture <file>` | Solo sorgente mock: lo storico sintetico da cui partire (predefinito `fixtures/history/history.json`).                                           |
+| `--fresh-history`          | Ignora lo storico precedente e riparte da questa raccolta (stato `none`).                                                                        |
 
 Un'esecuzione mock non ripristina mai lo storico reale: parte sempre dalla fixture
 sintetica, così storico mock e reale non si incontrano. Uno storico precedente scritto

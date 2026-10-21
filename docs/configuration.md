@@ -546,11 +546,11 @@ schema bump. A missing or invalid file never fails the site build: the pages say
 
 ### Collector flags
 
-| Flag                       | Meaning                                                                                           |
-| -------------------------- | ------------------------------------------------------------------------------------------------- |
-| `--history-from <dir>`     | Directory with the previous `history.json`. Default: `$HISTORY_FROM`, then the `--out` directory. |
-| `--history-fixture <file>` | Mock source only: the synthetic history to start from (default `fixtures/history/history.json`).  |
-| `--fresh-history`          | Ignore any previous history and start again from this collection (state `none`).                  |
+| Flag                       | Meaning                                                                                                                            |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `--history-from <dir>`     | Directory with the previous `history.json`. Default: `$HISTORY_FROM`, then the `--out` directory (an empty value counts as unset). |
+| `--history-fixture <file>` | Mock source only: the synthetic history to start from (default `fixtures/history/history.json`).                                   |
+| `--fresh-history`          | Ignore any previous history and start again from this collection (state `none`).                                                   |
 
 A mock run never restores real history: it always starts from the synthetic fixture, so
 mock and real history never meet. A previous history written by the other data source is

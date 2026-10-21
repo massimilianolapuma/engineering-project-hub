@@ -17,7 +17,7 @@ import { ConfigError, loadConfig } from './config/load';
 import { AuthConfigError, resolveAuth } from './providers/auth';
 import { createGitHubClient, GitHubProvider } from './providers/github/github-provider';
 import { buildHistoryExtras } from './history/extras';
-import { loadPreviousHistory } from './history/load';
+import { historyDir, loadPreviousHistory } from './history/load';
 import { MockProvider } from './providers/mock/mock-provider';
 import type { SourceProvider } from './providers/types';
 import { runCollection } from './run';
@@ -75,7 +75,7 @@ async function main(): Promise<number> {
     const now = new Date(result.index.generatedAt);
     const previous = await loadPreviousHistory({
       dataSource: source,
-      historyFrom: values['history-from'] ?? process.env.HISTORY_FROM ?? values.out,
+      historyFrom: historyDir(values['history-from'], process.env.HISTORY_FROM, values.out),
       fixturePath: values['history-fixture'],
       restoreState: process.env.HISTORY_RESTORE_STATE || undefined,
       fresh: values['fresh-history'],

@@ -289,7 +289,7 @@ Diff rules (pure function, `collector/src/history/changes.ts`):
 | Valid and same data source                                         | `restored`                             | yes                                                                            |
 
 - Mock and real points never mix. Every entry's `dataSource` is checked, not only the last one: when the last entry matches the run but older entries do not, those entries are dropped and the collection report gets a note ("Dropped N earlier collections from another data source"). The same rules apply to the mock fixture.
-- The history path is `--history-from <dir>`, then `$HISTORY_FROM`, then the `--out` directory (default `public/data`). It reads `<dir>/history.json`. `--fresh-history` forces `none`.
+- The history path is `--history-from <dir>`, then `$HISTORY_FROM`, then the `--out` directory (default `public/data`); an empty value counts as unset. It reads `<dir>/history.json`. `--fresh-history` forces `none`.
 - The file is untrusted input:
   - it is read with one handle and a size check (no check-then-use race, as in `scan-output.ts`);
   - it is parsed with the strict schema;
