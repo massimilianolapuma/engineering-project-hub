@@ -44,7 +44,7 @@ Keep the interfaces below. Never revert v0.7.0 or v0.8.0 code. If v0.7.0 is some
 - No new runtime or dev dependency. No OPA. YAML via the existing `yaml` package.
 - Strict Zod schemas on every published field.
   - Exception `reason` goes through `scrubText`. `owner`, rule and tool go through `scrubIdentifier`. `ticket` goes through `link()` (sanitizeUrl + `publication.allowedLinkHosts`).
-  - For a non-public repository with `publication.audience: public`, `selector.value` (rule or advisory) and `reason` are published as `null`.
+  - For a non-public repository with `publication.audience: public`, `selector.value` (rule or advisory), `selector.tool`, `reason` and `ticketUrl` are published as `null`.
 - Match keys (`alert`, raw `ruleId`, `tool`, advisory ids) never leave `collector/src/normalizers/security-model.ts` → `collector/src/policy/exceptions.ts`. They are not in any published object.
 - Unknown ≠ 0:
   - an unreadable source makes an exception `unverifiable` (a `not-configured` source reads as empty);
@@ -494,7 +494,7 @@ export interface SecurityInputs {
     - Beta:
       - `securityHealth.status red (unchanged)`;
       - `acceptedCounts.medium 1`;
-      - `EXC-BETA-001 selector { kind: "rule", value: null, tool: "CodeQL" }, reason null, state active, matched 1`;
+      - `EXC-BETA-001 selector { kind: "rule", value: null, tool: null }, reason null, ticketUrl null, state active, matched 1`;
       - `EXC-BETA-002 state unverifiable, matched null`;
       - `finding #3 sla { state: "within", days: 7, dueAt: "2026-01-19T12:00:00.000Z", ageDays: 3 }`.
     - Platform:

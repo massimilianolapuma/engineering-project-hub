@@ -295,7 +295,7 @@ describe('flags and publication', () => {
     const rule = entry({ match: { rule: 'py/flask-debug', tool: 'CodeQL' } });
     const f = [finding('code-scanning', 7, { ruleId: 'py/flask-debug', tool: 'CodeQL' })];
     const hidden = run([rule], f, { publicDetail: false }).records[0]!;
-    expect(hidden.selector).toEqual({ kind: 'rule', value: null, tool: 'CodeQL' });
+    expect(hidden.selector).toEqual({ kind: 'rule', value: null, tool: null });
     expect(hidden.reason).toBeNull();
     const alert = run([entry({ match: { alert: 15 } })], [finding('code-scanning', 15)], {
       publicDetail: false,
@@ -304,6 +304,21 @@ describe('flags and publication', () => {
     const shown = run([rule], f, { publicDetail: true, audience: 'restricted' }).records[0]!;
     expect(shown.selector.value).toBe('py/flask-debug');
     expect(shown.reason).toBe('Accepted for the demo only.');
+  });
+
+  it('non-public repository under a public audience: every detail field is null, counts and state intact', () => {
+    const e = entry({
+      match: { rule: 'py/flask-debug', tool: 'CodeQL' },
+      ticket: 'https://github.com/example-org/platform-mono/issues/31',
+    });
+    const f = [finding('code-scanning', 7, { ruleId: 'py/flask-debug', tool: 'CodeQL' })];
+    const r = run([e], f, { publicDetail: false }).records[0]!;
+    expect(r.selector).toEqual({ kind: 'rule', value: null, tool: null });
+    expect(r.reason).toBeNull();
+    expect(r.ticketUrl).toBeNull();
+    expect(r).toMatchObject({ state: 'active', matched: 1, owner: 'team-platform' });
+    expect(r.findingIds).toHaveLength(1);
+    expect(JSON.stringify(r)).not.toMatch(/flask-debug|CodeQL|issues\/31|demo only/);
   });
 
   it('reason containing a CANARIES value is scrubbed (record.reason does not contain it)', () => {

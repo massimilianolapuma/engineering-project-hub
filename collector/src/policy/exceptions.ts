@@ -163,13 +163,15 @@ export function applyExceptions(input: {
       selector: {
         kind,
         value: kind === 'alert' ? rawValue : reveal ? scrubIdentifier(rawValue, 200) : null,
-        tool: 'rule' in e.match && e.match.tool ? scrubIdentifier(e.match.tool, 50) : null,
+        tool:
+          reveal && 'rule' in e.match && e.match.tool ? scrubIdentifier(e.match.tool, 50) : null,
       },
       owner: scrubIdentifier(e.owner, 65) ?? 'unknown',
       reason: reveal ? scrubText(e.reason, 200) : null,
       created: e.created,
       expires: e.expires,
-      ticketUrl: e.ticket ? sanitizeUrl(e.ticket, policies.publication.allowedLinkHosts) : null,
+      ticketUrl:
+        reveal && e.ticket ? sanitizeUrl(e.ticket, policies.publication.allowedLinkHosts) : null,
       state,
       expiringSoon:
         state === 'active' &&

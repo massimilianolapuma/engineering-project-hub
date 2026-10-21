@@ -195,7 +195,7 @@ Effect on counting (D2):
 
 Publication (D4, same rule as finding titles):
 
-- When `publication.audience === 'public'` and the repository is not public, `selector.value` (rule or advisory) and `reason` are published as `null`.
+- When `publication.audience === 'public'` and the repository is not public, `selector.value` (rule or advisory), `selector.tool`, `reason` and `ticketUrl` are published as `null`.
 - `alert` numbers, `owner`, the dates, the state and the counts are always published. Alert numbers are already in the published links.
 - `reason` goes through `scrubText` (≤ 200 characters after scrubbing). `owner`, rule and tool go through `scrubIdentifier`. `ticket` goes through `link()` (sanitizeUrl + host allowlist).
 

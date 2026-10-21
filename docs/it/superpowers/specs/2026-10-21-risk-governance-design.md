@@ -195,7 +195,7 @@ Effetto sui conteggi (D2):
 
 Pubblicazione (D4, stessa regola dei titoli dei finding):
 
-- Quando `publication.audience === 'public'` e il repository non è pubblico, `selector.value` (regola o advisory) e `reason` sono pubblicati come `null`.
+- Quando `publication.audience === 'public'` e il repository non è pubblico, `selector.value` (regola o advisory), `selector.tool`, `reason` e `ticketUrl` sono pubblicati come `null`.
 - I numeri di alert, `owner`, le date, lo stato e i conteggi sono sempre pubblicati. I numeri di alert sono già nei link pubblicati.
 - `reason` passa da `scrubText` (≤ 200 caratteri dopo la pulizia). `owner`, regola e tool passano da `scrubIdentifier`. `ticket` passa da `link()` (sanitizeUrl + allowlist degli host).
 
