@@ -34,6 +34,13 @@ export function href(locale: Locale, page: PageKey | `projects/${string}`): stri
   return `${base()}${locale === 'en' ? '' : `${locale}/`}${path}`;
 }
 
+/** Static CSV export (shared by both locales), honouring the base path. */
+export function exportHref(
+  name: 'portfolio.csv' | 'findings-summary.csv' | 'versions.csv',
+): string {
+  return `${base()}exports/${name}`;
+}
+
 /** getStaticPaths helper for the optional [...lang] segment: "/" (en) and "/it/". */
 export const localeParams = () => [
   { params: { lang: undefined }, props: { locale: 'en' as Locale } },

@@ -792,6 +792,36 @@ describe('static site', () => {
     expect(findings).toEqual([]);
   });
 
+  describe('CSV exports', () => {
+    const csv = (name: string) => readFile(join(dist, 'exports', name), 'utf8');
+
+    it('portfolio.csv exists, starts with the BOM and the header', async () => {
+      const text = await csv('portfolio.csv');
+      expect(text.startsWith('\uFEFFproject_id,project_name,')).toBe(true);
+      expect(text.split('\r\n').filter(Boolean)).toHaveLength(5);
+      expect(text.endsWith('\r\n')).toBe(true);
+      const beta = text.split('\r\n').find((r) => r.startsWith('project-beta,'))!;
+      expect(beta).toContain(',amber,58,2026-01-14T12:00:00.000Z');
+    });
+
+    it('findings-summary.csv and versions.csv exist with their headers', async () => {
+      expect((await csv('findings-summary.csv')).startsWith('\uFEFFproject_id,component_id,')).toBe(
+        true,
+      );
+      expect((await csv('versions.csv')).startsWith('\uFEFFrow_type,project_id,item_id,')).toBe(
+        true,
+      );
+    });
+
+    it("no CSV cell begins with = + - @ unless prefixed by '", async () => {
+      for (const name of ['portfolio.csv', 'findings-summary.csv', 'versions.csv']) {
+        const rows = (await csv(name)).replace('\uFEFF', '').split('\r\n').filter(Boolean);
+        for (const row of rows)
+          for (const cell of row.split(',')) expect(cell).not.toMatch(/^[=+\-@]/);
+      }
+    });
+  });
+
   it.each(['catalog', 'it/catalog'])(
     'embeds the published catalog and suggestions on /%s without inline code',
     async (v) => {

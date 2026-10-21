@@ -1,8 +1,16 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import type { CatalogSnapshot, PortfolioIndex, ProjectSnapshot } from '@model/index';
+import type {
+  CatalogSnapshot,
+  ChangesFile,
+  HistoryFile,
+  PortfolioIndex,
+  ProjectSnapshot,
+} from '@model/index';
 import {
   validateCatalogSnapshot,
+  validateChanges,
+  validateHistory,
   validatePortfolio,
   validateProject,
   type DataError,
@@ -84,3 +92,33 @@ export function loadCatalogSnapshot(): Loaded<CatalogSnapshot> {
     );
   return result;
 }
+
+/** history.json / changes.json: optional companions of the snapshot, cached per directory. */
+function loadCompanion<T>(
+  file: string,
+  validate: (text: string) => Loaded<T>,
+  cache: { dir: string; result: Loaded<T> } | null,
+  store: (c: { dir: string; result: Loaded<T> }) => void,
+): Loaded<T> {
+  const dir = dataDir();
+  if (cache?.dir === dir) return cache.result;
+  const text = readText(join(dir, file));
+  const result: Loaded<T> =
+    text === null
+      ? { ok: false, error: { kind: 'missing', message: `no ${file} found in ${dir}` } }
+      : validate(text);
+  store({ dir, result });
+  if (!result.ok && result.error.kind !== 'missing')
+    console.warn(
+      `[engineering-project-hub] ${file} unavailable (${result.error.kind}): ${result.error.message}`,
+    );
+  return result;
+}
+
+let historyCache: { dir: string; result: Loaded<HistoryFile> } | null = null;
+export const loadHistory = (): Loaded<HistoryFile> =>
+  loadCompanion('history.json', validateHistory, historyCache, (c) => (historyCache = c));
+
+let changesCache: { dir: string; result: Loaded<ChangesFile> } | null = null;
+export const loadChanges = (): Loaded<ChangesFile> =>
+  loadCompanion('changes.json', validateChanges, changesCache, (c) => (changesCache = c));
