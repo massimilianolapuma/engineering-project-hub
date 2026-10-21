@@ -171,6 +171,51 @@ describe('collectReusableTargets', () => {
     expect(provider.getLatestRelease).not.toHaveBeenCalled();
   });
 
+  it('a private target is withheld (unknown) for a public audience and shown when restricted', async () => {
+    const mk = () =>
+      stub({
+        getRepository: vi.fn(async (repo: string) => ok(repoDto(repo.split('/')[1]!, 'private'))),
+        getLatestRelease: vi.fn(async () =>
+          ok({
+            tagName: 'v9.0.0',
+            name: null,
+            publishedAt: null,
+            prerelease: false,
+            htmlUrl: 'https://github.com/o/shared',
+          }),
+        ),
+      });
+    const pub = mk();
+    const hidden = await collectReusableTargets(context(pub), ['o/shared']);
+    expect(hidden.get('o/shared')).toEqual({ latest: null, tags: null, visible: false });
+    expect(pub.getLatestRelease).not.toHaveBeenCalled();
+    const shown = await collectReusableTargets(
+      context(mk(), (p) => {
+        p.publication.audience = 'restricted';
+      }),
+      ['o/shared'],
+    );
+    expect(shown.get('o/shared')).toMatchObject({ latest: 'v9.0.0', visible: true });
+  });
+
+  it('scrubs the latest tag name and published tag names', async () => {
+    const secret = 'ghp_' + 'a'.repeat(36);
+    const provider = stub({
+      getLatestRelease: vi.fn(async () => NOT_FOUND),
+      getLatestTag: vi.fn(async () => ok({ name: secret, sha: A })),
+      listTags: vi.fn(async () =>
+        ok([
+          { name: secret, sha: A },
+          { name: 'v1.0.0', sha: A },
+        ]),
+      ),
+    });
+    const map = await collectReusableTargets(context(provider), ['o/x'], new Set(['o/x']));
+    expect(JSON.stringify([...map])).not.toContain(secret);
+    expect(map.get('o/x')!.latest).toBeNull();
+    expect(map.get('o/x')!.tags).toEqual([{ name: 'v1.0.0', sha: A }]);
+  });
+
   it('resolves at most 50 distinct repositories, case-insensitively; the rest are not visible', async () => {
     const provider = stub();
     const targets = [

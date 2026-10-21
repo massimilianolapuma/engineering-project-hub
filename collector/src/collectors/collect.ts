@@ -5,6 +5,7 @@ import {
   type TrackedWorkflowConfig,
 } from '@model/index';
 import { associateSubmodules } from '../normalizers/association';
+import { scrubIdentifier } from '../sanitizers/sanitize';
 import { memoize } from '../util/concurrency';
 import { parseGitmodules, type GitmoduleEntry } from '../util/gitmodules';
 import type { TargetVersions } from '../normalizers/workflow-refs';
@@ -321,7 +322,12 @@ export async function collectReusableTargets(
         return;
       }
       const repo = await call(ctx, `repo:${repository}`, () => p.getRepository(repository));
-      if (!repo.ok) {
+      // A private target must not leak (version, existence) into a public site: treat it as
+      // unreadable unless the audience is restricted.
+      if (
+        !repo.ok ||
+        (repo.data.visibility !== 'public' && ctx.policies.publication.audience !== 'restricted')
+      ) {
         result.set(key, { latest: null, tags: null, visible: false });
         return;
       }
@@ -336,8 +342,16 @@ export async function collectReusableTargets(
         ? await call(ctx, `tags:${repository}`, () => p.listTags(repository))
         : null;
       result.set(key, {
-        latest: release.ok ? release.data.tagName : tag?.ok ? tag.data.name : null,
-        tags: tags?.ok ? tags.data : null,
+        latest: scrubIdentifier(
+          release.ok ? release.data.tagName : tag?.ok ? tag.data.name : null,
+          100,
+        ),
+        tags: tags?.ok
+          ? tags.data.flatMap((t) => {
+              const name = scrubIdentifier(t.name, 100);
+              return name ? [{ ...t, name }] : [];
+            })
+          : null,
         visible: true,
       });
     }),

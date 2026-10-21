@@ -89,7 +89,7 @@ The project rules hold unchanged:
 | D6  | A rule type absent from the rules API while the branch reports `protected: true` is `unknown`, not `fail`, unless classic protection was read **(BC)**                                           | It may be set by classic protection, which is invisible without Administration: read                      |
 | D7  | Reusable workflow currency is compared with the referenced repository's latest release, falling back to its latest tag. A ref equal to a tag's SHA resolves to that tag. Not visible → `unknown` | Same version sources the hub already uses for components                                                  |
 | D8  | OpenSSF Scorecard is a **summary**, not a seventh check **(BC)**                                                                                                                                 | Its alerts are already Security findings. Counting them again in Governance would double-count            |
-| D9  | Action details (identifier, ref) are withheld for non-public repositories when `publication.audience: public`. Counts stay **(BC)**                                                              | Same rule as finding titles today                                                                         |
+| D9  | Action details (identifier, ref) and reusable-workflow targets are withheld for non-public repositories when `publication.audience: public`. Counts stay **(BC)**                                | Same rule as finding titles today                                                                         |
 | D10 | Discovery hints: custom property wins over topic. Only configured keys are read and kept. A new proposal kind `grouped` **(BC)**                                                                 | Properties are admin-managed and topics are free-form. Unconfigured properties may be sensitive           |
 | D11 | Snapshot schema **1.4 → 1.5** (v0.7.0 keeps 1.4). `history.json` / `changes.json` are unaffected, apart from the optional extension in §5.10                                                     | One bump per release. History survives snapshot bumps by design (v0.7.0 D1)                               |
 | D12 | ADR 0007: "Repository controls from workflow files and the rules API, informative by default"                                                                                                    | First time the collector reads files outside a fixed allow-list. That changes a documented trust boundary |
@@ -154,6 +154,8 @@ For each distinct `(owner/repo, ref)` among the `reusable-workflow` references:
 | `ref` is a major alias `v2` whose major equals the latest's major                | `current` (floating major; pinning flags it) |
 | `ref` is a major alias whose major is lower                                      | `behind`                                     |
 | Anything else (a branch such as `main`)                                          | `floating`                                   |
+
+A referenced repository that is **not public** is treated as not visible (`unknown`, no `latest`, no URL, no tags) unless `publication.audience: restricted`, so a private shared repository never leaks its name state or versions to a public site. `latest` and any tag name pass through `scrubIdentifier`.
 
 `latest` is `normaliseVersion(release.tagName)` or `normaliseVersion(tag.name)`. Comparison uses `compareVersions` from `collector/src/util/semver.ts`.
 
