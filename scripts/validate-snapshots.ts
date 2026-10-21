@@ -5,7 +5,12 @@
  */
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { validatePortfolio, validateProject } from '../src/lib/validate';
+import {
+  validateChanges,
+  validateHistory,
+  validatePortfolio,
+  validateProject,
+} from '../src/lib/validate';
 import { assertPublishable } from '../collector/src/sanitizers/sanitize';
 
 const dir = process.argv[2] ?? process.env.SNAPSHOT_DIR ?? 'public/data';
@@ -50,6 +55,27 @@ if (index?.ok) {
   }
   try {
     assertPublishable(indexText!, 'index.json');
+  } catch (e) {
+    problems.push((e as Error).message);
+  }
+}
+
+// history.json and changes.json are optional (older data, history turned off); when present they
+// must be valid and publishable.
+for (const [file, validate] of [
+  ['history.json', validateHistory],
+  ['changes.json', validateChanges],
+] as const) {
+  let text: string;
+  try {
+    text = await readFile(join(dir, file), 'utf8');
+  } catch {
+    continue;
+  }
+  const res = validate(text);
+  if (!res.ok) problems.push(`${file}: ${res.error.message}`);
+  try {
+    assertPublishable(text, file);
   } catch (e) {
     problems.push((e as Error).message);
   }

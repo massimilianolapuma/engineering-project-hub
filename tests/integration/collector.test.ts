@@ -1,21 +1,41 @@
+import { execFileSync } from 'node:child_process';
 import { cp, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   CatalogSchema,
+  ChangesFileSchema,
+  HistoryFileSchema,
   PortfolioIndexSchema,
   ProjectSnapshotSchema,
+  type Catalog,
+  type ChangesFile,
+  type DataSource,
+  type HistoryFile,
+  type Policies,
   type ProjectSnapshot,
 } from '@model/index';
 import { loadConfig } from '../../collector/src/config/load';
+import { appendHistory } from '../../collector/src/history/append';
+import { computeChanges } from '../../collector/src/history/changes';
+import { loadPreviousHistory } from '../../collector/src/history/load';
 import { MockProvider } from '../../collector/src/providers/mock/mock-provider';
 import { fail, ok, type SourceProvider } from '../../collector/src/providers/types';
 import { runCollection } from '../../collector/src/run';
 import { fixedClock } from '../../collector/src/util/clock';
-import { serialise, writeSnapshots } from '../../collector/src/writers/write-snapshots';
+import {
+  serialise,
+  writeSnapshots,
+  type HistoryExtras,
+} from '../../collector/src/writers/write-snapshots';
 import { SanitizationError } from '../../collector/src/sanitizers/sanitize';
-import { validatePortfolio, validateProject } from '../../src/lib/validate';
+import {
+  validateChanges,
+  validateHistory,
+  validatePortfolio,
+  validateProject,
+} from '../../src/lib/validate';
 import { CANARIES } from '../helpers/canaries';
 
 const GOLDEN_NOW = '2026-01-15T12:00:00.000Z';
@@ -37,17 +57,51 @@ async function mockRun() {
   });
 }
 
+/**
+ * The history pipeline as the CLI and the golden script run it: load the previous history
+ * (before anything is written), append the run, diff against the previous.
+ */
+async function historyExtras(
+  result: Awaited<ReturnType<typeof mockRun>>,
+  o: {
+    catalog: Catalog;
+    policies: Policies;
+    dataSource?: DataSource;
+    historyFrom?: string;
+    fixturePath?: string;
+    restoreState?: string;
+  },
+): Promise<HistoryExtras & { history: HistoryFile; changes: ChangesFile }> {
+  const now = new Date(result.index.generatedAt);
+  const previous = await loadPreviousHistory({
+    dataSource: o.dataSource ?? 'mock',
+    historyFrom: o.historyFrom ?? 'fixtures/snapshots',
+    fixturePath: o.fixturePath ?? 'fixtures/history/history.json',
+    restoreState: o.restoreState,
+    catalog: o.catalog,
+    policies: o.policies,
+    now,
+  });
+  return {
+    history: appendHistory(previous, result.index, result.projects, o.catalog, o.policies, now),
+    changes: computeChanges(previous, result.index, result.projects),
+  };
+}
+
 describe('mock collection', () => {
   it('reproduces the golden snapshots exactly', async () => {
     const result = await mockRun();
-    const { catalog } = await loadConfig('config');
-    await writeSnapshots(out, result.index, result.projects, catalog, result.discovery);
+    const { catalog, policies } = await loadConfig('config');
+    const extras = await historyExtras(result, { catalog, policies });
+    await writeSnapshots(out, result.index, result.projects, catalog, result.discovery, extras);
     const golden = 'fixtures/snapshots';
     const files = [
       'index.json',
       'collection-report.json',
       'collection-report.md',
       'catalog.json',
+      'history.json',
+      'changes.json',
       ...(await readdir(join(golden, 'projects'))).map((f) => `projects/${f}`),
     ];
     for (const f of files) {
@@ -144,6 +198,289 @@ async function runWith(provider: SourceProvider) {
   const { catalog, policies } = await loadConfig('config');
   return runCollection({ catalog, policies, provider, clock: fixedClock(GOLDEN_NOW) });
 }
+
+const readGolden = async <T>(file: string): Promise<T> =>
+  JSON.parse(await readFile(join('fixtures/snapshots', file), 'utf8')) as T;
+
+describe('history and changes (mock run)', () => {
+  it('golden changes totals are {statusChanges:4,newFindings:1,resolvedFindings:1,versionMoves:1,newErrors:1}', async () => {
+    const changes = await readGolden<ChangesFile>('changes.json');
+    expect(changes.totals).toEqual({
+      statusChanges: 4,
+      newFindings: 1,
+      resolvedFindings: 1,
+      versionMoves: 1,
+      newErrors: 1,
+    });
+  });
+
+  it('golden changes: beta statusChanges [overall amber→red, delivery amber→red, security amber→red], newFindings[0].id "example-org/project-beta-api#code-scanning#3" with title null, findingsPartial true', async () => {
+    const beta = (await readGolden<ChangesFile>('changes.json')).projects.find(
+      (p) => p.id === 'project-beta',
+    )!;
+    expect(beta.statusChanges).toEqual([
+      { dimension: 'overall', from: 'amber', to: 'red' },
+      { dimension: 'delivery', from: 'amber', to: 'red' },
+      { dimension: 'security', from: 'amber', to: 'red' },
+    ]);
+    expect(beta.newFindings[0]).toMatchObject({
+      id: 'example-org/project-beta-api#code-scanning#3',
+      title: null,
+    });
+    expect(beta.findingsPartial).toBe(true);
+    expect(beta.newErrors).toEqual([
+      {
+        repository: 'example-org/project-beta-web',
+        source: 'secret-scanning',
+        classification: 'not-authorised',
+      },
+    ]);
+    expect(beta.previous).toEqual({ overall: 'amber', score: 58 });
+    expect(beta.current).toEqual({ overall: 'red', score: 40 });
+  });
+
+  it('golden changes: alpha versionMoves [{kind:"component", componentId:"frontend", from:"2.0.3", to:"2.1.0"}] and resolvedFindings[0].id "example-org/project-alpha-backend#code-scanning#9"', async () => {
+    const alpha = (await readGolden<ChangesFile>('changes.json')).projects.find(
+      (p) => p.id === 'project-alpha',
+    )!;
+    expect(alpha.versionMoves).toEqual([
+      { kind: 'component', componentId: 'frontend', from: '2.0.3', to: '2.1.0' },
+    ]);
+    expect(alpha.resolvedFindings[0]!.id).toBe('example-org/project-alpha-backend#code-scanning#9');
+    expect(alpha.statusChanges).toEqual([{ dimension: 'delivery', from: 'amber', to: 'green' }]);
+    expect(alpha.newFindings).toEqual([]);
+  });
+
+  it('golden changes: platform and gamma have empty lists; basis {state:"compared", previousCollectedAt:"2026-01-14T12:00:00.000Z", synthetic:true}', async () => {
+    const changes = await readGolden<ChangesFile>('changes.json');
+    for (const id of ['platform', 'project-gamma']) {
+      expect(changes.projects.find((p) => p.id === id)).toMatchObject({
+        added: false,
+        statusChanges: [],
+        newFindings: [],
+        resolvedFindings: [],
+        versionMoves: [],
+        newErrors: [],
+      });
+    }
+    expect(changes.basis).toEqual({
+      state: 'compared',
+      previousCollectedAt: '2026-01-14T12:00:00.000Z',
+      synthetic: true,
+    });
+  });
+
+  it('golden history: 13 entries, first 2026-01-03T12:00:00.000Z, last 2026-01-15T12:00:00.000Z, restore {state:"fixture", previousEntries:12}', async () => {
+    const h = await readGolden<HistoryFile>('history.json');
+    expect(h.entries).toHaveLength(13);
+    expect(h.entries[0]!.collectedAt).toBe('2026-01-03T12:00:00.000Z');
+    expect(h.entries.at(-1)!.collectedAt).toBe('2026-01-15T12:00:00.000Z');
+    expect(h.restore).toEqual({ state: 'fixture', previousEntries: 12 });
+    expect(h.baseline.collectedAt).toBe('2026-01-15T12:00:00.000Z');
+  });
+
+  it('golden history: platform appears in 10 entries, alpha has score null on 2026-01-09T12:00:00.000Z', async () => {
+    const h = await readGolden<HistoryFile>('history.json');
+    expect(h.entries.filter((e) => e.projects.some((p) => p.id === 'platform'))).toHaveLength(10);
+    const gap = h.entries.find((e) => e.collectedAt === '2026-01-09T12:00:00.000Z')!;
+    expect(gap.projects.find((p) => p.id === 'project-alpha')).toMatchObject({
+      score: null,
+      scoreMeasured: 2,
+      scoreRequired: 6,
+    });
+    // Gamma is unknown throughout: never a number.
+    expect(
+      h.entries.every((e) => e.projects.find((p) => p.id === 'project-gamma')!.score === null),
+    ).toBe(true);
+  });
+
+  it('fixtures:update is idempotent', async () => {
+    const { catalog, policies } = await loadConfig('config');
+    const dirs = [
+      await mkdtemp(join(tmpdir(), 'eph-idem-')),
+      await mkdtemp(join(tmpdir(), 'eph-idem-')),
+    ];
+    try {
+      const result = await mockRun();
+      // The second run sees the first one's output as its history directory; mock ignores it.
+      await writeSnapshots(
+        dirs[0]!,
+        result.index,
+        result.projects,
+        catalog,
+        result.discovery,
+        await historyExtras(result, { catalog, policies }),
+      );
+      await writeSnapshots(
+        dirs[1]!,
+        result.index,
+        result.projects,
+        catalog,
+        result.discovery,
+        await historyExtras(result, { catalog, policies, historyFrom: dirs[0]! }),
+      );
+      for (const f of ['history.json', 'changes.json', 'index.json', 'collection-report.md'])
+        expect(await readFile(join(dirs[1]!, f), 'utf8'), f).toBe(
+          await readFile(join(dirs[0]!, f), 'utf8'),
+        );
+    } finally {
+      await Promise.all(dirs.map((d) => rm(d, { recursive: true, force: true })));
+    }
+  });
+
+  it('github-mode restore appends', async () => {
+    const { catalog, policies } = await loadConfig('config');
+    const dir = await mkdtemp(join(tmpdir(), 'eph-restore-'));
+    try {
+      const golden = await readFile('fixtures/snapshots/history.json', 'utf8');
+      await writeFile(
+        join(dir, 'history.json'),
+        golden.replaceAll('"dataSource":"mock"', '"dataSource":"github"'),
+      );
+      const clock = fixedClock('2026-01-15T18:00:00.000Z');
+      const mock = new MockProvider('fixtures/github', clock);
+      const provider: SourceProvider = Object.assign(Object.create(mock) as SourceProvider, {
+        dataSource: 'github',
+        authenticationMode: 'github-token',
+      });
+      const result = await runCollection({ catalog, policies, provider, clock });
+      const extras = await historyExtras(result, {
+        catalog,
+        policies,
+        dataSource: 'github',
+        historyFrom: dir,
+        fixturePath: join(dir, 'unused-fixture.json'),
+      });
+      expect(extras.history.entries).toHaveLength(14);
+      expect(extras.history.restore).toEqual({ state: 'restored', previousEntries: 13 });
+      expect(extras.changes.basis).toMatchObject({
+        state: 'compared',
+        previousCollectedAt: '2026-01-15T12:00:00.000Z',
+        synthetic: false,
+      });
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('a mock run never restores a history in the output directory', async () => {
+    const { catalog, policies } = await loadConfig('config');
+    const dir = await mkdtemp(join(tmpdir(), 'eph-nomix-'));
+    try {
+      await writeFile(join(dir, 'history.json'), '{"kind":"hub-history"}');
+      const extras = await historyExtras(await mockRun(), { catalog, policies, historyFrom: dir });
+      expect(extras.history.restore.state).toBe('fixture');
+      expect(extras.history.entries).toHaveLength(13);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  describe('CLI (temporary output directories only)', () => {
+    const tsx = join('node_modules', '.bin', 'tsx');
+    const runCli = (args: string[]) =>
+      execFileSync(
+        tsx,
+        ['collector/src/index.ts', '--source', 'mock', '--now', GOLDEN_NOW, ...args],
+        {
+          encoding: 'utf8',
+          env: { ...process.env, HISTORY_FROM: '', HISTORY_RESTORE_STATE: '' },
+        },
+      );
+
+    it('writes history.json and changes.json and reports the history line', async () => {
+      const dir = await mkdtemp(join(tmpdir(), 'eph-cli-'));
+      try {
+        runCli(['--out', dir]);
+        const history = validateHistory(await readFile(join(dir, 'history.json'), 'utf8'));
+        expect(history.ok && history.data.entries.length).toBe(13);
+        expect(validateChanges(await readFile(join(dir, 'changes.json'), 'utf8')).ok).toBe(true);
+        expect(await readFile(join(dir, 'collection-report.md'), 'utf8')).toContain(
+          '| History | fixture · 13 entries |',
+        );
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    });
+
+    it('history.enabled false → no history.json or changes.json written and report says disabled', async () => {
+      const dir = await mkdtemp(join(tmpdir(), 'eph-cli-'));
+      try {
+        const config = join(dir, 'config');
+        await cp('config', config, { recursive: true });
+        const policiesFile = join(config, 'policies.yaml');
+        await writeFile(
+          policiesFile,
+          `${await readFile(policiesFile, 'utf8')}\nhistory:\n  enabled: false\n`,
+        );
+        const out2 = join(dir, 'out');
+        runCli(['--out', out2, '--config', config]);
+        const files = await readdir(out2);
+        expect(files).not.toContain('history.json');
+        expect(files).not.toContain('changes.json');
+        expect(await readFile(join(out2, 'collection-report.md'), 'utf8')).toContain(
+          '| History | disabled |',
+        );
+        expect(
+          JSON.parse(await readFile(join(out2, 'collection-report.json'), 'utf8')),
+        ).toMatchObject({
+          history: null,
+        });
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    });
+  });
+
+  it('canary in the history fixture is blocked', async () => {
+    const { catalog, policies } = await loadConfig('config');
+    const dir = await mkdtemp(join(tmpdir(), 'eph-canary-'));
+    try {
+      const fixture = await readFile('fixtures/history/history.json', 'utf8');
+      const result = await mockRun();
+      for (const canary of CANARIES) {
+        const path = join(dir, 'history.json');
+        await writeFile(path, fixture.replace('"2026.10.1"', JSON.stringify(canary)));
+        let text = '';
+        try {
+          const extras = await historyExtras(result, { catalog, policies, fixturePath: path });
+          text = [
+            ...serialise(result.index, result.projects, catalog, result.discovery, extras).values(),
+          ].join('\n');
+        } catch (e) {
+          expect(e).toBeInstanceOf(SanitizationError);
+        }
+        expect(text).not.toContain(canary);
+      }
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('validate-snapshots accepts the golden dir and rejects a history.json with an extra key', async () => {
+    const text = await readFile('fixtures/snapshots/history.json', 'utf8');
+    expect(validateHistory(text).ok).toBe(true);
+    expect(validateChanges(await readFile('fixtures/snapshots/changes.json', 'utf8')).ok).toBe(
+      true,
+    );
+    const bad = JSON.parse(text) as { entries: Record<string, unknown>[] };
+    bad.entries[0]!.raw = { headers: {} };
+    expect(validateHistory(JSON.stringify(bad))).toMatchObject({
+      ok: false,
+      error: { kind: 'invalid' },
+    });
+    // A changes file is never accepted as a history file, and vice versa.
+    expect(validateHistory(await readFile('fixtures/snapshots/changes.json', 'utf8')).ok).toBe(
+      false,
+    );
+    expect(HistoryFileSchema.safeParse(JSON.parse(text)).success).toBe(true);
+    expect(
+      ChangesFileSchema.safeParse(
+        JSON.parse(await readFile('fixtures/snapshots/changes.json', 'utf8')),
+      ).success,
+    ).toBe(true);
+  });
+});
 
 describe('quality dimension (mock run)', () => {
   const byId = (projects: ProjectSnapshot[]) =>

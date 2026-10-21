@@ -4,8 +4,11 @@
  *
  *   tsx collector/src/index.ts [--source mock|github] [--out public/data] [--config config]
  *                              [--fixtures fixtures/github] [--now 2026-01-15T12:00:00Z]
+ *                              [--history-from <dir>] [--history-fixture <file>] [--fresh-history]
  *
- * --source defaults to $DATA_SOURCE, then "mock". Exit codes: 0 ok (individual repository
+ * --source defaults to $DATA_SOURCE, then "mock". The previous history is read from
+ * --history-from, then $HISTORY_FROM, then --out (mock always starts from --history-fixture).
+ * Exit codes: 0 ok (individual repository
  * errors are data, not failures), 1 structural error (config, auth, schema, sanitisation).
  */
 import { parseArgs } from 'node:util';
@@ -13,12 +16,19 @@ import { DataSourceSchema } from '@model/index';
 import { ConfigError, loadConfig } from './config/load';
 import { AuthConfigError, resolveAuth } from './providers/auth';
 import { createGitHubClient, GitHubProvider } from './providers/github/github-provider';
+import { appendHistory } from './history/append';
+import { computeChanges } from './history/changes';
+import { loadPreviousHistory } from './history/load';
 import { MockProvider } from './providers/mock/mock-provider';
 import type { SourceProvider } from './providers/types';
 import { runCollection } from './run';
 import { SanitizationError } from './sanitizers/sanitize';
 import { fixedClock, systemClock } from './util/clock';
-import { SnapshotValidationError, writeSnapshots } from './writers/write-snapshots';
+import {
+  SnapshotValidationError,
+  writeSnapshots,
+  type HistoryExtras,
+} from './writers/write-snapshots';
 
 async function main(): Promise<number> {
   const { values } = parseArgs({
@@ -28,6 +38,9 @@ async function main(): Promise<number> {
       config: { type: 'string', default: 'config' },
       fixtures: { type: 'string', default: 'fixtures/github' },
       now: { type: 'string' },
+      'history-from': { type: 'string' },
+      'history-fixture': { type: 'string', default: 'fixtures/history/history.json' },
+      'fresh-history': { type: 'boolean', default: false },
       'api-url': { type: 'string' },
     },
   });
@@ -57,12 +70,32 @@ async function main(): Promise<number> {
     `Collecting ${catalog.projects.length} project(s) · source=${source} · auth=${provider.authenticationMode}`,
   );
   const result = await runCollection({ catalog, policies, provider, clock });
+  // The previous history is read before writeSnapshots, which replaces the output directory.
+  let extras: HistoryExtras = { history: null, changes: null };
+  if (policies.history.enabled) {
+    const now = new Date(result.index.generatedAt);
+    const previous = await loadPreviousHistory({
+      dataSource: source,
+      historyFrom: values['history-from'] ?? process.env.HISTORY_FROM ?? values.out,
+      fixturePath: values['history-fixture'],
+      restoreState: process.env.HISTORY_RESTORE_STATE || undefined,
+      fresh: values['fresh-history'],
+      catalog,
+      policies,
+      now,
+    });
+    extras = {
+      history: appendHistory(previous, result.index, result.projects, catalog, policies, now),
+      changes: computeChanges(previous, result.index, result.projects),
+    };
+  }
   const report = await writeSnapshots(
     values.out,
     result.index,
     result.projects,
     catalog,
     result.discovery,
+    extras,
   );
 
   for (const p of result.index.projects)
@@ -73,6 +106,8 @@ async function main(): Promise<number> {
   console.log(
     `Repositories: ${r.total} total · ${r.ok} ok · ${r.withErrors} with errors · ${r.unavailable} unavailable`,
   );
+  if (report.history)
+    console.log(`History: ${report.history.state} · ${report.history.entries} entries`);
   console.log(`Snapshots written to ${values.out}`);
   return 0;
 }

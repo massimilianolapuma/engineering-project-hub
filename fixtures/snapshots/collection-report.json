@@ -76,5 +76,9 @@
       "httpStatus": 403,
       "detail": "Resource not accessible by integration"
     }
-  ]
+  ],
+  "history": {
+    "state": "fixture",
+    "entries": 13
+  }
 }

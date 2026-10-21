@@ -2,12 +2,17 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   CatalogSnapshotSchema,
+  ChangesFileSchema,
+  HistoryFileSchema,
   PortfolioIndexSchema,
   ProjectSnapshotSchema,
   type Catalog,
   type CatalogSnapshot,
   type DiscoveryResult,
+  type ChangesFile,
   type CollectionError,
+  type HistoryFile,
+  type HistoryRestoreState,
   type PortfolioIndex,
   type ProjectSnapshot,
 } from '@model/index';
@@ -49,11 +54,18 @@ export function buildCatalogSnapshot(
   };
 }
 
+/** history.json and changes.json; null (or omitted) when history is turned off. */
+export interface HistoryExtras {
+  history: HistoryFile | null;
+  changes: ChangesFile | null;
+}
+
 export function serialise(
   index: PortfolioIndex,
   projects: ProjectSnapshot[],
   catalog?: Catalog,
   discovery: DiscoveryResult | null = null,
+  extras?: HistoryExtras,
 ): Map<string, string> {
   const files = new Map<string, string>();
   const idx = PortfolioIndexSchema.safeParse(index);
@@ -85,6 +97,27 @@ export function serialise(
     }
     files.set('catalog.json', `${JSON.stringify(parsed.data, null, 2)}\n`);
   }
+  if (extras?.history) {
+    const parsed = HistoryFileSchema.safeParse(extras.history);
+    if (!parsed.success) {
+      throw new SnapshotValidationError(
+        'history.json does not match the history schema:',
+        formatIssues(parsed.error),
+      );
+    }
+    // The only large file: compact, unlike the snapshots.
+    files.set('history.json', `${JSON.stringify(parsed.data)}\n`);
+  }
+  if (extras?.changes) {
+    const parsed = ChangesFileSchema.safeParse(extras.changes);
+    if (!parsed.success) {
+      throw new SnapshotValidationError(
+        'changes.json does not match the changes schema:',
+        formatIssues(parsed.error),
+      );
+    }
+    files.set('changes.json', `${JSON.stringify(parsed.data, null, 2)}\n`);
+  }
   for (const [name, text] of files) assertPublishable(text, name);
   return files;
 }
@@ -98,9 +131,15 @@ export interface CollectionReport {
   repositories: PortfolioIndex['run']['repositories'];
   errorsByClassification: Record<string, number>;
   errors: CollectionError[];
+  /** null when history is turned off. */
+  history: { state: HistoryRestoreState; entries: number } | null;
 }
 
-export function buildReport(index: PortfolioIndex, projects: ProjectSnapshot[]): CollectionReport {
+export function buildReport(
+  index: PortfolioIndex,
+  projects: ProjectSnapshot[],
+  history: HistoryFile | null = null,
+): CollectionReport {
   const seen = new Set<string>();
   const errors = projects
     .flatMap((p) => p.collectionErrors)
@@ -126,7 +165,15 @@ export function buildReport(index: PortfolioIndex, projects: ProjectSnapshot[]):
     repositories: index.run.repositories,
     errorsByClassification,
     errors,
+    history: history ? { state: history.restore.state, entries: history.entries.length } : null,
   };
+}
+
+function historyLine(h: CollectionReport['history']): string {
+  if (!h) return 'disabled';
+  const entries = `${h.entries} ${h.entries === 1 ? 'entry' : 'entries'}`;
+  const usable = h.state === 'restored' || h.state === 'fixture';
+  return `${usable ? h.state : `started fresh (${h.state})`} · ${entries}`;
 }
 
 export function reportMarkdown(r: CollectionReport): string {
@@ -140,6 +187,7 @@ export function reportMarkdown(r: CollectionReport): string {
     `| Authentication | ${r.authenticationMode} |`,
     `| Duration | ${r.durationMs} ms |`,
     `| Repositories | ${r.repositories.total} total · ${r.repositories.ok} ok · ${r.repositories.withErrors} with errors · ${r.repositories.unavailable} unavailable |`,
+    `| History | ${historyLine(r.history)} |`,
     '',
     '### Projects',
     '',
@@ -168,9 +216,10 @@ export async function writeSnapshots(
   projects: ProjectSnapshot[],
   catalog?: Catalog,
   discovery: DiscoveryResult | null = null,
+  extras?: HistoryExtras,
 ): Promise<CollectionReport> {
-  const files = serialise(index, projects, catalog, discovery);
-  const report = buildReport(index, projects);
+  const files = serialise(index, projects, catalog, discovery, extras);
+  const report = buildReport(index, projects, extras?.history ?? null);
   const reportJson = `${JSON.stringify(report, null, 2)}\n`;
   const reportMd = reportMarkdown(report);
   assertPublishable(reportJson, 'collection-report.json');

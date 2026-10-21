@@ -1,0 +1,1311 @@
+{
+  "kind": "hub-history",
+  "schemaVersion": "1.0",
+  "generatedAt": "@now-1d",
+  "retention": {
+    "maxEntries": 120,
+    "maxAgeDays": 90
+  },
+  "restore": {
+    "state": "none",
+    "previousEntries": 0
+  },
+  "entries": [
+    {
+      "collectedAt": "@now-12d",
+      "dataSource": "mock",
+      "authenticationMode": "mock",
+      "collectorVersion": "0.6.0",
+      "projects": [
+        {
+          "id": "project-alpha",
+          "overall": "amber",
+          "score": 64,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "green",
+            "quality": "green"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 3
+          },
+          "countsComplete": true,
+          "collectionErrors": 0
+        },
+        {
+          "id": "project-beta",
+          "overall": "amber",
+          "score": 62,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "amber",
+            "quality": "amber"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 1
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        },
+        {
+          "id": "project-gamma",
+          "overall": "grey",
+          "score": null,
+          "scoreMeasured": 0,
+          "scoreRequired": 5,
+          "dimensions": {
+            "delivery": "grey",
+            "version": "grey",
+            "security": "grey",
+            "coverage": "grey",
+            "governance": "grey",
+            "quality": "grey"
+          },
+          "open": {
+            "critical": null,
+            "high": null,
+            "medium": null,
+            "low": null
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        }
+      ]
+    },
+    {
+      "collectedAt": "@now-11d",
+      "dataSource": "mock",
+      "authenticationMode": "mock",
+      "collectorVersion": "0.6.0",
+      "projects": [
+        {
+          "id": "project-alpha",
+          "overall": "amber",
+          "score": 64,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "green",
+            "quality": "green"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 3
+          },
+          "countsComplete": true,
+          "collectionErrors": 0
+        },
+        {
+          "id": "project-beta",
+          "overall": "amber",
+          "score": 62,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "amber",
+            "quality": "amber"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 1
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        },
+        {
+          "id": "project-gamma",
+          "overall": "grey",
+          "score": null,
+          "scoreMeasured": 0,
+          "scoreRequired": 5,
+          "dimensions": {
+            "delivery": "grey",
+            "version": "grey",
+            "security": "grey",
+            "coverage": "grey",
+            "governance": "grey",
+            "quality": "grey"
+          },
+          "open": {
+            "critical": null,
+            "high": null,
+            "medium": null,
+            "low": null
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        }
+      ]
+    },
+    {
+      "collectedAt": "@now-10d",
+      "dataSource": "mock",
+      "authenticationMode": "mock",
+      "collectorVersion": "0.6.0",
+      "projects": [
+        {
+          "id": "project-alpha",
+          "overall": "amber",
+          "score": 66,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "green",
+            "quality": "green"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 3
+          },
+          "countsComplete": true,
+          "collectionErrors": 0
+        },
+        {
+          "id": "project-beta",
+          "overall": "amber",
+          "score": 60,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "amber",
+            "quality": "amber"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 1
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        },
+        {
+          "id": "project-gamma",
+          "overall": "grey",
+          "score": null,
+          "scoreMeasured": 0,
+          "scoreRequired": 5,
+          "dimensions": {
+            "delivery": "grey",
+            "version": "grey",
+            "security": "grey",
+            "coverage": "grey",
+            "governance": "grey",
+            "quality": "grey"
+          },
+          "open": {
+            "critical": null,
+            "high": null,
+            "medium": null,
+            "low": null
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        }
+      ]
+    },
+    {
+      "collectedAt": "@now-9d",
+      "dataSource": "mock",
+      "authenticationMode": "mock",
+      "collectorVersion": "0.6.0",
+      "projects": [
+        {
+          "id": "platform",
+          "overall": "amber",
+          "score": 84,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "green",
+            "version": "green",
+            "security": "amber",
+            "coverage": "green",
+            "governance": "green",
+            "quality": "amber"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 1,
+            "low": 1
+          },
+          "countsComplete": true,
+          "collectionErrors": 0
+        },
+        {
+          "id": "project-alpha",
+          "overall": "amber",
+          "score": 66,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "green",
+            "quality": "green"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 3
+          },
+          "countsComplete": true,
+          "collectionErrors": 0
+        },
+        {
+          "id": "project-beta",
+          "overall": "amber",
+          "score": 60,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "amber",
+            "quality": "amber"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 1
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        },
+        {
+          "id": "project-gamma",
+          "overall": "grey",
+          "score": null,
+          "scoreMeasured": 0,
+          "scoreRequired": 5,
+          "dimensions": {
+            "delivery": "grey",
+            "version": "grey",
+            "security": "grey",
+            "coverage": "grey",
+            "governance": "grey",
+            "quality": "grey"
+          },
+          "open": {
+            "critical": null,
+            "high": null,
+            "medium": null,
+            "low": null
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        }
+      ]
+    },
+    {
+      "collectedAt": "@now-8d",
+      "dataSource": "mock",
+      "authenticationMode": "mock",
+      "collectorVersion": "0.6.0",
+      "projects": [
+        {
+          "id": "platform",
+          "overall": "amber",
+          "score": 84,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "green",
+            "version": "green",
+            "security": "amber",
+            "coverage": "green",
+            "governance": "green",
+            "quality": "amber"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 1,
+            "low": 1
+          },
+          "countsComplete": true,
+          "collectionErrors": 0
+        },
+        {
+          "id": "project-alpha",
+          "overall": "amber",
+          "score": 68,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "green",
+            "quality": "green"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 3
+          },
+          "countsComplete": true,
+          "collectionErrors": 0
+        },
+        {
+          "id": "project-beta",
+          "overall": "amber",
+          "score": 60,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "amber",
+            "quality": "amber"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 1
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        },
+        {
+          "id": "project-gamma",
+          "overall": "grey",
+          "score": null,
+          "scoreMeasured": 0,
+          "scoreRequired": 5,
+          "dimensions": {
+            "delivery": "grey",
+            "version": "grey",
+            "security": "grey",
+            "coverage": "grey",
+            "governance": "grey",
+            "quality": "grey"
+          },
+          "open": {
+            "critical": null,
+            "high": null,
+            "medium": null,
+            "low": null
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        }
+      ]
+    },
+    {
+      "collectedAt": "@now-7d",
+      "dataSource": "mock",
+      "authenticationMode": "mock",
+      "collectorVersion": "0.6.0",
+      "projects": [
+        {
+          "id": "platform",
+          "overall": "amber",
+          "score": 84,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "green",
+            "version": "green",
+            "security": "amber",
+            "coverage": "green",
+            "governance": "green",
+            "quality": "amber"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 1,
+            "low": 1
+          },
+          "countsComplete": true,
+          "collectionErrors": 0
+        },
+        {
+          "id": "project-alpha",
+          "overall": "amber",
+          "score": 70,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "green",
+            "quality": "green"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 3
+          },
+          "countsComplete": true,
+          "collectionErrors": 0
+        },
+        {
+          "id": "project-beta",
+          "overall": "amber",
+          "score": 58,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "amber",
+            "quality": "amber"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 1
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        },
+        {
+          "id": "project-gamma",
+          "overall": "grey",
+          "score": null,
+          "scoreMeasured": 0,
+          "scoreRequired": 5,
+          "dimensions": {
+            "delivery": "grey",
+            "version": "grey",
+            "security": "grey",
+            "coverage": "grey",
+            "governance": "grey",
+            "quality": "grey"
+          },
+          "open": {
+            "critical": null,
+            "high": null,
+            "medium": null,
+            "low": null
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        }
+      ]
+    },
+    {
+      "collectedAt": "@now-6d",
+      "dataSource": "mock",
+      "authenticationMode": "mock",
+      "collectorVersion": "0.6.0",
+      "projects": [
+        {
+          "id": "platform",
+          "overall": "amber",
+          "score": 82,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "green",
+            "version": "green",
+            "security": "amber",
+            "coverage": "green",
+            "governance": "green",
+            "quality": "red"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 1,
+            "low": 1
+          },
+          "countsComplete": true,
+          "collectionErrors": 0
+        },
+        {
+          "id": "project-alpha",
+          "overall": "grey",
+          "score": null,
+          "scoreMeasured": 2,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "grey",
+            "version": "grey",
+            "security": "grey",
+            "coverage": "grey",
+            "governance": "green",
+            "quality": "grey"
+          },
+          "open": {
+            "critical": null,
+            "high": null,
+            "medium": null,
+            "low": null
+          },
+          "countsComplete": false,
+          "collectionErrors": 3
+        },
+        {
+          "id": "project-beta",
+          "overall": "amber",
+          "score": 58,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "amber",
+            "quality": "amber"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 1
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        },
+        {
+          "id": "project-gamma",
+          "overall": "grey",
+          "score": null,
+          "scoreMeasured": 0,
+          "scoreRequired": 5,
+          "dimensions": {
+            "delivery": "grey",
+            "version": "grey",
+            "security": "grey",
+            "coverage": "grey",
+            "governance": "grey",
+            "quality": "grey"
+          },
+          "open": {
+            "critical": null,
+            "high": null,
+            "medium": null,
+            "low": null
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        }
+      ]
+    },
+    {
+      "collectedAt": "@now-5d",
+      "dataSource": "mock",
+      "authenticationMode": "mock",
+      "collectorVersion": "0.6.0",
+      "projects": [
+        {
+          "id": "platform",
+          "overall": "amber",
+          "score": 82,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "green",
+            "version": "green",
+            "security": "amber",
+            "coverage": "green",
+            "governance": "green",
+            "quality": "red"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 1,
+            "low": 1
+          },
+          "countsComplete": true,
+          "collectionErrors": 0
+        },
+        {
+          "id": "project-alpha",
+          "overall": "amber",
+          "score": 72,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "green",
+            "quality": "green"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 3
+          },
+          "countsComplete": true,
+          "collectionErrors": 0
+        },
+        {
+          "id": "project-beta",
+          "overall": "amber",
+          "score": 58,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "amber",
+            "quality": "amber"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 1
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        },
+        {
+          "id": "project-gamma",
+          "overall": "grey",
+          "score": null,
+          "scoreMeasured": 0,
+          "scoreRequired": 5,
+          "dimensions": {
+            "delivery": "grey",
+            "version": "grey",
+            "security": "grey",
+            "coverage": "grey",
+            "governance": "grey",
+            "quality": "grey"
+          },
+          "open": {
+            "critical": null,
+            "high": null,
+            "medium": null,
+            "low": null
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        }
+      ]
+    },
+    {
+      "collectedAt": "@now-4d",
+      "dataSource": "mock",
+      "authenticationMode": "mock",
+      "collectorVersion": "0.6.0",
+      "projects": [
+        {
+          "id": "platform",
+          "overall": "amber",
+          "score": 82,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "green",
+            "version": "green",
+            "security": "amber",
+            "coverage": "green",
+            "governance": "green",
+            "quality": "red"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 1,
+            "low": 1
+          },
+          "countsComplete": true,
+          "collectionErrors": 0
+        },
+        {
+          "id": "project-alpha",
+          "overall": "amber",
+          "score": 72,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "green",
+            "quality": "green"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 3
+          },
+          "countsComplete": true,
+          "collectionErrors": 0
+        },
+        {
+          "id": "project-beta",
+          "overall": "amber",
+          "score": 58,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "amber",
+            "quality": "amber"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 1
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        },
+        {
+          "id": "project-gamma",
+          "overall": "grey",
+          "score": null,
+          "scoreMeasured": 0,
+          "scoreRequired": 5,
+          "dimensions": {
+            "delivery": "grey",
+            "version": "grey",
+            "security": "grey",
+            "coverage": "grey",
+            "governance": "grey",
+            "quality": "grey"
+          },
+          "open": {
+            "critical": null,
+            "high": null,
+            "medium": null,
+            "low": null
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        }
+      ]
+    },
+    {
+      "collectedAt": "@now-3d",
+      "dataSource": "mock",
+      "authenticationMode": "mock",
+      "collectorVersion": "0.6.0",
+      "projects": [
+        {
+          "id": "platform",
+          "overall": "amber",
+          "score": 82,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "green",
+            "version": "green",
+            "security": "amber",
+            "coverage": "green",
+            "governance": "green",
+            "quality": "red"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 1,
+            "low": 1
+          },
+          "countsComplete": true,
+          "collectionErrors": 0
+        },
+        {
+          "id": "project-alpha",
+          "overall": "amber",
+          "score": 74,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "green",
+            "quality": "green"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 3
+          },
+          "countsComplete": true,
+          "collectionErrors": 0
+        },
+        {
+          "id": "project-beta",
+          "overall": "amber",
+          "score": 58,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "amber",
+            "quality": "amber"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 1
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        },
+        {
+          "id": "project-gamma",
+          "overall": "grey",
+          "score": null,
+          "scoreMeasured": 0,
+          "scoreRequired": 5,
+          "dimensions": {
+            "delivery": "grey",
+            "version": "grey",
+            "security": "grey",
+            "coverage": "grey",
+            "governance": "grey",
+            "quality": "grey"
+          },
+          "open": {
+            "critical": null,
+            "high": null,
+            "medium": null,
+            "low": null
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        }
+      ]
+    },
+    {
+      "collectedAt": "@now-2d",
+      "dataSource": "mock",
+      "authenticationMode": "mock",
+      "collectorVersion": "0.6.0",
+      "projects": [
+        {
+          "id": "platform",
+          "overall": "amber",
+          "score": 82,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "green",
+            "version": "green",
+            "security": "amber",
+            "coverage": "green",
+            "governance": "green",
+            "quality": "red"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 1,
+            "low": 1
+          },
+          "countsComplete": true,
+          "collectionErrors": 0
+        },
+        {
+          "id": "project-alpha",
+          "overall": "amber",
+          "score": 76,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "green",
+            "quality": "green"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 3
+          },
+          "countsComplete": true,
+          "collectionErrors": 0
+        },
+        {
+          "id": "project-beta",
+          "overall": "amber",
+          "score": 58,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "amber",
+            "quality": "amber"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 1
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        },
+        {
+          "id": "project-gamma",
+          "overall": "grey",
+          "score": null,
+          "scoreMeasured": 0,
+          "scoreRequired": 5,
+          "dimensions": {
+            "delivery": "grey",
+            "version": "grey",
+            "security": "grey",
+            "coverage": "grey",
+            "governance": "grey",
+            "quality": "grey"
+          },
+          "open": {
+            "critical": null,
+            "high": null,
+            "medium": null,
+            "low": null
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        }
+      ]
+    },
+    {
+      "collectedAt": "@now-1d",
+      "dataSource": "mock",
+      "authenticationMode": "mock",
+      "collectorVersion": "0.6.0",
+      "projects": [
+        {
+          "id": "platform",
+          "overall": "amber",
+          "score": 82,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "green",
+            "version": "green",
+            "security": "amber",
+            "coverage": "green",
+            "governance": "green",
+            "quality": "red"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 1,
+            "low": 1
+          },
+          "countsComplete": true,
+          "collectionErrors": 0
+        },
+        {
+          "id": "project-alpha",
+          "overall": "amber",
+          "score": 76,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "green",
+            "quality": "green"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 3
+          },
+          "countsComplete": true,
+          "collectionErrors": 0
+        },
+        {
+          "id": "project-beta",
+          "overall": "amber",
+          "score": 58,
+          "scoreMeasured": 6,
+          "scoreRequired": 6,
+          "dimensions": {
+            "delivery": "amber",
+            "version": "amber",
+            "security": "amber",
+            "coverage": "amber",
+            "governance": "amber",
+            "quality": "amber"
+          },
+          "open": {
+            "critical": 0,
+            "high": 1,
+            "medium": 3,
+            "low": 1
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        },
+        {
+          "id": "project-gamma",
+          "overall": "grey",
+          "score": null,
+          "scoreMeasured": 0,
+          "scoreRequired": 5,
+          "dimensions": {
+            "delivery": "grey",
+            "version": "grey",
+            "security": "grey",
+            "coverage": "grey",
+            "governance": "grey",
+            "quality": "grey"
+          },
+          "open": {
+            "critical": null,
+            "high": null,
+            "medium": null,
+            "low": null
+          },
+          "countsComplete": false,
+          "collectionErrors": 2
+        }
+      ]
+    }
+  ],
+  "baseline": {
+    "collectedAt": "@now-1d",
+    "projects": [
+      {
+        "id": "platform",
+        "findings": [
+          {
+            "id": "example-org/platform-mono#code-scanning#4",
+            "severity": "high",
+            "componentId": "web",
+            "repository": "example-org/platform-mono",
+            "source": "github-code-scanning",
+            "htmlUrl": "https://github.com/example-org/platform-mono/security/code-scanning/4"
+          }
+        ],
+        "unreadable": [],
+        "errors": [],
+        "versions": [
+          {
+            "kind": "coordinator",
+            "componentId": null,
+            "version": "2026.10.1"
+          },
+          {
+            "kind": "component",
+            "componentId": "web",
+            "version": "2.0.1"
+          },
+          {
+            "kind": "component",
+            "componentId": "api",
+            "version": "1.8.0"
+          },
+          {
+            "kind": "component",
+            "componentId": "worker",
+            "version": "0.4.0"
+          }
+        ]
+      },
+      {
+        "id": "project-alpha",
+        "findings": [
+          {
+            "id": "example-org/project-alpha-backend#code-scanning#9",
+            "severity": "high",
+            "componentId": "backend",
+            "repository": "example-org/project-alpha-backend",
+            "source": "github-code-scanning",
+            "htmlUrl": "https://github.com/example-org/project-alpha-backend/security/code-scanning/9"
+          },
+          {
+            "id": "example-org/project-alpha-frontend#dependabot#7",
+            "severity": "high",
+            "componentId": "frontend",
+            "repository": "example-org/project-alpha-frontend",
+            "source": "github-dependabot",
+            "htmlUrl": "https://github.com/example-org/project-alpha-frontend/security/dependabot/7"
+          }
+        ],
+        "unreadable": [],
+        "errors": [],
+        "versions": [
+          {
+            "kind": "coordinator",
+            "componentId": null,
+            "version": "1.4.0"
+          },
+          {
+            "kind": "component",
+            "componentId": "backend",
+            "version": "1.4.0"
+          },
+          {
+            "kind": "component",
+            "componentId": "frontend",
+            "version": "2.0.3"
+          },
+          {
+            "kind": "component",
+            "componentId": "worker",
+            "version": "1.2.0"
+          },
+          {
+            "kind": "component",
+            "componentId": "helm",
+            "version": "0.9.0"
+          }
+        ]
+      },
+      {
+        "id": "project-beta",
+        "findings": [
+          {
+            "id": "example-org/project-beta-web#dependabot#11",
+            "severity": "high",
+            "componentId": "web",
+            "repository": "example-org/project-beta-web",
+            "source": "github-dependabot",
+            "htmlUrl": "https://github.com/example-org/project-beta-web/security/dependabot/11"
+          }
+        ],
+        "unreadable": [
+          "example-org/project-beta-api|secret-scanning",
+          "example-org/project-beta-coordinator|secret-scanning"
+        ],
+        "errors": [
+          "example-org/project-beta-api|secret-scanning|not-authorised",
+          "example-org/project-beta-coordinator|secret-scanning|not-authorised"
+        ],
+        "versions": [
+          {
+            "kind": "coordinator",
+            "componentId": null,
+            "version": "3.2.0"
+          },
+          {
+            "kind": "component",
+            "componentId": "api",
+            "version": "3.1.0"
+          },
+          {
+            "kind": "component",
+            "componentId": "web",
+            "version": "3.1.0"
+          },
+          {
+            "kind": "component",
+            "componentId": "helm",
+            "version": "1.0.0"
+          }
+        ]
+      },
+      {
+        "id": "project-gamma",
+        "findings": [],
+        "unreadable": [
+          "example-org/project-gamma-coordinator|code-scanning",
+          "example-org/project-gamma-coordinator|dependabot",
+          "example-org/project-gamma-coordinator|secret-scanning",
+          "example-org/project-gamma-coordinator|security-status-file",
+          "example-org/project-gamma-service|code-scanning",
+          "example-org/project-gamma-service|dependabot",
+          "example-org/project-gamma-service|secret-scanning",
+          "example-org/project-gamma-service|security-status-file"
+        ],
+        "errors": [
+          "example-org/project-gamma-coordinator|repository|not-found",
+          "example-org/project-gamma-service|repository|not-authorised"
+        ],
+        "versions": [
+          {
+            "kind": "coordinator",
+            "componentId": null,
+            "version": null
+          },
+          {
+            "kind": "component",
+            "componentId": "service",
+            "version": null
+          }
+        ]
+      }
+    ]
+  }
+}
