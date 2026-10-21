@@ -37,6 +37,11 @@ export function entryFromRun(index: PortfolioIndex): HistoryEntry {
       },
       countsComplete: s.countsComplete,
       collectionErrors: s.collectionErrorCount,
+      controls: {
+        passed: s.repositoryControls.passed,
+        failed: s.repositoryControls.failed,
+        unknown: s.repositoryControls.unknown,
+      },
     })),
   };
 }

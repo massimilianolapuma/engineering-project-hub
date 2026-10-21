@@ -1,6 +1,6 @@
 {
   "kind": "hub-history",
-  "schemaVersion": "1.0",
+  "schemaVersion": "1.1",
   "generatedAt": "@now-1d",
   "retention": {
     "maxEntries": 120,
@@ -1182,7 +1182,8 @@
             "componentId": "worker",
             "version": "0.4.0"
           }
-        ]
+        ],
+        "checks": []
       },
       {
         "id": "project-alpha",
@@ -1239,7 +1240,8 @@
             "componentId": "helm",
             "version": "0.9.0"
           }
-        ]
+        ],
+        "checks": []
       },
       {
         "id": "project-beta",
@@ -1297,7 +1299,8 @@
             "componentId": "helm",
             "version": "1.0.0"
           }
-        ]
+        ],
+        "checks": ["example-org/project-beta-web|branch-protected|pass"]
       },
       {
         "id": "project-gamma",
@@ -1331,7 +1334,8 @@
             "componentId": "service",
             "version": null
           }
-        ]
+        ],
+        "checks": []
       }
     ]
   }

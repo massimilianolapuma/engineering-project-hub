@@ -36,9 +36,20 @@ export const FINDING_PAIR_SOURCE: Record<FindingSource, PairSource> = {
 export const BASELINE_LIST_CAP = 500;
 /** Versions per project (coordinator first). A version beyond it is simply not compared. */
 export const BASELINE_VERSIONS_CAP = 200;
+/** Repository check keys per project. */
+export const BASELINE_CHECKS_CAP = 600;
 
 export const pairKey = (repository: string, source: PairSource): string =>
   `${repository}|${source}`;
+/** "owner/repo|check|pass" / "|fail" keys of the repository checks; unknown and n/a are left out. */
+export function checkKeys(p: ProjectSnapshot): string[] {
+  const keys: string[] = [];
+  for (const r of p.repositoryControls.repositories)
+    for (const c of r.checks)
+      if (c.state === 'pass' || c.state === 'fail') keys.push(`${r.repository}|${c.id}|${c.state}`);
+  return keys.sort();
+}
+
 export const errorKey = (e: CollectionError): string =>
   `${e.repository}|${e.source}|${e.classification}`;
 
@@ -115,6 +126,7 @@ export function buildBaseline(index: PortfolioIndex, projects: ProjectSnapshot[]
         })),
       ].slice(0, BASELINE_VERSIONS_CAP),
       errors: [...new Set(p.collectionErrors.map(errorKey))].sort().slice(0, BASELINE_LIST_CAP),
+      checks: checkKeys(p).slice(0, BASELINE_CHECKS_CAP),
     })),
   };
 }

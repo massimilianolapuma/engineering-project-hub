@@ -1289,6 +1289,14 @@ describe('static site', () => {
       }
     });
 
+    it('/changes/ lists repository check changes (EN and IT)', async () => {
+      const en = textOf(await page('changes'));
+      expect(en).toContain('Repository checks');
+      expect(en).toContain('project-beta-web');
+      expect(en).toContain('Branch protected');
+      expect(textOf(await page('it/changes'))).toContain('Controlli repository');
+    });
+
     it('the catalog page shows grouped proposals and the suggested project', async () => {
       const html = await page('catalog');
       expect(html).toContain('Grouped by hints');

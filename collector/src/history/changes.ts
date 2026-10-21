@@ -57,6 +57,7 @@ export function computeChanges(
         resolvedFindings: 0,
         versionMoves: 0,
         newErrors: 0,
+        checkChanges: 0,
       },
       projects: index.projects.map((s) =>
         emptyProject(s.id, s.overall, s.score.value, false, null),
@@ -70,6 +71,7 @@ export function computeChanges(
     resolvedFindings: 0,
     versionMoves: 0,
     newErrors: 0,
+    checkChanges: 0,
   };
   const out: ProjectChanges[] = [];
   for (const s of index.projects) {
@@ -104,6 +106,7 @@ export function computeChanges(
       totals.resolvedFindings += alerts.resolved;
       diffVersions(entry, before, snapshot);
       diffErrors(entry, before, snapshot);
+      totals.checkChanges += diffChecks(entry, before, snapshot);
     }
     totals.statusChanges += entry.statusChanges.length;
     totals.versionMoves += entry.versionMoves.length;
@@ -146,6 +149,7 @@ function emptyProject(
     versionMoves: [],
     newErrors: [],
     resolvedErrors: 0,
+    checkChanges: [],
   };
 }
 
@@ -252,4 +256,27 @@ function diffErrors(entry: ProjectChanges, before: Baseline, snapshot: ProjectSn
       classification: e.classification,
     }));
   entry.resolvedErrors = [...was].filter((key) => !seen.has(key)).length;
+}
+
+/**
+ * Only pass ↔ fail moves, and only when both runs know the state (like version moves). A
+ * baseline without `checks` (history 1.0) is not compared. Returns the full count.
+ */
+function diffChecks(entry: ProjectChanges, before: Baseline, snapshot: ProjectSnapshot): number {
+  if (!before.checks) return 0;
+  const was = new Map<string, 'pass' | 'fail'>();
+  for (const key of before.checks) {
+    const [repo, check, state] = key.split('|');
+    if (repo && check && (state === 'pass' || state === 'fail')) was.set(`${repo}|${check}`, state);
+  }
+  const moves: NonNullable<ProjectChanges['checkChanges']> = [];
+  for (const r of snapshot.repositoryControls.repositories)
+    for (const c of r.checks) {
+      if (c.state !== 'pass' && c.state !== 'fail') continue;
+      const from = was.get(`${r.repository}|${c.id}`);
+      if (from && from !== c.state)
+        moves.push({ repository: r.repository, check: c.id, from, to: c.state });
+    }
+  entry.checkChanges = moves.slice(0, LIST_CAP);
+  return moves.length;
 }

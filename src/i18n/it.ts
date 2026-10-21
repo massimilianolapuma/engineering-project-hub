@@ -1174,6 +1174,7 @@ export const it: Dict = {
     truncated: 'e altri {n}',
     versionMoves: 'Versioni cambiate',
     coordinator: 'Coordinatore',
+    repositoryChecks: 'Controlli repository',
     errors: 'Errori di raccolta',
     resolvedErrorsOne: '{n} errore non si verifica più',
     resolvedErrorsOther: '{n} errori non si verificano più',

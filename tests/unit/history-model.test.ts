@@ -120,8 +120,12 @@ describe('HistoryFileSchema', () => {
     );
   });
 
-  it('rejects schemaVersion "1.1"', () => {
-    expect(HistoryFileSchema.safeParse({ ...validHistory(), schemaVersion: '1.1' }).success).toBe(
+  it('accepts schemaVersion "1.0" and "1.1", rejects "2.0"', () => {
+    for (const v of ['1.0', '1.1'])
+      expect(HistoryFileSchema.safeParse({ ...validHistory(), schemaVersion: v }).success).toBe(
+        true,
+      );
+    expect(HistoryFileSchema.safeParse({ ...validHistory(), schemaVersion: '2.0' }).success).toBe(
       false,
     );
   });

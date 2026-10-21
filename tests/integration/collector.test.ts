@@ -217,7 +217,22 @@ describe('history and changes (mock run)', () => {
       resolvedFindings: 1,
       versionMoves: 1,
       newErrors: 1,
+      checkChanges: 1,
     });
+  });
+
+  it('golden changes: beta-web branch-protected moved pass → fail', async () => {
+    const beta = (await readGolden<ChangesFile>('changes.json')).projects.find(
+      (p) => p.id === 'project-beta',
+    )!;
+    expect(beta.checkChanges).toEqual([
+      {
+        repository: 'example-org/project-beta-web',
+        check: 'branch-protected',
+        from: 'pass',
+        to: 'fail',
+      },
+    ]);
   });
 
   it('golden changes: beta statusChanges [overall amber→red, delivery amber→red, security amber→red], newFindings[0].id "example-org/project-beta-api#code-scanning#3" with title null, findingsPartial true', async () => {

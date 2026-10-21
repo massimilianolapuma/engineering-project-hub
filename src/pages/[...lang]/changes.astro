@@ -43,6 +43,7 @@ const changed = (p: Card) =>
     p.newFindings.length +
     p.resolvedFindings.length +
     p.versionMoves.length +
+    (p.checkChanges?.length ?? 0) +
     p.newErrors.length +
     p.resolvedErrors >
   0;
@@ -258,6 +259,23 @@ const date = (iso: string) => i18n.date(iso);
                           <li data-change="version">
                             {componentName(p.id, v.componentId)}: <span class="mono">{v.from}</span>{' '}
                             → <span class="mono">{v.to}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+
+                  {(p.checkChanges?.length ?? 0) > 0 && (
+                    <section aria-labelledby={`h-${p.id}-checks`}>
+                      <h3 id={`h-${p.id}-checks`}>{c.repositoryChecks}</h3>
+                      <ul class="chg-list">
+                        {p.checkChanges!.map((x) => (
+                          <li data-change="check">
+                            <span class="mono">{x.repository}</span> · {d.repositoryCheck[x.check]}:{' '}
+                            {d.repositoryCheckState[x.from]}
+                            <span aria-hidden="true"> → </span>
+                            <span class="visually-hidden"> {c.to} </span>
+                            {d.repositoryCheckState[x.to]}
                           </li>
                         ))}
                       </ul>

@@ -6,6 +6,7 @@ import {
   ErrorClassificationSchema,
   FindingSourceSchema,
   HealthStatusSchema,
+  RepositoryCheckIdSchema,
 } from './enums';
 import { RepositoryRefSchema } from './catalog';
 import { httpsUrl, nullableCount, shortText, utcDate } from './primitives';
@@ -20,8 +21,9 @@ import { CollectionErrorSchema } from './snapshot';
 /** The same instant as an ISO date in UTC ("Z", milliseconds), as history and changes store it. */
 export const toUtc = (iso: string): string => new Date(iso).toISOString();
 
-export const HISTORY_SCHEMA_VERSION = '1.0';
-export const SUPPORTED_HISTORY_SCHEMA_VERSIONS = ['1.0'] as const;
+// 1.1: repository controls counts per point and check states in the baseline (optional).
+export const HISTORY_SCHEMA_VERSION = '1.1';
+export const SUPPORTED_HISTORY_SCHEMA_VERSIONS = ['1.0', '1.1'] as const;
 export const CHANGES_SCHEMA_VERSION = '1.0';
 
 /** How the previous history was obtained for a run. */
@@ -75,6 +77,8 @@ export const HistoryProjectPointSchema = z
       .strict(),
     countsComplete: z.boolean(),
     collectionErrors: count,
+    /** Repository checks of the run (absent in 1.0 files). */
+    controls: z.object({ passed: count, failed: count, unknown: count }).strict().optional(),
   })
   .strict();
 export type HistoryProjectPoint = z.infer<typeof HistoryProjectPointSchema>;
@@ -137,6 +141,11 @@ export const HistoryBaselineSchema = z
               .max(200),
             /** "owner/repo|source|classification" keys of the run's collection errors. */
             errors: z.array(z.string().max(300)).max(500),
+            /**
+             * "owner/repo|check|pass" or "owner/repo|check|fail" keys (unknown and not applicable
+             * are left out). Absent in 1.0 files: nothing to compare.
+             */
+            checks: z.array(z.string().max(320)).max(600).optional(),
           })
           .strict(),
       )
@@ -206,6 +215,8 @@ export const ChangesFileSchema = z
         resolvedFindings: count,
         versionMoves: count,
         newErrors: count,
+        /** Written by 0.8.0 and later. */
+        checkChanges: count.optional(),
       })
       .strict(),
     projects: z.array(
@@ -252,6 +263,20 @@ export const ChangesFileSchema = z
               .strict(),
           ),
           resolvedErrors: count,
+          /** Repository checks that moved pass ↔ fail (both runs known), at most 50. */
+          checkChanges: z
+            .array(
+              z
+                .object({
+                  repository: z.string().max(200),
+                  check: RepositoryCheckIdSchema,
+                  from: z.enum(['pass', 'fail']),
+                  to: z.enum(['pass', 'fail']),
+                })
+                .strict(),
+            )
+            .max(50)
+            .optional(),
         })
         .strict(),
     ),

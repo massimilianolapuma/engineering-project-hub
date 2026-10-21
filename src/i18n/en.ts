@@ -1164,6 +1164,7 @@ export const en = {
     truncated: 'and {n} more',
     versionMoves: 'Version moves',
     coordinator: 'Coordinator',
+    repositoryChecks: 'Repository checks',
     errors: 'Collection errors',
     resolvedErrorsOne: '{n} error no longer occurs',
     resolvedErrorsOther: '{n} errors no longer occur',
