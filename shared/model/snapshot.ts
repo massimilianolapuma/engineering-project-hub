@@ -53,6 +53,8 @@ export const CollectionErrorSchema = z
       'dependabot',
       'secret-scanning',
       'security-status-file',
+      'quality-summary',
+      'code-quality',
     ]),
     classification: ErrorClassificationSchema,
     httpStatus: z.number().int().min(100).max(599).optional(),
@@ -256,6 +258,71 @@ export const SecuritySummarySchema = HealthResultSchema.extend({
   bySource: z.record(FindingSourceSchema, z.number().int().min(0)),
 }).strict();
 export type SecuritySummary = z.infer<typeof SecuritySummarySchema>;
+
+/**
+ * State of a component's quality report. readable / stale are counted; missing, expired,
+ * invalid, not-authorised and unknown are "not visible" and never count as 0%.
+ */
+export const QualityReportStateSchema = z.enum([
+  'readable',
+  'stale',
+  'missing',
+  'expired',
+  'invalid',
+  'not-authorised',
+  'unknown',
+  'not-applicable',
+]);
+export type QualityReportState = z.infer<typeof QualityReportStateSchema>;
+
+const percentage = z.number().min(0).max(100);
+
+export const QualityHealthSchema = HealthResultSchema.extend({
+  /** Σ covered / Σ valid over unique repositories with a readable or stale report (1 decimal). */
+  percentage: percentage.nullable(),
+  linesCovered: z.number().int().min(0),
+  linesValid: z.number().int().min(0),
+  /** Component counts: measured (readable or stale) out of applicable. */
+  measured: z.number().int().min(0),
+  applicable: z.number().int().min(0),
+  notVisible: z.number().int().min(0),
+  stale: z.number().int().min(0),
+  collectedAt: isoDate,
+  perComponent: z.array(
+    z
+      .object({
+        componentId: z.string().max(64),
+        state: QualityReportStateSchema,
+        /** The repository (and so this report) is shared with other components. */
+        sharedRepository: z.boolean(),
+        percentage: percentage.nullable(),
+        linesCovered: nullableCount,
+        linesValid: nullableCount,
+        commitSha: sha.nullable(),
+        generatedAt: isoDate.nullable(),
+        tool: z.string().max(40).nullable(),
+        runUrl: httpsUrl.nullable(),
+      })
+      .strict(),
+  ),
+  /** GitHub Code Quality open findings, counted once per repository. Informative only. */
+  findings: z
+    .object({
+      state: z.enum(['available', 'not-configured', 'not-authorised', 'unknown']),
+      reliability: nullableCount,
+      maintainability: nullableCount,
+      bySeverity: z
+        .object({
+          error: nullableCount,
+          warning: nullableCount,
+          note: nullableCount,
+          none: nullableCount,
+        })
+        .strict(),
+    })
+    .strict(),
+}).strict();
+export type QualityHealth = z.infer<typeof QualityHealthSchema>;
 
 /**
  * What the SHA pinned by the coordinator corresponds to in the component repository:

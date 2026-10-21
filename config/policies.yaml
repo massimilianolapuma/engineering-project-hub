@@ -12,6 +12,7 @@ freshness:
   workflowRunStaleDays: 14 # last completed run of a tracked workflow older than this = stale
   securityScanStaleDays: 7 # last code scanning analysis older than this = stale
   securityStatusFileStaleDays: 7 # .security/project-security-status.json older than this = stale
+  qualityReportStaleDays: 14 # hub-quality-summary generated longer ago = stale (still counted, caps at amber)
 
 delivery:
   queuedThresholdMinutes: 60 # queued / in progress for longer = attention
@@ -28,6 +29,14 @@ security:
 
 coverage:
   greenThresholdPercent: 100
+
+# Quality: line coverage from the CI artifact hub-quality-summary (quality-summary.json).
+# Project coverage = sum covered / sum valid over repositories with a readable or stale report;
+# a component without a visible report never counts as 0%.
+quality:
+  greenThresholdPercent: 80 # at or above = green
+  amberThresholdPercent: 60 # at or above = amber, below = red
+  missingReportIsAmber: true # some applicable component without a visible report → at most amber
 
 version:
   componentDrift: amber

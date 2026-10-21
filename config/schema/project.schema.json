@@ -66,6 +66,13 @@
               "artifactSignature"
             ]
           }
+        },
+        "testCoverage": {
+          "type": "string",
+          "enum": [
+            "required",
+            "not-applicable"
+          ]
         }
       },
       "required": [
@@ -149,6 +156,13 @@
               "submodule",
               "manifest",
               "release"
+            ]
+          },
+          "testCoverage": {
+            "type": "string",
+            "enum": [
+              "required",
+              "not-applicable"
             ]
           }
         },

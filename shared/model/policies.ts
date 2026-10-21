@@ -17,6 +17,8 @@ export const PoliciesSchema = z
         workflowRunStaleDays: z.number().positive().default(14),
         securityScanStaleDays: z.number().positive().default(7),
         securityStatusFileStaleDays: z.number().positive().default(7),
+        /** generatedAt of a hub-quality-summary older than this = stale (still counted). */
+        qualityReportStaleDays: z.number().positive().default(14),
       })
       .strict(),
     delivery: z
@@ -43,6 +45,20 @@ export const PoliciesSchema = z
         greenThresholdPercent: z.number().min(0).max(100).default(100),
       })
       .strict(),
+    /** Quality: line coverage from the CI hub-quality-summary artifact. Optional block. */
+    quality: z
+      .object({
+        greenThresholdPercent: z.number().min(0).max(100).default(80),
+        /** Below this percentage the status is red. */
+        amberThresholdPercent: z.number().min(0).max(100).default(60),
+        /** Some applicable components without a visible report → at most amber. */
+        missingReportIsAmber: z.boolean().default(true),
+      })
+      .strict()
+      .refine((q) => q.amberThresholdPercent <= q.greenThresholdPercent, {
+        message: 'amberThresholdPercent must not exceed greenThresholdPercent',
+      })
+      .prefault({}),
     version: z
       .object({
         componentDrift: RedOrAmber.default('amber'),

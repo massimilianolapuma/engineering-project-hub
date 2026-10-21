@@ -106,7 +106,9 @@
                   "code-scanning",
                   "dependabot",
                   "secret-scanning",
-                  "security-status-file"
+                  "security-status-file",
+                  "quality-summary",
+                  "code-quality"
                 ]
               },
               "classification": {

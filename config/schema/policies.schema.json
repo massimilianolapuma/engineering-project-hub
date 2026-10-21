@@ -28,6 +28,11 @@
           "default": 7,
           "type": "number",
           "exclusiveMinimum": 0
+        },
+        "qualityReportStaleDays": {
+          "default": 14,
+          "type": "number",
+          "exclusiveMinimum": 0
         }
       },
       "additionalProperties": false
@@ -126,6 +131,29 @@
           "type": "number",
           "minimum": 0,
           "maximum": 100
+        }
+      },
+      "additionalProperties": false
+    },
+    "quality": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "greenThresholdPercent": {
+          "default": 80,
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "amberThresholdPercent": {
+          "default": 60,
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "missingReportIsAmber": {
+          "default": true,
+          "type": "boolean"
         }
       },
       "additionalProperties": false

@@ -214,6 +214,17 @@ export const REASON_CODES = [
   'default-branch-mismatch',
   'repository-unavailable',
   'governance-compliant',
+  // quality (test coverage)
+  'quality-below-threshold',
+  'quality-below-red-threshold',
+  'quality-report-missing',
+  'quality-report-expired',
+  'quality-report-invalid',
+  'quality-report-not-authorised',
+  'quality-report-unknown',
+  'quality-report-stale',
+  'quality-not-applicable',
+  'quality-all-above-threshold',
   // freshness / overall
   'source-stale',
   'data-fresh',
