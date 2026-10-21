@@ -3,6 +3,7 @@ import type {
   ComponentSnapshot,
   CoverageSummary,
   RepositoryControls,
+  SecurityException,
   SecurityFinding,
 } from '@model/index';
 import {
@@ -15,7 +16,7 @@ import {
   type SecurityInputs,
 } from '../../collector/src/evaluators/health';
 import { emptyCounts } from '../../collector/src/normalizers/security-model';
-import { hoursAgo, NOW, policies, workflow } from '../helpers/factories';
+import { hoursAgo, NOW, policies, remediationSummary, workflow } from '../helpers/factories';
 
 const P = policies();
 const run = (createdAt: string, extra: object = {}) => ({
@@ -185,6 +186,9 @@ const inputs = (partial: Partial<SecurityInputs> = {}): SecurityInputs => ({
   countsComplete: true,
   secretSourceReadable: true,
   detailsWithheld: false,
+  remediation: remediationSummary(),
+  exceptions: [],
+  acceptedCount: 0,
   ...partial,
 });
 const counts = (c: Partial<Record<'critical' | 'high' | 'medium' | 'low', number>>) => ({
@@ -251,6 +255,191 @@ describe('security risk', () => {
       p.security.redOnSeverities = ['critical', 'high'];
     });
     expect(evaluateSecurity(inputs(), counts({ high: 1 }), 0, strict).status).toBe('red');
+  });
+});
+
+describe('security risk governance', () => {
+  const INFO = {
+    critical: 'info',
+    high: 'info',
+    medium: 'info',
+    low: 'info',
+    secret: 'info',
+  } as const;
+  const defaults = (over: (p: ReturnType<typeof policies>) => void = () => {}) =>
+    policies((p) => {
+      p.remediation.overdue = { ...INFO };
+      over(p);
+    });
+  const overdue = (o: Partial<Record<'critical' | 'high' | 'medium' | 'low' | 'secret', number>>) =>
+    remediationSummary({
+      overdue: { critical: 0, high: 0, medium: 0, low: 0, secret: 0, ...o },
+    });
+  const record = (id: string, state: SecurityException['state']): SecurityException => ({
+    id,
+    repository: 'example-org/platform-mono',
+    source: 'code-scanning',
+    selector: { kind: 'alert', value: '1', tool: null },
+    owner: 'team-platform',
+    reason: null,
+    created: '2026-01-01',
+    expires: '2026-02-01',
+    ticketUrl: null,
+    state,
+    expiringSoon: false,
+    matched: state === 'unverifiable' ? null : 0,
+    findingIds: [],
+  });
+  const codes = (r: ReturnType<typeof evaluateSecurity>) => r.reasons.map((x) => x.code);
+
+  it('one overdue high, defaults → amber; reasons include open-high-alerts (amber) and sla-overdue (info, severity high, count 1, days 30)', () => {
+    const r = evaluateSecurity(
+      inputs({ remediation: overdue({ high: 1 }) }),
+      counts({ high: 1 }),
+      0,
+      defaults(),
+    );
+    expect(r.status).toBe('amber');
+    expect(r.reasons).toContainEqual({
+      code: 'open-high-alerts',
+      level: 'amber',
+      params: { count: 1 },
+    });
+    expect(r.reasons).toContainEqual({
+      code: 'sla-overdue',
+      level: 'info',
+      params: { severity: 'high', count: 1, days: 30 },
+    });
+  });
+
+  it('same with remediation.overdue.high red → red', () => {
+    const r = evaluateSecurity(
+      inputs({ remediation: overdue({ high: 1 }) }),
+      counts({ high: 1 }),
+      0,
+      defaults((p) => {
+        p.remediation.overdue.high = 'red';
+      }),
+    );
+    expect(r.status).toBe('red');
+  });
+
+  it('overdue medium with overdue.medium amber stays amber and sla-overdue is amber', () => {
+    const r = evaluateSecurity(
+      inputs({ remediation: overdue({ medium: 1 }) }),
+      counts({ medium: 1 }),
+      0,
+      defaults((p) => {
+        p.remediation.overdue.medium = 'amber';
+      }),
+    );
+    expect(r.status).toBe('amber');
+    expect(r.reasons.find((x) => x.code === 'sla-overdue')?.level).toBe('amber');
+  });
+
+  it('one accepted high only → green; reasons security-exception-active {count:1} and no-open-alerts; no open-high-alerts', () => {
+    const r = evaluateSecurity(inputs({ acceptedCount: 1 }), counts({}), 0, defaults());
+    expect(r.status).toBe('green');
+    expect(r.reasons).toContainEqual({
+      code: 'security-exception-active',
+      level: 'info',
+      params: { count: 1 },
+    });
+    expect(codes(r)).toContain('no-open-alerts');
+    expect(codes(r)).not.toContain('open-high-alerts');
+  });
+
+  it('expired exception record → security-exception-expired amber {count:1, ids:"EXC-PLAT-001"}; with expiredIsAmber false → info and status green when nothing else', () => {
+    const exceptions = [record('EXC-PLAT-001', 'expired')];
+    const amber = evaluateSecurity(inputs({ exceptions }), counts({}), 0, defaults());
+    expect(amber.status).toBe('amber');
+    expect(amber.reasons).toContainEqual({
+      code: 'security-exception-expired',
+      level: 'amber',
+      params: { count: 1, ids: 'EXC-PLAT-001' },
+    });
+    const info = evaluateSecurity(
+      inputs({ exceptions }),
+      counts({}),
+      0,
+      defaults((p) => {
+        p.exceptions.expiredIsAmber = false;
+      }),
+    );
+    expect(info.status).toBe('green');
+    expect(info.reasons.find((x) => x.code === 'security-exception-expired')?.level).toBe('info');
+  });
+
+  it('stale and unverifiable records → info reasons with ids; status unchanged', () => {
+    const r = evaluateSecurity(
+      inputs({ exceptions: [record('EXC-S', 'stale'), record('EXC-U', 'unverifiable')] }),
+      counts({}),
+      0,
+      defaults(),
+    );
+    expect(r.status).toBe('green');
+    expect(r.reasons).toContainEqual({
+      code: 'security-exception-stale',
+      level: 'info',
+      params: { count: 1, ids: 'EXC-S' },
+    });
+    expect(r.reasons).toContainEqual({
+      code: 'security-exception-unverifiable',
+      level: 'info',
+      params: { count: 1, ids: 'EXC-U' },
+    });
+  });
+
+  it('12 expired records → ids param lists 10 ids then "+2"', () => {
+    const exceptions = Array.from({ length: 12 }, (_, i) =>
+      record(`EXC-${String(i + 1).padStart(3, '0')}`, 'expired'),
+    );
+    const r = evaluateSecurity(inputs({ exceptions }), counts({}), 0, defaults());
+    const ids = String(r.reasons.find((x) => x.code === 'security-exception-expired')?.params.ids);
+    expect(ids).toBe(
+      `${exceptions
+        .slice(0, 10)
+        .map((e) => e.id)
+        .join(',')} +2`,
+    );
+  });
+
+  it('anySourceReadable false → grey with only security-data-unavailable, even with expired records', () => {
+    const r = evaluateSecurity(
+      inputs({ anySourceReadable: false, exceptions: [record('EXC-X', 'expired')] }),
+      emptyCounts(null),
+      null,
+      defaults(),
+    );
+    expect(r.status).toBe('grey');
+    expect(codes(r)).toEqual(['security-data-unavailable']);
+  });
+
+  it('sla-age-unknown {count:1} when slaUnknown 1', () => {
+    const r = evaluateSecurity(
+      inputs({ remediation: remediationSummary({ slaUnknown: 1 }) }),
+      counts({}),
+      0,
+      defaults(),
+    );
+    expect(r.reasons).toContainEqual({
+      code: 'sla-age-unknown',
+      level: 'info',
+      params: { count: 1 },
+    });
+  });
+
+  it('risk reasons sit before coverage-incomplete', () => {
+    const r = evaluateSecurity(
+      inputs({
+        coverage: coverage({ status: 'amber', percentage: 75 }),
+        remediation: overdue({ high: 1 }),
+      }),
+      counts({ high: 1 }),
+      0,
+      defaults(),
+    );
+    expect(codes(r).indexOf('sla-overdue')).toBeLessThan(codes(r).indexOf('coverage-incomplete'));
   });
 });
 

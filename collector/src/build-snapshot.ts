@@ -181,6 +181,16 @@ export function buildProjectSnapshot(
       countsComplete,
       secretSourceReadable,
       detailsWithheld,
+      // Wired to the exceptions and SLA engines in the collection step.
+      remediation: {
+        enabled: false,
+        slaDays: { ...policies.remediation.days },
+        overdue: { critical: null, high: null, medium: null, low: null, secret: null },
+        oldestOverdueSince: null,
+        slaUnknown: 0,
+      },
+      exceptions: [],
+      acceptedCount: 0,
     },
     openCounts,
     openSecretAlerts,

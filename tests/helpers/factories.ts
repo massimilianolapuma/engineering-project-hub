@@ -6,6 +6,7 @@ import {
   type HistoryProjectPoint,
   type Policies,
   type ProjectSummary,
+  type RemediationSummary,
   type WorkflowStatus,
 } from '@model/index';
 import { parse } from 'yaml';
@@ -25,6 +26,18 @@ export function policies(overrides: (p: Policies) => void = () => {}): Policies 
   const p = loadPolicies();
   overrides(p);
   return p;
+}
+
+/** A measured, empty remediation summary (SLAs on, nothing overdue). */
+export function remediationSummary(partial: Partial<RemediationSummary> = {}): RemediationSummary {
+  return {
+    enabled: true,
+    slaDays: { critical: 7, high: 30, medium: 90, low: 180, secret: 7 },
+    overdue: { critical: 0, high: 0, medium: 0, low: 0, secret: 0 },
+    oldestOverdueSince: null,
+    slaUnknown: 0,
+    ...partial,
+  };
 }
 
 export function workflow(partial: Partial<WorkflowStatus> = {}): WorkflowStatus {
