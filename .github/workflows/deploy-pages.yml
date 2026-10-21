@@ -6,7 +6,9 @@
 #           GitHub Pages. Three jobs with separate trust boundaries (ADR 0003):
 #
 #   collect — ./.github/workflows/collect-data.yml (the ONLY job with secrets)
-#             → artifact "snapshots" (sanitized public/data)
+#             → artifact "snapshots" (sanitized public/data) and, for the github
+#               source, "hub-history" (restored from and uploaded for this
+#               repository only; needs actions: read on the called workflow)
 #   build   — NO secrets, NO write permissions: npm ci → download snapshots
 #             into public/data → configure-pages (base path) → npm run
 #             build:site → SBOM → scan:output → artifact "site" (dist/)
@@ -57,6 +59,7 @@ jobs:
     name: Collect
     permissions:
       contents: read
+      actions: read # collect-data restores this repository's own hub-history artifact
     uses: ./.github/workflows/collect-data.yml
     secrets:
       GH_APP_ID: ${{ secrets.GH_APP_ID }}

@@ -21,7 +21,14 @@
 #   3. The workflow GITHUB_TOKEN (contents: read on this repository only)
 #   Secrets are passed via env ONLY to the "Collect" step and never printed.
 #
-# Permissions: contents: read (the only GITHUB_TOKEN scope in this workflow).
+# History: the previous history.json is restored from this repository's OWN newest
+#   "hub-history" artifact (default branch, same repository, deploy/collect workflow
+#   only; scripts/restore-history.ts) and the new one is uploaded again (90 days).
+#   Only the workflow GITHUB_TOKEN is used for this (actions: read). A failed restore
+#   starts a fresh history; it never fails the collection.
+#
+# Permissions: contents: read; actions: read (list/download this repository's own
+#   "hub-history" artifact — GET only, never any write).
 #
 # Local test (nektos/act with podman as the container engine):
 #   act workflow_dispatch --workflows .github/workflows/collect-data.yml \
@@ -84,6 +91,11 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
+      actions: read # restores this repository's own hub-history artifact
+    # Serialises collections so the history chain is never forked by two parallel runs.
+    concurrency:
+      group: hub-collect
+      cancel-in-progress: false
     outputs:
       artifact-name: ${{ steps.artifact.outputs.name }}
       data-source: ${{ steps.source.outputs.data-source }}
@@ -130,6 +142,17 @@ jobs:
         run: npm run validate:config
 
       # ------------------------------------------------------------------
+      # Restores the previous history from this repository's own newest "hub-history"
+      # artifact (default branch, same repository, deploy/collect workflow only).
+      # Uses only the workflow GITHUB_TOKEN (actions: read); collector secrets are not passed.
+      - name: Restore previous history
+        id: history
+        if: ${{ steps.source.outputs.data-source == 'github' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: npm run --silent history:restore -- --out .history-restore
+
+      # ------------------------------------------------------------------
       # The only step with credentials. Values are never echoed or printed.
       - name: Collect
         env:
@@ -140,6 +163,8 @@ jobs:
           GH_APP_INSTALLATION_ID: ${{ secrets.GH_APP_INSTALLATION_ID }}
           GH_READ_TOKEN: ${{ secrets.GH_READ_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
+          HISTORY_FROM: .history-restore
+          HISTORY_RESTORE_STATE: ${{ steps.history.outputs.state }}
         run: npm run collect
 
       - name: Validate snapshots
@@ -168,3 +193,12 @@ jobs:
           path: public/data
           retention-days: 14
           if-no-files-found: error
+
+      - name: Upload history artifact
+        if: ${{ steps.source.outputs.data-source == 'github' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: hub-history
+          path: public/data/history.json
+          retention-days: 90
+          if-no-files-found: warn
