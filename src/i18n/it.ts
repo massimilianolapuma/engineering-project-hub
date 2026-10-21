@@ -1044,7 +1044,7 @@ export const it: Dict = {
     trendsRetention:
       'Lo storico conserva fino a {maxEntries} raccolte e al massimo {maxAgeDays} giorni (dalle policy dello storico).',
     trendsAlerts:
-      'Cosa è cambiato confronta solo le fonti di alert leggibili in entrambe le raccolte: una fonte illeggibile non risulta mai risolta e una appena leggibile non risulta mai nuova.',
+      'Cosa è cambiato confronta solo le fonti di alert monitorate e leggibili in entrambe le raccolte: una fonte illeggibile o rimossa non risulta mai risolta e una appena leggibile o appena aggiunta non risulta mai nuova.',
     trendsCsv:
       'I file CSV sono UTF-8 con BOM, separati da virgole. "unknown" significa non leggibile e non è mai 0; "n/a" significa non applicabile; un apostrofo iniziale protegge il testo che inizia con =, +, - o @.',
     docsTitle: 'Più dettagli',
@@ -1077,7 +1077,7 @@ export const it: Dict = {
       'Nessun dato sui cambiamenti in questo snapshot (raccolto prima della v0.7.0 o con lo storico disattivato).',
     invalid: 'I dati sui cambiamenti non sono leggibili.',
     findingsPartial:
-      'Alcune fonti di alert non erano leggibili in una delle due raccolte; i loro alert non vengono confrontati.',
+      'Alcuni alert non sono stati confrontati: la loro fonte non era leggibile, o non era monitorata, in una delle due raccolte. Non vengono mai contati come nuovi o risolti.',
     basis: {
       none: 'Questa è la prima raccolta con storico. I cambiamenti compariranno dopo la prossima raccolta.',
       'restore-failed':

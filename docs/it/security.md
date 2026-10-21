@@ -39,7 +39,7 @@
   allowlist). GitHub Code Quality: conteggi dei finding aperti per categoria e per severità.
   Nient'altro.
 
-- Storico e cambiamenti: `history.json` conserva, per progetto e raccolta, stati, punteggio, conteggi aperti e conteggi di errori, più gli alert critici/alti aperti dell'ultima esecuzione (id, severità, componente, repository, link) e le versioni. `changes.json` elenca gli alert nuovi (con lo stesso titolo pubblicato dallo snapshot), gli alert risolti (solo id e link), i cambi di stato, le versioni cambiate e le chiavi degli errori. Entrambi sono strict, sanitizzati e controllati dal gate come lo snapshot.
+- Storico e cambiamenti: `history.json` conserva, per progetto e raccolta, stati, punteggio, conteggi aperti e conteggi di errori, più gli alert critici/alti aperti dell'ultima esecuzione (id, severità, componente, repository, link), i repository monitorati e le versioni. `changes.json` elenca gli alert nuovi (con lo stesso titolo pubblicato dallo snapshot), gli alert risolti (solo id e link), i cambi di stato, le versioni cambiate e le chiavi degli errori. Entrambi sono strict, sanitizzati e controllati dal gate come lo snapshot.
 - Esportazioni CSV (`exports/*.csv`): stati, conteggi, versioni e id costruiti dagli stessi dati validati. Nessun titolo, id di regola, path o link.
 
 \* Omessi per i repository non pubblici quando `audience: public`.

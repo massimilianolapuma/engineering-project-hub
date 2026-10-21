@@ -10,6 +10,7 @@ import {
   dimensionsOf,
   errorKey,
   FINDING_PAIR_SOURCE,
+  monitoredRepositories,
   openCriticalHigh,
   pairKey,
   unreadablePairs,
@@ -154,6 +155,11 @@ function diffAlerts(
 ): { new: number; resolved: number } {
   const nowUnreadable = new Set(unreadablePairs(snapshot.collectionErrors));
   const wasUnreadable = new Set(before.unreadable);
+  // A repository monitored in only one of the two runs (catalog change) is not compared.
+  const nowMonitored = new Set(monitoredRepositories(snapshot));
+  const wasMonitored = new Set(before.repositories);
+  const catalogChanged =
+    nowMonitored.size !== wasMonitored.size || [...nowMonitored].some((r) => !wasMonitored.has(r));
   const current = openCriticalHigh(snapshot);
   const wasIds = new Set(before.findings.map((f) => f.id));
   const nowIds = new Set(current.map((f) => f.id));
@@ -162,6 +168,7 @@ function diffAlerts(
     .filter(
       (f) =>
         !wasIds.has(f.id) &&
+        wasMonitored.has(f.repository) &&
         !wasUnreadable.has(pairKey(f.repository, FINDING_PAIR_SOURCE[f.source])),
     )
     .map((f) => ({
@@ -176,6 +183,7 @@ function diffAlerts(
     .filter(
       (f) =>
         !nowIds.has(f.id) &&
+        nowMonitored.has(f.repository) &&
         !nowUnreadable.has(pairKey(f.repository, FINDING_PAIR_SOURCE[f.source])),
     )
     .map((f) => ({
@@ -191,7 +199,7 @@ function diffAlerts(
   entry.resolvedFindings = resolved.slice(0, LIST_CAP);
   entry.findingsTruncated =
     Math.max(0, fresh.length - LIST_CAP) + Math.max(0, resolved.length - LIST_CAP);
-  entry.findingsPartial = nowUnreadable.size > 0 || wasUnreadable.size > 0;
+  entry.findingsPartial = nowUnreadable.size > 0 || wasUnreadable.size > 0 || catalogChanged;
   return { new: fresh.length, resolved: resolved.length };
 }
 

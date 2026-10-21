@@ -48,6 +48,7 @@ function validHistory(): HistoryFile {
       projects: [
         {
           id: 'project-alpha',
+          repositories: ['example-org/project-alpha-backend'],
           findings: [
             {
               id: 'example-org/project-alpha-backend#code-scanning#9',

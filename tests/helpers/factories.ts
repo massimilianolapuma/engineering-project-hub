@@ -213,6 +213,7 @@ export function historyFile(
       collectedAt: last.collectedAt,
       projects: last.projects.map((p) => ({
         id: p.id,
+        repositories: [],
         findings: [],
         unreadable: [],
         versions: [],

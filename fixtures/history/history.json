@@ -1148,6 +1148,7 @@
     "projects": [
       {
         "id": "platform",
+        "repositories": ["example-org/platform-mono"],
         "findings": [
           {
             "id": "example-org/platform-mono#code-scanning#4",
@@ -1185,6 +1186,13 @@
       },
       {
         "id": "project-alpha",
+        "repositories": [
+          "example-org/project-alpha-backend",
+          "example-org/project-alpha-coordinator",
+          "example-org/project-alpha-frontend",
+          "example-org/project-alpha-helm",
+          "example-org/project-alpha-worker"
+        ],
         "findings": [
           {
             "id": "example-org/project-alpha-backend#code-scanning#9",
@@ -1235,6 +1243,12 @@
       },
       {
         "id": "project-beta",
+        "repositories": [
+          "example-org/project-beta-api",
+          "example-org/project-beta-coordinator",
+          "example-org/project-beta-helm",
+          "example-org/project-beta-web"
+        ],
         "findings": [
           {
             "id": "example-org/project-beta-web#dependabot#11",
@@ -1278,6 +1292,10 @@
       },
       {
         "id": "project-gamma",
+        "repositories": [
+          "example-org/project-gamma-coordinator",
+          "example-org/project-gamma-service"
+        ],
         "findings": [],
         "unreadable": [
           "example-org/project-gamma-coordinator|code-scanning",

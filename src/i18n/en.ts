@@ -1034,7 +1034,7 @@ export const en = {
     trendsRetention:
       'History keeps up to {maxEntries} collections and at most {maxAgeDays} days (from the history policies).',
     trendsAlerts:
-      'What changed compares only alert sources that were readable in both collections, so an unreadable source never shows as resolved and a newly readable one never shows as new.',
+      'What changed compares only alert sources that were monitored and readable in both collections, so an unreadable or removed source never shows as resolved and a newly readable or newly added one never shows as new.',
     trendsCsv:
       'CSV files are UTF-8 with a BOM, comma-separated. "unknown" means not readable and is never 0; "n/a" means not applicable; a leading apostrophe protects text that starts with =, +, - or @.',
     docsTitle: 'More detail',
@@ -1067,7 +1067,7 @@ export const en = {
       'No change data in this snapshot (collected before v0.7.0 or with history turned off).',
     invalid: 'The change data could not be read.',
     findingsPartial:
-      'Some alert sources could not be read in one of the two collections; their alerts are not compared.',
+      'Some alerts were not compared: their source was unreadable, or not monitored, in one of the two collections. They are never counted as new or resolved.',
     basis: {
       none: 'This is the first collection with history. Changes appear after the next collection.',
       'restore-failed':

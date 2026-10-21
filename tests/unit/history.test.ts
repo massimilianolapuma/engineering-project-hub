@@ -365,6 +365,8 @@ describe('appendHistory', () => {
 });
 
 describe('computeChanges', () => {
+  /** Repositories alpha monitors in the golden run. */
+  const alphaRepos = goldenProject('project-alpha').securityControls.map((c) => c.repository);
   /** Alpha's current dimensions, as a history point, so a test only overrides what differs. */
   const alphaNow = () => {
     const s = GOLDEN_INDEX.projects.find((p) => p.id === 'project-alpha')!;
@@ -387,7 +389,11 @@ describe('computeChanges', () => {
     state: 'restored' | 'fixture' = 'restored',
   ): PreviousHistory => {
     const file = historyFile([historyEntry(daysAgo(1), { projects: [point] })]);
-    file.baseline.projects[0] = { ...file.baseline.projects[0]!, ...baseline };
+    file.baseline.projects[0] = {
+      ...file.baseline.projects[0]!,
+      repositories: alphaRepos,
+      ...baseline,
+    };
     return { state, file };
   };
   const changesFor = (
@@ -485,6 +491,37 @@ describe('computeChanges', () => {
     );
     expect(alphaOf(c).resolvedFindings).toEqual([]);
     expect(alphaOf(c).findingsPartial).toBe(true);
+  });
+
+  it('a component removed from the catalog: its baseline alerts are not resolved; findingsPartial true', () => {
+    const legacy = {
+      ...dependabot7,
+      id: 'example-org/project-alpha-legacy#dependabot#5',
+      severity: 'critical' as const,
+      componentId: 'legacy',
+      repository: 'example-org/project-alpha-legacy',
+    };
+    const c = changesFor(
+      previousOf(alphaNow(), {
+        findings: [dependabot7, legacy],
+        repositories: [...alphaRepos, 'example-org/project-alpha-legacy'],
+      }),
+    );
+    expect(alphaOf(c).resolvedFindings).toEqual([]);
+    expect(alphaOf(c).findingsPartial).toBe(true);
+    expect(c.totals.resolvedFindings).toBe(0);
+  });
+
+  it('a component added to the catalog: its open alerts are not new; findingsPartial true', () => {
+    const c = changesFor(
+      previousOf(alphaNow(), {
+        findings: [],
+        repositories: alphaRepos.filter((r) => r !== dependabot7.repository),
+      }),
+    );
+    expect(alphaOf(c).newFindings).toEqual([]);
+    expect(alphaOf(c).findingsPartial).toBe(true);
+    expect(c.totals.newFindings).toBe(0);
   });
 
   it('61 new findings → 50 listed, findingsTruncated 11, totals.newFindings 61', () => {

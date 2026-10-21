@@ -61,6 +61,11 @@ export function openCriticalHigh(p: ProjectSnapshot): CriticalOrHigh[] {
   );
 }
 
+/** Repositories whose alerts this run collected (one security-controls row each), sorted. */
+export function monitoredRepositories(p: ProjectSnapshot): string[] {
+  return [...new Set(p.securityControls.map((c) => c.repository))].sort();
+}
+
 /**
  * (repository, source) pairs whose alerts could not be read. A repository error makes all four
  * pairs of that repository unreadable.
@@ -82,6 +87,7 @@ export function buildBaseline(index: PortfolioIndex, projects: ProjectSnapshot[]
     collectedAt: index.generatedAt,
     projects: projects.map((p) => ({
       id: p.project.id,
+      repositories: monitoredRepositories(p).slice(0, BASELINE_LIST_CAP),
       findings: openCriticalHigh(p)
         .slice(0, BASELINE_LIST_CAP)
         .map((f) => ({

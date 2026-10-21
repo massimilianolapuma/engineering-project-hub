@@ -7,6 +7,7 @@ import {
   FindingSourceSchema,
   HealthStatusSchema,
 } from './enums';
+import { RepositoryRefSchema } from './catalog';
 import { httpsUrl, isoDate, nullableCount, shortText } from './primitives';
 import { CollectionErrorSchema } from './snapshot';
 
@@ -92,6 +93,12 @@ export const HistoryBaselineSchema = z
         z
           .object({
             id: projectId,
+            /**
+             * Repositories whose alerts were collected in that run (the project's security
+             * controls). An alert of a repository monitored in only one of the two runs is
+             * never compared: a catalog change is not a new or resolved alert.
+             */
+            repositories: z.array(RepositoryRefSchema).max(500),
             /** Open critical/high alerts, at most 500 per project. */
             findings: z
               .array(

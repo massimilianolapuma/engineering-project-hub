@@ -953,7 +953,7 @@ describe('static site', () => {
         'href="https://github.com/example-org/project-beta-api/security/code-scanning/3"',
       );
       expect(text(beta)).toContain('Details withheld');
-      expect(text(beta)).toContain('Some alert sources could not be read in one of the two');
+      expect(text(beta)).toContain('Some alerts were not compared');
       expect(text(beta)).toContain('Secret scanning');
       expect(text(beta)).toContain('example-org/project-beta-web');
     });
