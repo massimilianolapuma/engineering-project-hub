@@ -893,6 +893,44 @@ describe('static site', () => {
       expect(await page('it/projects/project-alpha')).toContain('I vuoti sono raccolte');
     });
 
+    it('reads "not tracked", never grey, for a dimension missing from an older entry', async () => {
+      const data = join(work, 'untracked');
+      await cp('fixtures/snapshots', data, { recursive: true });
+      const file = join(data, 'history.json');
+      const json = JSON.parse(await readFile(file, 'utf8')) as {
+        entries: { collectedAt: string; projects: { id: string; dimensions: object }[] }[];
+      };
+      const oldest = json.entries[0]!;
+      const point = oldest.projects.find((p) => p.id === 'project-alpha')!;
+      delete (point.dimensions as Record<string, unknown>).quality;
+      await writeFile(file, JSON.stringify(json));
+      const out = join(work, 'dist-untracked');
+      await buildSite(data, out);
+      const day = oldest.collectedAt.slice(0, 10);
+      /** The quality cell of the table row of that day: date, overall, score, six dimensions. */
+      const qualityCell = (html: string) => {
+        const rows = html.match(/<tr data-trend-row[\s\S]*?<\/tr>/g) ?? [];
+        const row = rows.find((r) => r.includes(`>${day}<`)) ?? '';
+        return (row.match(/<td[\s\S]*?<\/td>/g) ?? [])[7] ?? '';
+      };
+      const enCell = qualityCell(
+        await readFile(join(out, 'projects/project-alpha/index.html'), 'utf8'),
+      );
+      expect(enCell).toContain('not tracked');
+      expect(enCell).not.toContain('badge');
+      const itCell = qualityCell(
+        await readFile(join(out, 'it/projects/project-alpha/index.html'), 'utf8'),
+      );
+      expect(itCell).toContain('non rilevato');
+      expect(itCell).not.toContain('badge');
+      // An entry that tracked quality keeps its badge.
+      const html = await readFile(join(out, 'projects/project-alpha/index.html'), 'utf8');
+      const tracked = (html.match(/<tr data-trend-row[\s\S]*?<\/tr>/g) ?? []).find(
+        (r) => !r.includes(`>${day}<`),
+      )!;
+      expect((tracked.match(/<td[\s\S]*?<\/td>/g) ?? [])[7]).toContain('badge');
+    }, 180_000);
+
     it('renders portfolio and project pages without history.json and changes.json', async () => {
       const data = join(work, 'no-history');
       await cp('fixtures/snapshots', data, { recursive: true });

@@ -633,7 +633,7 @@ describe('computeChanges', () => {
     expect(alphaOf(changesFor(previousOf(prev))).statusChanges).toEqual([]);
   });
 
-  it('new critical when the pair was readable before', () => {
+  it('new high alert when its pair was readable before', () => {
     const c = changesFor(previousOf(alphaNow(), { findings: [] }));
     const p = alphaOf(c);
     expect(p.newFindings.map((f) => f.id)).toEqual([dependabot7.id]);
