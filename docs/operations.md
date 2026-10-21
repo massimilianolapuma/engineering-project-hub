@@ -87,18 +87,23 @@ validate:snapshots`.
 
 The Quality dimension reads the artifact `hub-quality-summary` from each monitored
 repository (contract: [Configuration](configuration.md#hub-quality-summary-artifact-each-repository-optional)).
-A minimal job that turns a Cobertura file into `quality-summary.json` and uploads it, only
-on the default branch, with a 30-day retention:
+Add two steps to the **same job that runs the tests and writes `coverage/cobertura.xml`**:
+each job runs on a fresh runner, so a separate job would not see the coverage file. The steps
+turn the Cobertura file into `quality-summary.json` and upload it, only on the default branch,
+with a 30-day retention:
 
 ```yaml
-quality-summary:
-  if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+test:
   runs-on: ubuntu-latest
   permissions:
     contents: read
   steps:
-    # ... run your tests and write coverage/cobertura.xml first ...
+    - uses: actions/checkout@<full-commit-sha>
+    # ... set up your toolchain ...
+    - name: Run tests with coverage
+      run: <your test command> # must write coverage/cobertura.xml
     - name: Write quality-summary.json
+      if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
       run: |
         python3 - <<'PY'
         import json, os, datetime
@@ -120,6 +125,7 @@ quality-summary:
         json.dump(summary, open('quality-summary.json', 'w'))
         PY
     - uses: actions/upload-artifact@<full-commit-sha>
+      if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
       with:
         name: hub-quality-summary
         path: quality-summary.json
@@ -142,6 +148,11 @@ Notes:
 
 `npm run ci:build` runs `collect:mock`, which overwrites `public/data`. A local real-data
 snapshot (for example from `collect:github`) must be re-collected after it.
+
+**Upgrading to snapshot 1.4** (Quality dimension): the site reads only `schemaVersion` 1.4.
+An existing 1.3 `public/data` fails validation until it is re-collected (`collect:github`, or
+the next scheduled run). Remember that `npm run ci:build` overwrites `public/data` with mock
+data.
 
 ## Artifact retention
 

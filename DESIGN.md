@@ -283,10 +283,10 @@ The shell is a centred column of at most 1200px with 24px side gutters (16px at 
 
 Every page follows the same order: title, one lead sentence, then the list worst first, then secondary or collapsed sections, then a one-line legend that links to "How to read".
 
-- **Portfolio:** title and lead on the left, status count filters on the right; one inline filter row (search, status, business unit, sort) with lifecycle and severity under "More filters"; then a single list in a 10px-radius surface: status dot, project, score with confidence, five dimension bars (short labels once in the header), main reason.
-- **Project:** breadcrumb; header with name, status pill, score and confidence; a "Why it is critical / needs attention" box with reasons as sentences, red first; six dimension cards; environments as a DEV → UAT → PROD path; a components table; collapsible Workflows, Security, Coverage and Collection errors.
+- **Portfolio:** title and lead on the left, status count filters on the right; one inline filter row (search, status, business unit, sort) with lifecycle and severity under "More filters"; then a single list in a 10px-radius surface: status dot, project, score with confidence, six dimension bars (short labels once in the header), main reason.
+- **Project:** breadcrumb; header with name, status pill, score and confidence; a "Why it is critical / needs attention" box with reasons as sentences, red first; six dimension cards; environments as a DEV → UAT → PROD path; a components table; collapsible Workflows, Security, Controls coverage, Code quality and Collection errors. The Code quality section opens with a summary tile (aggregated line coverage and the coverage meter), then the open Code Quality findings counts, the blind spots (components without a visible report) and a per-component table.
 - **Security, Versions, Workflows:** one card per project, worst first, showing only what needs attention; healthy projects collapse into one line.
-- **Data quality:** repository counts, then what could not be read grouped by cause with how to fix it.
+- **Data quality:** repository counts, then what could not be read grouped by cause with how to fix it, and the test coverage reports that are not visible.
 - **Catalog:** side list of projects and discovered repositories, a form in bordered groups, and a proposal box with the one primary action.
 
 Spacing follows a 4px base: 4 / 8 / 12 / 16 / 24 / 32 / 40 / 48. Cells are at least 8px × 10px of padding; list rows use 14px 16px.
@@ -325,7 +325,7 @@ A 10px circle: filled vermilion, ochre or emerald, or a hollow 2px `--unknown` r
 
 Six 32px bars with a 4px gap and 4px corners, bottom-aligned in a 12px box, in a fixed order: Delivery, Versions, Security, Controls, Governance, Quality (Quality is the sixth; Controls is the former Coverage). Height repeats the state so colour is never the only carrier (WCAG 1.4.1): the worse, the taller: critical 12px (full), attention 8px (two thirds), healthy 4px (one third). Unknown keeps the full 12px as a dashed outline with no fill. In forced-colours mode the bars stay solid `CanvasText` so their heights still read. Each bar has an accessible name ("Security risk: Critical"); the short labels appear once in the list header as abbreviations with their full names. "How to read" explains the encoding.
 
-### Coverage meter
+### Test coverage meter
 
 The pattern for a percentage measured against a threshold (test coverage): an 8px track, 180px wide (full width in the summary tile), with a fill in the status colour and a 2px tick at the threshold. It is decorative (`aria-hidden`): the number always sits right next to it, so colour and length are never the only carriers. Unknown is a dashed track with no fill and no tick, never an empty bar that would read as 0%, and the row shows the "?" symbol; not applicable shows "–". A stale report keeps its fill and adds the ⧖ symbol with its age.
 

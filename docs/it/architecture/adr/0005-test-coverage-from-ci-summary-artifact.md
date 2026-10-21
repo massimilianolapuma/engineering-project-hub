@@ -1,6 +1,6 @@
 # ADR 0005: Copertura dei test da un artifact di riepilogo della CI, non da Sonar o dalla UI di GitHub
 
-- **Stato:** Accepted
+- **Stato:** Accettata
 - **Data:** 2026-10-21
 - **Versione inglese:** [docs/architecture/adr/0005-test-coverage-from-ci-summary-artifact.md](../../../architecture/adr/0005-test-coverage-from-ci-summary-artifact.md)
 

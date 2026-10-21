@@ -92,18 +92,23 @@ validate:snapshots`.
 
 La dimensione Qualità legge l'artifact `hub-quality-summary` di ogni repository monitorato
 (contratto: [Configurazione](configuration.md#artifact-hub-quality-summary-ogni-repository-opzionale)).
-Un job minimo che trasforma un file Cobertura in `quality-summary.json` e lo carica, solo sul
+Aggiungi due step allo **stesso job che esegue i test e scrive `coverage/cobertura.xml`**:
+ogni job gira su un runner nuovo, quindi un job separato non vedrebbe il file di copertura.
+Gli step trasformano il file Cobertura in `quality-summary.json` e lo caricano, solo sul
 branch predefinito, con una conservazione di 30 giorni:
 
 ```yaml
-quality-summary:
-  if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+test:
   runs-on: ubuntu-latest
   permissions:
     contents: read
   steps:
-    # ... esegui i test e scrivi prima coverage/cobertura.xml ...
+    - uses: actions/checkout@<sha-completo-del-commit>
+    # ... configura il tuo toolchain ...
+    - name: Esegui i test con la copertura
+      run: <il tuo comando di test> # deve scrivere coverage/cobertura.xml
     - name: Scrivi quality-summary.json
+      if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
       run: |
         python3 - <<'PY'
         import json, os, datetime
@@ -125,6 +130,7 @@ quality-summary:
         json.dump(summary, open('quality-summary.json', 'w'))
         PY
     - uses: actions/upload-artifact@<sha-completo-del-commit>
+      if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
       with:
         name: hub-quality-summary
         path: quality-summary.json
@@ -148,6 +154,11 @@ Note:
 
 `npm run ci:build` esegue `collect:mock`, che sovrascrive `public/data`. Uno snapshot locale
 con dati reali (per esempio da `collect:github`) va raccolto di nuovo dopo di esso.
+
+**Aggiornamento allo snapshot 1.4** (dimensione Qualità): il sito legge solo
+`schemaVersion` 1.4. Un `public/data` 1.3 esistente non supera la validazione finché non viene
+raccolto di nuovo (`collect:github`, o la prossima esecuzione pianificata). Ricorda che
+`npm run ci:build` sovrascrive `public/data` con dati mock.
 
 ## Conservazione degli artifact
 
