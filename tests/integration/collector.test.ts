@@ -852,6 +852,10 @@ describe('sanitisation end to end', () => {
         },
       ]),
     getLatestCodeScanningAnalysis: async () => ok({ createdAt: GOLDEN_NOW, toolName: poison }),
+    getLatestScorecardAnalysis: async () => ok(null),
+    getBranchRules: async () => ok([]),
+    getClassicBranchProtection: async () => ok(null),
+    getCustomPropertyValues: async () => ok([]),
     listDependabotAlerts: async () =>
       ok([
         {

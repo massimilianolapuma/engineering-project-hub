@@ -4,7 +4,10 @@ import { resolveRelativeTime, type Clock } from '../../util/clock';
 import {
   fail,
   ok,
+  type BranchRuleDTO,
+  type ClassicProtectionDTO,
   type CodeQualityFindingDTO,
+  type CustomPropertyDTO,
   type CodeScanningAlertDTO,
   type CodeScanningAnalysisDTO,
   type CommitRefDTO,
@@ -35,6 +38,13 @@ import {
 export interface RepoFixture {
   repository: RepositoryDTO | ErrorFixture;
   head?: Omit<CommitRefDTO, 'htmlUrl'> | ErrorFixture;
+  /** Rules applying to the default branch; absent → no rules. */
+  branchRules?: BranchRuleDTO[] | ErrorFixture;
+  /** Absent → no classic protection (ok(null)). */
+  classicProtection?: ClassicProtectionDTO | null | ErrorFixture;
+  /** Absent → no Scorecard analysis (ok(null)). */
+  scorecardAnalysis?: CodeScanningAnalysisDTO | null | ErrorFixture;
+  customProperties?: CustomPropertyDTO[] | ErrorFixture;
   latestRelease?: ReleaseDTO | ErrorFixture;
   latestTag?: TagDTO | ErrorFixture;
   /** Tags newest first; defaults to [latestTag] when absent. */
@@ -145,8 +155,24 @@ export class MockProvider implements SourceProvider {
     return ok(out);
   }
 
-  listDirectory(repo: string, path: string) {
+  listDirectory(repo: string, path: string, _ref?: string) {
     return this.pick<DirectoryEntryDTO[]>(repo, (f) => f.directories?.[path]);
+  }
+
+  getBranchRules(repo: string, _branch: string) {
+    return this.pick<BranchRuleDTO[]>(repo, (f) => f.branchRules, ok([]));
+  }
+
+  getClassicBranchProtection(repo: string, _branch: string) {
+    return this.pick<ClassicProtectionDTO | null>(repo, (f) => f.classicProtection, ok(null));
+  }
+
+  getLatestScorecardAnalysis(repo: string) {
+    return this.pick<CodeScanningAnalysisDTO | null>(repo, (f) => f.scorecardAnalysis, ok(null));
+  }
+
+  getCustomPropertyValues(repo: string) {
+    return this.pick<CustomPropertyDTO[]>(repo, (f) => f.customProperties, ok([]));
   }
 
   listWorkflows(repo: string) {

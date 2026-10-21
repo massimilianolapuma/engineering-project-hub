@@ -7,7 +7,10 @@ import type { ResolvedAuth } from '../auth';
 import {
   fail,
   ok,
+  type BranchRuleDTO,
+  type ClassicProtectionDTO,
   type CodeQualityFindingDTO,
+  type CustomPropertyDTO,
   type CodeScanningAlertDTO,
   type CodeScanningAnalysisDTO,
   type CommitRefDTO,
@@ -26,6 +29,7 @@ import {
   type SubmoduleRefDTO,
   type TagDTO,
   type WorkflowRunDTO,
+  WORKFLOW_FILE,
 } from '../types';
 import { readZipEntry, ZipError } from '../../util/zip';
 import { classifyGitHubError } from './errors';
@@ -191,9 +195,17 @@ export class GitHubProvider implements SourceProvider {
     });
   }
 
-  listDirectory(repo: string, path: string): Promise<ProviderResult<DirectoryEntryDTO[]>> {
+  listDirectory(
+    repo: string,
+    path: string,
+    ref?: string,
+  ): Promise<ProviderResult<DirectoryEntryDTO[]>> {
     return guard(async () => {
-      const { data } = await this.client.rest.repos.getContent({ ...split(repo), path });
+      const { data } = await this.client.rest.repos.getContent({
+        ...split(repo),
+        path,
+        ...(ref ? { ref } : {}),
+      });
       if (!Array.isArray(data)) throw new InvalidData('not a directory');
       return data.map((e) => ({ name: e.name, type: e.type as DirectoryEntryDTO['type'] }));
     });
@@ -218,7 +230,82 @@ export class GitHubProvider implements SourceProvider {
         sha: data.commit.sha,
         htmlUrl: data.commit.html_url ?? null,
         committedAt: data.commit.commit.committer?.date ?? null,
+        protected: data.protected ?? null,
       };
+    });
+  }
+
+  getBranchRules(repo: string, branch: string): Promise<ProviderResult<BranchRuleDTO[]>> {
+    type Rule = { type: string; parameters?: { required_approving_review_count?: number } | null };
+    return guard(async () => {
+      const { data } = await this.client.request(
+        'GET /repos/{owner}/{repo}/rules/branches/{branch}',
+        {
+          ...split(repo),
+          branch,
+          per_page: 100,
+        },
+      );
+      return (data as unknown as Rule[]).map((r) => ({
+        type: r.type,
+        requiredApprovals:
+          r.type === 'pull_request'
+            ? (r.parameters?.required_approving_review_count ?? null)
+            : null,
+      }));
+    });
+  }
+
+  getClassicBranchProtection(
+    repo: string,
+    branch: string,
+  ): Promise<ProviderResult<ClassicProtectionDTO | null>> {
+    return guard(
+      async () => {
+        const { data } = await this.client.rest.repos.getBranchProtection({
+          ...split(repo),
+          branch,
+        });
+        return {
+          pullRequestReviews: !!data.required_pull_request_reviews,
+          requiredApprovals:
+            data.required_pull_request_reviews?.required_approving_review_count ?? null,
+          statusChecks: !!data.required_status_checks,
+          forcePushBlocked: data.allow_force_pushes?.enabled === false,
+          deletionBlocked: data.allow_deletions?.enabled === false,
+        };
+      },
+      () => ok(null),
+    );
+  }
+
+  getLatestScorecardAnalysis(
+    repo: string,
+  ): Promise<ProviderResult<CodeScanningAnalysisDTO | null>> {
+    return guard(
+      async () => {
+        const { data } = await this.client.rest.codeScanning.listRecentAnalyses({
+          ...split(repo),
+          tool_name: 'Scorecard',
+          per_page: 1,
+        });
+        const a = data[0];
+        return a ? { createdAt: a.created_at, toolName: a.tool.name ?? null } : null;
+      },
+      () => ok(null),
+    );
+  }
+
+  getCustomPropertyValues(repo: string): Promise<ProviderResult<CustomPropertyDTO[]>> {
+    type Value = { property_name: string; value: string | string[] | null };
+    return guard(async () => {
+      const { data } = await this.client.request('GET /repos/{owner}/{repo}/properties/values', {
+        ...split(repo),
+      });
+      return (data as unknown as Value[]).map((v) => ({
+        name: v.property_name,
+        value: v.value ?? null,
+      }));
     });
   }
 
@@ -268,6 +355,9 @@ export class GitHubProvider implements SourceProvider {
 
   getFile(repo: string, path: string, ref?: string): Promise<ProviderResult<FileDTO>> {
     return guard(async () => {
+      // Defence in depth: only a plain workflow file name below .github/workflows/ is readable.
+      if (path.startsWith('.github/workflows/') && !WORKFLOW_FILE.test(path.slice(18)))
+        throw new InvalidData('workflow path not allowed');
       const { data } = await this.client.rest.repos.getContent({
         ...split(repo),
         path,

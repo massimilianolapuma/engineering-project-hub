@@ -1,3 +1,6 @@
+import { mkdtemp, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { classifyGitHubError } from '../../collector/src/providers/github/errors';
 import {
@@ -549,5 +552,256 @@ describe('GitHubProvider quality calls', () => {
     expect((p as unknown as Record<string, unknown>).getCodeQualitySetup).toBeUndefined();
     const mock = new MockProvider('fixtures/github', () => new Date(0));
     expect((mock as unknown as Record<string, unknown>).getCodeQualitySetup).toBeUndefined();
+  });
+});
+
+describe('GitHubProvider repository controls calls', () => {
+  it('getBranchRules requests per_page 100 and maps only type and requiredApprovals', async () => {
+    const seen: string[] = [];
+    const p = provider(
+      {
+        '/repos/o/a/rules/branches/main': {
+          status: 200,
+          body: [
+            {
+              type: 'pull_request',
+              parameters: {
+                required_approving_review_count: 2,
+                dismiss_stale_reviews_on_push: true,
+              },
+              ruleset_id: 7,
+            },
+            { type: 'non_fast_forward' },
+          ],
+        },
+      },
+      seen,
+    );
+    const r = await p.getBranchRules('o/a', 'main');
+    expect(r).toEqual({
+      ok: true,
+      data: [
+        { type: 'pull_request', requiredApprovals: 2 },
+        { type: 'non_fast_forward', requiredApprovals: null },
+      ],
+    });
+    if (r.ok)
+      for (const rule of r.data) expect(Object.keys(rule)).toEqual(['type', 'requiredApprovals']);
+    expect(seen[0]).toContain('per_page=100');
+  });
+
+  it('getBranchRules encodes a branch with a slash', async () => {
+    const seen: string[] = [];
+    const p = provider(
+      { '/repos/o/a/rules/branches/release/1.x': { status: 200, body: [] } },
+      seen,
+    );
+    expect(await p.getBranchRules('o/a', 'release/1.x')).toEqual({ ok: true, data: [] });
+    expect(seen[0]).toContain('/rules/branches/release%2F1.x');
+  });
+
+  it('getBranchRules 403 → not-authorised; 404 → not-found', async () => {
+    const p = provider({
+      '/repos/o/a/rules/branches/main': {
+        status: 403,
+        body: { message: 'Resource not accessible by integration' },
+      },
+    });
+    expect(await p.getBranchRules('o/a', 'main')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-authorised' },
+    });
+    expect(await p.getBranchRules('o/b', 'main')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-found' },
+    });
+  });
+
+  it('getBranchHead maps protected true/false and missing → null', async () => {
+    const branch = (extra: object) => ({
+      status: 200,
+      body: {
+        name: 'main',
+        commit: { sha: 'a'.repeat(40), html_url: 'x', commit: { committer: { date: 'd' } } },
+        ...extra,
+      },
+    });
+    const p = provider({
+      '/repos/o/t/branches/main': branch({ protected: true }),
+      '/repos/o/f/branches/main': branch({ protected: false }),
+      '/repos/o/m/branches/main': branch({}),
+    });
+    const prot = async (r: string) => {
+      const x = await p.getBranchHead(r, 'main');
+      return x.ok ? x.data.protected : 'error';
+    };
+    expect(await prot('o/t')).toBe(true);
+    expect(await prot('o/f')).toBe(false);
+    expect(await prot('o/m')).toBeNull();
+  });
+
+  it('getClassicBranchProtection 404 → ok(null); maps allow_force_pushes.enabled false → forcePushBlocked true', async () => {
+    const p = provider({
+      '/repos/o/a/branches/main/protection': {
+        status: 200,
+        body: {
+          required_pull_request_reviews: { required_approving_review_count: 1, secret: 'x' },
+          allow_force_pushes: { enabled: false },
+          allow_deletions: { enabled: true },
+        },
+      },
+    });
+    expect(await p.getClassicBranchProtection('o/a', 'main')).toEqual({
+      ok: true,
+      data: {
+        pullRequestReviews: true,
+        requiredApprovals: 1,
+        statusChecks: false,
+        forcePushBlocked: true,
+        deletionBlocked: false,
+      },
+    });
+    expect(await p.getClassicBranchProtection('o/none', 'main')).toEqual({ ok: true, data: null });
+  });
+
+  it('getLatestScorecardAnalysis sends tool_name=Scorecard and per_page=1; [] → ok(null)', async () => {
+    const seen: string[] = [];
+    const p = provider(
+      {
+        '/repos/o/a/code-scanning/analyses': { status: 200, body: [] },
+        '/repos/o/b/code-scanning/analyses': {
+          status: 200,
+          body: [{ created_at: '2026-01-13T00:00:00Z', tool: { name: 'Scorecard' } }],
+        },
+      },
+      seen,
+    );
+    expect(await p.getLatestScorecardAnalysis('o/a')).toEqual({ ok: true, data: null });
+    expect(seen[0]).toContain('tool_name=Scorecard');
+    expect(seen[0]).toContain('per_page=1');
+    expect(await p.getLatestScorecardAnalysis('o/b')).toEqual({
+      ok: true,
+      data: { createdAt: '2026-01-13T00:00:00Z', toolName: 'Scorecard' },
+    });
+    expect(await p.getLatestScorecardAnalysis('o/missing')).toEqual({ ok: true, data: null });
+  });
+
+  it('getCustomPropertyValues maps property_name/value (string, array, null)', async () => {
+    const p = provider({
+      '/repos/o/a/properties/values': {
+        status: 200,
+        body: [
+          { property_name: 'a', value: 'x', extra: 1 },
+          { property_name: 'b', value: ['y', 'z'] },
+          { property_name: 'c', value: null },
+        ],
+      },
+    });
+    expect(await p.getCustomPropertyValues('o/a')).toEqual({
+      ok: true,
+      data: [
+        { name: 'a', value: 'x' },
+        { name: 'b', value: ['y', 'z'] },
+        { name: 'c', value: null },
+      ],
+    });
+  });
+
+  it('getFile rejects .github/workflows/../secrets.yml and .github/workflows/a/b.yml without calling the API', async () => {
+    const seen: string[] = [];
+    const p = provider({}, seen);
+    for (const path of ['.github/workflows/../secrets.yml', '.github/workflows/a/b.yml']) {
+      expect(await p.getFile('o/a', path, 'main')).toMatchObject({
+        ok: false,
+        error: { classification: 'invalid-data' },
+      });
+    }
+    expect(seen).toEqual([]);
+  });
+
+  it('getFile reads a workflow file at a ref', async () => {
+    const seen: string[] = [];
+    const p = provider(
+      {
+        '/repos/o/a/contents/.github/workflows/ci.yml': {
+          status: 200,
+          body: { type: 'file', size: 2, content: Buffer.from('ok').toString('base64') },
+        },
+      },
+      seen,
+    );
+    expect(await p.getFile('o/a', '.github/workflows/ci.yml', 'main')).toEqual({
+      ok: true,
+      data: { text: 'ok' },
+    });
+    expect(seen[0]).toContain('ref=main');
+  });
+
+  it('listDirectory forwards ref', async () => {
+    const seen: string[] = [];
+    const p = provider(
+      {
+        '/repos/o/a/contents/.github/workflows': {
+          status: 200,
+          body: [{ name: 'ci.yml', type: 'file' }],
+        },
+      },
+      seen,
+    );
+    expect(await p.listDirectory('o/a', '.github/workflows', 'dev')).toEqual({
+      ok: true,
+      data: [{ name: 'ci.yml', type: 'file' }],
+    });
+    expect(seen[0]).toContain('ref=dev');
+  });
+});
+
+describe('MockProvider repository controls calls', () => {
+  const make = async (fixture: object) => {
+    const dir = await mkdtemp(join(tmpdir(), 'hub-mock-'));
+    await writeFile(join(dir, 'o__a.json'), JSON.stringify(fixture));
+    return new MockProvider(dir, () => new Date('2026-01-15T00:00:00Z'));
+  };
+  const repository = {
+    owner: 'o',
+    name: 'a',
+    fullName: 'o/a',
+    htmlUrl: 'https://github.com/o/a',
+    visibility: 'public',
+    defaultBranch: 'main',
+    archived: false,
+    updatedAt: null,
+    topics: [],
+  };
+
+  it('absent branchRules → ok([]); absent classic/scorecard/properties → ok(null)/ok([])', async () => {
+    const p = await make({ repository });
+    expect(await p.getBranchRules('o/a', 'main')).toEqual({ ok: true, data: [] });
+    expect(await p.getClassicBranchProtection('o/a', 'main')).toEqual({ ok: true, data: null });
+    expect(await p.getLatestScorecardAnalysis('o/a')).toEqual({ ok: true, data: null });
+    expect(await p.getCustomPropertyValues('o/a')).toEqual({ ok: true, data: [] });
+  });
+
+  it('$error 403 fixture → not-authorised; configured values are returned', async () => {
+    const p = await make({
+      repository,
+      branchRules: { $error: { classification: 'not-authorised', httpStatus: 403 } },
+      customProperties: [{ name: 'team', value: 'x' }],
+      scorecardAnalysis: { createdAt: '@now-3d', toolName: 'Scorecard' },
+      directories: { '.github/workflows': [{ name: 'ci.yml', type: 'file' }] },
+    });
+    expect(await p.getBranchRules('o/a', 'main')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-authorised' },
+    });
+    expect(await p.getCustomPropertyValues('o/a')).toEqual({
+      ok: true,
+      data: [{ name: 'team', value: 'x' }],
+    });
+    expect(await p.getLatestScorecardAnalysis('o/a')).toEqual({
+      ok: true,
+      data: { createdAt: '2026-01-12T00:00:00.000Z', toolName: 'Scorecard' },
+    });
+    expect(await p.listDirectory('o/a', '.github/workflows', 'main')).toMatchObject({ ok: true });
   });
 });
