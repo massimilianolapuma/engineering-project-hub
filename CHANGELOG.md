@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-21
+
 ### Added
 
 - Quality dimension (test coverage): each repository's CI publishes a `hub-quality-summary` artifact (`quality-summary.json`, strict contract `1.0`, zip ≤ 64 KB, JSON Schema in `config/schema/quality-summary.schema.json`); the collector reads the newest default-branch, same-repository run with the existing Actions: read permission. Project coverage is line-weighted over readable or stale reports, each repository counted once; a component without a readable report is "not visible", never 0%, and `lines.valid: 0` is not applicable. New `quality` policies (green 80, amber 60, `missingReportIsAmber`), `freshness.qualityReportStaleDays` (14), catalog `testCoverage: required | not-applicable`, score weight 10, and `overall.optionalDimensions` (default `[quality]`: ignored when grey, so projects stay stable until CI publishes reports). Quality card, "Code quality" section and sixth portfolio bar with a threshold meter (EN/IT).
@@ -131,7 +133,8 @@ Not tagged or deployed on its own: its changes ship with 0.5.0.
 - Read-only by design: no write calls, alert dismissals or workflow triggers. Secret scanning alerts are fetched with `hide_secret=true` and only the secret type is kept.
 - The public demo publishes synthetic mock data only.
 
-[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.3.0...v0.5.0
 [0.4.0]: https://github.com/massimilianolapuma/engineering-project-hub/tree/ce13a1d2f4910960ee62a41c3e96b2b7b2b62934
 [0.3.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.2.0...v0.3.0
