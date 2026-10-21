@@ -8,6 +8,7 @@ import {
   VERSIONS_HEADERS,
   findingsRows,
   portfolioRows,
+  unavailableCsv,
   versionsRows,
 } from '../../src/lib/exports';
 import { validateHistory, validatePortfolio, validateProject } from '../../src/lib/validate';
@@ -192,5 +193,18 @@ describe('export rows (golden data)', () => {
     const fe = rows.find((r) => r.project_id === 'project-alpha' && r.item_id === 'frontend')!;
     expect(fe.version).toBe('2.1.0');
     expect(fe.drift).toBe('drift');
+  });
+});
+
+describe('unavailableCsv', () => {
+  it('is never a header-only file that reads as zero projects', () => {
+    const lines = unavailableCsv(PORTFOLIO_HEADERS)
+      .replace('\uFEFF', '')
+      .split('\r\n')
+      .filter(Boolean);
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toBe(PORTFOLIO_HEADERS.join(','));
+    expect(lines[1]!.split(',')).toHaveLength(PORTFOLIO_HEADERS.length);
+    expect(lines[1]!.startsWith('data unavailable,unknown,')).toBe(true);
   });
 });

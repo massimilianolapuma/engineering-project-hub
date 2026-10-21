@@ -68,7 +68,7 @@ const sentence =
               scores={points.map((p) => p.score)}
               width={320}
               height={56}
-              label={`${text.label}. ${sentence ?? ''}`}
+              label={text.label}
               guides
             />
           </div>
@@ -111,7 +111,9 @@ const sentence =
             <tbody>
               {[...points].reverse().map((p) => (
                 <tr data-trend-row>
-                  <th scope="row">{p.at.slice(0, 10)}</th>
+                  <th scope="row">
+                    <time datetime={p.at}>{i18n.date(p.at)}</time>
+                  </th>
                   <td>
                     <StatusBadge
                       status={p.overall}

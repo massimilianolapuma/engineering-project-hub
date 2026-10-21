@@ -873,7 +873,7 @@ describe('static site', () => {
       const block = html.slice(at, html.indexOf('</section>', at));
       expect(block).toMatch(/<details[^>]*>\s*<summary[^>]*>Show history as a table/);
       expect(block.match(/data-trend-row/g)).toHaveLength(13);
-      const gap = block.slice(block.indexOf('2026-01-09'));
+      const gap = block.slice(block.indexOf('datetime="2026-01-09T12:00:00.000Z"'));
       const cells = gap.slice(0, gap.indexOf('</tr>'));
       expect(cells).toContain('unknown-value');
       expect(block).toContain('Gaps are collections where the score could not be measured');
@@ -906,11 +906,10 @@ describe('static site', () => {
       await writeFile(file, JSON.stringify(json));
       const out = join(work, 'dist-untracked');
       await buildSite(data, out);
-      const day = oldest.collectedAt.slice(0, 10);
-      /** The quality cell of the table row of that day: date, overall, score, six dimensions. */
+      /** The quality cell of the oldest table row: date, overall, score, six dimensions. */
       const qualityCell = (html: string) => {
         const rows = html.match(/<tr data-trend-row[\s\S]*?<\/tr>/g) ?? [];
-        const row = rows.find((r) => r.includes(`>${day}<`)) ?? '';
+        const row = rows.at(-1) ?? ''; // newest first, so the last row is the oldest collection
         return (row.match(/<td[\s\S]*?<\/td>/g) ?? [])[7] ?? '';
       };
       const enCell = qualityCell(
@@ -926,7 +925,7 @@ describe('static site', () => {
       // An entry that tracked quality keeps its badge.
       const html = await readFile(join(out, 'projects/project-alpha/index.html'), 'utf8');
       const tracked = (html.match(/<tr data-trend-row[\s\S]*?<\/tr>/g) ?? []).find(
-        (r) => !r.includes(`>${day}<`),
+        (r) => !r.includes(`datetime="${oldest.collectedAt}"`),
       )!;
       expect((tracked.match(/<td[\s\S]*?<\/td>/g) ?? [])[7]).toContain('badge');
     }, 180_000);
@@ -1005,8 +1004,13 @@ describe('static site', () => {
     it('says "No changes." for platform and gamma', async () => {
       const html = await page('changes');
       expect(text(card(html, 'platform'))).toContain('No changes.');
-      expect(text(card(html, 'project-gamma'))).toContain('No changes.');
       expect(text(card(html, 'project-alpha'))).not.toContain('No changes.');
+    });
+
+    it('does not say "No changes." when a project\'s alerts could not be compared', async () => {
+      const gamma = text(card(await page('changes'), 'project-gamma'));
+      expect(gamma).toContain('No changes in what could be compared.');
+      expect(gamma).not.toContain('No changes.');
     });
 
     it('shows the restore-failed sentence and never "No changes"', async () => {

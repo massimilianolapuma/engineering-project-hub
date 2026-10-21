@@ -576,6 +576,8 @@ numeri non hanno mai prefissi. Excel con separatore di elenco `;`: usa Dati, Da 
 - `findings-summary.csv`: `project_id, component_id, repository, open_critical, open_high, open_medium, open_low, open_informational, open_unknown, sources_complete`. Tutti i conteggi sono `unknown` quando nessuna fonte di alert era leggibile; quando solo alcune lo erano, i conteggi sono un limite inferiore e `sources_complete` è `false`.
 - `versions.csv`: `row_type (coordinator|component|environment), project_id, item_id, item_name, repository, version, version_source, declared_version, latest_release, drift, manifest_consistency, pin_status, environment_status`.
 
+Se i dati dello snapshot mancano o non sono validi, ogni CSV contiene l'intestazione e una sola riga che inizia con `data unavailable` e ha `unknown` nelle altre colonne. Non è mai un file con la sola intestazione, che si leggerebbe come "nessun progetto".
+
 ## Variabili d'ambiente
 
 | Variabile                                                   | Dove                             | Scopo                                                                                                                                                                                                     |

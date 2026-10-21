@@ -5,13 +5,20 @@ import type {
   ProjectSummary,
   SeverityCounts,
 } from '@model/index';
-import { NA, type CsvValue } from './csv';
+import { NA, toCsv, type CsvValue } from './csv';
 import type { SiteData } from './data';
 
 /*
  * Rows of the three CSV exports, built from the same validated data the pages use.
  * No titles, rule ids, paths or links: only statuses, counts, versions and ids.
  */
+/**
+ * The CSV published when the snapshot data is missing or invalid. A header-only file would
+ * read as "zero projects"; one row that says so is unmistakable (unknown is never 0).
+ */
+export const unavailableCsv = (headers: readonly string[]): string =>
+  toCsv(headers, [['data unavailable', ...headers.slice(1).map(() => null)]]);
+
 export const PORTFOLIO_HEADERS: readonly string[] = [
   'project_id',
   'project_name',

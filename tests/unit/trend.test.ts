@@ -1,7 +1,15 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { HistoryFileSchema, type HistoryFile } from '@model/index';
-import { STRIP_HEIGHT, seriesFor, sparklineSegments, summarise } from '../../src/lib/trend';
+import { useI18n } from '../../src/i18n';
+import {
+  STRIP_HEIGHT,
+  seriesFor,
+  sparklineSegments,
+  summarise,
+  trendText,
+  type TrendSummary,
+} from '../../src/lib/trend';
 
 const golden: HistoryFile = HistoryFileSchema.parse(
   JSON.parse(readFileSync('fixtures/snapshots/history.json', 'utf8')),
@@ -44,21 +52,27 @@ describe('seriesFor and summarise on the golden history', () => {
     expect(seriesFor(golden, 'nope', 30)).toEqual([]);
   });
   it('summarises first, last, delta, days and count', () => {
-    expect(summary('project-alpha')).toEqual({
+    expect(summary('project-alpha')).toMatchObject({
       first: 64,
       last: 78,
       delta: 14,
       days: 12,
       count: 13,
     });
-    expect(summary('project-beta')).toEqual({
+    expect(summary('project-beta')).toMatchObject({
       first: 62,
       last: 40,
       delta: -22,
       days: 12,
       count: 13,
     });
-    expect(summary('platform')).toEqual({ first: 84, last: 82, delta: -2, days: 9, count: 10 });
+    expect(summary('platform')).toMatchObject({
+      first: 84,
+      last: 82,
+      delta: -2,
+      days: 9,
+      count: 10,
+    });
   });
   it('returns null with fewer than two measured points', () => {
     expect(summary('project-gamma')).toBeNull();
@@ -71,5 +85,36 @@ describe('STRIP_HEIGHT', () => {
     expect(STRIP_HEIGHT.amber).toBeGreaterThan(STRIP_HEIGHT.green);
     expect(STRIP_HEIGHT.grey).toBe(1);
     expect(STRIP_HEIGHT.red).toBe(1);
+  });
+});
+
+describe('trendText plurals and short spans', () => {
+  const base: TrendSummary = { first: 70, last: 71, delta: 1, days: 0, hours: 6, count: 2 };
+  const en = useI18n('en');
+  const itl = useI18n('it');
+  it('uses the singular for one point and hours below one day (EN)', () => {
+    const t = trendText(en, base);
+    expect(t.label).toBe('Score up 1 point over 6 hours (2 collections)');
+    expect(t.short).toBe('+1 · 6 h');
+  });
+  it('uses the plural for several points and days (EN)', () => {
+    const t = trendText(en, { ...base, delta: -3, days: 2, hours: 48 });
+    expect(t.label).toBe('Score down 3 points over 2 days (2 collections)');
+    expect(t.short).toBe('\u22123 · 2 d');
+  });
+  it('reads one day and one hour in the singular', () => {
+    expect(trendText(en, { ...base, days: 1, hours: 24 }).label).toContain('over 1 day (');
+    expect(trendText(en, { ...base, hours: 1 }).label).toContain('over 1 hour (');
+  });
+  it('reads naturally in Italian', () => {
+    expect(trendText(itl, base).label).toBe(
+      'Punteggio in aumento di 1 punto in 6 ore (2 raccolte)',
+    );
+    expect(trendText(itl, { ...base, delta: -2, days: 3, hours: 72 }).label).toBe(
+      'Punteggio in calo di 2 punti in 3 giorni (2 raccolte)',
+    );
+    expect(trendText(itl, { ...base, delta: 0, days: 1, hours: 24 }).label).toBe(
+      'Punteggio invariato in 1 giorno (2 raccolte)',
+    );
   });
 });

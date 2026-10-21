@@ -569,6 +569,8 @@ separator: use Data, From Text/CSV.
 - `findings-summary.csv`: `project_id, component_id, repository, open_critical, open_high, open_medium, open_low, open_informational, open_unknown, sources_complete`. All counts are `unknown` when no alert source was readable; when only some were, the counts are a lower bound and `sources_complete` is `false`.
 - `versions.csv`: `row_type (coordinator|component|environment), project_id, item_id, item_name, repository, version, version_source, declared_version, latest_release, drift, manifest_consistency, pin_status, environment_status`.
 
+If the snapshot data is missing or invalid, each CSV has its header and one row that starts with `data unavailable` and has `unknown` elsewhere. It is never a header-only file, which would read as "no projects".
+
 ## Environment variables
 
 | Variable                                                    | Where                     | Purpose                                                                                                                                                                           |

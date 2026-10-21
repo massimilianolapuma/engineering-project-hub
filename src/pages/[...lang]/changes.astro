@@ -16,6 +16,7 @@ import { healthRank } from '../../lib/format';
 import { pageContext } from '../../lib/page';
 import { href, localeParams } from '../../lib/routes';
 import { severityTone } from '../../lib/tones';
+import { plural } from '../../lib/workflows';
 
 export const getStaticPaths = localeParams;
 const { locale } = Astro.props;
@@ -117,7 +118,7 @@ const date = (iso: string) => i18n.date(iso);
 
       {changes.ok && basis!.state === 'compared' && (
         <>
-          <p class="chg__summary" data-changes-summary aria-label={c.summaryLabel}>
+          <p class="chg__summary" data-changes-summary>
             {summaryParts.map((part) =>
               'kind' in part ? (
                 first[part.kind] && part.value > 0 ? (
@@ -149,7 +150,7 @@ const date = (iso: string) => i18n.date(iso);
                 <p class="muted">{c.added}</p>
               ) : (
                 <>
-                  {!changed(p) && <p>{c.projectNone}</p>}
+                  {!changed(p) && <p>{p.findingsPartial ? c.projectNonePartial : c.projectNone}</p>}
 
                   {(p.statusChanges.length > 0 || scoreMoved(p)) && (
                     <section aria-labelledby={`h-${p.id}-status`}>
@@ -171,7 +172,7 @@ const date = (iso: string) => i18n.date(iso);
                               size="sm"
                             />
                             <span aria-hidden="true"> → </span>
-                            <span class="visually-hidden"> → </span>
+                            <span class="visually-hidden"> {c.to} </span>
                             <StatusBadge
                               status={s.to}
                               i18n={i18n}
@@ -267,7 +268,7 @@ const date = (iso: string) => i18n.date(iso);
                     <section aria-labelledby={`h-${p.id}-errors`}>
                       <h3 id={`h-${p.id}-errors`}>
                         <span id={isFirst('newErrors', p.id) ? 'first-newErrors' : undefined}>
-                          {c.newErrors}
+                          {c.errors}
                         </span>
                       </h3>
                       <ul class="chg-list">
@@ -278,7 +279,12 @@ const date = (iso: string) => i18n.date(iso);
                           </li>
                         ))}
                         {p.resolvedErrors > 0 && (
-                          <li class="muted">{f(c.resolvedErrors, { n: p.resolvedErrors })}</li>
+                          <li class="muted">
+                            {plural(
+                              { one: c.resolvedErrorsOne, other: c.resolvedErrorsOther },
+                              p.resolvedErrors,
+                            )}
+                          </li>
                         )}
                       </ul>
                     </section>
