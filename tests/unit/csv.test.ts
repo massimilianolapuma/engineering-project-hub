@@ -153,6 +153,15 @@ describe('export rows (golden data)', () => {
     expect([beta.controls_passed, beta.controls_failed, beta.controls_unknown]).toEqual([5, 7, 8]);
   });
 
+  it('portfolio control counts are n/a, never 0, when nothing was evaluated', () => {
+    const d = golden();
+    for (const pr of d.index.projects)
+      Object.assign(pr.repositoryControls, { passed: 0, failed: 0, unknown: 0 });
+    const rows = asObjects(PORTFOLIO_HEADERS, portfolioRows(d, history()));
+    for (const r of rows)
+      expect([r.controls_passed, r.controls_failed, r.controls_unknown]).toEqual([NA, NA, NA]);
+  });
+
   it('portfolioRows on the golden data: gamma unknown score, beta previous values', () => {
     const rows = asObjects(PORTFOLIO_HEADERS, portfolioRows(golden(), history()));
     const gamma = rows.find((r) => r.project_id === 'project-gamma')!;

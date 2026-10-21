@@ -843,6 +843,20 @@ describe('computeChanges', () => {
       expect(c.totals.checkChanges).toBe(2);
     });
 
+    it('pass → unknown and pass → not-applicable are not changes', () => {
+      const c = changesFor(
+        previousOf(alphaNow(), {
+          checks: [`${BACKEND}|branch-protected|pass`, `${BACKEND}|pull-request-required|pass`],
+        }),
+        (r) => {
+          setCheck(r, BACKEND, 'branch-protected', 'unknown');
+          setCheck(r, BACKEND, 'pull-request-required', 'not-applicable');
+        },
+      );
+      expect(alphaOf(c).checkChanges).toEqual([]);
+      expect(c.totals.checkChanges).toBe(0);
+    });
+
     it('a baseline without checks is not compared', () => {
       const c = changesFor(previousOf(alphaNow()), (r) =>
         setCheck(r, BACKEND, 'branch-protected', 'fail'),
@@ -867,6 +881,12 @@ describe('computeChanges', () => {
         failed: 7,
         unknown: 8,
       });
+    });
+
+    it('no controls are recorded when nothing was evaluated (checks off), never 0/0/0', () => {
+      const r = runOf('project-beta');
+      Object.assign(r.index.projects[0]!.repositoryControls, { passed: 0, failed: 0, unknown: 0 });
+      expect(entryFromRun(r.index).projects[0]!.controls).toBeUndefined();
     });
 
     it('a 1.0 history file is read (no controls) and checkChanges is [] with no error', async () => {
