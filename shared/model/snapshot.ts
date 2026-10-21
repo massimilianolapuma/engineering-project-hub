@@ -431,6 +431,7 @@ export const ProjectSnapshotSchema = z
     securityHealth: SecuritySummarySchema,
     securityCoverage: CoverageSummarySchema,
     governanceHealth: HealthResultSchema,
+    qualityHealth: QualityHealthSchema,
     overallHealth: HealthResultSchema,
     score: ProjectScoreSchema,
     dataFreshness: z
@@ -442,7 +443,12 @@ export const ProjectSnapshotSchema = z
           z
             .object({
               repository: z.string().max(200),
-              source: z.enum(['workflow-runs', 'code-scanning', 'security-status-file']),
+              source: z.enum([
+                'workflow-runs',
+                'code-scanning',
+                'security-status-file',
+                'quality-report',
+              ]),
               lastUpdatedAt: isoDate.nullable(),
             })
             .strict(),
@@ -474,6 +480,14 @@ export const ProjectSummarySchema = z
       })
       .strict(),
     governance: HealthStatusSchema,
+    quality: z
+      .object({
+        status: HealthStatusSchema,
+        percentage: z.number().min(0).max(100).nullable(),
+        measured: z.number().int().min(0),
+        applicable: z.number().int().min(0),
+      })
+      .strict(),
     freshness: HealthStatusSchema,
     openCounts: SeverityCountsSchema,
     countsComplete: z.boolean(),

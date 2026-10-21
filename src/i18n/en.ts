@@ -88,6 +88,7 @@ export const en = {
       security: 'Sec',
       coverage: 'Cov',
       governance: 'Gov',
+      quality: 'Qual',
     },
   },
   symbols: {
@@ -106,6 +107,7 @@ export const en = {
     security: 'Security risk',
     coverage: 'Security coverage',
     governance: 'Governance',
+    quality: 'Quality',
     freshness: 'Freshness',
   },
   lifecycle: {
@@ -241,6 +243,7 @@ export const en = {
     'security-status-file': 'Security status file',
     'quality-summary': 'Quality summary',
     'code-quality': 'Code Quality',
+    'quality-report': 'Quality report',
   },
   availability: {
     available: 'Available',
@@ -262,6 +265,7 @@ export const en = {
     codeScanning: 'Code scanning alerts',
     dependabot: 'Dependabot alerts',
     secretScanning: 'Secret scanning alerts',
+    codeQuality: 'Code Quality findings',
   },
   portfolio: {
     title: 'Portfolio',
@@ -906,6 +910,7 @@ export const en = {
     colCap: 'Highest score',
     notMeasured: 'Not measured',
     notRequired: 'Not required: left out of the score',
+    optional: 'Optional: counted only when measured, left out when unknown',
     checks: {
       delivery: 'Critical workflows: last runs, failures, missing or stale runs.',
       version: 'Coordinator, components and environments: declared versions, drift and alignment.',
@@ -913,6 +918,7 @@ export const en = {
       coverage: 'Share of the required security controls that are enabled and visible.',
       governance:
         'Repository standards: standard workflows, archived repositories, security status file, default branch.',
+      quality: 'Line coverage of the tests, from the summary each repository’s CI publishes.',
     },
     capsNote:
       'Caps keep the number consistent with the state: a critical project always ranks below one that needs attention or is unknown. A healthy project scores 100.',

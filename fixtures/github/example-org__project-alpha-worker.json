@@ -75,5 +75,21 @@
       "aheadBy": 3,
       "behindBy": 0
     }
-  }
+  },
+  "qualitySummary": {
+    "summary": {
+      "schemaVersion": "1.0",
+      "repository": "example-org/project-alpha-worker",
+      "ref": "refs/heads/main",
+      "commitSha": "d3a5814a6e7959fc09128637bc5469d3e725aea9",
+      "generatedAt": "@now-2d",
+      "tool": "pytest-cov",
+      "format": "cobertura",
+      "lines": { "covered": 1720, "valid": 2000 }
+    },
+    "createdAt": "@now-2d",
+    "runId": 9008
+  },
+  "codeQualityFindings": [],
+  "codeQualitySetup": { "state": "configured" }
 }

@@ -42,6 +42,7 @@ describe('loadSitePolicies', () => {
       security: 30,
       coverage: 15,
       governance: 15,
+      quality: 10,
     });
     expect(policies.score.caps).toEqual({ red: 49, amber: 89, grey: 89 });
     expect(policies.score.minMeasuredRatio).toBe(0.5);

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.4",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-alpha",
@@ -1463,6 +1463,100 @@
       }
     ]
   },
+  "qualityHealth": {
+    "status": "green",
+    "reasons": [
+      {
+        "code": "quality-all-above-threshold",
+        "level": "info",
+        "params": {
+          "components": "coordinator, backend, frontend, worker",
+          "percentage": 84.7
+        }
+      }
+    ],
+    "percentage": 84.7,
+    "linesCovered": 14400,
+    "linesValid": 17000,
+    "measured": 4,
+    "applicable": 4,
+    "notVisible": 0,
+    "stale": 0,
+    "collectedAt": "2026-01-15T12:00:00.000Z",
+    "perComponent": [
+      {
+        "componentId": "coordinator",
+        "state": "readable",
+        "sharedRepository": false,
+        "percentage": 84,
+        "linesCovered": 2100,
+        "linesValid": 2500,
+        "commitSha": "4e8100969f2ec6777df476c40eeedec80aca4380",
+        "generatedAt": "2026-01-13T12:00:00.000Z",
+        "tool": "coverlet",
+        "runUrl": "https://github.com/example-org/project-alpha-coordinator/actions/runs/9001"
+      },
+      {
+        "componentId": "backend",
+        "state": "readable",
+        "sharedRepository": false,
+        "percentage": 85,
+        "linesCovered": 6800,
+        "linesValid": 8000,
+        "commitSha": "95c7fbdc2c7d81daf6bf050dab7bdd4c1e160a82",
+        "generatedAt": "2026-01-13T12:00:00.000Z",
+        "tool": "coverlet",
+        "runUrl": "https://github.com/example-org/project-alpha-backend/actions/runs/9002"
+      },
+      {
+        "componentId": "frontend",
+        "state": "readable",
+        "sharedRepository": false,
+        "percentage": 84,
+        "linesCovered": 3780,
+        "linesValid": 4500,
+        "commitSha": "ae4b58f791cf66bf510c92ca102cc34470fbdf7d",
+        "generatedAt": "2026-01-13T12:00:00.000Z",
+        "tool": "vitest",
+        "runUrl": "https://github.com/example-org/project-alpha-frontend/actions/runs/9005"
+      },
+      {
+        "componentId": "worker",
+        "state": "readable",
+        "sharedRepository": false,
+        "percentage": 86,
+        "linesCovered": 1720,
+        "linesValid": 2000,
+        "commitSha": "d3a5814a6e7959fc09128637bc5469d3e725aea9",
+        "generatedAt": "2026-01-13T12:00:00.000Z",
+        "tool": "pytest-cov",
+        "runUrl": "https://github.com/example-org/project-alpha-worker/actions/runs/9008"
+      },
+      {
+        "componentId": "helm",
+        "state": "not-applicable",
+        "sharedRepository": false,
+        "percentage": null,
+        "linesCovered": null,
+        "linesValid": null,
+        "commitSha": null,
+        "generatedAt": null,
+        "tool": null,
+        "runUrl": null
+      }
+    ],
+    "findings": {
+      "state": "available",
+      "reliability": 0,
+      "maintainability": 3,
+      "bySeverity": {
+        "error": 0,
+        "warning": 2,
+        "note": 1,
+        "none": 0
+      }
+    }
+  },
   "overallHealth": {
     "status": "amber",
     "reasons": [
@@ -1490,9 +1584,9 @@
     ]
   },
   "score": {
-    "value": 76,
-    "measured": 5,
-    "required": 5
+    "value": 78,
+    "measured": 6,
+    "required": 6
   },
   "dataFreshness": {
     "status": "green",

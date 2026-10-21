@@ -24,6 +24,7 @@ import {
   sumCounts,
   type GovernanceRepo,
 } from './evaluators/health';
+import { evaluateQuality, type QualityInput } from './evaluators/quality';
 import { evaluateScore } from './evaluators/score';
 import {
   recordError,
@@ -32,6 +33,11 @@ import {
   toWorkflowStatus,
   type BuildContext,
 } from './normalizers/model';
+import {
+  isCoverageApplicable,
+  normaliseQualitySummary,
+  type RepoQuality,
+} from './normalizers/quality';
 import {
   countOpen,
   emptyCounts,
@@ -236,6 +242,56 @@ export function buildProjectSnapshot(
     policies,
   );
   const governanceHealth = evaluateGovernance(governanceRepos, workflows, policies);
+
+  // Quality: one report per repository (monorepos share it), applicability per component.
+  const applicable = (componentId: string) => {
+    if (componentId === 'coordinator')
+      return isCoverageApplicable('coordinator', config.coordinator.testCoverage);
+    const c = config.components.find((x) => x.id === componentId)!;
+    return isCoverageApplicable(c.type, c.testCoverage);
+  };
+  const qualityComponents = raw.repos.map((r) => ({
+    componentId: r.componentId,
+    repository: r.repository,
+    applicable: applicable(r.componentId),
+  }));
+  const qualityInput: QualityInput = {
+    components: qualityComponents,
+    repos: new Map(),
+    findings: new Map(),
+    setup: new Map(),
+    collectedAt: generatedAt,
+  };
+  const staleQuality: RepoQuality[] = [];
+  for (const r of uniqueRepos) {
+    const key = r.repository.toLowerCase();
+    const relevant = qualityComponents.some(
+      (c) => c.applicable && c.repository.toLowerCase() === key,
+    );
+    const { quality, error } = normaliseQualitySummary(
+      r.repository,
+      r.qualitySummary,
+      policies,
+      now,
+    );
+    qualityInput.repos.set(key, quality);
+    qualityInput.findings.set(key, r.codeQualityFindings);
+    qualityInput.setup.set(key, r.codeQualitySetup);
+    // The normaliser already built the one error for this summary: never record it twice.
+    // A repository no component needs a report from is not reported.
+    if (error && relevant) {
+      const { repository, ...rest } = error;
+      ctx.errors.push({ repository, componentId: r.componentId, ...rest });
+    }
+    if (quality.state === 'stale' && relevant) staleQuality.push(quality);
+    if (r.repo.ok) {
+      recordError(ctx, r.repository, r.componentId, 'code-quality', r.codeQualityFindings, {
+        expectedNotFound: true,
+      });
+    }
+  }
+  const qualityHealth = evaluateQuality(qualityInput, policies);
+
   const overallHealth = evaluateOverall(
     {
       delivery: deliveryHealth.status,
@@ -243,6 +299,7 @@ export function buildProjectSnapshot(
       security: securityResult.status,
       coverage: coverage.status,
       governance: governanceHealth.status,
+      quality: qualityHealth.status,
     },
     policies,
   );
@@ -253,6 +310,7 @@ export function buildProjectSnapshot(
       security: securityResult,
       coverage,
       governance: governanceHealth,
+      quality: qualityHealth,
     },
     overallHealth.status,
     policies,
@@ -274,6 +332,13 @@ export function buildProjectSnapshot(
         staleSources.push({ repository: rc.repository, source, lastUpdatedAt: c.lastScanAt });
       }
     }
+  }
+  for (const q of staleQuality) {
+    staleSources.push({
+      repository: q.repository,
+      source: 'quality-report',
+      lastUpdatedAt: q.generatedAt,
+    });
   }
   const timestamps = staleSources
     .map((s) => s.lastUpdatedAt)
@@ -316,6 +381,7 @@ export function buildProjectSnapshot(
     },
     securityCoverage: coverage,
     governanceHealth,
+    qualityHealth,
     overallHealth,
     score,
     dataFreshness: {
@@ -350,6 +416,12 @@ export function toProjectSummary(s: ProjectSnapshot): ProjectSummary {
       available: s.securityCoverage.available,
     },
     governance: s.governanceHealth.status,
+    quality: {
+      status: s.qualityHealth.status,
+      percentage: s.qualityHealth.percentage,
+      measured: s.qualityHealth.measured,
+      applicable: s.qualityHealth.applicable,
+    },
     freshness: s.dataFreshness.status,
     openCounts: s.securityHealth.openCounts,
     countsComplete: s.securityHealth.countsComplete,

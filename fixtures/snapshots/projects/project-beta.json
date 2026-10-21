@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.4",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-beta",
@@ -1175,6 +1175,96 @@
       }
     ]
   },
+  "qualityHealth": {
+    "status": "amber",
+    "reasons": [
+      {
+        "code": "quality-below-threshold",
+        "level": "amber",
+        "params": {
+          "components": "coordinator, api",
+          "percentage": 67.2,
+          "threshold": 80
+        }
+      },
+      {
+        "code": "quality-report-missing",
+        "level": "amber",
+        "params": {
+          "components": "web"
+        }
+      }
+    ],
+    "percentage": 67.2,
+    "linesCovered": 6454,
+    "linesValid": 9600,
+    "measured": 2,
+    "applicable": 3,
+    "notVisible": 1,
+    "stale": 0,
+    "collectedAt": "2026-01-15T12:00:00.000Z",
+    "perComponent": [
+      {
+        "componentId": "coordinator",
+        "state": "readable",
+        "sharedRepository": false,
+        "percentage": 38,
+        "linesCovered": 456,
+        "linesValid": 1200,
+        "commitSha": "971a7f034dadeeaea0d6daacfc265dd40cde39e8",
+        "generatedAt": "2026-01-13T12:00:00.000Z",
+        "tool": "coverlet",
+        "runUrl": "https://github.com/example-org/project-beta-coordinator/actions/runs/9011"
+      },
+      {
+        "componentId": "api",
+        "state": "readable",
+        "sharedRepository": false,
+        "percentage": 71.4,
+        "linesCovered": 5998,
+        "linesValid": 8400,
+        "commitSha": "3214cb086d9f6b265d49568ba63b3eb3afb5b505",
+        "generatedAt": "2026-01-13T12:00:00.000Z",
+        "tool": "coverlet",
+        "runUrl": "https://github.com/example-org/project-beta-api/actions/runs/9012"
+      },
+      {
+        "componentId": "web",
+        "state": "missing",
+        "sharedRepository": false,
+        "percentage": null,
+        "linesCovered": null,
+        "linesValid": null,
+        "commitSha": null,
+        "generatedAt": null,
+        "tool": null,
+        "runUrl": null
+      },
+      {
+        "componentId": "helm",
+        "state": "not-applicable",
+        "sharedRepository": false,
+        "percentage": null,
+        "linesCovered": null,
+        "linesValid": null,
+        "commitSha": null,
+        "generatedAt": null,
+        "tool": null,
+        "runUrl": null
+      }
+    ],
+    "findings": {
+      "state": "available",
+      "reliability": 1,
+      "maintainability": 9,
+      "bySeverity": {
+        "error": 1,
+        "warning": 5,
+        "note": 3,
+        "none": 1
+      }
+    }
+  },
   "overallHealth": {
     "status": "red",
     "reasons": [
@@ -1212,13 +1302,20 @@
         "params": {
           "dimension": "governance"
         }
+      },
+      {
+        "code": "dimension-amber",
+        "level": "amber",
+        "params": {
+          "dimension": "quality"
+        }
       }
     ]
   },
   "score": {
-    "value": 38,
-    "measured": 5,
-    "required": 5
+    "value": 40,
+    "measured": 6,
+    "required": 6
   },
   "dataFreshness": {
     "status": "amber",

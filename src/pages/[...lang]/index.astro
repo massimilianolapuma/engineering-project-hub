@@ -32,7 +32,7 @@ const sorted = [...projects].sort(
 
 const DIMS: Dimension[] = ['delivery', 'version', 'security', 'coverage', 'governance'];
 const statusOf = (p: Project, k: Dimension): HealthStatus =>
-  k === 'coverage' ? p.coverage.status : p[k];
+  k === 'coverage' || k === 'quality' ? p[k].status : p[k];
 const healthOf = (s: ProjectSnapshot | undefined, k: Dimension): HealthResult | undefined =>
   s &&
   {
@@ -41,6 +41,7 @@ const healthOf = (s: ProjectSnapshot | undefined, k: Dimension): HealthResult | 
     security: s.securityHealth,
     coverage: s.securityCoverage,
     governance: s.governanceHealth,
+    quality: s.qualityHealth,
   }[k];
 /** The reason that explains a dimension: one at the dimension's own level first. */
 const topReason = (status: HealthStatus, reasons: Reason[]): Reason | undefined =>
@@ -214,7 +215,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
               </th>
               <th role="columnheader" scope="col" class="plist__c-dims">
                 <span class="visually-hidden">{d.portfolio.dimensionsColumn}</span>
-                <DimensionBars variant="header" locale={locale} />
+                <DimensionBars variant="header" dimensions={DIMS} locale={locale} />
               </th>
               <th role="columnheader" scope="col">
                 {d.portfolio.reasonColumn}
@@ -258,7 +259,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
                   <td role="cell" class="plist__dims">
                     {/* Phone and tablet: the header row is hidden, so label the bars here. */}
                     <span class="plist__dimlabels" aria-hidden="true">
-                      <DimensionBars variant="header" locale={locale} />
+                      <DimensionBars variant="header" dimensions={DIMS} locale={locale} />
                     </span>
                     <DimensionBars
                       dims={DIMS.map((k) => ({ dimension: k, status: statusOf(p, k) }))}

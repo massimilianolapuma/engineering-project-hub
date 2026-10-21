@@ -26,8 +26,16 @@ const { policies, source } = loadSitePolicies();
 const { score, freshness } = policies;
 
 const STATES: HealthStatus[] = ['red', 'amber', 'green', 'grey'];
-const DIMENSIONS: Dimension[] = ['delivery', 'version', 'security', 'coverage', 'governance'];
+const DIMENSIONS: Dimension[] = [
+  'delivery',
+  'version',
+  'security',
+  'coverage',
+  'governance',
+  'quality',
+];
 const required = new Set<Dimension>(policies.overall.requiredDimensions);
+const optional = new Set<Dimension>(policies.overall.optionalDimensions);
 
 /** The six symbols, each shown through a control state that produces it. */
 const SYMBOLS: { key: keyof typeof h.symbolsHelp; state: ControlState; required: boolean }[] = [
@@ -268,7 +276,11 @@ const SECTIONS = [
               <td role="cell" data-label={h.colChecks}>
                 <span>
                   {h.checks[dim]}
-                  {!required.has(dim) && <span class="note htr-block">{h.notRequired}</span>}
+                  {optional.has(dim) ? (
+                    <span class="note htr-block">{h.optional}</span>
+                  ) : (
+                    !required.has(dim) && <span class="note htr-block">{h.notRequired}</span>
+                  )}
                 </span>
               </td>
               <td role="cell" data-label={h.colWeight} class="num tabular" data-weight={dim}>

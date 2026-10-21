@@ -88,10 +88,19 @@ export const PoliciesSchema = z
         requiredDimensions: z
           .array(DimensionSchema)
           .default(['delivery', 'version', 'security', 'coverage', 'governance']),
+        /**
+         * Counted like a required non-critical dimension when measured; ignored when grey (it
+         * neither turns the project grey nor lowers the score's measured ratio).
+         */
+        optionalDimensions: z.array(DimensionSchema).default(['quality']),
         /** What an undeterminable required dimension does to the overall status. */
         greyRequiredDimension: z.enum(['grey', 'amber']).default('grey'),
       })
-      .strict(),
+      .strict()
+      .refine((o) => !o.requiredDimensions.some((d) => o.optionalDimensions.includes(d)), {
+        message: 'a dimension cannot be in both requiredDimensions and optionalDimensions',
+        path: ['optionalDimensions'],
+      }),
     /**
      * Project score (0–100) used to rank and compare projects. Optional: omitted, the
      * defaults below apply. Grey dimensions are never counted as 0 (see docs/configuration.md).
@@ -106,6 +115,7 @@ export const PoliciesSchema = z
             security: z.number().min(0).default(30),
             coverage: z.number().min(0).default(15),
             governance: z.number().min(0).default(15),
+            quality: z.number().min(0).default(10),
           })
           .strict()
           .prefault({}),

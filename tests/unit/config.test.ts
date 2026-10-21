@@ -194,6 +194,25 @@ describe('policies.yaml validation', () => {
     ).toThrow(/quality/);
   });
 
+  it('policies default optionalDimensions to quality and weights.quality to 10', () => {
+    const p = parseYamlWith(PoliciesSchema, policiesText, 'policies.yaml');
+    expect(p.overall.optionalDimensions).toEqual(['quality']);
+    expect(p.score.weights.quality).toBe(10);
+  });
+
+  it('quality in both requiredDimensions and optionalDimensions is rejected', () => {
+    expect(() =>
+      parseYamlWith(
+        PoliciesSchema,
+        policiesText.replace(
+          'requiredDimensions: [delivery, version, security, coverage, governance]',
+          'requiredDimensions: [delivery, version, security, coverage, governance, quality]',
+        ),
+        'policies.yaml',
+      ),
+    ).toThrow(/optionalDimensions/);
+  });
+
   it('rejects an unsupported status value', () => {
     expect(() =>
       parseYamlWith(

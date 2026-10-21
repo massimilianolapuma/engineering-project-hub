@@ -120,6 +120,147 @@ describe('mock collection', () => {
     expect(index.run.repositories).toMatchObject({ total: 12, unavailable: 2 });
     expect(index.projects.map((p) => p.overall)).toEqual(['amber', 'amber', 'red', 'grey']);
     expect(index.run.capabilities.secretScanning).toBe('partial');
+    expect(index.run.capabilities.codeQuality).toBe('available');
+  });
+});
+
+/** The mock provider with some quality calls replaced. */
+function withQuality(
+  overrides: Partial<
+    Pick<SourceProvider, 'getQualitySummary' | 'listCodeQualityFindings' | 'getCodeQualitySetup'>
+  >,
+): SourceProvider {
+  const mock = new MockProvider('fixtures/github', fixedClock(GOLDEN_NOW));
+  return new Proxy(mock, {
+    get(target, prop, receiver) {
+      const o = overrides[prop as keyof typeof overrides];
+      if (o) return o;
+      const v = Reflect.get(target, prop, receiver);
+      return typeof v === 'function' ? v.bind(target) : v;
+    },
+  });
+}
+
+async function runWith(provider: SourceProvider) {
+  const { catalog, policies } = await loadConfig('config');
+  return runCollection({ catalog, policies, provider, clock: fixedClock(GOLDEN_NOW) });
+}
+
+describe('quality dimension (mock run)', () => {
+  const byId = (projects: ProjectSnapshot[]) =>
+    Object.fromEntries(projects.map((p) => [p.project.id, p])) as Record<string, ProjectSnapshot>;
+
+  it('beta qualityHealth.percentage 67.2 status amber', async () => {
+    const beta = byId((await mockRun()).projects)['project-beta']!;
+    expect(beta.qualityHealth).toMatchObject({
+      status: 'amber',
+      percentage: 67.2,
+      measured: 2,
+      applicable: 3,
+      notVisible: 1,
+    });
+    expect(beta.qualityHealth.perComponent.map((c) => [c.componentId, c.state])).toEqual([
+      ['coordinator', 'readable'],
+      ['api', 'readable'],
+      ['web', 'missing'],
+      ['helm', 'not-applicable'],
+    ]);
+    expect(beta.qualityHealth.findings).toMatchObject({
+      state: 'available',
+      reliability: 1,
+      maintainability: 9,
+    });
+  });
+
+  it('alpha 84.7 green', async () => {
+    const alpha = byId((await mockRun()).projects)['project-alpha']!;
+    expect(alpha.qualityHealth).toMatchObject({
+      status: 'green',
+      percentage: 84.7,
+      measured: 4,
+      applicable: 4,
+    });
+    expect(alpha.qualityHealth.findings).toMatchObject({ reliability: 0, maintainability: 3 });
+  });
+
+  it('platform 58 red with quality-report-stale and staleSources contains quality-report', async () => {
+    const platform = byId((await mockRun()).projects)['platform']!;
+    expect(platform.qualityHealth).toMatchObject({ status: 'red', percentage: 58, stale: 4 });
+    expect(platform.qualityHealth.reasons.map((r) => r.code)).toContain('quality-report-stale');
+    expect(platform.qualityHealth.perComponent.every((c) => c.sharedRepository)).toBe(true);
+    expect(platform.dataFreshness.staleSources).toContainEqual({
+      repository: 'example-org/platform-mono',
+      source: 'quality-report',
+      lastUpdatedAt: '2025-12-26T12:00:00.000Z',
+    });
+    expect(platform.dataFreshness.status).toBe('amber');
+  });
+
+  it('gamma quality grey and overall/score unchanged vs a run without quality', async () => {
+    const notFound = async () => fail<never>({ classification: 'not-found', httpStatus: 404 });
+    const without = byId(
+      (
+        await runWith(
+          withQuality({
+            getQualitySummary: notFound,
+            listCodeQualityFindings: notFound,
+            getCodeQualitySetup: notFound,
+          }),
+        )
+      ).projects,
+    );
+    const gamma = byId((await mockRun()).projects)['project-gamma']!;
+    expect(gamma.qualityHealth.status).toBe('grey');
+    expect(gamma.qualityHealth.percentage).toBeNull();
+    expect(gamma.overallHealth).toEqual(without['project-gamma']!.overallHealth);
+    expect(gamma.score).toEqual(without['project-gamma']!.score);
+    // With no report anywhere, quality is grey everywhere and changes no overall or score.
+    for (const p of Object.values(without)) {
+      expect(p.qualityHealth.status, p.project.id).toBe('grey');
+      expect(p.overallHealth.reasons.map((r) => r.params.dimension)).not.toContain('quality');
+    }
+    expect(Object.values(without).map((p) => p.score.required)).toEqual([5, 5, 5, 5]);
+  });
+
+  it('summary.quality matches snapshot', async () => {
+    const { index, projects } = await mockRun();
+    for (const p of projects) {
+      const summary = index.projects.find((s) => s.id === p.project.id)!;
+      expect(summary.quality).toEqual({
+        status: p.qualityHealth.status,
+        percentage: p.qualityHealth.percentage,
+        measured: p.qualityHealth.measured,
+        applicable: p.qualityHealth.applicable,
+      });
+    }
+  });
+
+  it('an invalid summary yields exactly one invalid-data quality-summary error', async () => {
+    const mock = new MockProvider('fixtures/github', fixedClock(GOLDEN_NOW));
+    const { projects } = await runWith(
+      withQuality({
+        getQualitySummary: async (repo) =>
+          repo === 'example-org/project-alpha-backend'
+            ? ok({
+                summaryText: '{"schemaVersion":"1.0","extra":true}',
+                createdAt: GOLDEN_NOW,
+                runUrl: null,
+              })
+            : mock.getQualitySummary(repo),
+      }),
+    );
+    const alpha = byId(projects)['project-alpha']!;
+    const errors = alpha.collectionErrors.filter((e) => e.source === 'quality-summary');
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({
+      repository: 'example-org/project-alpha-backend',
+      componentId: 'backend',
+      classification: 'invalid-data',
+    });
+    expect(JSON.stringify(alpha)).not.toContain('extra');
+    expect(alpha.qualityHealth.perComponent.find((c) => c.componentId === 'backend')?.state).toBe(
+      'invalid',
+    );
   });
 });
 
@@ -286,9 +427,23 @@ describe('sanitisation end to end', () => {
           htmlUrl: url,
         },
       ]),
-    getQualitySummary: async () => fail({ classification: 'not-found', httpStatus: 404 }),
-    listCodeQualityFindings: async () => fail({ classification: 'not-found', httpStatus: 404 }),
-    getCodeQualitySetup: async () => fail({ classification: 'not-found', httpStatus: 404 }),
+    getQualitySummary: async (repo) =>
+      ok({
+        summaryText: JSON.stringify({
+          schemaVersion: '1.0',
+          repository: repo,
+          ref: 'main',
+          commitSha: 'c'.repeat(40),
+          generatedAt: GOLDEN_NOW,
+          tool: CANARIES[0],
+          format: 'cobertura',
+          lines: { covered: 1, valid: 2 },
+        }),
+        createdAt: GOLDEN_NOW,
+        runUrl: url,
+      }),
+    listCodeQualityFindings: async () => ok([{ category: poison, severity: poison }]),
+    getCodeQualitySetup: async () => ok({ state: poison }),
     listSecretScanningAlerts: async () =>
       ok([
         {
@@ -310,6 +465,13 @@ describe('sanitisation end to end', () => {
     // Strict schemas + gate, including catalog.json with the discovery proposals.
     const files = serialise(result.index, result.projects, catalog, result.discovery);
     expect(result.discovery?.proposals[0]).toMatchObject({ kind: 'monorepo' });
+    // The poisoned summary was read (so its tool really went through the pipeline).
+    const quality = result.projects[0]!.qualityHealth;
+    expect(quality.perComponent.map((c) => [c.state, c.tool])).toEqual([
+      ['readable', null],
+      ['readable', null],
+    ]);
+    expect(quality.findings.bySeverity.none).toBe(2);
     const all = [...files.values()].join('\n');
     for (const canary of CANARIES) expect(all).not.toContain(canary);
     expect(all).not.toContain('access_token');
@@ -334,7 +496,7 @@ describe('sanitisation end to end', () => {
 describe('snapshot schema versions', () => {
   it('fails in a controlled way on an unsupported schemaVersion', async () => {
     const text = (await readFile('fixtures/snapshots/index.json', 'utf8')).replace(
-      '"schemaVersion": "1.3"',
+      '"schemaVersion": "1.4"',
       '"schemaVersion": "9.0"',
     );
     const r = validatePortfolio(text);

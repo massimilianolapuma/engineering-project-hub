@@ -151,7 +151,7 @@ describe('static site', () => {
       'platform (monorepo)',
     ]);
     const beta = html.slice(html.indexOf('data-name="project beta"'));
-    expect(beta.slice(0, beta.indexOf('>'))).toContain('data-score="38"');
+    expect(beta.slice(0, beta.indexOf('>'))).toContain('data-score="40"');
     expect(html).toMatch(/<option value="score" selected/);
     // One-line legend under the list, linking to "How to read".
     expect(html).toMatch(/<a class="legend__link"[^>]*href="[^"]*how-to-read\/"/);
@@ -182,8 +182,8 @@ describe('static site', () => {
     it('shows the score with its confidence and explains why it is critical', async () => {
       const html = await page('projects/project-beta');
       const head = between(html, '<main', 'id="h-why"');
-      expect(head).toMatch(/class="score__value"[^>]*>38</);
-      expect(head).toContain('measured 5 of 5');
+      expect(head).toMatch(/class="score__value"[^>]*>40</);
+      expect(head).toContain('measured 6 of 6');
       expect(head).toMatch(/badge badge--red/);
       expect(html).toMatch(/<h2[^>]*id="h-why"[^>]*>Why it is Critical</);
       const why = between(html, 'id="h-why"', '</section>');
@@ -388,7 +388,7 @@ describe('static site', () => {
     it('renders the Italian project page in Italian', async () => {
       const html = await page('it/projects/project-beta');
       expect(html).toContain('Perché è critico');
-      expect(html).toContain('misurato 5 di 5');
+      expect(html).toContain('misurato 6 di 6');
       expect(html).toContain('Ambienti');
     });
   });
@@ -773,12 +773,15 @@ describe('static site', () => {
       security: 30,
       coverage: 15,
       governance: 15,
+      quality: 10,
     });
     expect(caps).toEqual({ red: 49, amber: 89, grey: 89 });
     expect(minMeasuredRatio).toBe(0.5);
     const cell = (attr: string, value: number | string) =>
       expect(html).toMatch(new RegExp(`${attr}[^>]*>\\s*${value}\\s*<`));
     for (const [dim, w] of Object.entries(weights)) cell(`data-weight="${dim}"`, w);
+    // Quality is optional: its row says it counts only when measured.
+    expect(html).toContain(esc(h.optional));
     for (const [st, p] of Object.entries(points)) cell(`data-points="${st}"`, p);
     for (const [st, c] of Object.entries(caps)) cell(`data-cap="${st}"`, c);
     cell('data-min-measured', `${minMeasuredRatio * 100}%`);
@@ -809,7 +812,7 @@ describe('static site', () => {
     const idx = join(data, 'index.json');
     await writeFile(
       idx,
-      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.3"', '"schemaVersion": "9.0"'),
+      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.4"', '"schemaVersion": "9.0"'),
     );
     const out = join(work, 'dist-bad');
     await buildSite(data, out);

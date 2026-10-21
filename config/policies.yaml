@@ -56,6 +56,9 @@ governance:
 overall:
   criticalDimensions: [delivery, version, security]
   requiredDimensions: [delivery, version, security, coverage, governance]
+  # Counted like a required non-critical dimension when measured; ignored when grey (it neither
+  # turns the project grey nor lowers the score). Never list a dimension in both lists.
+  # optionalDimensions: [quality] # default
   greyRequiredDimension: grey
 
 # Project score (0–100), used to rank and compare projects. Optional: the defaults below apply
@@ -64,7 +67,7 @@ overall:
 # only because there is nothing to measure (e.g. no critical workflows) is not applicable and
 # leaves both measured and required. Below minMeasuredRatio measured: no number.
 # score:
-#   weights: { delivery: 25, version: 15, security: 30, coverage: 15, governance: 15 }
+#   weights: { delivery: 25, version: 15, security: 30, coverage: 15, governance: 15, quality: 10 }
 #   points: { green: 100, amber: 60, red: 20 }
 #   caps: { red: 49, amber: 89, grey: 89 } # overall red ≤ 49; amber / grey ≤ 89
 #   minMeasuredRatio: 0.5

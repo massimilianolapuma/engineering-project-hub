@@ -125,5 +125,24 @@
       "name": "v1.3.0",
       "sha": "4659611956cf6c8980d4bc7f13f14a65947f4b01"
     }
-  ]
+  ],
+  "qualitySummary": {
+    "summary": {
+      "schemaVersion": "1.0",
+      "repository": "example-org/project-alpha-backend",
+      "ref": "refs/heads/main",
+      "commitSha": "95c7fbdc2c7d81daf6bf050dab7bdd4c1e160a82",
+      "generatedAt": "@now-2d",
+      "tool": "coverlet",
+      "format": "cobertura",
+      "lines": { "covered": 6800, "valid": 8000 }
+    },
+    "createdAt": "@now-2d",
+    "runId": 9002
+  },
+  "codeQualityFindings": [
+    { "category": "maintainability", "severity": "warning" },
+    { "category": "maintainability", "severity": "note" }
+  ],
+  "codeQualitySetup": { "state": "configured" }
 }

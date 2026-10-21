@@ -90,6 +90,7 @@ export const it: Dict = {
       security: 'Sic',
       coverage: 'Cop',
       governance: 'Gov',
+      quality: 'Qual',
     },
   },
   symbols: {
@@ -108,6 +109,7 @@ export const it: Dict = {
     security: 'Rischio sicurezza',
     coverage: 'Copertura sicurezza',
     governance: 'Governance',
+    quality: 'Qualità',
     freshness: 'Aggiornamento',
   },
   lifecycle: {
@@ -243,6 +245,7 @@ export const it: Dict = {
     'security-status-file': 'File di stato sicurezza',
     'quality-summary': 'Riepilogo qualità',
     'code-quality': 'Code Quality',
+    'quality-report': 'Report di qualità',
   },
   availability: {
     available: 'Disponibile',
@@ -264,6 +267,7 @@ export const it: Dict = {
     codeScanning: 'Alert code scanning',
     dependabot: 'Alert Dependabot',
     secretScanning: 'Alert secret scanning',
+    codeQuality: 'Rilievi Code Quality',
   },
   portfolio: {
     title: 'Portfolio',
@@ -913,6 +917,7 @@ export const it: Dict = {
     colCap: 'Score massimo',
     notMeasured: 'Non misurato',
     notRequired: 'Non richiesta: esclusa dallo score',
+    optional: 'Facoltativa: conta solo se misurata, esclusa se sconosciuta',
     checks: {
       delivery: 'Workflow critici: ultime esecuzioni, fallimenti, esecuzioni assenti o vecchie.',
       version:
@@ -921,6 +926,8 @@ export const it: Dict = {
       coverage: 'Quota dei controlli di sicurezza richiesti attivi e visibili.',
       governance:
         'Standard dei repository: workflow standard, repository archiviati, file di stato sicurezza, branch predefinito.',
+      quality:
+        'Copertura delle righe dei test, dal riepilogo pubblicato dalla CI di ogni repository.',
     },
     capsNote:
       'I tetti mantengono il numero coerente con lo stato: un progetto critico sta sempre sotto uno che richiede attenzione o è sconosciuto. Un progetto sano ha score 100.',

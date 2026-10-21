@@ -114,5 +114,21 @@
       "name": "v2.1.0",
       "sha": "7482a4cab7d0cbbb5b9bde9cb303ab22b02ef963"
     }
-  ]
+  ],
+  "qualitySummary": {
+    "summary": {
+      "schemaVersion": "1.0",
+      "repository": "example-org/project-alpha-frontend",
+      "ref": "refs/heads/main",
+      "commitSha": "ae4b58f791cf66bf510c92ca102cc34470fbdf7d",
+      "generatedAt": "@now-2d",
+      "tool": "vitest",
+      "format": "lcov",
+      "lines": { "covered": 3780, "valid": 4500 }
+    },
+    "createdAt": "@now-2d",
+    "runId": 9005
+  },
+  "codeQualityFindings": [{ "category": "maintainability", "severity": "warning" }],
+  "codeQualitySetup": { "state": "configured" }
 }

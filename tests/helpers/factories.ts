@@ -71,6 +71,9 @@ export function repoData(name: string, partial: Partial<RepoData> = {}): RepoDat
     codeScanningAnalysis: ok({ createdAt: hoursAgo(2), toolName: 'CodeQL' }),
     dependabot: ok([]),
     secretScanning: ok([]),
+    qualitySummary: fail({ classification: 'not-found', httpStatus: 404 }),
+    codeQualityFindings: fail({ classification: 'not-found', httpStatus: 404 }),
+    codeQualitySetup: fail({ classification: 'not-found', httpStatus: 404 }),
     ...partial,
   };
 }
