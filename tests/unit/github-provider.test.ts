@@ -343,6 +343,28 @@ describe('GitHubProvider quality calls', () => {
     });
   });
 
+  it.each([
+    ['head_repository_id', { head_repository_id: null, repository_id: 7 }],
+    ['repository_id', { head_repository_id: 7, repository_id: null }],
+    ['both ids', { head_repository_id: null, repository_id: null }],
+  ])('getQualitySummary does not trust a workflow_run with null %s', async (_, ids) => {
+    const untrusted = art(3, 'main', '2026-01-15T10:00:00Z');
+    Object.assign(untrusted.workflow_run, ids);
+    const seen: string[] = [];
+    const p = provider(
+      {
+        '/repos/o/a/actions/artifacts': list([untrusted]),
+        '/repos/o/a/actions/artifacts/3/zip': zipOf('{"untrusted":true}'),
+      },
+      seen,
+    );
+    expect(await p.getQualitySummary('o/a', 'main')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-found' },
+    });
+    expect(seen.some((s) => s.includes('/zip'))).toBe(false);
+  });
+
   it('getQualitySummary finds the matching artifact on page 2 behind 30 PR-branch artifacts', async () => {
     const page1 = Array.from({ length: 30 }, (_, i) =>
       art(100 + i, `pr/${i}`, '2026-01-14T10:00:00Z'),
