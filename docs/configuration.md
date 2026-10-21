@@ -281,8 +281,8 @@ _Multi-repository_, _Monorepo_ or _Single repository_.
 Two panels start from the last collector run:
 
 - **Discovered repositories** lists the discovery proposals (`discovery` in `catalog.json`)
-  grouped by kind (_Coordinator_, _Monorepo_, _Single repository_) with the repository link,
-  the evidence and the number of components, plus the scanned count and the repositories
+  grouped by kind (_Coordinator_, _Monorepo_, _Grouped by hints_, _Single repository_) with the repository link,
+  the evidence and the number of components (a proposal whose repository hints at an existing project, without being part of it, carries a _Suggested for project X_ badge), plus the scanned count and the repositories
   that could not be scanned (classification only). A proposal not in the catalog has
   _Add as project_: it imports the proposed configuration into the editor (the id gets a
   `-2`, `-3`… suffix if taken) and selects it. A proposal already in the catalog (same

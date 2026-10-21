@@ -280,8 +280,8 @@ _Multi-repository_, _Monorepo_ o _Repository singolo_.
 Due pannelli partono dall'ultima esecuzione del collector:
 
 - **Repository scoperti** elenca le proposte della discovery (`discovery` in
-  `catalog.json`) raggruppate per tipo (_Coordinator_, _Monorepo_, _Repository singolo_) con
-  il link al repository, gli indizi e il numero di componenti, oltre al numero di repository
+  `catalog.json`) raggruppate per tipo (_Coordinator_, _Monorepo_, _Raggruppato dai suggerimenti_, _Repository singolo_) con
+  il link al repository, gli indizi e il numero di componenti (una proposta il cui repository suggerisce un progetto esistente, senza farne parte, ha il badge _Suggerito per il progetto X_), oltre al numero di repository
   analizzati e a quelli non analizzabili (solo la classificazione). Una proposta non presente
   nel catalogo ha _Aggiungi come progetto_: importa la configurazione proposta nell'editor
   (all'id si aggiunge `-2`, `-3`… se già usato) e la seleziona. Una proposta già nel catalogo
@@ -620,13 +620,19 @@ file in più accanto allo snapshot, più tre file CSV. Lo schema dello snapshot 
 prima raccolta della v0.7.0. Come viene conservato in Actions è descritto in
 [Operatività](operations.md#storico-tra-le-esecuzioni).
 
-| File                           | Contenuto                                                                                                                        |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| `history.json`                 | `kind: hub-history`, schema `1.0`: un punto compatto per progetto e raccolta, più la base per calcolare il confronto successivo. |
-| `changes.json`                 | `kind: hub-changes`, schema `1.0`: cosa si è mosso rispetto alla raccolta precedente, o perché non si può dire.                  |
-| `exports/portfolio.csv`        | Una riga per progetto, con stato e punteggio della raccolta precedente.                                                          |
-| `exports/findings-summary.csv` | Una riga per progetto e repository: alert aperti per severità, senza titoli.                                                     |
-| `exports/versions.csv`         | Una riga per coordinator, componente e ambiente.                                                                                 |
+Dalla v0.8.0 lo schema dello storico è `1.1`: ogni punto porta anche i conteggi dei controlli
+sui repository (`controls`) e la base lo stato superato/fallito di ciascun controllo, così
+"Cosa è cambiato" può elencare i controlli passati da superato a fallito o viceversa (e il CSV
+del portfolio guadagna `controls_passed`, `controls_failed` e `controls_unknown`). Uno
+storico `1.0` viene ancora letto; semplicemente non ha nulla da confrontare per i controlli.
+
+| File                           | Contenuto                                                                                                                                                   |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `history.json`                 | `kind: hub-history`, schema `1.1` (`1.0` viene ancora letto): un punto compatto per progetto e raccolta, più la base per calcolare il confronto successivo. |
+| `changes.json`                 | `kind: hub-changes`, schema `1.0`: cosa si è mosso rispetto alla raccolta precedente, o perché non si può dire.                                             |
+| `exports/portfolio.csv`        | Una riga per progetto, con stato e punteggio della raccolta precedente.                                                                                     |
+| `exports/findings-summary.csv` | Una riga per progetto e repository: alert aperti per severità, senza titoli.                                                                                |
+| `exports/versions.csv`         | Una riga per coordinator, componente e ambiente.                                                                                                            |
 
 I due file JSON hanno una versione separata da quella dello snapshot, così lo storico
 sopravvive a un cambio di schema dello snapshot. Un file mancante o non valido non
