@@ -508,7 +508,8 @@ visible report never count, and never count as 0%. Status: grey when nothing app
 nothing is visible; otherwise green at or above `quality.greenThresholdPercent`, amber at or
 above `quality.amberThresholdPercent`, red below. Any stale report, or any applicable
 component without a visible report when `quality.missingReportIsAmber` is true, caps a green
-at amber (a red stays red).
+at amber (a red stays red). When Quality is grey, its not-visible reasons are informative, so
+they add no row to the project's "why" box.
 
 **GitHub Code Quality findings** are informative: open findings are counted per repository
 (by category `reliability` / `maintainability` and by severity `error` / `warning` / `note` /

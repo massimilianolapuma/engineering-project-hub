@@ -287,12 +287,24 @@ describe('static site', () => {
       expect(between(visible, 'data-all-unknown', '</li>')).toContain('All 6 dimensions unknown');
       // The single reasons stay one click away, never silently dropped.
       expect(why).toMatch(
-        /<details class="why__more disclosure"[^>]*>\s*<summary[^>]*>Show 8 more reasons</,
+        /<details class="why__more disclosure"[^>]*>\s*<summary[^>]*>Show 7 more reasons</,
       );
       expect(why).toContain('Repository not accessible');
       const it = between(await page('it/projects/project-gamma'), 'id="h-why"', '</section>');
       expect(it).toContain('Tutte le 6 dimensioni sconosciute');
-      expect(it).toContain('Mostra altri 8 motivi');
+      expect(it).toContain('Mostra altri 7 motivi');
+    });
+
+    it('a grey Quality adds no quality reason to the why box', async () => {
+      const gamma = JSON.parse(
+        readFileSync('fixtures/snapshots/projects/project-gamma.json', 'utf8'),
+      ) as { qualityHealth: { status: string } };
+      expect(gamma.qualityHealth.status).toBe('grey');
+      const why = between(await page('projects/project-gamma'), 'id="h-why"', '</section>');
+      expect(why).not.toContain('Quality report');
+      expect(why).not.toContain('href="#quality"');
+      const it = between(await page('it/projects/project-gamma'), 'id="h-why"', '</section>');
+      expect(it).not.toContain('Report di qualità');
     });
 
     it('lists the reasons beyond the first five in a disclosure inside the why box', async () => {

@@ -513,7 +513,9 @@ report visibile non contano mai, e mai come 0%. Stato: grigio quando nulla è ap
 nulla è visibile; altrimenti verde a partire da `quality.greenThresholdPercent`, ambra a
 partire da `quality.amberThresholdPercent`, rosso sotto. Un report non aggiornato, oppure un
 componente applicabile senza report visibile con `quality.missingReportIsAmber` a true,
-limita un verde a ambra (un rosso resta rosso).
+limita un verde a ambra (un rosso resta rosso). Quando la Qualità è grigia, i suoi motivi di
+report non visibile sono informativi, quindi non aggiungono righe al riquadro "perché" del
+progetto.
 
 I **finding di GitHub Code Quality** sono solo informativi: i finding aperti sono contati per
 repository (per categoria `reliability` / `maintainability` e per severità `error` /

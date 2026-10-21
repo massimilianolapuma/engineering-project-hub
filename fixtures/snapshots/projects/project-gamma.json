@@ -404,7 +404,7 @@
     "reasons": [
       {
         "code": "quality-report-unknown",
-        "level": "amber",
+        "level": "info",
         "params": {
           "components": "coordinator, service"
         }

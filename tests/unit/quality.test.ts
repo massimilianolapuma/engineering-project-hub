@@ -235,6 +235,44 @@ describe('evaluateQuality', () => {
     expect(codes(q)).toEqual(['quality-report-invalid', 'quality-report-unknown']);
   });
 
+  it('all applicable not visible → grey, not-visible reasons level info', () => {
+    const q = evaluate(
+      input(
+        [
+          { componentId: 'coordinator', repository: 'example-org/a', applicable: true },
+          { componentId: 'api', repository: 'example-org/b', applicable: true },
+          { componentId: 'web', repository: 'example-org/c', applicable: true },
+        ],
+        [
+          repo('example-org/a', 'missing'),
+          repo('example-org/b', 'not-authorised'),
+          repo('example-org/c', 'unknown'),
+        ],
+      ),
+    );
+    expect(q.status).toBe('grey');
+    // Grey already says "not visible": the reasons must not add amber rows to the why box.
+    expect(q.reasons.map((r) => [r.code, r.level])).toEqual([
+      ['quality-report-missing', 'info'],
+      ['quality-report-not-authorised', 'info'],
+      ['quality-report-unknown', 'info'],
+    ]);
+  });
+
+  it('not grey → not-visible reasons keep level amber', () => {
+    const q = evaluate(
+      input(
+        [
+          { componentId: 'coordinator', repository: 'example-org/a', applicable: true },
+          { componentId: 'api', repository: 'example-org/b', applicable: true },
+        ],
+        [repo('example-org/a', 'readable', 50, 100), repo('example-org/b', 'unknown')],
+      ),
+    );
+    expect(q.status).toBe('red');
+    expect(reasonOf(q, 'quality-report-unknown')!.level).toBe('amber');
+  });
+
   it('no applicable component → grey with quality-not-applicable', () => {
     const q = evaluate(
       input([{ componentId: 'helm', repository: 'example-org/helm', applicable: false }], []),

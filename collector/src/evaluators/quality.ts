@@ -188,7 +188,9 @@ export function evaluateQuality(input: QualityInput, policies: Policies): Qualit
 
   if (staleRows.length)
     reasons.push(reason('quality-report-stale', 'amber', { components: ids(staleRows) }));
-  const hiddenLevel: ReasonLevel = q.missingReportIsAmber ? 'amber' : 'info';
+  // A grey Quality already says "nothing visible": its reasons stay informative and never
+  // add amber rows to the why box. Otherwise a not-visible component caps at amber.
+  const hiddenLevel: ReasonLevel = status === 'grey' || !q.missingReportIsAmber ? 'info' : 'amber';
   for (const [state, code] of Object.entries(NOT_VISIBLE_REASON)) {
     const rows = hiddenRows.filter((r) => r.state === state);
     if (rows.length) reasons.push(reason(code, hiddenLevel, { components: ids(rows) }));
