@@ -1004,6 +1004,28 @@ describe('static site', () => {
       expect(text(alpha)).toContain('example-org/project-alpha-backend#code-scanning#9');
     });
 
+    it('lists newly overdue alerts and expired exceptions in the platform card (EN and IT)', async () => {
+      const en = text(card(await page('changes'), 'platform'));
+      expect(en).toContain('Newly overdue');
+      expect(en).toContain('example-org/platform-mono#code-scanning#2');
+      expect(en).toContain('Exceptions expired');
+      expect(en).toContain('EXC-PLAT-001');
+      const it = text(card(await page('it/changes'), 'platform'));
+      expect(it).toContain('Scaduti da poco');
+      expect(it).toContain('Eccezioni scadute');
+      // A project with neither list shows neither heading.
+      expect(text(card(await page('changes'), 'project-gamma'))).not.toContain('Newly overdue');
+    });
+
+    it('the trend table has an Overdue column: "not tracked" before 1.2, the count after', async () => {
+      const html = await page('projects/platform');
+      const rows = html.match(/<tr data-trend-row[\s\S]*?<\/tr>/g) ?? [];
+      const cell = (row: string) => (row.match(/<td[\s\S]*?<\/td>/g) ?? []).at(-1) ?? '';
+      expect(html).toContain('>Overdue<');
+      expect(textOf(cell(rows.at(-1)!))).toContain('not tracked');
+      expect(textOf(cell(rows[0]!)).trim()).toBe('1');
+    });
+
     it('lists the platform status change and says no changes for nobody else but gamma', async () => {
       const html = await page('changes');
       const platform = text(card(html, 'platform'));

@@ -106,6 +106,7 @@ const sentence =
                   <th scope="col">{i18n.dimension(k)}</th>
                 ))}
                 <th scope="col">{d.trend.openHigh}</th>
+                <th scope="col">{d.trend.overdue}</th>
               </tr>
             </thead>
             <tbody>
@@ -144,6 +145,15 @@ const sentence =
                       <UnknownValue i18n={i18n} />
                     ) : (
                       `${p.open.critical} · ${p.open.high}`
+                    )}
+                  </td>
+                  <td class="trend__num">
+                    {!p.risk ? (
+                      <span class="trend__untracked">{d.trend.notTracked}</span>
+                    ) : p.risk.overdue === null ? (
+                      <UnknownValue i18n={i18n} />
+                    ) : (
+                      p.risk.overdue
                     )}
                   </td>
                 </tr>

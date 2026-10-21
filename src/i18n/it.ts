@@ -1181,6 +1181,10 @@ export const it: Dict = {
     truncated: 'e altri {n}',
     versionMoves: 'Versioni cambiate',
     coordinator: 'Coordinatore',
+    newlyOverdue: 'Scaduti da poco',
+    newlyOverdueDue: 'scadenza {date}',
+    expiredExceptions: 'Eccezioni scadute',
+    expiredExceptionOn: 'ultimo giorno {date}',
     repositoryChecks: 'Controlli repository',
     errors: 'Errori di raccolta',
     resolvedErrorsOne: '{n} errore non si verifica più',
@@ -1232,6 +1236,7 @@ export const it: Dict = {
     date: 'Raccolto',
     notTracked: 'non rilevato',
     changesLink: 'Cosa è cambiato per questo progetto',
+    overdue: 'In ritardo',
     openHigh: 'Aperti critici / alti',
   },
   exports: {

@@ -120,14 +120,36 @@ describe('HistoryFileSchema', () => {
     );
   });
 
-  it('accepts schemaVersion "1.0" and "1.1", rejects "2.0"', () => {
-    for (const v of ['1.0', '1.1'])
+  it('accepts schemaVersion "1.0", "1.1" and "1.2", rejects "2.0"', () => {
+    for (const v of ['1.0', '1.1', '1.2'])
       expect(HistoryFileSchema.safeParse({ ...validHistory(), schemaVersion: v }).success).toBe(
         true,
       );
     expect(HistoryFileSchema.safeParse({ ...validHistory(), schemaVersion: '2.0' }).success).toBe(
       false,
     );
+  });
+
+  it('a 1.0 file and a 1.1 file parse and their points have no risk', () => {
+    for (const v of ['1.0', '1.1']) {
+      const r = HistoryFileSchema.safeParse({ ...validHistory(), schemaVersion: v });
+      expect(r.success).toBe(true);
+      expect(r.data?.entries[0]!.projects[0]!.risk).toBeUndefined();
+    }
+  });
+
+  it('a 1.2 point with risk { overdue: 1, accepted: 1 } round-trips; risk { overdue: -1 } is rejected', () => {
+    const f = clone(validHistory());
+    f.schemaVersion = '1.2';
+    f.entries[0]!.projects[0]!.risk = { overdue: 1, accepted: 1 };
+    const parsed = HistoryFileSchema.safeParse(f);
+    expect(parsed.success).toBe(true);
+    expect(parsed.data?.entries[0]!.projects[0]!.risk).toEqual({ overdue: 1, accepted: 1 });
+    f.entries[0]!.projects[0]!.risk = { overdue: -1, accepted: 0 };
+    expect(HistoryFileSchema.safeParse(f).success).toBe(false);
+    // null is "not measured", never 0.
+    f.entries[0]!.projects[0]!.risk = { overdue: null, accepted: null };
+    expect(HistoryFileSchema.safeParse(f).success).toBe(true);
   });
 
   it('rejects a baseline whose collectedAt differs from the last entry', () => {
@@ -199,5 +221,38 @@ describe('ChangesFileSchema', () => {
     expect(ChangesFileSchema.safeParse(f).success).toBe(false);
     f.projects[0]!.newFindings.pop();
     expect(ChangesFileSchema.safeParse(f).success).toBe(true);
+  });
+});
+
+describe('ChangesFileSchema risk lists', () => {
+  it('accepts newlyOverdue / expiredExceptions and their totals, rejects more than 50', () => {
+    const f = clone(validChanges());
+    f.totals.newlyOverdue = 1;
+    f.totals.expiredExceptions = 1;
+    const p = f.projects[0]!;
+    p.newlyOverdue = [
+      {
+        id: 'example-org/platform-mono#code-scanning#2',
+        severity: 'high',
+        componentId: 'api',
+        repository: 'example-org/platform-mono',
+        dueAt: '2026-01-14T18:00:00.000Z',
+        htmlUrl: null,
+      },
+    ];
+    p.expiredExceptions = [
+      { id: 'EXC-PLAT-001', repository: 'example-org/platform-mono', expires: '2026-01-14' },
+    ];
+    expect(ChangesFileSchema.safeParse(f).success).toBe(true);
+    p.expiredExceptions = Array.from({ length: 51 }, (_, i) => ({
+      id: `EXC-${i}00`,
+      repository: 'example-org/platform-mono',
+      expires: '2026-01-14',
+    }));
+    expect(ChangesFileSchema.safeParse(f).success).toBe(false);
+  });
+
+  it('a file without the risk fields (older collector) still parses', () => {
+    expect(ChangesFileSchema.safeParse(validChanges()).success).toBe(true);
   });
 });

@@ -228,7 +228,34 @@ describe('history and changes (mock run)', () => {
       versionMoves: 1,
       newErrors: 1,
       checkChanges: 1,
+      newlyOverdue: 1,
+      expiredExceptions: 1,
     });
+  });
+
+  it('golden changes: platform newlyOverdue and expiredExceptions, and no fake new alerts', async () => {
+    const changes = await readGolden<ChangesFile>('changes.json');
+    const platform = changes.projects.find((p) => p.id === 'platform')!;
+    expect(platform.newlyOverdue).toHaveLength(1);
+    expect(platform.newlyOverdue![0]).toMatchObject({
+      id: 'example-org/platform-mono#code-scanning#2',
+      dueAt: '2026-01-14T18:00:00.000Z',
+    });
+    expect(platform.expiredExceptions).toEqual([
+      { id: 'EXC-PLAT-001', repository: 'example-org/platform-mono', expires: '2026-01-14' },
+    ]);
+    const newIds = changes.projects.flatMap((p) => p.newFindings.map((f) => f.id));
+    expect(newIds).not.toContain('example-org/project-alpha-backend#code-scanning#15');
+    expect(newIds).not.toContain('example-org/platform-mono#code-scanning#2');
+  });
+
+  it('golden history: schema 1.2 and the latest platform point carries risk { overdue: 1, accepted: 1 }', async () => {
+    const h = await readGolden<HistoryFile>('history.json');
+    expect(h.schemaVersion).toBe('1.2');
+    const latest = h.entries.at(-1)!.projects.find((p) => p.id === 'platform')!;
+    expect(latest.risk).toEqual({ overdue: 1, accepted: 1 });
+    // The fixture entries come from an older collector: no risk, shown as "not tracked".
+    expect(h.entries[0]!.projects[0]!.risk).toBeUndefined();
   });
 
   it('golden changes: beta-web branch-protected moved pass → fail', async () => {

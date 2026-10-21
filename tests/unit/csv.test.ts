@@ -105,6 +105,10 @@ describe('export rows (golden data)', () => {
       'controls_passed',
       'controls_failed',
       'controls_unknown',
+      'overdue',
+      'overdue_critical_high',
+      'accepted',
+      'exception_issues',
     ]);
     expect(FINDINGS_HEADERS).toEqual([
       'project_id',
@@ -117,6 +121,8 @@ describe('export rows (golden data)', () => {
       'open_informational',
       'open_unknown',
       'sources_complete',
+      'overdue',
+      'accepted',
     ]);
     expect(VERSIONS_HEADERS).toEqual([
       'row_type',
@@ -142,8 +148,8 @@ describe('export rows (golden data)', () => {
     for (const r of versionsRows(d)) expect(r).toHaveLength(VERSIONS_HEADERS.length);
   });
 
-  it('portfolio CSV ends with the repository control counts: beta 5, 7, 8', () => {
-    expect(PORTFOLIO_HEADERS.slice(-3)).toEqual([
+  it('portfolio CSV carries the repository control counts before the risk columns: beta 5, 7, 8', () => {
+    expect(PORTFOLIO_HEADERS.slice(-7, -4)).toEqual([
       'controls_passed',
       'controls_failed',
       'controls_unknown',
@@ -151,6 +157,32 @@ describe('export rows (golden data)', () => {
     const rows = asObjects(PORTFOLIO_HEADERS, portfolioRows(golden(), history()));
     const beta = rows.find((r) => r.project_id === 'project-beta')!;
     expect([beta.controls_passed, beta.controls_failed, beta.controls_unknown]).toEqual([5, 7, 8]);
+  });
+
+  it('portfolio CSV ends with the risk columns: platform 1,1,1,1 and gamma unknown,unknown,unknown,0', () => {
+    expect(PORTFOLIO_HEADERS.slice(-4)).toEqual([
+      'overdue',
+      'overdue_critical_high',
+      'accepted',
+      'exception_issues',
+    ]);
+    const csv = toCsv(PORTFOLIO_HEADERS, portfolioRows(golden(), history()))
+      .replace('\uFEFF', '')
+      .split('\r\n');
+    expect(csv.find((l) => l.startsWith('platform,'))!.endsWith(',1,1,1,1')).toBe(true);
+    expect(
+      csv.find((l) => l.startsWith('project-gamma,'))!.endsWith(',unknown,unknown,unknown,0'),
+    ).toBe(true);
+  });
+
+  it('findings summary CSV ends with overdue and accepted per repository row', () => {
+    expect(FINDINGS_HEADERS.slice(-2)).toEqual(['overdue', 'accepted']);
+    const rows = asObjects(FINDINGS_HEADERS, findingsRows(golden()));
+    const mono = rows.filter((r) => r.repository === 'example-org/platform-mono');
+    expect(mono.length).toBeGreaterThan(0);
+    expect(mono.reduce((n, r) => n + Number(r.overdue), 0)).toBeGreaterThanOrEqual(1);
+    const gamma = rows.filter((r) => r.project_id === 'project-gamma');
+    for (const r of gamma) expect([r.overdue, r.accepted]).toEqual([null, null]);
   });
 
   it('portfolio control counts are n/a, never 0, when nothing was evaluated', () => {

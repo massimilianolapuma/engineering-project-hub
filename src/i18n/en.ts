@@ -1171,6 +1171,10 @@ export const en = {
     truncated: 'and {n} more',
     versionMoves: 'Version moves',
     coordinator: 'Coordinator',
+    newlyOverdue: 'Newly overdue',
+    newlyOverdueDue: 'was due {date}',
+    expiredExceptions: 'Exceptions expired',
+    expiredExceptionOn: 'last day {date}',
     repositoryChecks: 'Repository checks',
     errors: 'Collection errors',
     resolvedErrorsOne: '{n} error no longer occurs',
@@ -1222,6 +1226,7 @@ export const en = {
     date: 'Collected',
     notTracked: 'not tracked',
     changesLink: 'What changed for this project',
+    overdue: 'Overdue',
     openHigh: 'Open critical / high',
   },
   exports: {

@@ -22,8 +22,9 @@ import { CollectionErrorSchema } from './snapshot';
 export const toUtc = (iso: string): string => new Date(iso).toISOString();
 
 // 1.1: repository controls counts per point and check states in the baseline (optional).
-export const HISTORY_SCHEMA_VERSION = '1.1';
-export const SUPPORTED_HISTORY_SCHEMA_VERSIONS = ['1.0', '1.1'] as const;
+// 1.2: overdue and accepted counts per point (optional, absent = not tracked then).
+export const HISTORY_SCHEMA_VERSION = '1.2';
+export const SUPPORTED_HISTORY_SCHEMA_VERSIONS = ['1.0', '1.1', '1.2'] as const;
 export const CHANGES_SCHEMA_VERSION = '1.0';
 
 /** How the previous history was obtained for a run. */
@@ -79,6 +80,8 @@ export const HistoryProjectPointSchema = z
     collectionErrors: count,
     /** Repository checks of the run (absent in 1.0 files). */
     controls: z.object({ passed: count, failed: count, unknown: count }).strict().optional(),
+    /** Overdue and accepted findings of the run (absent before 1.2: not tracked, never 0). */
+    risk: z.object({ overdue: nullableCount, accepted: nullableCount }).strict().optional(),
   })
   .strict();
 export type HistoryProjectPoint = z.infer<typeof HistoryProjectPointSchema>;
@@ -217,6 +220,9 @@ export const ChangesFileSchema = z
         newErrors: count,
         /** Written by 0.8.0 and later. */
         checkChanges: count.optional(),
+        /** Written by 0.9.0 and later. */
+        newlyOverdue: count.optional(),
+        expiredExceptions: count.optional(),
       })
       .strict(),
     projects: z.array(
@@ -272,6 +278,35 @@ export const ChangesFileSchema = z
                   check: RepositoryCheckIdSchema,
                   from: z.enum(['pass', 'fail']),
                   to: z.enum(['pass', 'fail']),
+                })
+                .strict(),
+            )
+            .max(50)
+            .optional(),
+          /** Counted critical/high findings whose SLA fell due since the previous collection. */
+          newlyOverdue: z
+            .array(
+              z
+                .object({
+                  id: z.string().max(200),
+                  severity: z.enum(['critical', 'high']),
+                  componentId: z.string().max(64),
+                  repository: z.string().max(200),
+                  dueAt: utcDate,
+                  htmlUrl: httpsUrl.nullable(),
+                })
+                .strict(),
+            )
+            .max(50)
+            .optional(),
+          /** Exceptions whose last day ended since the previous collection. */
+          expiredExceptions: z
+            .array(
+              z
+                .object({
+                  id: z.string().max(40),
+                  repository: z.string().max(200),
+                  expires: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
                 })
                 .strict(),
             )

@@ -13,7 +13,9 @@
     "resolvedFindings": 1,
     "versionMoves": 1,
     "newErrors": 1,
-    "checkChanges": 1
+    "checkChanges": 1,
+    "newlyOverdue": 1,
+    "expiredExceptions": 1
   },
   "projects": [
     {
@@ -46,7 +48,24 @@
       "versionMoves": [],
       "newErrors": [],
       "resolvedErrors": 0,
-      "checkChanges": []
+      "checkChanges": [],
+      "newlyOverdue": [
+        {
+          "id": "example-org/platform-mono#code-scanning#2",
+          "severity": "high",
+          "componentId": "coordinator",
+          "repository": "example-org/platform-mono",
+          "dueAt": "2026-01-14T18:00:00.000Z",
+          "htmlUrl": "https://github.com/example-org/platform-mono/security/code-scanning/2"
+        }
+      ],
+      "expiredExceptions": [
+        {
+          "id": "EXC-PLAT-001",
+          "repository": "example-org/platform-mono",
+          "expires": "2026-01-14"
+        }
+      ]
     },
     {
       "id": "project-alpha",
@@ -88,7 +107,9 @@
       ],
       "newErrors": [],
       "resolvedErrors": 0,
-      "checkChanges": []
+      "checkChanges": [],
+      "newlyOverdue": [],
+      "expiredExceptions": []
     },
     {
       "id": "project-beta",
@@ -147,7 +168,9 @@
           "from": "pass",
           "to": "fail"
         }
-      ]
+      ],
+      "newlyOverdue": [],
+      "expiredExceptions": []
     },
     {
       "id": "project-gamma",
@@ -168,7 +191,9 @@
       "versionMoves": [],
       "newErrors": [],
       "resolvedErrors": 0,
-      "checkChanges": []
+      "checkChanges": [],
+      "newlyOverdue": [],
+      "expiredExceptions": []
     }
   ]
 }

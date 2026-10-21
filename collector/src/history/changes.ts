@@ -1,5 +1,6 @@
 import {
   CHANGES_SCHEMA_VERSION,
+  countsAsOpen,
   DimensionSchema,
   toUtc,
   type ChangesFile,
@@ -17,6 +18,7 @@ import {
   pairKey,
   unreadablePairs,
 } from './baseline';
+import { expiryInstant } from '../policy/exceptions';
 import type { PreviousHistory } from './load';
 
 type ProjectChanges = ChangesFile['projects'][number];
@@ -58,6 +60,8 @@ export function computeChanges(
         versionMoves: 0,
         newErrors: 0,
         checkChanges: 0,
+        newlyOverdue: 0,
+        expiredExceptions: 0,
       },
       projects: index.projects.map((s) =>
         emptyProject(s.id, s.overall, s.score.value, false, null),
@@ -72,6 +76,8 @@ export function computeChanges(
     versionMoves: 0,
     newErrors: 0,
     checkChanges: 0,
+    newlyOverdue: 0,
+    expiredExceptions: 0,
   };
   const out: ProjectChanges[] = [];
   for (const s of index.projects) {
@@ -107,6 +113,14 @@ export function computeChanges(
       diffVersions(entry, before, snapshot);
       diffErrors(entry, before, snapshot);
       totals.checkChanges += diffChecks(entry, before, snapshot);
+    }
+    // Risk lists need only the previous collection time, not a baseline.
+    if (snapshot) {
+      const risk = diffRisk(snapshot, last.collectedAt, toUtc(index.generatedAt));
+      entry.newlyOverdue = risk.newlyOverdue.slice(0, LIST_CAP);
+      entry.expiredExceptions = risk.expiredExceptions.slice(0, LIST_CAP);
+      totals.newlyOverdue += risk.newlyOverdue.length;
+      totals.expiredExceptions += risk.expiredExceptions.length;
     }
     totals.statusChanges += entry.statusChanges.length;
     totals.versionMoves += entry.versionMoves.length;
@@ -150,6 +164,8 @@ function emptyProject(
     newErrors: [],
     resolvedErrors: 0,
     checkChanges: [],
+    newlyOverdue: [],
+    expiredExceptions: [],
   };
 }
 
@@ -217,6 +233,43 @@ function diffAlerts(
   entry.findingsPartial =
     nowUnreadable.size > 0 || wasUnreadable.size > 0 || catalogChanged || wasCut;
   return { new: fresh.length, resolved: resolved.length };
+}
+
+/**
+ * What crossed a line between two collections (spec 5.8): counted critical/high findings whose
+ * dueAt is in (previous, now], and exceptions whose expiry instant is. A policy change that
+ * makes old findings overdue at once is not listed (their dueAt is before the window).
+ */
+function diffRisk(
+  snapshot: ProjectSnapshot,
+  previousAt: string,
+  nowAt: string,
+): {
+  newlyOverdue: NonNullable<ProjectChanges['newlyOverdue']>;
+  expiredExceptions: NonNullable<ProjectChanges['expiredExceptions']>;
+} {
+  const from = Date.parse(previousAt);
+  const to = Date.parse(nowAt);
+  const inWindow = (t: number) => t > from && t <= to;
+  const newlyOverdue: NonNullable<ProjectChanges['newlyOverdue']> = [];
+  for (const f of snapshot.securityFindings) {
+    if ((f.severity !== 'critical' && f.severity !== 'high') || !countsAsOpen(f)) continue;
+    if (f.sla?.state !== 'overdue' || !f.sla.dueAt || !inWindow(Date.parse(f.sla.dueAt))) continue;
+    newlyOverdue.push({
+      id: f.id,
+      severity: f.severity,
+      componentId: f.componentId,
+      repository: f.repository,
+      dueAt: toUtc(f.sla.dueAt),
+      htmlUrl: f.htmlUrl,
+    });
+  }
+  newlyOverdue.sort((a, b) => a.dueAt.localeCompare(b.dueAt) || a.id.localeCompare(b.id));
+  const expiredExceptions = snapshot.securityExceptions
+    .filter((e) => inWindow(expiryInstant(e.expires).getTime()))
+    .map((e) => ({ id: e.id, repository: e.repository, expires: e.expires }))
+    .sort((a, b) => a.expires.localeCompare(b.expires) || a.id.localeCompare(b.id));
+  return { newlyOverdue, expiredExceptions };
 }
 
 /** Only when both values are known and differ; known to unknown is a visibility loss. */

@@ -16,6 +16,8 @@ export interface TrendPoint {
   /** A missing key means the dimension was not tracked at that time. */
   dimensions: Partial<Record<Dimension, HealthStatus>>;
   open: { critical: number | null; high: number | null };
+  /** undefined = not tracked then (collector before 0.9.0), never 0. */
+  risk?: { overdue: number | null; accepted: number | null };
 }
 
 /** The last `max` points of one project, oldest first. A project absent from an entry has no point. */
@@ -30,6 +32,7 @@ export function seriesFor(history: HistoryFile, projectId: string, max: number):
         overall: p.overall,
         dimensions: p.dimensions,
         open: { critical: p.open.critical, high: p.open.high },
+        risk: p.risk,
       });
   }
   return points.slice(-max);
