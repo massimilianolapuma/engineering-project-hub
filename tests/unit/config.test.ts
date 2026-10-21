@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { mkdtemp, mkdir, writeFile, cp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -8,6 +9,7 @@ import {
   ConfigError,
   loadCatalog,
   loadConfig,
+  loadExceptions,
   parseYamlWith,
 } from '../../collector/src/config/load';
 
@@ -418,5 +420,72 @@ describe('policies: remediation and exceptions blocks', () => {
       low: 'info',
       secret: 'info',
     });
+  });
+});
+
+describe('exceptions loading', () => {
+  const NOW_TOKENS = new Date('2026-01-15T12:00:00.000Z');
+  const exceptionsYaml = (created: string, expires: string, extra = '') => `schemaVersion: '1.0'
+exceptions:
+  - id: EXC-0001
+    repository: example-org/project-alpha-backend
+    source: code-scanning
+    match: { alert: 15 }
+    owner: team-alpha
+    reason: Accepted for the demo only.
+    created: ${created}
+    expires: ${expires}${extra}
+`;
+  async function load(text: string | null, allowDateTokens = false) {
+    const dir = await mkdtemp(join(tmpdir(), 'hub-exc-'));
+    const file = join(dir, 'exceptions.yaml');
+    if (text !== null) await writeFile(file, text);
+    const { catalog, policies } = await loadConfig('config');
+    return loadExceptions(file, { policies, catalog, now: NOW_TOKENS, allowDateTokens });
+  }
+
+  it('loadExceptions: missing file → source none, file null', async () => {
+    expect(await load(null)).toEqual({ source: 'none', file: null, warnings: [] });
+  });
+
+  it('allowDateTokens: "@now+20d" → "2026-02-04", "@now-10d" → "2026-01-05"', async () => {
+    const r = await load(exceptionsYaml("'@now-10d'", "'@now+20d'"), true);
+    expect(r.source).toBe('fixture');
+    expect(r.file!.exceptions[0]).toMatchObject({ created: '2026-01-05', expires: '2026-02-04' });
+  });
+
+  it('without allowDateTokens "@now+20d" throws ConfigError mentioning created/expires', async () => {
+    const run = load(exceptionsYaml("'@now-10d'", "'@now+20d'"), false);
+    await expect(run).rejects.toBeInstanceOf(ConfigError);
+    await expect(run).rejects.toThrow(/created|expires/);
+  });
+
+  it('a valid file loads as source config, with warnings returned', async () => {
+    const r = await load(exceptionsYaml("'2026-01-05'", "'2026-01-14'"));
+    expect(r.source).toBe('config');
+    expect(r.warnings.map((w) => w.message).join('|')).toContain('expired');
+  });
+
+  it('an error issue throws ConfigError listing "exceptions[0] (EXC-0001): …"', async () => {
+    const run = load(exceptionsYaml("'2026-01-01'", "'2026-12-31'"));
+    await expect(run).rejects.toBeInstanceOf(ConfigError);
+    await expect(run).rejects.toThrow(/exceptions\[0\] \(EXC-0001\): .*exceptions\.maxDays/);
+  });
+
+  it('validate-config prints "✔ config/exceptions.yaml: 0 exception(s)"', () => {
+    const r = spawnSync('npx', ['tsx', 'scripts/validate-config.ts', 'config'], {
+      encoding: 'utf8',
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('✔ config/exceptions.yaml: 0 exception(s)');
+  });
+
+  it('validate-config exits 1 on an invalid exceptions file', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'hub-cfg-'));
+    await cp('config', dir, { recursive: true });
+    await writeFile(join(dir, 'exceptions.yaml'), exceptionsYaml("'2026-01-01'", "'2026-12-31'"));
+    const r = spawnSync('npx', ['tsx', 'scripts/validate-config.ts', dir], { encoding: 'utf8' });
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('exceptions[0] (EXC-0001)');
   });
 });

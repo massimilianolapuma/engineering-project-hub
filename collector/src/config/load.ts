@@ -5,11 +5,15 @@ import type { z } from 'zod';
 import {
   CatalogSchema,
   CatalogSettingsSchema,
+  ExceptionsFileSchema,
   PoliciesSchema,
   ProjectConfigSchema,
   type Catalog,
+  type ExceptionsFile,
   type Policies,
 } from '@model/index';
+import { validateExceptions, type ExceptionIssue } from '../policy/exceptions';
+import { resolveRelativeTime } from '../util/clock';
 
 export class ConfigError extends Error {
   constructor(
@@ -54,9 +58,17 @@ async function readText(file: string): Promise<string> {
   }
 }
 
+export interface LoadedExceptions {
+  /** fixture = the mock source (date tokens allowed); config = a reviewed config file. */
+  source: 'config' | 'fixture' | 'none';
+  file: ExceptionsFile | null;
+  warnings: ExceptionIssue[];
+}
+
 export interface LoadedConfig {
   catalog: Catalog;
   policies: Policies;
+  exceptions: LoadedExceptions;
 }
 
 async function readOptional(file: string): Promise<string | null> {
@@ -129,9 +141,84 @@ export async function loadCatalog(configDir = 'config'): Promise<Catalog> {
   return merged.data;
 }
 
-export async function loadConfig(configDir = 'config'): Promise<LoadedConfig> {
+const DATE_TOKEN = /^@now([+-]\d+[mhd])?$/;
+
+/** Replaces "@now±N(d|h|m)" in created / expires with the UTC date of the resulting instant. */
+function resolveDateTokens(raw: unknown, now: Date): unknown {
+  if (!raw || typeof raw !== 'object' || !('exceptions' in raw) || !Array.isArray(raw.exceptions))
+    return raw;
+  const exceptions = raw.exceptions.map((e: unknown) => {
+    if (!e || typeof e !== 'object') return e;
+    const out = { ...(e as Record<string, unknown>) };
+    for (const key of ['created', 'expires']) {
+      const v = out[key];
+      if (typeof v === 'string' && DATE_TOKEN.test(v))
+        out[key] = resolveRelativeTime(v, now)?.slice(0, 10) ?? v;
+    }
+    return out;
+  });
+  return { ...raw, exceptions };
+}
+
+/**
+ * Loads and validates the exceptions file. A missing file is "no exceptions". Errors throw a
+ * ConfigError (structural, like any config error); warnings are returned.
+ */
+export async function loadExceptions(
+  file: string,
+  ctx: { policies: Policies; catalog: Catalog; now: Date; allowDateTokens: boolean },
+): Promise<LoadedExceptions> {
+  const text = await readOptional(file);
+  if (text === null) return { source: 'none', file: null, warnings: [] };
+  let raw: unknown;
+  try {
+    raw = parse(text, { prettyErrors: true });
+  } catch (e) {
+    throw new ConfigError(`Invalid YAML in ${file}: ${(e as Error).message.split('\n')[0]}`, file);
+  }
+  if (ctx.allowDateTokens) raw = resolveDateTokens(raw, ctx.now);
+  const result = ExceptionsFileSchema.safeParse(raw);
+  if (!result.success) {
+    throw new ConfigError(`Invalid configuration in ${file}:`, file, formatIssues(result.error));
+  }
+  const repositories = new Set(
+    ctx.catalog.projects.flatMap((p) =>
+      [p.coordinator.repository, ...p.components.map((c) => c.repository)].map((r) =>
+        r.toLowerCase(),
+      ),
+    ),
+  );
+  const issues = validateExceptions(result.data, ctx.policies, repositories, ctx.now);
+  const errors = issues.filter((i) => i.level === 'error');
+  if (errors.length) {
+    throw new ConfigError(
+      `Invalid exceptions in ${file}:`,
+      file,
+      errors.map((i) => `${i.path}: ${i.message}`),
+    );
+  }
+  return {
+    source: ctx.allowDateTokens ? 'fixture' : 'config',
+    file: result.data,
+    warnings: issues.filter((i) => i.level === 'warning'),
+  };
+}
+
+export async function loadConfig(
+  configDir = 'config',
+  opts: { exceptionsFile?: string; allowDateTokens?: boolean; now?: Date } = {},
+): Promise<LoadedConfig> {
   const policiesFile = join(configDir, 'policies.yaml');
   const catalog = await loadCatalog(configDir);
   const policies = parseYamlWith(PoliciesSchema, await readText(policiesFile), policiesFile);
-  return { catalog, policies };
+  const exceptions = await loadExceptions(
+    opts.exceptionsFile ?? join(configDir, 'exceptions.yaml'),
+    {
+      policies,
+      catalog,
+      now: opts.now ?? new Date(),
+      allowDateTokens: opts.allowDateTokens ?? false,
+    },
+  );
+  return { catalog, policies, exceptions };
 }
