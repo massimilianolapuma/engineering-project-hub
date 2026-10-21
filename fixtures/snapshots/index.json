@@ -15,7 +15,7 @@
       "codeScanning": "available",
       "dependabot": "available",
       "secretScanning": "partial",
-      "codeQuality": "available"
+      "codeQuality": "partial"
     },
     "inaccessibleSources": [
       {

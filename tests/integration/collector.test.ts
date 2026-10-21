@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -120,7 +120,8 @@ describe('mock collection', () => {
     expect(index.run.repositories).toMatchObject({ total: 12, unavailable: 2 });
     expect(index.projects.map((p) => p.overall)).toEqual(['amber', 'amber', 'red', 'grey']);
     expect(index.run.capabilities.secretScanning).toBe('partial');
-    expect(index.run.capabilities.codeQuality).toBe('available');
+    // Platform: findings and setup both 404, so the permission is not proven everywhere.
+    expect(index.run.capabilities.codeQuality).toBe('partial');
   });
 });
 
@@ -235,32 +236,78 @@ describe('quality dimension (mock run)', () => {
     }
   });
 
-  it('an invalid summary yields exactly one invalid-data quality-summary error', async () => {
-    const mock = new MockProvider('fixtures/github', fixedClock(GOLDEN_NOW));
-    const { projects } = await runWith(
+  it('an expired artifact and an invalid summary (test-scoped fixtures)', async () => {
+    // Copies of the demo fixtures, patched only here: the golden demo stays as published.
+    const dir = await mkdtemp(join(tmpdir(), 'eph-quality-fixtures-'));
+    try {
+      await cp('fixtures/github', dir, { recursive: true });
+      const patch = async (
+        repo: string,
+        edit: (q: { summary: Record<string, unknown>; expired?: boolean }) => void,
+      ) => {
+        const file = join(dir, `example-org__${repo}.json`);
+        const fixture = JSON.parse(await readFile(file, 'utf8'));
+        edit(fixture.qualitySummary);
+        await writeFile(file, JSON.stringify(fixture));
+      };
+      // Newest default-branch artifact expired, no live one left.
+      await patch('project-alpha-frontend', (q) => {
+        q.expired = true;
+      });
+      // Extra key: the strict 1.0 contract rejects it, and its value must never be published.
+      await patch('project-alpha-backend', (q) => {
+        q.summary.path = 'src/internal/LeakyService.cs';
+      });
+      const { projects } = await runWith(new MockProvider(dir, fixedClock(GOLDEN_NOW)));
+      const alpha = byId(projects)['project-alpha']!;
+      const state = (id: string) =>
+        alpha.qualityHealth.perComponent.find((c) => c.componentId === id)?.state;
+      expect(state('frontend')).toBe('expired');
+      expect(state('backend')).toBe('invalid');
+      const reasons = alpha.qualityHealth.reasons.map((r) => [r.code, r.params.components]);
+      expect(reasons).toContainEqual(['quality-report-expired', 'frontend']);
+      expect(reasons).toContainEqual(['quality-report-invalid', 'backend']);
+      // Coordinator + worker still measured: (2100 + 1720) / (2500 + 2000) = 84.9, capped amber.
+      expect(alpha.qualityHealth).toMatchObject({
+        status: 'amber',
+        percentage: 84.9,
+        measured: 2,
+        notVisible: 2,
+      });
+      // Invalid: exactly one invalid-data error. Expired: a normal state, no error (spec §5.4).
+      const errors = alpha.collectionErrors.filter((e) => e.source === 'quality-summary');
+      expect(errors).toHaveLength(1);
+      expect(errors[0]).toMatchObject({
+        repository: 'example-org/project-alpha-backend',
+        componentId: 'backend',
+        classification: 'invalid-data',
+      });
+      expect(JSON.stringify(projects)).not.toContain('LeakyService');
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('codeQuality capability is not available when findings and setup are both unreadable', async () => {
+    const notFound = async () => fail<never>({ classification: 'not-found', httpStatus: 404 });
+    const denied = async () => fail<never>({ classification: 'not-authorised', httpStatus: 403 });
+    // Platform-like everywhere: findings 404 + setup 404 proves nothing about the permission.
+    const both404 = await runWith(
+      withQuality({ listCodeQualityFindings: notFound, getCodeQualitySetup: notFound }),
+    );
+    expect(both404.index.run.capabilities.codeQuality).toBe('unknown');
+    const setupDenied = await runWith(
+      withQuality({ listCodeQualityFindings: notFound, getCodeQualitySetup: denied }),
+    );
+    expect(setupDenied.index.run.capabilities.codeQuality).toBe('not-authorised');
+    // Findings 404 with a readable setup ("not configured") proves the permission works.
+    const notConfigured = await runWith(
       withQuality({
-        getQualitySummary: async (repo) =>
-          repo === 'example-org/project-alpha-backend'
-            ? ok({
-                summaryText: '{"schemaVersion":"1.0","extra":true}',
-                createdAt: GOLDEN_NOW,
-                runUrl: null,
-              })
-            : mock.getQualitySummary(repo),
+        listCodeQualityFindings: notFound,
+        getCodeQualitySetup: async () => ok({ state: 'not-configured' }),
       }),
     );
-    const alpha = byId(projects)['project-alpha']!;
-    const errors = alpha.collectionErrors.filter((e) => e.source === 'quality-summary');
-    expect(errors).toHaveLength(1);
-    expect(errors[0]).toMatchObject({
-      repository: 'example-org/project-alpha-backend',
-      componentId: 'backend',
-      classification: 'invalid-data',
-    });
-    expect(JSON.stringify(alpha)).not.toContain('extra');
-    expect(alpha.qualityHealth.perComponent.find((c) => c.componentId === 'backend')?.state).toBe(
-      'invalid',
-    );
+    expect(notConfigured.index.run.capabilities.codeQuality).toBe('available');
   });
 });
 
