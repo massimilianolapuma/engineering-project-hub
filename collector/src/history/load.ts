@@ -19,7 +19,12 @@ import { resolveRelativeTime } from '../util/clock';
 /** A parsed, cleaned history; baseline is null when the last entry was dropped by cleaning. */
 export type CleanHistory = Omit<HistoryFile, 'baseline'> & { baseline: HistoryBaseline | null };
 export type PreviousHistory =
-  | { state: 'restored' | 'fixture'; file: CleanHistory }
+  | {
+      state: 'restored' | 'fixture';
+      file: CleanHistory;
+      /** What loading dropped and why (collection report). */
+      notes?: string[];
+    }
   | {
       state: 'none' | 'restore-failed' | 'unreadable' | 'incompatible' | 'source-changed';
       file: null;
@@ -86,8 +91,11 @@ export async function loadPreviousHistory(o: LoadHistoryOptions): Promise<Previo
     const text = read.text.replace(TOKEN_IN_TEXT, (t) => resolveRelativeTime(t, o.now) ?? t);
     const parsed = parseHistory(text);
     if (parsed.state !== 'ok') return freshStart(parsed.state);
-    const file = cleanHistory(parsed.file, o.catalog, o.policies, o.now);
-    return file.entries.length ? { state: 'fixture', file } : freshStart('none');
+    if (parsed.file.entries.at(-1)?.dataSource !== o.dataSource)
+      return freshStart('source-changed');
+    const { file: same, notes } = sameSource(parsed.file, o.dataSource);
+    const file = cleanHistory(same, o.catalog, o.policies, o.now);
+    return file.entries.length ? { state: 'fixture', file, notes } : freshStart('none');
   }
   if (o.fresh) return freshStart('none');
   if (o.restoreState === 'failed') return freshStart('restore-failed');
@@ -97,8 +105,31 @@ export async function loadPreviousHistory(o: LoadHistoryOptions): Promise<Previo
   const parsed = parseHistory(read.text);
   if (parsed.state !== 'ok') return freshStart(parsed.state);
   if (parsed.file.entries.at(-1)?.dataSource !== o.dataSource) return freshStart('source-changed');
-  const file = cleanHistory(parsed.file, o.catalog, o.policies, o.now);
-  return file.entries.length ? { state: 'restored', file } : freshStart('none');
+  const { file: same, notes } = sameSource(parsed.file, o.dataSource);
+  const file = cleanHistory(same, o.catalog, o.policies, o.now);
+  return file.entries.length ? { state: 'restored', file, notes } : freshStart('none');
+}
+
+/**
+ * Mock and real points never mix: entries from another data source than the run's are dropped
+ * (the last entry already matches, so the baseline still describes it), with a note.
+ */
+function sameSource(
+  file: HistoryFile,
+  dataSource: DataSource,
+): { file: HistoryFile; notes: string[] } {
+  const entries = file.entries.filter((e) => e.dataSource === dataSource);
+  const dropped = file.entries.length - entries.length;
+  if (dropped === 0) return { file, notes: [] };
+  const others = [...new Set(file.entries.map((e) => e.dataSource))]
+    .filter((s) => s !== dataSource)
+    .join(', ');
+  return {
+    file: { ...file, entries },
+    notes: [
+      `Dropped ${dropped} earlier ${dropped === 1 ? 'collection' : 'collections'} from another data source (${others}) from the restored history.`,
+    ],
+  };
 }
 
 function parseHistory(

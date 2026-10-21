@@ -90,4 +90,18 @@ describe('buildHistoryExtras', () => {
     expect(report.history).toMatchObject({ state: 'not-written', entries: 0 });
     expect(reportMarkdown(report)).toContain('| History | not written this run');
   });
+
+  it('carries the notes of the restored history into the report', () => {
+    const { index, projects } = run();
+    const file = cleanHistory(historyFile([historyEntry(daysAgo(1))]), catalog, policies, NOW);
+    const extras = buildHistoryExtras(
+      { state: 'restored', file, notes: ['Dropped 1 earlier collection.'] },
+      index,
+      projects,
+      catalog,
+      policies,
+      NOW,
+    );
+    expect(extras.notes).toEqual(['Dropped 1 earlier collection.']);
+  });
 });

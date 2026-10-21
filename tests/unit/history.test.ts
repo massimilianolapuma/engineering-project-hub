@@ -171,6 +171,22 @@ describe('loadPreviousHistory', () => {
     expect((await loadGithub(f)).state).toBe('source-changed');
   });
 
+  it('github: older mock entries are dropped with a note; the github entries are restored', async () => {
+    const previous = await loadGithub(
+      historyFile([
+        historyEntry(daysAgo(3), { dataSource: 'mock', authenticationMode: 'mock' }),
+        historyEntry(daysAgo(2)),
+        historyEntry(daysAgo(1)),
+      ]),
+    );
+    expect(previous.state).toBe('restored');
+    expect(previous.file?.entries.map((e) => e.collectedAt)).toEqual([daysAgo(2), daysAgo(1)]);
+    expect(previous.file?.entries.every((e) => e.dataSource === 'github')).toBe(true);
+    expect(previous.state === 'restored' && previous.notes).toEqual([
+      'Dropped 1 earlier collection from another data source (mock) from the restored history.',
+    ]);
+  });
+
   it('github: valid file → restored with its entries', async () => {
     const r = await loadGithub(githubHistory());
     expect(r.state).toBe('restored');

@@ -34,6 +34,7 @@ export function buildHistoryExtras(
 ): HistoryExtras {
   const notes: string[] = [];
   const attempt = (p: PreviousHistory): HistoryExtras => {
+    const loadNotes = p.file ? (p.notes ?? []) : [];
     const fitted = fitHistory(appendHistory(p, index, projects, catalog, policies, now));
     const extras: HistoryExtras = {
       history: fitted.file,
@@ -49,7 +50,7 @@ export function buildHistoryExtras(
       sizeNotes.push(
         'history.json is larger than the 8 MiB the next run reads, even with only this collection: the next run will start fresh (unreadable).',
       );
-    return { ...extras, notes: [...notes, ...sizeNotes] };
+    return { ...extras, notes: [...loadNotes, ...notes, ...sizeNotes] };
   };
   let basis = previous;
   if (basis.file) {

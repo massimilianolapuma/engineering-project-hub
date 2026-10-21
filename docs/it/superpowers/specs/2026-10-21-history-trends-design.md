@@ -288,6 +288,7 @@ Regole del confronto (funzione pura, `collector/src/history/changes.ts`):
 | Valido, ma `entries.at(-1).dataSource` diverso da quello dell'esecuzione  | `source-changed`                               | nessuno                                                                                    |
 | Valido e stessa fonte dati                                                | `restored`                                     | sì                                                                                         |
 
+- Punti mock e reali non si mescolano mai. Si controlla il `dataSource` di ogni voce, non solo dell'ultima: quando l'ultima voce corrisponde all'esecuzione ma voci più vecchie no, quelle voci vengono scartate e il report di raccolta riceve una nota ("Dropped N earlier collections from another data source"). Le stesse regole valgono per la fixture mock.
 - Il percorso dello storico è `--history-from <dir>`, poi `$HISTORY_FROM`, poi la directory `--out` (default `public/data`). Si legge `<dir>/history.json`. `--fresh-history` forza `none`.
 - Il file è un input non fidato:
   - viene letto con un unico handle e un controllo di dimensione (nessuna race tra controllo e uso, come in `scan-output.ts`);

@@ -167,15 +167,15 @@ Data quality "History" card and in the job summary. A state other than `restored
 fails the collection, and the "What changed" page then explains it instead of saying "no
 changes".
 
-| State            | Meaning                                                                                                   | What to do                                                                                  |
-| ---------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `restored`       | The previous history was read and extended.                                                               | Nothing.                                                                                    |
-| `fixture`        | Mock run, started from the synthetic fixture.                                                             | Nothing. Demo data.                                                                         |
-| `none`           | No previous history (first run, expired artifacts, `--fresh-history`).                                    | Nothing. Changes appear after the next collection.                                          |
-| `restore-failed` | The artifact could not be fetched (not authorised, bad archive, API error).                               | Check that the `collect` job has `actions: read` (the workflow log prints the reason code). |
-| `unreadable`     | The previous file was too large, not JSON, failed the schema or could not be published; it was set aside. | Usually a one-off. Check the previous run if it repeats.                                    |
-| `incompatible`   | The previous file uses a schema version this version does not read.                                       | Nothing: history starts again from this collection.                                         |
-| `source-changed` | The previous history came from the other data source (mock or GitHub).                                    | Nothing: history starts again from this collection.                                         |
+| State            | Meaning                                                                                                   | What to do                                                                                                                                      |
+| ---------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `restored`       | The previous history was read and extended.                                                               | Nothing.                                                                                                                                        |
+| `fixture`        | Mock run, started from the synthetic fixture.                                                             | Nothing. Demo data.                                                                                                                             |
+| `none`           | No previous history (first run, expired artifacts, `--fresh-history`).                                    | Nothing. Changes appear after the next collection.                                                                                              |
+| `restore-failed` | The artifact could not be fetched (not authorised, bad archive, API error).                               | Check that the `collect` job has `actions: read` (the workflow log prints the reason code).                                                     |
+| `unreadable`     | The previous file was too large, not JSON, failed the schema or could not be published; it was set aside. | Usually a one-off. Check the previous run if it repeats.                                                                                        |
+| `incompatible`   | The previous file uses a schema version this version does not read.                                       | Nothing: history starts again from this collection.                                                                                             |
+| `source-changed` | The previous history came from the other data source (mock or GitHub).                                    | Nothing: history starts again from this collection. Older entries from the other source, behind a matching last entry, are dropped with a note. |
 
 History never blocks the snapshots. If the restored history passes the checks but still
 cannot be published, it is set aside (state `unreadable`). If even a fresh history cannot be
