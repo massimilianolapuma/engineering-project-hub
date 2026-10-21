@@ -83,14 +83,86 @@ validate:snapshots`.
 - **Emergency** (data exposure): see [security.md → Response to accidental
   exposure](security.md#response-to-accidental-exposure). Disable Pages first.
 
+## Publishing the quality summary from CI
+
+The Quality dimension reads the artifact `hub-quality-summary` from each monitored
+repository (contract: [Configuration](configuration.md#hub-quality-summary-artifact-each-repository-optional)).
+Add two steps to the **same job that runs the tests and writes `coverage/cobertura.xml`**:
+each job runs on a fresh runner, so a separate job would not see the coverage file. The steps
+turn the Cobertura file into `quality-summary.json` and upload it, only on the default branch,
+with a 30-day retention:
+
+```yaml
+test:
+  runs-on: ubuntu-latest
+  permissions:
+    contents: read
+  steps:
+    - uses: actions/checkout@<full-commit-sha>
+    # ... set up your toolchain ...
+    - name: Run tests with coverage
+      run: <your test command> # must write coverage/cobertura.xml
+    - name: Write quality-summary.json
+      if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      run: |
+        python3 - <<'PY'
+        import json, os, datetime
+        import xml.etree.ElementTree as ET
+        root = ET.parse('coverage/cobertura.xml').getroot()
+        summary = {
+            'schemaVersion': '1.0',
+            'repository': os.environ['GITHUB_REPOSITORY'],
+            'ref': os.environ['GITHUB_REF'],
+            'commitSha': os.environ['GITHUB_SHA'],
+            'generatedAt': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+            'tool': 'coverlet',
+            'format': 'cobertura',
+            'lines': {
+                'covered': int(root.get('lines-covered')),
+                'valid': int(root.get('lines-valid')),
+            },
+        }
+        json.dump(summary, open('quality-summary.json', 'w'))
+        PY
+    - uses: actions/upload-artifact@<full-commit-sha>
+      if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      with:
+        name: hub-quality-summary
+        path: quality-summary.json
+        retention-days: 30
+```
+
+Notes:
+
+- Pin the action to a full commit SHA, like every action in this project.
+- Keep the artifact name and file name exactly as above; the zip must stay under 64 KB.
+- Upload it only from default-branch runs of the repository itself: runs from forks or other
+  branches are ignored by the collector.
+- Retention is also the freshness horizon: after the retention period the artifact expires
+  and the report becomes `expired` (not visible, never 0%). Reports older than
+  `freshness.qualityReportStaleDays` (14 by default) show as stale.
+- Coverage is read from the Cobertura root attributes `lines-covered` and `lines-valid`.
+  For other formats, compute the two numbers and set `format` accordingly.
+
+## Local data and `ci:build`
+
+`npm run ci:build` runs `collect:mock`, which overwrites `public/data`. A local real-data
+snapshot (for example from `collect:github`) must be re-collected after it.
+
+**Upgrading to snapshot 1.4** (Quality dimension): the site reads only `schemaVersion` 1.4.
+An existing 1.3 `public/data` fails validation until it is re-collected (`collect:github`, or
+the next scheduled run). Remember that `npm run ci:build` overwrites `public/data` with mock
+data.
+
 ## Artifact retention
 
-| Artifact           | Retention        | Content                                 |
-| ------------------ | ---------------- | --------------------------------------- |
-| `snapshots`        | 14 days          | Sanitised JSON + collection report      |
-| `site`             | 1 day            | Built `dist/`, handed to the deploy job |
-| `github-pages`     | GitHub default   | Pages deployment artifact               |
-| CI coverage report | upstream default | Vitest coverage (`coverage/`)           |
+| Artifact                                             | Retention             | Content                                 |
+| ---------------------------------------------------- | --------------------- | --------------------------------------- |
+| `snapshots`                                          | 14 days               | Sanitised JSON + collection report      |
+| `site`                                               | 1 day                 | Built `dist/`, handed to the deploy job |
+| `github-pages`                                       | GitHub default        | Pages deployment artifact               |
+| CI coverage report                                   | upstream default      | Vitest coverage (`coverage/`)           |
+| `hub-quality-summary` (in each monitored repository) | 30 days (recommended) | `quality-summary.json`: counts only     |
 
 Artifacts contain only sanitised, publishable data. They never contain credentials,
 temporary files or raw payloads.

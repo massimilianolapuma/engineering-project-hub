@@ -4,6 +4,7 @@ import { memoize } from '../util/concurrency';
 import { parseGitmodules, type GitmoduleEntry } from '../util/gitmodules';
 import {
   fail,
+  type CodeQualityFindingDTO,
   type CodeScanningAlertDTO,
   type CodeScanningAnalysisDTO,
   type CommitRefDTO,
@@ -11,6 +12,7 @@ import {
   type DependabotAlertDTO,
   type FileDTO,
   type ProviderResult,
+  type QualitySummaryArtifactDTO,
   type ReleaseDTO,
   type RunFailureDTO,
   type RepositoryDTO,
@@ -57,6 +59,9 @@ export interface RepoData {
   codeScanningAnalysis: ProviderResult<CodeScanningAnalysisDTO | null>;
   dependabot: ProviderResult<DependabotAlertDTO[]>;
   secretScanning: ProviderResult<SecretScanningAlertDTO[]>;
+  /** Newest default-branch `hub-quality-summary` artifact. */
+  qualitySummary: ProviderResult<QualitySummaryArtifactDTO>;
+  codeQualityFindings: ProviderResult<CodeQualityFindingDTO[]>;
 }
 
 export interface WorkflowData {
@@ -149,6 +154,8 @@ export async function collectRepository(
       codeScanningAnalysis: skipped(repo),
       dependabot: skipped(repo),
       secretScanning: skipped(repo),
+      qualitySummary: skipped(repo),
+      codeQualityFindings: skipped(repo),
     };
   }
   const branch = configuredDefaultBranch ?? repo.data.defaultBranch;
@@ -160,6 +167,8 @@ export async function collectRepository(
     codeScanningAnalysis,
     dependabot,
     secretScanning,
+    qualitySummary,
+    codeQualityFindings,
   ] = await Promise.all([
     call(ctx, `head:${repository}:${branch}`, () => p.getBranchHead(repository, branch)),
     call(ctx, `release:${repository}`, () => p.getLatestRelease(repository)),
@@ -170,6 +179,8 @@ export async function collectRepository(
     call(ctx, `csa:${repository}`, () => p.getLatestCodeScanningAnalysis(repository)),
     call(ctx, `dep:${repository}`, () => p.listDependabotAlerts(repository)),
     call(ctx, `ss:${repository}`, () => p.listSecretScanningAlerts(repository)),
+    call(ctx, `qs:${repository}:${branch}`, () => p.getQualitySummary(repository, branch)),
+    call(ctx, `cq:${repository}`, () => p.listCodeQualityFindings(repository)),
   ]);
   // Fall back to the latest tag only when there is no GitHub Release.
   const tag =
@@ -190,6 +201,8 @@ export async function collectRepository(
     codeScanningAnalysis,
     dependabot,
     secretScanning,
+    qualitySummary,
+    codeQualityFindings,
   };
 }
 

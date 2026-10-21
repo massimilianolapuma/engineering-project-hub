@@ -7,6 +7,7 @@ import type { ResolvedAuth } from '../auth';
 import {
   fail,
   ok,
+  type CodeQualityFindingDTO,
   type CodeScanningAlertDTO,
   type CodeScanningAnalysisDTO,
   type CommitRefDTO,
@@ -16,6 +17,7 @@ import {
   type DependabotAlertDTO,
   type FileDTO,
   type ProviderResult,
+  type QualitySummaryArtifactDTO,
   type ReleaseDTO,
   type RepositoryDTO,
   type RunFailureDTO,
@@ -25,6 +27,7 @@ import {
   type TagDTO,
   type WorkflowRunDTO,
 } from '../types';
+import { readZipEntry, ZipError } from '../../util/zip';
 import { classifyGitHubError } from './errors';
 
 const ThrottledOctokit = Octokit.plugin(throttling, retry);
@@ -34,6 +37,14 @@ type Client = InstanceType<typeof ThrottledOctokit>;
 const MAX_ALERT_PAGES = 3;
 /** Files above this size are not parsed (manifest / .gitmodules / status file are tiny). */
 const MAX_FILE_BYTES = 256 * 1024;
+
+/** Artifact name / file / size cap of the CI quality summary contract. */
+const QUALITY_ARTIFACT = 'hub-quality-summary';
+const QUALITY_FILE = 'quality-summary.json';
+const ARTIFACT_PAGE_SIZE = 30;
+const MAX_ARTIFACT_PAGES = 3;
+const MAX_QUALITY_ZIP_BYTES = 65_536;
+const CODE_QUALITY_API_VERSION = '2026-03-10';
 
 const silentLog = { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} };
 
@@ -101,6 +112,11 @@ async function guard<T>(
 class InvalidData extends Error {
   override readonly name = 'InvalidData';
   readonly status = 0;
+}
+
+/** More pages remain past MAX_ALERT_PAGES: the count would be incomplete (classified error). */
+class FindingsPageCapExceeded extends Error {
+  override readonly name = 'FindingsPageCapExceeded';
 }
 
 export class GitHubProvider implements SourceProvider {
@@ -331,21 +347,30 @@ export class GitHubProvider implements SourceProvider {
     );
   }
 
-  /** Reads at most MAX_ALERT_PAGES pages of 100 items. */
+  /**
+   * Reads at most MAX_ALERT_PAGES pages of 100 items. With `failWhenCapped`, hitting the cap
+   * while more pages remain throws instead of returning a partial list (a count must never
+   * read as complete when it is not).
+   */
   private async paginate<T, R>(
     method: unknown,
     params: Record<string, unknown>,
     map: (item: T) => R,
+    opts: { failWhenCapped?: boolean } = {},
   ): Promise<R[]> {
     const out: R[] = [];
     let pages = 0;
     const iterator = this.client.paginate.iterator as (
       m: unknown,
       p: unknown,
-    ) => AsyncIterable<{ data: unknown }>;
+    ) => AsyncIterable<{ data: unknown; headers?: { link?: string } }>;
     for await (const page of iterator(method, { ...params, per_page: 100 })) {
       for (const item of page.data as unknown as T[]) out.push(map(item));
-      if (++pages >= MAX_ALERT_PAGES) break;
+      if (++pages >= MAX_ALERT_PAGES) {
+        if (opts.failWhenCapped && /rel="next"/.test(page.headers?.link ?? ''))
+          throw new FindingsPageCapExceeded();
+        break;
+      }
     }
     return out;
   }
@@ -434,6 +459,92 @@ export class GitHubProvider implements SourceProvider {
           updatedAt: a.updated_at ?? null,
           htmlUrl: a.html_url ?? '',
         }),
+      ),
+    );
+  }
+
+  getQualitySummary(
+    repo: string,
+    branch: string,
+  ): Promise<ProviderResult<QualitySummaryArtifactDTO>> {
+    const { owner, repo: name } = split(repo);
+    return guard(async () => {
+      type Art = Awaited<
+        ReturnType<Client['rest']['actions']['listArtifactsForRepo']>
+      >['data']['artifacts'][number];
+      // Only same-repository runs on the branch are trusted: a fork PR run can share the
+      // branch name but has a different head repository.
+      const trusted = (a: Art) =>
+        a.workflow_run?.head_branch === branch &&
+        a.workflow_run.head_repository_id != null &&
+        a.workflow_run.head_repository_id === a.workflow_run.repository_id;
+      const runUrlOf = (a: Art) =>
+        a.workflow_run?.id != null
+          ? `https://github.com/${owner}/${name}/actions/runs/${a.workflow_run.id}`
+          : null;
+      let live: Art | undefined;
+      let newestExpired: Art | undefined;
+      for (let page = 1; page <= MAX_ARTIFACT_PAGES && !live; page++) {
+        const { data } = await this.client.rest.actions.listArtifactsForRepo({
+          owner,
+          repo: name,
+          name: QUALITY_ARTIFACT,
+          per_page: ARTIFACT_PAGE_SIZE,
+          page,
+        });
+        const matching = data.artifacts
+          .filter(trusted)
+          .sort((x, y) => Date.parse(y.created_at ?? '') - Date.parse(x.created_at ?? ''));
+        live = matching.find((a) => !a.expired);
+        newestExpired ??= matching[0];
+        if (data.artifacts.length < ARTIFACT_PAGE_SIZE) break;
+      }
+      if (!live) {
+        if (!newestExpired) throw Object.assign(new Error('no artifact'), { status: 404 });
+        return {
+          summaryText: null,
+          createdAt: newestExpired.created_at ?? null,
+          runUrl: runUrlOf(newestExpired),
+        };
+      }
+      if (live.size_in_bytes > MAX_QUALITY_ZIP_BYTES) throw new InvalidData('artifact too large');
+      const res = await this.client.rest.actions.downloadArtifact({
+        owner,
+        repo: name,
+        artifact_id: live.id,
+        archive_format: 'zip',
+      });
+      const bytes = new Uint8Array(res.data as ArrayBuffer);
+      if (bytes.byteLength > MAX_QUALITY_ZIP_BYTES) throw new InvalidData('artifact too large');
+      try {
+        return {
+          summaryText: readZipEntry(bytes, QUALITY_FILE, MAX_QUALITY_ZIP_BYTES),
+          createdAt: live.created_at ?? null,
+          runUrl: runUrlOf(live),
+        };
+      } catch (e) {
+        if (e instanceof ZipError) throw new InvalidData('invalid artifact archive');
+        throw e;
+      }
+    });
+  }
+
+  listCodeQualityFindings(repo: string): Promise<ProviderResult<CodeQualityFindingDTO[]>> {
+    type Finding = { rule?: { category?: string | null; severity?: string | null } | null };
+    return guard(() =>
+      this.paginate<Finding, CodeQualityFindingDTO>(
+        'GET /repos/{owner}/{repo}/code-quality/findings',
+        {
+          ...split(repo),
+          state: 'open',
+          headers: { 'X-GitHub-Api-Version': CODE_QUALITY_API_VERSION },
+        },
+        (f) => ({
+          category: f.rule?.category ?? 'unknown',
+          severity: f.rule?.severity ?? 'unknown',
+        }),
+        // Past 300 findings the repository's count is unknown, never under-counted.
+        { failWhenCapped: true },
       ),
     );
   }

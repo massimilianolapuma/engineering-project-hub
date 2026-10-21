@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.3",
+  "schemaVersion": "1.4",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "platform",
@@ -581,6 +581,96 @@
       }
     ]
   },
+  "qualityHealth": {
+    "status": "red",
+    "reasons": [
+      {
+        "code": "quality-below-red-threshold",
+        "level": "red",
+        "params": {
+          "components": "coordinator, web, api, worker",
+          "percentage": 58,
+          "threshold": 60
+        }
+      },
+      {
+        "code": "quality-report-stale",
+        "level": "amber",
+        "params": {
+          "components": "coordinator, web, api, worker"
+        }
+      }
+    ],
+    "percentage": 58,
+    "linesCovered": 2900,
+    "linesValid": 5000,
+    "measured": 4,
+    "applicable": 4,
+    "notVisible": 0,
+    "stale": 4,
+    "collectedAt": "2026-01-15T12:00:00.000Z",
+    "perComponent": [
+      {
+        "componentId": "coordinator",
+        "state": "stale",
+        "sharedRepository": true,
+        "percentage": 58,
+        "linesCovered": 2900,
+        "linesValid": 5000,
+        "commitSha": "b85777552b25839b2cea3e76e5c15827386f60ac",
+        "generatedAt": "2025-12-26T12:00:00.000Z",
+        "tool": "vitest",
+        "runUrl": "https://github.com/example-org/platform-mono/actions/runs/9501"
+      },
+      {
+        "componentId": "web",
+        "state": "stale",
+        "sharedRepository": true,
+        "percentage": 58,
+        "linesCovered": 2900,
+        "linesValid": 5000,
+        "commitSha": "b85777552b25839b2cea3e76e5c15827386f60ac",
+        "generatedAt": "2025-12-26T12:00:00.000Z",
+        "tool": "vitest",
+        "runUrl": "https://github.com/example-org/platform-mono/actions/runs/9501"
+      },
+      {
+        "componentId": "api",
+        "state": "stale",
+        "sharedRepository": true,
+        "percentage": 58,
+        "linesCovered": 2900,
+        "linesValid": 5000,
+        "commitSha": "b85777552b25839b2cea3e76e5c15827386f60ac",
+        "generatedAt": "2025-12-26T12:00:00.000Z",
+        "tool": "vitest",
+        "runUrl": "https://github.com/example-org/platform-mono/actions/runs/9501"
+      },
+      {
+        "componentId": "worker",
+        "state": "stale",
+        "sharedRepository": true,
+        "percentage": 58,
+        "linesCovered": 2900,
+        "linesValid": 5000,
+        "commitSha": "b85777552b25839b2cea3e76e5c15827386f60ac",
+        "generatedAt": "2025-12-26T12:00:00.000Z",
+        "tool": "vitest",
+        "runUrl": "https://github.com/example-org/platform-mono/actions/runs/9501"
+      }
+    ],
+    "findings": {
+      "state": "unknown",
+      "reliability": null,
+      "maintainability": null,
+      "bySeverity": {
+        "error": null,
+        "warning": null,
+        "note": null,
+        "none": null
+      }
+    }
+  },
   "overallHealth": {
     "status": "amber",
     "reasons": [
@@ -590,19 +680,32 @@
         "params": {
           "dimension": "security"
         }
+      },
+      {
+        "code": "dimension-red",
+        "level": "amber",
+        "params": {
+          "dimension": "quality"
+        }
       }
     ]
   },
   "score": {
-    "value": 88,
-    "measured": 5,
-    "required": 5
+    "value": 82,
+    "measured": 6,
+    "required": 6
   },
   "dataFreshness": {
-    "status": "green",
+    "status": "amber",
     "collectedAt": "2026-01-15T12:00:00.000Z",
-    "oldestSourceAt": null,
-    "staleSources": []
+    "oldestSourceAt": "2025-12-26T12:00:00.000Z",
+    "staleSources": [
+      {
+        "repository": "example-org/platform-mono",
+        "source": "quality-report",
+        "lastUpdatedAt": "2025-12-26T12:00:00.000Z"
+      }
+    ]
   },
   "collectionErrors": []
 }

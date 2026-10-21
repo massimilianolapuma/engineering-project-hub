@@ -69,15 +69,25 @@ export function pushError(
   source: CollectionError['source'],
   error: ProviderError,
 ): void {
+  ctx.errors.push(toCollectionError(repository, componentId, source, error));
+}
+
+/** Publishable collection error: the provider message is scrubbed and truncated. */
+export function toCollectionError(
+  repository: string,
+  componentId: string | undefined,
+  source: CollectionError['source'],
+  error: ProviderError,
+): CollectionError {
   const detail = scrubText(error.message, 160);
-  ctx.errors.push({
+  return {
     repository,
     ...(componentId ? { componentId } : {}),
     source,
     classification: error.classification,
     ...(error.httpStatus ? { httpStatus: error.httpStatus } : {}),
     ...(detail ? { detail } : {}),
-  });
+  };
 }
 
 export const link = (ctx: BuildContext, url: string | null | undefined) =>

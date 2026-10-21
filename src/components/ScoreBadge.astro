@@ -30,7 +30,15 @@ const hasValue = score.value !== null;
     )}
     {hasValue && size === 'header' && <span class="score__out">{` ${d.score.outOf}`}</span>}
   </div>
-  <div class="score__conf">{hasValue ? measured : `${d.score.insufficient} · ${measured}`}</div>
+  {hasValue ? (
+    <div class="score__conf">{measured}</div>
+  ) : (
+    <div class="score__conf">
+      <span class="score__conf-line">{d.score.insufficient}</span>
+      <span class="visually-hidden"> · </span>
+      <span class="score__conf-line">{measured}</span>
+    </div>
+  )}
 </div>
 
 <style>
@@ -58,6 +66,10 @@ const hasValue = score.value !== null;
   .score--row .score__conf {
     font-size: var(--fs-xs);
     line-height: 16px;
+  }
+  .score__conf-line {
+    display: block;
+    white-space: nowrap;
   }
   .score--header {
     align-items: flex-end;

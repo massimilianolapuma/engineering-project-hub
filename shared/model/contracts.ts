@@ -78,3 +78,27 @@ export const ReleaseManifestSchema = z
   })
   .strict();
 export type ReleaseManifest = z.infer<typeof ReleaseManifestSchema>;
+
+/**
+ * Summary published by the repository's CI as the `hub-quality-summary` artifact
+ * (file `quality-summary.json`). Counts only: no paths, no raw reports.
+ */
+export const QualitySummarySchema = z
+  .object({
+    schemaVersion: z.literal('1.0'),
+    repository: z.string().min(1).max(200),
+    ref: z.string().min(1).max(200),
+    commitSha: z.string().regex(/^[0-9a-f]{40}$/),
+    generatedAt: z.iso.datetime({ offset: true }),
+    tool: z.string().min(1).max(40),
+    format: z.enum(['cobertura', 'lcov', 'opencover', 'jacoco', 'other']),
+    lines: z
+      .object({
+        covered: z.number().int().min(0),
+        valid: z.number().int().min(0),
+      })
+      .strict()
+      .refine((l) => l.covered <= l.valid, { message: 'covered must not exceed valid' }),
+  })
+  .strict();
+export type QualitySummary = z.infer<typeof QualitySummarySchema>;

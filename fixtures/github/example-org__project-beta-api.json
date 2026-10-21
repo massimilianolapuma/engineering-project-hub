@@ -111,5 +111,28 @@
       "name": "v3.1.0",
       "sha": "02e07b72cd5485660e38fef9882f564dcf097939"
     }
+  ],
+  "qualitySummary": {
+    "summary": {
+      "schemaVersion": "1.0",
+      "repository": "example-org/project-beta-api",
+      "ref": "refs/heads/main",
+      "commitSha": "3214cb086d9f6b265d49568ba63b3eb3afb5b505",
+      "generatedAt": "@now-2d",
+      "tool": "coverlet",
+      "format": "cobertura",
+      "lines": { "covered": 5998, "valid": 8400 }
+    },
+    "createdAt": "@now-2d",
+    "runId": 9012
+  },
+  "codeQualityFindings": [
+    { "category": "reliability", "severity": "error" },
+    { "category": "maintainability", "severity": "warning" },
+    { "category": "maintainability", "severity": "note" },
+    { "category": "maintainability", "severity": "warning" },
+    { "category": "maintainability", "severity": "none" },
+    { "category": "maintainability", "severity": "note" },
+    { "category": "maintainability", "severity": "warning" }
   ]
 }

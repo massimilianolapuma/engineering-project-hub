@@ -137,6 +137,18 @@ export interface SecretScanningAlertDTO {
   htmlUrl: string;
 }
 
+export interface QualitySummaryArtifactDTO {
+  /** null when the newest default-branch artifact has expired and no live one exists. */
+  summaryText: string | null;
+  createdAt: string | null;
+  runUrl: string | null;
+}
+
+export interface CodeQualityFindingDTO {
+  category: string;
+  severity: string;
+}
+
 export interface ProviderError {
   classification: ErrorClassification;
   httpStatus?: number;
@@ -199,6 +211,12 @@ export interface SourceProvider {
   ): Promise<ProviderResult<CodeScanningAnalysisDTO | null>>;
   listDependabotAlerts(repo: string): Promise<ProviderResult<DependabotAlertDTO[]>>;
   listSecretScanningAlerts(repo: string): Promise<ProviderResult<SecretScanningAlertDTO[]>>;
+  /** Newest `hub-quality-summary` artifact of a branch, unzipped to the summary JSON text. */
+  getQualitySummary(
+    repo: string,
+    branch: string,
+  ): Promise<ProviderResult<QualitySummaryArtifactDTO>>;
+  listCodeQualityFindings(repo: string): Promise<ProviderResult<CodeQualityFindingDTO[]>>;
 }
 
 /**

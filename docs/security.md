@@ -4,17 +4,18 @@
 
 ## Threat model (summary)
 
-| #   | Threat                                                                                | Mitigation                                                                                                                                                                                                                                                                                                                                                                                   |
-| --- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T1  | A credential (token, App private key) leaks into the static site                      | Secrets exist only in the `collect` job. The build and deploy jobs have none. The credential gate runs on snapshots, and `scan-output` scans `dist/` and `public/data/` for patterns and for the exact values of environment credentials. Octokit logging is disabled.                                                                                                                       |
-| T2  | A secret scanning alert value or location is published                                | Alerts are requested with `hide_secret=true`. The DTO has no field for the value, location, file or commit. Only the secret _type_ name is kept.                                                                                                                                                                                                                                             |
-| T3  | A raw API payload, stack trace, header or env var is published                        | Allowlist: DTO projection, then strict Zod schemas that reject unknown keys. Error messages are classified and scrubbed (headers, stack frames, query strings, code removed).                                                                                                                                                                                                                |
-| T4  | Details of private repositories leak through a public Page                            | `publication.audience: public` (default) withholds titles and rule ids of findings in non-public repositories. Advice below on private Pages.                                                                                                                                                                                                                                                |
-| T5  | Malicious data in monitored repositories (crafted alert titles, tags, URLs, manifest) | Text is scrubbed and truncated. Links must be `https` on allow-listed hosts (`github.com`), with no credentials, query or fragment. Contract files are Zod-validated. Astro escapes HTML. CSP blocks inline and third-party scripts.                                                                                                                                                         |
-| T6  | "Zero alerts" read as "secure"                                                        | Coverage is a separate dimension. Unknown is never 0. 403 means Not authorised, and an ambiguous 404 means Unknown. Security is never green unless coverage is complete.                                                                                                                                                                                                                     |
-| T7  | Over-privileged credentials                                                           | GitHub App with read-only permissions, installed only on the monitored repositories. No write scopes anywhere in the collector.                                                                                                                                                                                                                                                              |
-| T8  | Supply chain (actions, npm)                                                           | Actions are pinned to full SHAs. Dependabot covers npm and actions. zizmor and Trivy run when enabled. `npm ci` uses the lockfile. Fonts are self-hosted, with no CDN. Each deploy publishes a CycloneDX SBOM (`/sbom.cdx.json`) and signed provenance + SBOM attestations of the exact bundle (`gh attestation verify site.tar -R <owner>/<repo>`, bundle in the `site-attested` artifact). |
-| T9  | The portal is used to change things                                                   | The collector only performs GET requests. It does not dismiss alerts, trigger workflows or write to repositories.                                                                                                                                                                                                                                                                            |
+| #   | Threat                                                                                | Mitigation                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T1  | A credential (token, App private key) leaks into the static site                      | Secrets exist only in the `collect` job. The build and deploy jobs have none. The credential gate runs on snapshots, and `scan-output` scans `dist/` and `public/data/` for patterns and for the exact values of environment credentials. Octokit logging is disabled.                                                                                                                                     |
+| T2  | A secret scanning alert value or location is published                                | Alerts are requested with `hide_secret=true`. The DTO has no field for the value, location, file or commit. Only the secret _type_ name is kept.                                                                                                                                                                                                                                                           |
+| T3  | A raw API payload, stack trace, header or env var is published                        | Allowlist: DTO projection, then strict Zod schemas that reject unknown keys. Error messages are classified and scrubbed (headers, stack frames, query strings, code removed).                                                                                                                                                                                                                              |
+| T4  | Details of private repositories leak through a public Page                            | `publication.audience: public` (default) withholds titles and rule ids of findings in non-public repositories. Advice below on private Pages.                                                                                                                                                                                                                                                              |
+| T5  | Malicious data in monitored repositories (crafted alert titles, tags, URLs, manifest) | Text is scrubbed and truncated. Links must be `https` on allow-listed hosts (`github.com`), with no credentials, query or fragment. Contract files are Zod-validated. Astro escapes HTML. CSP blocks inline and third-party scripts.                                                                                                                                                                       |
+| T6  | "Zero alerts" read as "secure"                                                        | Coverage is a separate dimension. Unknown is never 0. 403 means Not authorised, and an ambiguous 404 means Unknown. Security is never green unless coverage is complete.                                                                                                                                                                                                                                   |
+| T7  | Over-privileged credentials                                                           | GitHub App with read-only permissions, installed only on the monitored repositories. No write scopes anywhere in the collector.                                                                                                                                                                                                                                                                            |
+| T8  | Supply chain (actions, npm)                                                           | Actions are pinned to full SHAs. Dependabot covers npm and actions. zizmor and Trivy run when enabled. `npm ci` uses the lockfile. Fonts are self-hosted, with no CDN. Each deploy publishes a CycloneDX SBOM (`/sbom.cdx.json`) and signed provenance + SBOM attestations of the exact bundle (`gh attestation verify site.tar -R <owner>/<repo>`, bundle in the `site-attested` artifact).               |
+| T9  | The portal is used to change things                                                   | The collector only performs GET requests. It does not dismiss alerts, trigger workflows or write to repositories.                                                                                                                                                                                                                                                                                          |
+| T10 | A forged, oversized or misleading quality summary                                     | Only artifacts of runs on the default branch that come from the same repository are read (a fork pull request run is ignored). The zip is capped at 64 KB and only `quality-summary.json` is read. The summary is validated by a strict schema and must name the repository being read, otherwise it is `invalid` and nothing of it is published. Counts and percentages are recomputed from `lines` only. |
 
 ## Data published
 
@@ -30,6 +31,10 @@
   links (allow-listed hosts only).
 - Classified collection errors (repository, source, class, HTTP status, short scrubbed
   detail).
+- Quality: per repository, the line counts (`covered`, `valid`) and the derived percentage,
+  the commit SHA, the report date (ISO), the scrubbed tool identifier (at most 40
+  characters), and a link to the GitHub Actions run (allow-listed host only). GitHub Code
+  Quality: counts of open findings by category and by severity. Nothing else.
 
 \* Withheld for non-public repositories when `audience: public`.
 
@@ -39,6 +44,11 @@ Secret values or fragments, file paths and line numbers of secrets, file content
 snippets, commit contents, logs, HTTP headers, query strings, raw API payloads, stack
 traces, environment variables, tokens, the App private key, workflow actors (not
 collected), and anything outside the snapshot schemas.
+
+For the Quality dimension specifically: file paths and source code from coverage reports,
+raw reports, the raw `quality-summary.json`, Code Quality finding messages, rule text and
+file locations, and raw API payloads. Only counts, percentages, SHAs, ISO dates and
+allow-listed `https://github.com/...` links are published.
 
 ## Authorisation model
 
@@ -50,6 +60,30 @@ collected), and anything outside the snapshot schemas.
   checked against GitHub's
   [permissions-required-for-github-apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps)
   page on 2026-10-03.
+- **Quality sources** (test coverage summary and Code Quality). Checked on 2026-10-21 on
+  GitHub's
+  [permissions-required-for-github-apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps)
+  page:
+  - Listing and downloading artifacts (`GET /repos/{owner}/{repo}/actions/artifacts` and
+    `.../{artifact_id}/{archive_format}`) need **Actions: read**, already granted. No new
+    secret.
+  - Listing Code Quality findings (`GET /repos/{owner}/{repo}/code-quality/findings`) needs
+    the repository permission **Code quality: read**. The API key name is not documented
+    on that page.
+  - The setup endpoint (`GET /repos/{owner}/{repo}/code-quality/setup`) needs
+    **Administration: write**, so the hub does not call it; a findings 404 is shown as
+    unknown.
+  - The REST reference pages of these endpoints state only classic-token scopes, not
+    fine-grained permissions. The names above come from the GitHub App permissions page;
+    re-check them on your own plan before you grant access.
+  - Observed behaviour: a findings 403 is `not-authorised`, never "missing". A findings 404
+    is ambiguous (Code Quality not enabled, or not visible), so the project's findings are
+    `unknown`, never 0. A 404 whose message says Code Quality is not enabled skips that
+    repository. Like the other security endpoints, a 404 still proves the permission
+    works: the `codeQuality` capability is `available` when every findings call answers
+    200 or 404, `not-authorised` when none does and at least one answers 403, and
+    `partial` when only some do. Code Quality findings are informative: they never change
+    the Quality status.
 - **Fallback (MVP only): a fine-grained PAT** in `GH_READ_TOKEN`. Limit it to the monitored
   repositories, give it the same read-only permissions, and use a short expiry. It is tied
   to a person, so prefer the App.
@@ -168,6 +202,8 @@ upstream fix through Dependabot.
   audience.
 - No alerts does not mean no vulnerabilities. Coverage depends on the controls that are
   configured and on what the APIs return (up to 300 alerts per source and repository).
+  Code Quality findings use the same 300 cap, but past it the repository's findings are
+  unknown rather than under-counted.
 - Results from external scanners are trusted as declared in
   `.security/project-security-status.json`. That file is not signed in the MVP (roadmap:
   attestations).

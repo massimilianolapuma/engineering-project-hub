@@ -4,6 +4,7 @@ import { resolveRelativeTime, type Clock } from '../../util/clock';
 import {
   fail,
   ok,
+  type CodeQualityFindingDTO,
   type CodeScanningAlertDTO,
   type CodeScanningAnalysisDTO,
   type CommitRefDTO,
@@ -14,6 +15,7 @@ import {
   type FileDTO,
   type ProviderError,
   type ProviderResult,
+  type QualitySummaryArtifactDTO,
   type ReleaseDTO,
   type RepositoryDTO,
   type RunFailureDTO,
@@ -50,6 +52,9 @@ export interface RepoFixture {
   codeScanningAnalysis?: CodeScanningAnalysisDTO | null | ErrorFixture;
   dependabotAlerts?: DependabotAlertDTO[] | ErrorFixture;
   secretScanningAlerts?: SecretScanningAlertDTO[] | ErrorFixture;
+  qualitySummary?:
+    { summary: unknown; createdAt: string; expired?: boolean; runId: number } | ErrorFixture;
+  codeQualityFindings?: CodeQualityFindingDTO[] | ErrorFixture;
 }
 
 interface ErrorFixture {
@@ -205,5 +210,19 @@ export class MockProvider implements SourceProvider {
 
   listSecretScanningAlerts(repo: string) {
     return this.pick(repo, (f) => f.secretScanningAlerts);
+  }
+
+  async getQualitySummary(repo: string): Promise<ProviderResult<QualitySummaryArtifactDTO>> {
+    const r = await this.pick(repo, (f) => f.qualitySummary);
+    if (!r.ok) return r;
+    return ok({
+      summaryText: r.data.expired ? null : JSON.stringify(r.data.summary),
+      createdAt: r.data.createdAt,
+      runUrl: `https://github.com/${repo}/actions/runs/${r.data.runId}`,
+    });
+  }
+
+  listCodeQualityFindings(repo: string) {
+    return this.pick(repo, (f) => f.codeQualityFindings);
   }
 }

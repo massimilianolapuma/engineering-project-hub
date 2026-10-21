@@ -13,12 +13,20 @@ import { DimensionSchema, type Dimension, type HealthStatus } from '@model/index
 import { useI18n, type Locale } from '../i18n';
 interface Props {
   dims?: { dimension: Dimension; status: HealthStatus }[];
+  /** Header labels, in bar order: pass the same dimensions the rows show. */
+  dimensions?: readonly Dimension[];
   locale: Locale;
   variant?: 'bars' | 'header';
   /** A sample (e.g. on "How to read"): no accessible names or tooltips, hidden from AT. */
   decorative?: boolean;
 }
-const { dims = [], locale, variant = 'bars', decorative = false } = Astro.props;
+const {
+  dims = [],
+  dimensions = DimensionSchema.options,
+  locale,
+  variant = 'bars',
+  decorative = false,
+} = Astro.props;
 const i18n = useI18n(locale);
 const { d } = i18n;
 /** Bar height in thirds of the box: the worse the status, the taller the bar. */
@@ -27,7 +35,7 @@ const HEIGHT: Record<HealthStatus, 1 | 2 | 3> = { red: 3, amber: 2, green: 1, gr
 
 {variant === 'header' ? (
   <span class="dimbars dimbars--header">
-    {DimensionSchema.options.map((dim) => (
+    {dimensions.map((dim) => (
       <abbr class="dimbars__label" title={i18n.dimension(dim)}>
         <span aria-hidden="true">{d.dimensionBars.short[dim]}</span>
         <span class="visually-hidden">{i18n.dimension(dim)}</span>

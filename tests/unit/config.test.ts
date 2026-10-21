@@ -130,6 +130,31 @@ describe('catalog validation (config/projects/<id>.yaml)', () => {
     expect(() => parseYamlWith(CatalogSchema, 'projects: [', 'projects.yaml')).toThrow(ConfigError);
   });
 
+  it('catalog accepts testCoverage on coordinator and component, rejects other values', () => {
+    const withCoverage = (value: string) =>
+      parseYamlWith(
+        ProjectConfigSchema,
+        catalogText
+          .replace(
+            'manifestPath: release-manifest.yaml',
+            `manifestPath: release-manifest.yaml\n  testCoverage: ${value}`,
+          )
+          .replace('type: deployment', `type: deployment\n    testCoverage: ${value}`),
+        'project-alpha.yaml',
+      );
+    const p = withCoverage('not-applicable');
+    expect(p.coordinator.testCoverage).toBe('not-applicable');
+    expect(p.components.find((c) => c.id === 'helm')!.testCoverage).toBe('not-applicable');
+    expect(withCoverage('required').components.find((c) => c.id === 'helm')!.testCoverage).toBe(
+      'required',
+    );
+    expect(() => withCoverage('sometimes')).toThrow(/testCoverage/);
+    expect(
+      parseYamlWith(ProjectConfigSchema, catalogText, 'project-alpha.yaml').components[0]!
+        .testCoverage,
+    ).toBeUndefined();
+  });
+
   it('reserves "coordinator" as component id', () => {
     expect(invalid((t) => t.replace('- id: backend', '- id: coordinator'))).toThrow(
       /"coordinator" is reserved/,
@@ -142,6 +167,50 @@ describe('policies.yaml validation', () => {
     const p = parseYamlWith(PoliciesSchema, policiesText, 'policies.yaml');
     expect(p.security.redOnSeverities).toEqual(['critical']);
     expect(p.overall.criticalDimensions).toContain('security');
+  });
+
+  it('policies default quality thresholds 80/60, stale 14 days', () => {
+    const p = parseYamlWith(PoliciesSchema, policiesText, 'policies.yaml');
+    expect(p.quality).toEqual({
+      greenThresholdPercent: 80,
+      amberThresholdPercent: 60,
+      missingReportIsAmber: true,
+    });
+    expect(p.freshness.qualityReportStaleDays).toBe(14);
+    // Omitted from the file, the schema defaults are the same.
+    const { quality: _omit, ...rest } = p;
+    const d = PoliciesSchema.parse({ ...rest, freshness: {} });
+    expect(d.quality).toEqual(p.quality);
+    expect(d.freshness.qualityReportStaleDays).toBe(14);
+  });
+
+  it('rejects a quality amber threshold above the green one', () => {
+    expect(() =>
+      parseYamlWith(
+        PoliciesSchema,
+        policiesText.replace('amberThresholdPercent: 60', 'amberThresholdPercent: 90'),
+        'policies.yaml',
+      ),
+    ).toThrow(/quality/);
+  });
+
+  it('policies default optionalDimensions to quality and weights.quality to 10', () => {
+    const p = parseYamlWith(PoliciesSchema, policiesText, 'policies.yaml');
+    expect(p.overall.optionalDimensions).toEqual(['quality']);
+    expect(p.score.weights.quality).toBe(10);
+  });
+
+  it('quality in both requiredDimensions and optionalDimensions is rejected', () => {
+    expect(() =>
+      parseYamlWith(
+        PoliciesSchema,
+        policiesText.replace(
+          'requiredDimensions: [delivery, version, security, coverage, governance]',
+          'requiredDimensions: [delivery, version, security, coverage, governance, quality]',
+        ),
+        'policies.yaml',
+      ),
+    ).toThrow(/optionalDimensions/);
   });
 
   it('rejects an unsupported status value', () => {
