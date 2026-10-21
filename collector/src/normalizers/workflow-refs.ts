@@ -160,7 +160,7 @@ export function parseWorkflow(file: string, text: string): ParsedWorkflow {
 
 export type ReusableStatus = 'current' | 'behind' | 'untagged' | 'floating' | 'unknown';
 export interface TargetVersions {
-  latest: string | null; // tag name of latest release or latest tag, raw
+  latest: string | null; // tag name of latest release or latest tag (exact, at most 100 chars)
   tags: { name: string; sha: string }[] | null; // null = not read / not visible
   visible: boolean;
 }
@@ -170,7 +170,10 @@ export function reusableStatus(
   ref: string,
   target: TargetVersions,
 ): { status: ReusableStatus; latest: string | null } {
-  const latestRaw = target.latest;
+  // collectReusableTargets already keeps only exact tags of at most 100 characters; never echo
+  // one the published schema would refuse, whatever the caller passes.
+  const latestRaw =
+    target.latest !== null && target.latest.length <= MAX_REF_LENGTH ? target.latest : null;
   const unknown = { status: 'unknown' as const, latest: latestRaw };
   const latest = normaliseVersion(latestRaw);
   if (!target.visible || latest === null) return unknown;

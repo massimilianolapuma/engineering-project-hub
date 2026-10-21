@@ -220,6 +220,13 @@ describe('reusableStatus', () => {
       'unknown',
     );
   });
+  it('a latest over 100 characters is never echoed (defence in depth)', () => {
+    const latest = 'v1.0.0-' + 'x'.repeat(120);
+    expect(reusableStatus('v1.0.0', { latest, tags: null, visible: true })).toEqual({
+      status: 'unknown',
+      latest: null,
+    });
+  });
   it('a pre-release latest (tag fallback) never makes a stable ref behind: unknown', () => {
     const pre: TargetVersions = { latest: 'v2.5.0-rc.1', tags: null, visible: true };
     expect(reusableStatus('v2.4.0', pre)).toEqual({ status: 'unknown', latest: 'v2.5.0-rc.1' });
