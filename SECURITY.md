@@ -30,8 +30,8 @@ on severity.
 
 | Version | Supported |
 | ------- | --------- |
-| 0.7.x   | ✅        |
-| < 0.7   | ❌        |
+| 0.8.x   | ✅        |
+| < 0.8   | ❌        |
 
 ## Scope
 
@@ -74,8 +74,8 @@ tempi di correzione in base alla gravità.
 
 | Versione | Supportata |
 | -------- | ---------- |
-| 0.7.x    | ✅         |
-| < 0.7    | ❌         |
+| 0.8.x    | ✅         |
+| < 0.8    | ❌         |
 
 ## Ambito
 
