@@ -488,6 +488,7 @@ export const it: Dict = {
       legend:
         'I controlli informativi non cambiano mai lo stato di Governance. Non visibile non significa fallito.',
       withheld: 'Dettagli nascosti per i repository non pubblici',
+      notVisibleRepos: 'Non visibili (workflow non leggibili)',
       off: 'I controlli repository sono spenti nelle policy.',
       scorecardBelow: 'Check sotto il minimo della tua policy Scorecard',
       standardWorkflowsLink: 'Workflow standard →',

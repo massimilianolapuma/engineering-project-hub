@@ -41,6 +41,12 @@ const scorecardFailing = scorecardRepos.reduce(
   (n, r) => n + r.scorecard.failingChecks.length + r.scorecard.otherFailing,
   0,
 );
+// Repositories whose workflows could not be read: never shown as "none" (unknown is not zero).
+const notRead = rc.repositories.filter(
+  (r) => r.actions.state === 'unknown' || r.actions.state === 'not-authorised',
+);
+const names = (rs: typeof rc.repositories) => rs.map((r) => repoName(r.repository)).join(', ');
+const allRead = notRead.length === 0 && withheld.length === 0;
 const withUnpinned = rc.repositories.filter((r) => r.actions.unpinnedRefs.length > 0);
 const withReusable = rc.repositories.filter((r) => r.reusableWorkflows.length > 0);
 const withScorecard = rc.repositories.filter((r) => r.scorecard.state === 'available');
@@ -160,118 +166,142 @@ const reusableTone = (status: string) =>
 
     <details class="disclosure rc-detail" data-detail="unpinned">
       <summary>{t.unpinnedTitle}</summary>
-      {withUnpinned.length === 0 ? (
-        <p class="muted">{t.unpinnedNone}</p>
-      ) : (
-        withUnpinned.map((r) => (
-          <div class="rc-block">
-            <p class="rc-block__head">
-              <code>{repoName(r.repository)}</code>
-            </p>
-            <div
-              class="table-wrap rc-wrap"
-              tabindex="0"
-              role="region"
-              aria-label={`${t.unpinnedTitle}: ${repoName(r.repository)}`}
-            >
-              <table class="rc-table rc-table--list">
-                <thead>
-                  <tr>
-                    <th scope="col">{t.colWorkflow}</th>
-                    <th scope="col">{t.colTarget}</th>
-                    <th scope="col">{t.colRef}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {r.actions.unpinnedRefs.map((u) => (
+      {withUnpinned.length === 0
+        ? allRead && <p class="muted">{t.unpinnedNone}</p>
+        : withUnpinned.map((r) => (
+            <div class="rc-block">
+              <p class="rc-block__head">
+                <code>{repoName(r.repository)}</code>
+              </p>
+              <div
+                class="table-wrap rc-wrap"
+                tabindex="0"
+                role="region"
+                aria-label={`${t.unpinnedTitle}: ${repoName(r.repository)}`}
+              >
+                <table class="rc-table rc-table--list">
+                  <thead>
                     <tr>
-                      <td>
-                        <code>{u.workflow}</code>
-                      </td>
-                      <td class="rc-break">
-                        <code>{u.target}</code>
-                      </td>
-                      <td>
-                        <code>{u.ref}</code>
-                      </td>
+                      <th scope="col">{t.colWorkflow}</th>
+                      <th scope="col">{t.colTarget}</th>
+                      <th scope="col">{t.colRef}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {r.actions.unpinnedRefs.map((u) => (
+                      <tr>
+                        <td>
+                          <code>{u.workflow}</code>
+                        </td>
+                        <td class="rc-break">
+                          <code>{u.target}</code>
+                        </td>
+                        <td>
+                          <code>{u.ref}</code>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {r.actions.truncated > 0 && (
+                <p class="sub">{f(t.unpinnedMore, { n: i18n.number(r.actions.truncated) })}</p>
+              )}
             </div>
-            {r.actions.truncated > 0 && (
-              <p class="sub">{f(t.unpinnedMore, { n: i18n.number(r.actions.truncated) })}</p>
-            )}
-          </div>
-        ))
+          ))}
+      {!allRead && (
+        <>
+          {notRead.length > 0 && (
+            <p class="note" data-not-visible>
+              {t.notVisibleRepos}: <span class="mono">{names(notRead)}</span>
+            </p>
+          )}
+          {withheld.length > 0 && (
+            <p class="note" data-withheld-fold>
+              {t.withheld}: <span class="mono">{names(withheld)}</span>
+            </p>
+          )}
+        </>
       )}
     </details>
 
     <details class="disclosure rc-detail" data-detail="reusable">
       <summary>{t.reusableTitle}</summary>
-      {withReusable.length === 0 ? (
-        <p class="muted">{t.reusableNone}</p>
-      ) : (
-        withReusable.map((r) => (
-          <div class="rc-block">
-            <p class="rc-block__head">
-              <code>{repoName(r.repository)}</code>
-            </p>
-            <div
-              class="table-wrap rc-wrap"
-              tabindex="0"
-              role="region"
-              aria-label={`${t.reusableTitle}: ${repoName(r.repository)}`}
-            >
-              <table class="rc-table rc-table--list">
-                <thead>
-                  <tr>
-                    <th scope="col">{t.colTarget}</th>
-                    <th scope="col">{t.colRef}</th>
-                    <th scope="col">{t.colLatest}</th>
-                    <th scope="col">{t.colStatus}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {r.reusableWorkflows.map((w) => (
-                    <tr data-status={w.status}>
-                      <td class="rc-break">
-                        {w.url ? (
-                          <ExtLink href={w.url} i18n={i18n}>
-                            <code>{w.target}</code>
-                          </ExtLink>
-                        ) : (
-                          <code>{w.target}</code>
-                        )}
-                      </td>
-                      <td>
-                        <code>{w.ref}</code>
-                      </td>
-                      <td>
-                        {w.latest ? (
-                          <code>{w.latest}</code>
-                        ) : (
-                          <span class="muted">
-                            {d.common.unknownValue}
-                            <span class="visually-hidden">{d.common.unknown}</span>
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        <span class={`rc-status rc-status--${reusableTone(w.status)}`}>
-                          <span aria-hidden="true">
-                            {w.status === 'current' ? '✓' : w.status === 'behind' ? '✕' : '?'}
-                          </span>{' '}
-                          {d.reusableStatus[w.status]}
-                        </span>
-                      </td>
+      {withReusable.length === 0
+        ? allRead && <p class="muted">{t.reusableNone}</p>
+        : withReusable.map((r) => (
+            <div class="rc-block">
+              <p class="rc-block__head">
+                <code>{repoName(r.repository)}</code>
+              </p>
+              <div
+                class="table-wrap rc-wrap"
+                tabindex="0"
+                role="region"
+                aria-label={`${t.reusableTitle}: ${repoName(r.repository)}`}
+              >
+                <table class="rc-table rc-table--list">
+                  <thead>
+                    <tr>
+                      <th scope="col">{t.colTarget}</th>
+                      <th scope="col">{t.colRef}</th>
+                      <th scope="col">{t.colLatest}</th>
+                      <th scope="col">{t.colStatus}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {r.reusableWorkflows.map((w) => (
+                      <tr data-status={w.status}>
+                        <td class="rc-break">
+                          {w.url ? (
+                            <ExtLink href={w.url} i18n={i18n}>
+                              <code>{w.target}</code>
+                            </ExtLink>
+                          ) : (
+                            <code>{w.target}</code>
+                          )}
+                        </td>
+                        <td>
+                          <code>{w.ref}</code>
+                        </td>
+                        <td>
+                          {w.latest ? (
+                            <code>{w.latest}</code>
+                          ) : (
+                            <span class="muted">
+                              {d.common.unknownValue}
+                              <span class="visually-hidden">{d.common.unknown}</span>
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          <span class={`rc-status rc-status--${reusableTone(w.status)}`}>
+                            <span aria-hidden="true">
+                              {w.status === 'current' ? '✓' : w.status === 'behind' ? '✕' : '?'}
+                            </span>{' '}
+                            {d.reusableStatus[w.status]}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        ))
+          ))}
+      {!allRead && (
+        <>
+          {notRead.length > 0 && (
+            <p class="note" data-not-visible>
+              {t.notVisibleRepos}: <span class="mono">{names(notRead)}</span>
+            </p>
+          )}
+          {withheld.length > 0 && (
+            <p class="note" data-withheld-fold>
+              {t.withheld}: <span class="mono">{names(withheld)}</span>
+            </p>
+          )}
+        </>
       )}
     </details>
 

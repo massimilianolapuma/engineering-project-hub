@@ -1272,6 +1272,25 @@ describe('static site', () => {
       expect(platform).toContain('v4');
     });
 
+    it('never says "none" in the detail folds when workflows were not readable (unknown is not zero)', async () => {
+      const fold = (html: string, name: string) => {
+        const from = html.indexOf(`data-detail="${name}"`);
+        return textOf(html.slice(from, html.indexOf('</details>', from)));
+      };
+      const gamma = await page('projects/project-gamma');
+      for (const name of ['unpinned', 'reusable']) {
+        const text = fold(gamma, name);
+        expect(text).not.toMatch(/No unpinned reference|No reusable workflow/);
+        expect(text).toContain('Not visible');
+      }
+      const gammaIt = await page('it/projects/project-gamma');
+      expect(fold(gammaIt, 'unpinned')).not.toContain('Nessun riferimento non fissato');
+      expect(fold(gammaIt, 'unpinned')).toContain('Non visibili');
+      // Withheld details are named inside the fold, not only in the note above it.
+      const beta = await page('projects/project-beta');
+      expect(fold(beta, 'unpinned')).toContain('Details withheld for non-public repositories');
+    });
+
     it('the Governance card links to #repository-controls', async () => {
       const html = await page('projects/project-beta');
       expect(between(html, 'data-dimension="governance"', '</a>')).toBeTruthy();

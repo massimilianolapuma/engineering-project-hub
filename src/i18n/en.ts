@@ -486,6 +486,7 @@ export const en = {
       legend:
         'Informative checks never change the Governance status. Not visible does not mean failing.',
       withheld: 'Details withheld for non-public repositories',
+      notVisibleRepos: 'Not visible (workflows could not be read)',
       off: 'Repository controls are turned off in the policies.',
       scorecardBelow: 'Checks below your Scorecard policy minimum',
       standardWorkflowsLink: 'Standard workflows →',
