@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../schema/policy-case.schema.json
+#
+# Synthetic decision case for `npm run policy:check`. It is evaluated with the real engines
+# against the effective policies, so a policy change that alters a decision fails the case.
+# Reference: docs/configuration.md (EN) · docs/it/configuration.md (IT)
+
+name: A red Security dimension makes the project red and caps the score
+kind: overall
+now: '2026-01-15T12:00:00Z'
+overall:
+  dimensions:
+    delivery: green
+    version: green
+    security: red
+    coverage: green
+    governance: green
+    quality: grey
+expect:
+  status: red
+  score: 49

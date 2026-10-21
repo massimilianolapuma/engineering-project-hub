@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../schema/policy-case.schema.json
+#
+# Synthetic decision case for `npm run policy:check`. It is evaluated with the real engines
+# against the effective policies, so a policy change that alters a decision fails the case.
+# Reference: docs/configuration.md (EN) · docs/it/configuration.md (IT)
+
+name: An expired exception returns the alert to the counts and adds an amber reason
+kind: security
+now: '2026-01-15T12:00:00Z'
+security:
+  findings:
+    - id: example-org/platform-mono#code-scanning#4
+      severity: medium
+      detectedAt: '@now-4d'
+      ruleId: js/path-injection
+  exceptions:
+    - id: EXC-CASE-002
+      repository: example-org/platform-mono
+      source: code-scanning
+      match: { rule: js/path-injection }
+      owner: team-platform
+      reason: Synthetic acceptance used only by this decision case.
+      created: '@now-60d'
+      expires: '@now-1d'
+expect:
+  status: amber
+  reasons: [open-medium-low-alerts, security-exception-expired]

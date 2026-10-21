@@ -163,7 +163,7 @@ export function resolveExceptionsPath(o: {
 const DATE_TOKEN = /^@now([+-]\d+[mhd])?$/;
 
 /** Replaces "@now±N(d|h|m)" in created / expires with the UTC date of the resulting instant. */
-function resolveDateTokens(raw: unknown, now: Date): unknown {
+export function resolveDateTokens(raw: unknown, now: Date): unknown {
   if (!raw || typeof raw !== 'object' || !('exceptions' in raw) || !Array.isArray(raw.exceptions))
     return raw;
   const exceptions = raw.exceptions.map((e: unknown) => {

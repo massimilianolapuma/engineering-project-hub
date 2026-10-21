@@ -9,6 +9,7 @@
 # Jobs (parallel):
 #   pr-title-lint   — PR title follows Conventional Commits (pull_request only)
 #   node-quality    — eslint, tsc + astro check, prettier --check
+#   policy-check    — npm run policy:check (policies, exceptions, decision cases)
 #   build-test      — npm run ci:build (validate config + collect mock +
 #                     validate snapshots + astro build + scan output) and
 #                     npm run ci:test (Vitest + coverage in coverage/)
@@ -69,6 +70,20 @@ jobs:
       lint-command: npm run lint
       typecheck-command: npm run typecheck
       format-check-command: npm run format:check
+
+  # --------------------------------------------------------------------------
+  # Runs on every pull request and push (no path filter): a required check that a
+  # path filter skips never reports. Exceptions and policies live in config/.
+  policy-check:
+    name: Policy check
+    permissions:
+      contents: read
+    uses: ./.github/workflows/rw-node-quality-host.yml
+    with:
+      node-version: '24'
+      lint-command: npm run policy:check
+      typecheck-command: ''
+      format-check-command: ''
 
   # --------------------------------------------------------------------------
   build-test:
