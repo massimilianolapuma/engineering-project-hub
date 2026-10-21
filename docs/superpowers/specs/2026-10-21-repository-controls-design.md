@@ -119,7 +119,7 @@ A workflow file name longer than 100 characters (the published bound) is never r
 
 ### 5.2 Workflow reference parsing (`collector/src/normalizers/workflow-refs.ts`)
 
-- The file is parsed with the existing `yaml` dependency. `maxAliasCount: 100`, and `uniqueKeys` is not enforced. A file that fails to parse makes the repository's action data `partial` (`unparsable` +1).
+- The file is parsed with the existing `yaml` dependency. `maxAliasCount: 100`, `uniqueKeys` is not enforced, and `logLevel: 'error'` keeps YAML warnings (which quote the source) out of the collector log. A file that fails to parse makes the repository's action data `partial` (`unparsable` +1). A legitimate file that reuses an anchor more than about 100 times (for example 120 jobs with `steps: *steps`) is therefore `unparsable`, and pinning is `unknown` for its repository.
 - The parser looks only at `jobs.<id>.uses` (reusable workflow) and `jobs.<id>.steps[*].uses` (action). Everything else is ignored and never stored.
 - At most 200 references per file and 1 000 per repository. Beyond that, the reference count is `null` and the pinning check is `unknown` **(BC)**.
 - Each `uses` string is classified:

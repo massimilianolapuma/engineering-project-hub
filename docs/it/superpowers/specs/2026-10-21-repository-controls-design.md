@@ -119,7 +119,7 @@ Un nome di file di workflow più lungo di 100 caratteri (il limite pubblicato) n
 
 ### 5.2 Analisi dei riferimenti nei workflow (`collector/src/normalizers/workflow-refs.ts`)
 
-- Il file si analizza con la dipendenza `yaml` esistente. `maxAliasCount: 100` e `uniqueKeys` non è imposto. Un file che non si analizza rende `partial` i dati delle action del repository (`unparsable` +1).
+- Il file si analizza con la dipendenza `yaml` esistente. `maxAliasCount: 100`, `uniqueKeys` non è imposto e `logLevel: 'error'` tiene fuori dal log del collector gli avvisi YAML (che citano il sorgente). Un file che non si analizza rende `partial` i dati delle action del repository (`unparsable` +1). Un file legittimo che riusa un'ancora più di circa 100 volte (per esempio 120 job con `steps: *steps`) risulta quindi `unparsable` e il pinning è `unknown` per il suo repository.
 - L'analisi guarda solo `jobs.<id>.uses` (workflow riutilizzabile) e `jobs.<id>.steps[*].uses` (action). Tutto il resto viene ignorato e mai salvato.
 - Al massimo 200 riferimenti per file e 1 000 per repository. Oltre, il conteggio dei riferimenti è `null` e il controllo di pinning è `unknown` **(SB)**.
 - Ogni stringa `uses` viene classificata:

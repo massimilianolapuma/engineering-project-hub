@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   classifyUses,
   MAX_REFS_PER_FILE,
@@ -153,6 +153,22 @@ jobs:
       const r = parseWorkflow('a.yml', text);
       expect(r.refs).toHaveLength(1);
       expect(JSON.stringify(r)).not.toContain(canary);
+    }
+  });
+  it('never prints YAML warnings (they quote the untrusted workflow source)', () => {
+    const emit = vi.spyOn(process, 'emitWarning').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const out = parseWorkflow(
+        'ci.yml',
+        'jobs:\n  a:\n    steps:\n      - uses: !custom example/secret-step@v1\n',
+      );
+      expect(out.unparsable).toBe(false);
+      expect(emit).not.toHaveBeenCalled();
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      emit.mockRestore();
+      warn.mockRestore();
     }
   });
   it('an expression in uses is invalid and not copied', () => {

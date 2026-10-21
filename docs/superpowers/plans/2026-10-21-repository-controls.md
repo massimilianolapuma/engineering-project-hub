@@ -50,7 +50,7 @@ v0.7.0 changes files this plan touches, so line numbers and surrounding code wil
 ## Global Constraints
 
 - Read-only, GET only. Never call a write endpoint. The classic protection call (`GET …/branches/{branch}/protection`) is made **only** when `policies.repositoryControls.readClassicProtection === true`.
-- No new runtime dependency. Parse YAML with the existing `yaml` package (`parse(text, { maxAliasCount: 100, uniqueKeys: false })`).
+- No new runtime dependency. Parse YAML with the existing `yaml` package (`parse(text, { maxAliasCount: 100, uniqueKeys: false, logLevel: 'error' })`).
 - Workflow text, step names, `run:`, `with:`, `env:` and expressions are **never** stored in a DTO that leaves `collector/src/normalizers/workflow-refs.ts`, and never published.
   - Published action data is limited to:
     - `target` rebuilt from validated parts (`owner/repo[/path]`, or `owner/repo/.github/workflows/file.yml`, or `docker://image`);

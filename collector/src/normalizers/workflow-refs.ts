@@ -130,7 +130,9 @@ export function parseWorkflow(file: string, text: string): ParsedWorkflow {
   if (text.length > MAX_WORKFLOW_TEXT) return { ...result, unparsable: true };
   let doc: unknown;
   try {
-    doc = parse(text, { maxAliasCount: 100, uniqueKeys: false });
+    // logLevel 'error': warnings quote the (untrusted, possibly private) source and would reach
+    // the collector's log. Errors still throw ('silent' would swallow them).
+    doc = parse(text, { maxAliasCount: 100, uniqueKeys: false, logLevel: 'error' });
   } catch {
     return { ...result, unparsable: true };
   }
