@@ -142,6 +142,16 @@ export const PoliciesSchema = z
       })
       .strict()
       .prefault({}),
+    /** Compact history kept between runs (history.json) and the "what changed" diff. */
+    history: z
+      .object({
+        enabled: z.boolean().default(true),
+        /** 120 = 30 days at the 6-hour schedule. */
+        maxEntries: z.number().int().min(2).max(1000).default(120),
+        maxAgeDays: z.number().int().min(1).max(400).default(90),
+      })
+      .strict()
+      .prefault({}),
     publication: z
       .object({
         /**

@@ -223,6 +223,39 @@ describe('policies.yaml validation', () => {
     ).toThrow(/version\.componentDrift/);
   });
 
+  it('history defaults: enabled true, maxEntries 120, maxAgeDays 90', () => {
+    const p = parseYamlWith(PoliciesSchema, policiesText, 'policies.yaml');
+    expect(p.history).toEqual({ enabled: true, maxEntries: 120, maxAgeDays: 90 });
+    const { history: _omit, ...rest } = p;
+    expect(PoliciesSchema.parse(rest).history).toEqual(p.history);
+  });
+
+  it('history.maxEntries 1 is rejected; 1001 is rejected', () => {
+    const withHistory = (history: object) =>
+      PoliciesSchema.safeParse({
+        ...parseYamlWith(PoliciesSchema, policiesText, 'p.yaml'),
+        history,
+      });
+    expect(withHistory({ maxEntries: 1 }).success).toBe(false);
+    expect(withHistory({ maxEntries: 1001 }).success).toBe(false);
+    expect(withHistory({ maxEntries: 2 }).success).toBe(true);
+    expect(withHistory({ maxEntries: 1000 }).success).toBe(true);
+  });
+
+  it('history.maxAgeDays 0 is rejected', () => {
+    const r = PoliciesSchema.safeParse({
+      ...parseYamlWith(PoliciesSchema, policiesText, 'p.yaml'),
+      history: { maxAgeDays: 0 },
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it('config/policies.yaml declares the history block', () => {
+    expect(policiesText).toMatch(/^# history:/m);
+    const p = parseYamlWith(PoliciesSchema, policiesText, 'policies.yaml');
+    expect(p.history.maxEntries).toBe(120);
+  });
+
   it('rejects a wrong schemaVersion', () => {
     expect(() =>
       parseYamlWith(

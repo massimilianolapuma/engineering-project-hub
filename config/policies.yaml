@@ -38,6 +38,13 @@ quality:
   amberThresholdPercent: 60 # at or above = amber, below = red
   missingReportIsAmber: true # some applicable component without a visible report → at most amber
 
+# History: a compact record of every collection kept between runs (history.json) and the
+# "what changed" diff (changes.json). Optional: the defaults below apply when omitted.
+# history:
+#   enabled: true # false = no history.json / changes.json; the pages say history is off
+#   maxEntries: 120 # 2–1000; 120 = 30 days at the 6-hour schedule
+#   maxAgeDays: 90 # 1–400; older entries are dropped
+
 version:
   componentDrift: amber
   environmentBehind: amber
