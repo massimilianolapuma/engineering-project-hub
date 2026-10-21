@@ -78,6 +78,5 @@
   "codeQualityFindings": [
     { "category": "maintainability", "severity": "warning" },
     { "category": "maintainability", "severity": "note" }
-  ],
-  "codeQualitySetup": { "state": "configured" }
+  ]
 }

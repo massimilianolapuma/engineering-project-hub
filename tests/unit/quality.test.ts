@@ -11,7 +11,6 @@ import {
   fail,
   ok,
   type CodeQualityFindingDTO,
-  type CodeQualitySetupDTO,
   type ProviderResult,
   type QualitySummaryArtifactDTO,
 } from '../../collector/src/providers/types';
@@ -73,7 +72,6 @@ function input(
     components,
     repos: new Map(repos.map((r) => [r.repository.toLowerCase(), r])),
     findings: new Map(),
-    setup: new Map(),
     collectedAt: NOW.toISOString(),
     ...extra,
   };
@@ -304,9 +302,6 @@ describe('evaluateQuality', () => {
           findings: new Map([
             ['example-org/a', fail({ classification: 'not-authorised', httpStatus: 403 })],
           ]),
-          setup: new Map([
-            ['example-org/a', fail({ classification: 'not-authorised', httpStatus: 403 })],
-          ]),
         }),
       );
       expect(q.findings).toEqual({
@@ -317,16 +312,65 @@ describe('evaluateQuality', () => {
       });
     });
 
-    it('setup state "not-configured" → findings.state not-configured', () => {
+    it('findings 404 → unknown, never 0 (the setup endpoint is not called)', () => {
       const q = evaluate(
         input(one, readable, {
-          findings: new Map([['example-org/a', fail({ classification: 'not-found' })]]),
-          setup: new Map<string, ProviderResult<CodeQualitySetupDTO>>([
-            ['example-org/a', ok({ state: 'not-configured' })],
+          findings: new Map([
+            ['example-org/a', fail({ classification: 'not-found', httpStatus: 404 })],
           ]),
         }),
       );
-      expect(q.findings.state).toBe('not-configured');
+      expect(q.findings.state).toBe('unknown');
+      expect(q.findings.reliability).toBeNull();
+      expect(q.findings.bySeverity.error).toBeNull();
+    });
+
+    it('a "not configured" message → that repository is skipped', () => {
+      const notEnabled = fail<CodeQualityFindingDTO[]>({
+        classification: 'not-configured',
+        httpStatus: 404,
+      });
+      const alone = evaluate(
+        input(one, readable, { findings: new Map([['example-org/a', notEnabled]]) }),
+      );
+      expect(alone.findings.state).toBe('not-configured');
+      expect(alone.findings.reliability).toBeNull();
+      // Skipped, not unreadable: the other repository's counts are published.
+      const two = evaluate(
+        input(
+          [
+            { componentId: 'coordinator', repository: 'example-org/a', applicable: true },
+            { componentId: 'api', repository: 'example-org/b', applicable: true },
+          ],
+          readable,
+          {
+            findings: new Map([
+              ['example-org/a', notEnabled],
+              ['example-org/b', ok([{ category: 'reliability', severity: 'error' }])],
+            ]),
+          },
+        ),
+      );
+      expect(two.findings).toMatchObject({ state: 'available', reliability: 1 });
+    });
+
+    it('one repository 404 among readable ones → unknown (never a partial sum)', () => {
+      const q = evaluate(
+        input(
+          [
+            { componentId: 'coordinator', repository: 'example-org/a', applicable: true },
+            { componentId: 'helm', repository: 'example-org/b', applicable: false },
+          ],
+          readable,
+          {
+            findings: new Map<string, ProviderResult<CodeQualityFindingDTO[]>>([
+              ['example-org/a', ok([{ category: 'reliability', severity: 'error' }])],
+              ['example-org/b', fail({ classification: 'not-found', httpStatus: 404 })],
+            ]),
+          },
+        ),
+      );
+      expect(q.findings.state).toBe('unknown');
       expect(q.findings.reliability).toBeNull();
     });
 
@@ -345,7 +389,6 @@ describe('evaluateQuality', () => {
           readable,
           {
             findings: new Map([['example-org/a', ok(list)]]),
-            setup: new Map([['example-org/a', ok({ state: 'configured' })]]),
           },
         ),
       );

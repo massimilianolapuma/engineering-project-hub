@@ -5,7 +5,6 @@ import { parseGitmodules, type GitmoduleEntry } from '../util/gitmodules';
 import {
   fail,
   type CodeQualityFindingDTO,
-  type CodeQualitySetupDTO,
   type CodeScanningAlertDTO,
   type CodeScanningAnalysisDTO,
   type CommitRefDTO,
@@ -63,7 +62,6 @@ export interface RepoData {
   /** Newest default-branch `hub-quality-summary` artifact. */
   qualitySummary: ProviderResult<QualitySummaryArtifactDTO>;
   codeQualityFindings: ProviderResult<CodeQualityFindingDTO[]>;
-  codeQualitySetup: ProviderResult<CodeQualitySetupDTO>;
 }
 
 export interface WorkflowData {
@@ -158,7 +156,6 @@ export async function collectRepository(
       secretScanning: skipped(repo),
       qualitySummary: skipped(repo),
       codeQualityFindings: skipped(repo),
-      codeQualitySetup: skipped(repo),
     };
   }
   const branch = configuredDefaultBranch ?? repo.data.defaultBranch;
@@ -172,7 +169,6 @@ export async function collectRepository(
     secretScanning,
     qualitySummary,
     codeQualityFindings,
-    codeQualitySetup,
   ] = await Promise.all([
     call(ctx, `head:${repository}:${branch}`, () => p.getBranchHead(repository, branch)),
     call(ctx, `release:${repository}`, () => p.getLatestRelease(repository)),
@@ -185,7 +181,6 @@ export async function collectRepository(
     call(ctx, `ss:${repository}`, () => p.listSecretScanningAlerts(repository)),
     call(ctx, `qs:${repository}:${branch}`, () => p.getQualitySummary(repository, branch)),
     call(ctx, `cq:${repository}`, () => p.listCodeQualityFindings(repository)),
-    call(ctx, `cqs:${repository}`, () => p.getCodeQualitySetup(repository)),
   ]);
   // Fall back to the latest tag only when there is no GitHub Release.
   const tag =
@@ -208,7 +203,6 @@ export async function collectRepository(
     secretScanning,
     qualitySummary,
     codeQualityFindings,
-    codeQualitySetup,
   };
 }
 

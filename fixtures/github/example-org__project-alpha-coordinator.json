@@ -69,6 +69,5 @@
     "createdAt": "@now-2d",
     "runId": 9001
   },
-  "codeQualityFindings": [],
-  "codeQualitySetup": { "state": "configured" }
+  "codeQualityFindings": []
 }

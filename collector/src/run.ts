@@ -14,13 +14,8 @@ import {
 } from '@model/index';
 import { buildProjectSnapshot, toProjectSummary } from './build-snapshot';
 import { discover } from './discovery/discover';
-import {
-  collectProject,
-  type CollectContext,
-  type RawProjectData,
-  type RepoData,
-} from './collectors/collect';
-import { fail, type ProviderResult, type SourceProvider } from './providers/types';
+import { collectProject, type CollectContext, type RawProjectData } from './collectors/collect';
+import type { ProviderResult, SourceProvider } from './providers/types';
 import { createLimiter } from './util/concurrency';
 import type { Clock } from './util/clock';
 
@@ -51,19 +46,6 @@ export interface RunResult {
   discovery: DiscoveryResult | null;
 }
 
-/**
- * Code Quality outcome of one repository. A findings 404 is ambiguous (not enabled, or not
- * visible): it proves the permission only when the setup call was readable. Otherwise the
- * setup failure (403 → not-authorised) or an unknown outcome stands in (spec §5.2).
- */
-function codeQualityOutcome(r: RepoData): ProviderResult<unknown> {
-  const findings = r.codeQualityFindings;
-  if (findings.ok || findings.error.classification !== 'not-found') return findings;
-  const setup = r.codeQualitySetup;
-  if (setup.ok || setup.error.classification !== 'not-found') return setup;
-  return fail({ classification: 'error', message: 'Code Quality findings and setup not found' });
-}
-
 /** Aggregates per-call outcomes into one availability value per capability. */
 function capabilities(raws: RawProjectData[]): Record<Capability, Availability> {
   const outcomes: Record<Capability, ProviderResult<unknown>[]> = Object.fromEntries(
@@ -77,7 +59,7 @@ function capabilities(raws: RawProjectData[]): Record<Capability, Availability> 
       outcomes.codeScanning.push(r.codeScanning);
       outcomes.dependabot.push(r.dependabot);
       outcomes.secretScanning.push(r.secretScanning);
-      outcomes.codeQuality.push(codeQualityOutcome(r));
+      outcomes.codeQuality.push(r.codeQualityFindings);
     }
     outcomes.contents.push(raw.manifest, raw.gitmodules);
     for (const w of raw.workflows) outcomes.actions.push(w.runs);

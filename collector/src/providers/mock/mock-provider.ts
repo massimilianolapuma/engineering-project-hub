@@ -5,7 +5,6 @@ import {
   fail,
   ok,
   type CodeQualityFindingDTO,
-  type CodeQualitySetupDTO,
   type CodeScanningAlertDTO,
   type CodeScanningAnalysisDTO,
   type CommitRefDTO,
@@ -56,7 +55,6 @@ export interface RepoFixture {
   qualitySummary?:
     { summary: unknown; createdAt: string; expired?: boolean; runId: number } | ErrorFixture;
   codeQualityFindings?: CodeQualityFindingDTO[] | ErrorFixture;
-  codeQualitySetup?: CodeQualitySetupDTO | ErrorFixture;
 }
 
 interface ErrorFixture {
@@ -226,9 +224,5 @@ export class MockProvider implements SourceProvider {
 
   listCodeQualityFindings(repo: string) {
     return this.pick(repo, (f) => f.codeQualityFindings);
-  }
-
-  getCodeQualitySetup(repo: string) {
-    return this.pick(repo, (f) => f.codeQualitySetup);
   }
 }

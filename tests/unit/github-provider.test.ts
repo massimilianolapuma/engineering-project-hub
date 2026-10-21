@@ -6,6 +6,7 @@ import {
 } from '../../collector/src/providers/github/github-provider';
 import { makeZip } from '../helpers/factories';
 import { AuthConfigError, resolveAuth } from '../../collector/src/providers/auth';
+import { MockProvider } from '../../collector/src/providers/mock/mock-provider';
 
 const httpError = (status: number, message: string, headers: Record<string, string> = {}) => ({
   status,
@@ -473,10 +474,10 @@ describe('GitHubProvider quality calls', () => {
     if (r.ok) expect(Object.keys(r.data[0]!).sort()).toEqual(['category', 'severity']);
   });
 
-  it('getCodeQualitySetup maps state only', async () => {
-    const p = provider({
-      '/repos/o/a/code-quality/setup': { status: 200, body: { state: 'configured', extra: 1 } },
-    });
-    expect(await p.getCodeQualitySetup('o/a')).toEqual({ ok: true, data: { state: 'configured' } });
+  it('has no Code Quality setup call (the endpoint needs Administration: write)', () => {
+    const p = provider({});
+    expect((p as unknown as Record<string, unknown>).getCodeQualitySetup).toBeUndefined();
+    const mock = new MockProvider('fixtures/github', () => new Date(0));
+    expect((mock as unknown as Record<string, unknown>).getCodeQualitySetup).toBeUndefined();
   });
 });

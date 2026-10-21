@@ -129,6 +129,5 @@
     "createdAt": "@now-2d",
     "runId": 9005
   },
-  "codeQualityFindings": [{ "category": "maintainability", "severity": "warning" }],
-  "codeQualitySetup": { "state": "configured" }
+  "codeQualityFindings": [{ "category": "maintainability", "severity": "warning" }]
 }

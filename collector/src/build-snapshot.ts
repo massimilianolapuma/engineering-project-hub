@@ -259,7 +259,6 @@ export function buildProjectSnapshot(
     components: qualityComponents,
     repos: new Map(),
     findings: new Map(),
-    setup: new Map(),
     collectedAt: generatedAt,
   };
   const staleQuality: RepoQuality[] = [];
@@ -276,7 +275,6 @@ export function buildProjectSnapshot(
     );
     qualityInput.repos.set(key, quality);
     qualityInput.findings.set(key, r.codeQualityFindings);
-    qualityInput.setup.set(key, r.codeQualitySetup);
     // The normaliser already built the one error for this summary: never record it twice.
     // A repository no component needs a report from is not reported.
     if (error && relevant) {

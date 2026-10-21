@@ -8,7 +8,6 @@ import {
   fail,
   ok,
   type CodeQualityFindingDTO,
-  type CodeQualitySetupDTO,
   type CodeScanningAlertDTO,
   type CodeScanningAnalysisDTO,
   type CommitRefDTO,
@@ -532,15 +531,5 @@ export class GitHubProvider implements SourceProvider {
         }),
       ),
     );
-  }
-
-  getCodeQualitySetup(repo: string): Promise<ProviderResult<CodeQualitySetupDTO>> {
-    return guard(async () => {
-      const { data } = await this.client.request('GET /repos/{owner}/{repo}/code-quality/setup', {
-        ...split(repo),
-        headers: { 'X-GitHub-Api-Version': CODE_QUALITY_API_VERSION },
-      });
-      return { state: String((data as { state?: unknown }).state ?? 'unknown') };
-    });
   }
 }

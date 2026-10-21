@@ -82,6 +82,5 @@
       "sha": "74d77c07925aea1b9d655d1455dcae68b2a0c3ce"
     }
   ],
-  "codeQualityFindings": [{ "category": "maintainability", "severity": "warning" }],
-  "codeQualitySetup": { "state": "configured" }
+  "codeQualityFindings": [{ "category": "maintainability", "severity": "warning" }]
 }

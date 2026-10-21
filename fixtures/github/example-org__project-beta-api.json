@@ -134,6 +134,5 @@
     { "category": "maintainability", "severity": "none" },
     { "category": "maintainability", "severity": "note" },
     { "category": "maintainability", "severity": "warning" }
-  ],
-  "codeQualitySetup": { "state": "configured" }
+  ]
 }

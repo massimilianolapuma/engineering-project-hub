@@ -7,11 +7,7 @@ import type {
   ReasonLevel,
 } from '@model/index';
 import type { RepoQuality, RepoQualityState } from '../normalizers/quality';
-import type {
-  CodeQualityFindingDTO,
-  CodeQualitySetupDTO,
-  ProviderResult,
-} from '../providers/types';
+import type { CodeQualityFindingDTO, ProviderResult } from '../providers/types';
 import { reason } from './health';
 
 export interface QualityInput {
@@ -19,9 +15,8 @@ export interface QualityInput {
   components: { componentId: string; repository: string; applicable: boolean }[];
   /** Key = repository.toLowerCase(). */
   repos: Map<string, RepoQuality>;
-  /** Code Quality open findings and setup, key = repository.toLowerCase(). */
+  /** Code Quality open findings, key = repository.toLowerCase(). */
   findings: Map<string, ProviderResult<CodeQualityFindingDTO[]>>;
-  setup: Map<string, ProviderResult<CodeQualitySetupDTO>>;
   collectedAt: string;
 }
 
@@ -84,16 +79,17 @@ const unknownFindings = (state: Findings['state']): Findings => ({
 });
 
 /**
- * Code Quality findings, counted once per repository. Counts are published only when every
- * repository with Code Quality set up was readable: a partial sum would read as a total.
+ * Code Quality findings, counted once per repository. A repository whose error message says
+ * Code Quality is not enabled is skipped; a 403 is not-authorised; a 404 or any other failure
+ * is unknown (the setup endpoint needs Administration: write, so it is never called). Counts
+ * are published only when every repository was readable or skipped: a partial sum would read
+ * as a total.
  */
 function evaluateFindings(repositories: string[], input: QualityInput): Findings {
   let notAuthorised = false;
   let unreadable = false;
   const lists: CodeQualityFindingDTO[][] = [];
   for (const key of repositories) {
-    const setup = input.setup.get(key);
-    if (setup?.ok && setup.data.state === 'not-configured') continue;
     const findings = input.findings.get(key);
     if (findings?.ok) lists.push(findings.data);
     else if (findings && findings.error.classification === 'not-configured') continue;

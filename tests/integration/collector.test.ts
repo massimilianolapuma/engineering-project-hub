@@ -120,16 +120,14 @@ describe('mock collection', () => {
     expect(index.run.repositories).toMatchObject({ total: 12, unavailable: 2 });
     expect(index.projects.map((p) => p.overall)).toEqual(['amber', 'amber', 'red', 'grey']);
     expect(index.run.capabilities.secretScanning).toBe('partial');
-    // Platform: findings and setup both 404, so the permission is not proven everywhere.
-    expect(index.run.capabilities.codeQuality).toBe('partial');
+    // Platform: findings 404 still proves the permission works (house rule for a 404).
+    expect(index.run.capabilities.codeQuality).toBe('available');
   });
 });
 
 /** The mock provider with some quality calls replaced. */
 function withQuality(
-  overrides: Partial<
-    Pick<SourceProvider, 'getQualitySummary' | 'listCodeQualityFindings' | 'getCodeQualitySetup'>
-  >,
+  overrides: Partial<Pick<SourceProvider, 'getQualitySummary' | 'listCodeQualityFindings'>>,
 ): SourceProvider {
   const mock = new MockProvider('fixtures/github', fixedClock(GOLDEN_NOW));
   return new Proxy(mock, {
@@ -205,7 +203,6 @@ describe('quality dimension (mock run)', () => {
           withQuality({
             getQualitySummary: notFound,
             listCodeQualityFindings: notFound,
-            getCodeQualitySetup: notFound,
           }),
         )
       ).projects,
@@ -288,26 +285,42 @@ describe('quality dimension (mock run)', () => {
     }
   });
 
-  it('codeQuality capability is not available when findings and setup are both unreadable', async () => {
+  it('codeQuality capability: a findings 404 is usable, a 403 is not-authorised', async () => {
     const notFound = async () => fail<never>({ classification: 'not-found', httpStatus: 404 });
     const denied = async () => fail<never>({ classification: 'not-authorised', httpStatus: 403 });
-    // Platform-like everywhere: findings 404 + setup 404 proves nothing about the permission.
-    const both404 = await runWith(
-      withQuality({ listCodeQualityFindings: notFound, getCodeQualitySetup: notFound }),
-    );
-    expect(both404.index.run.capabilities.codeQuality).toBe('unknown');
-    const setupDenied = await runWith(
-      withQuality({ listCodeQualityFindings: notFound, getCodeQualitySetup: denied }),
-    );
-    expect(setupDenied.index.run.capabilities.codeQuality).toBe('not-authorised');
-    // Findings 404 with a readable setup ("not configured") proves the permission works.
-    const notConfigured = await runWith(
-      withQuality({
-        listCodeQualityFindings: notFound,
-        getCodeQualitySetup: async () => ok({ state: 'not-configured' }),
-      }),
-    );
-    expect(notConfigured.index.run.capabilities.codeQuality).toBe('available');
+    const all404 = await runWith(withQuality({ listCodeQualityFindings: notFound }));
+    expect(all404.index.run.capabilities.codeQuality).toBe('available');
+    // ...but the findings themselves stay unknown, never 0. (Gamma's repositories are not
+    // accessible at all, so its findings stay not-authorised whatever the findings call says.)
+    const readableRepos = (projects: ProjectSnapshot[]) =>
+      projects.filter((p) => p.project.id !== 'project-gamma');
+    for (const p of readableRepos(all404.projects))
+      expect(p.qualityHealth.findings.state, p.project.id).toBe('unknown');
+    const all403 = await runWith(withQuality({ listCodeQualityFindings: denied }));
+    expect(all403.index.run.capabilities.codeQuality).toBe('not-authorised');
+    for (const p of all403.projects)
+      expect(p.qualityHealth.findings.state, p.project.id).toBe('not-authorised');
+  });
+
+  it('a "not configured" findings message skips that repository', async () => {
+    const notEnabled = async () =>
+      fail<never>({ classification: 'not-configured', httpStatus: 404 });
+    const { index, projects } = await runWith(withQuality({ listCodeQualityFindings: notEnabled }));
+    expect(index.run.capabilities.codeQuality).toBe('available');
+    for (const p of projects.filter((x) => x.project.id !== 'project-gamma'))
+      expect(p.qualityHealth.findings.state, p.project.id).toBe('not-configured');
+  });
+
+  it('alpha findings 0 / 3: helm (no Code Quality) has an empty list (spec §5.8)', async () => {
+    const { projects } = await mockRun();
+    const alpha = byId(projects)['project-alpha']!;
+    expect(alpha.qualityHealth.findings).toMatchObject({
+      state: 'available',
+      reliability: 0,
+      maintainability: 3,
+    });
+    // Platform's findings 404 is unknown, never 0.
+    expect(byId(projects)['platform']!.qualityHealth.findings.state).toBe('unknown');
   });
 });
 
@@ -490,7 +503,6 @@ describe('sanitisation end to end', () => {
         runUrl: url,
       }),
     listCodeQualityFindings: async () => ok([{ category: poison, severity: poison }]),
-    getCodeQualitySetup: async () => ok({ state: poison }),
     listSecretScanningAlerts: async () =>
       ok([
         {

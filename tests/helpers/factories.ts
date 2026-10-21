@@ -73,7 +73,6 @@ export function repoData(name: string, partial: Partial<RepoData> = {}): RepoDat
     secretScanning: ok([]),
     qualitySummary: fail({ classification: 'not-found', httpStatus: 404 }),
     codeQualityFindings: fail({ classification: 'not-found', httpStatus: 404 }),
-    codeQualitySetup: fail({ classification: 'not-found', httpStatus: 404 }),
     ...partial,
   };
 }

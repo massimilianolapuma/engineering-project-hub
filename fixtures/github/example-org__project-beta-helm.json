@@ -51,5 +51,5 @@
       "sha": "1485c43fd9e24ef6e7d082c0d83c62d7becafbed"
     }
   ],
-  "codeQualitySetup": { "state": "not-configured" }
+  "codeQualityFindings": []
 }

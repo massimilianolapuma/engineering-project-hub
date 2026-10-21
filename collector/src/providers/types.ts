@@ -149,10 +149,6 @@ export interface CodeQualityFindingDTO {
   severity: string;
 }
 
-export interface CodeQualitySetupDTO {
-  state: string;
-}
-
 export interface ProviderError {
   classification: ErrorClassification;
   httpStatus?: number;
@@ -221,7 +217,6 @@ export interface SourceProvider {
     branch: string,
   ): Promise<ProviderResult<QualitySummaryArtifactDTO>>;
   listCodeQualityFindings(repo: string): Promise<ProviderResult<CodeQualityFindingDTO[]>>;
-  getCodeQualitySetup(repo: string): Promise<ProviderResult<CodeQualitySetupDTO>>;
 }
 
 /**
