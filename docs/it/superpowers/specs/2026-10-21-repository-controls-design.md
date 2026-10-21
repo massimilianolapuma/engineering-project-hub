@@ -190,6 +190,7 @@ I controlli 4–6 seguono la stessa regola:
 - Se assente:
   - `fail` se la chiamata alle regole è riuscita e `protected === false`, oppure la protezione classica è stata letta e non lo ha;
   - `unknown` se `protected === true` o `null` e la protezione classica non è stata letta (D6).
+  - `unknown` se la protezione classica è stata letta ma ha risposto 404 mentre `protected === true` e la chiamata alle regole non ha restituito regole: le due fonti si contraddicono, segno di un'ambiguità di permessi (404 ambiguo = unknown, mai fail).
 - `unknown` se la chiamata alle regole è fallita e la protezione classica non è stata letta.
 
 Eccezioni a livello di repository:
@@ -217,7 +218,7 @@ Le regole di branch si riassumono; i `parameters` grezzi delle regole non si pub
 - I tipi futuri sconosciuti si contano in `otherRules` e non si pubblicano mai per nome.
 - `source`:
   - `rulesets` se la rules API ha restituito regole;
-  - `classic` se vale solo la protezione classica (letta o dedotta da `protected`);
+  - `classic` se vale solo la protezione classica: letta, oppure dedotta da `protected === true` quando la chiamata alle regole è riuscita senza regole (una chiamata alle regole fallita dà `unknown`, perché la causa potrebbero essere i ruleset);
   - `both`, `none` o `unknown` negli altri casi.
 
 ### 5.6 Riepilogo OpenSSF Scorecard (D8)

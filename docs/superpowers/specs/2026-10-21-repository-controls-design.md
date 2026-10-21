@@ -190,6 +190,7 @@ Checks 4–6 share one rule:
 - When absent:
   - `fail` if the rules call succeeded and either `protected === false` or classic protection was read and lacks it;
   - `unknown` if `protected === true` or `null` and classic protection was not read (D6).
+  - `unknown` if classic protection was read but answered 404 while `protected === true` and the rules call returned no rule: the two sources contradict each other, which points to a permission ambiguity (ambiguous 404 = unknown, never fail).
 - `unknown` when the rules call failed and classic protection was not read.
 
 Repository-level overrides:
@@ -217,7 +218,7 @@ Branch rules are summarised; raw rule `parameters` are never published, except `
 - Unknown future types are counted in `otherRules` and never published by name.
 - `source`:
   - `rulesets` when the rules API returned rules;
-  - `classic` when only classic protection (read or inferred from `protected`) applies;
+  - `classic` when only classic protection applies: read, or inferred from `protected === true` when the rules call succeeded with no rule (a failed rules call gives `unknown`, since rulesets may be the cause);
   - `both`, `none` or `unknown` otherwise.
 
 ### 5.6 OpenSSF Scorecard summary (D8)

@@ -238,8 +238,8 @@ function evaluateBranch(input: RepoControlsInput): {
   if (hasRules && classic) source = 'both';
   else if (hasRules) source = 'rulesets';
   else if (classic) source = 'classic';
-  else if (input.protected === true && !classicRead)
-    source = 'classic'; // inferred from `protected`
+  else if (rulesOk && input.protected === true && !classicRead)
+    source = 'classic'; // inferred from `protected` (only when the rules call answered)
   else if (rulesOk && input.protected === false) source = 'none';
   else if (rulesOk && classicRead && input.protected !== true) source = 'none';
   else source = 'unknown';
@@ -252,6 +252,9 @@ function evaluateBranch(input: RepoControlsInput): {
     if (present) return 'pass';
     if (!rulesOk) return 'unknown';
     if (protectedFlag === false && !classic) return 'fail';
+    // Classic protection answered 404 while the branch reports protected and no rule explains
+    // it: a contradiction, most likely a permission ambiguity. Unknown, never fail.
+    if (classicRead && classic === null && protectedFlag === true && !hasRules) return 'unknown';
     if (classicRead) return 'fail'; // classic protection was read and lacks it
     return 'unknown'; // protected true / null and classic not read (D6)
   };

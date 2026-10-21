@@ -285,6 +285,22 @@ describe('branch checks', () => {
       requiredApprovals: 1,
     });
   });
+  it('rules [] + protected true + classic read but 404 (ambiguous) → protected pass, the other three unknown, never fail', () => {
+    const input = { rules: ok([]), protected: true, classic: ok(null) };
+    expect(branchStates(states(input))).toEqual(['pass', 'unknown', 'unknown', 'unknown']);
+    expect(repo(input).branchRules.source).toBe('unknown');
+  });
+  it('rules [] + protected false + classic read 404 → 4 × fail (no contradiction)', () =>
+    expect(branchStates(states({ rules: ok([]), protected: false, classic: ok(null) }))).toEqual([
+      'fail',
+      'fail',
+      'fail',
+      'fail',
+    ]));
+  it('rules 403 + protected true → source unknown, never inferred classic', () => {
+    const rules = fail<never>({ classification: 'not-authorised', httpStatus: 403 }) as never;
+    expect(repo({ rules, protected: true }).branchRules.source).toBe('unknown');
+  });
   it('rules and classic together → source both', () =>
     expect(
       repo({
