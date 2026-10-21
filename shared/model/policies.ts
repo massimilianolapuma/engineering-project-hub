@@ -1,8 +1,10 @@
 import { z } from 'zod';
-import { DimensionSchema, SeveritySchema } from './enums';
+import { DimensionSchema, REPOSITORY_CHECK_IDS, SeveritySchema } from './enums';
 
 const NonGreenStatus = z.enum(['red', 'amber', 'grey']);
 const RedOrAmber = z.enum(['red', 'amber']);
+/** info = shown, never changes Governance. */
+const CheckLevel = z.enum(['info', 'amber', 'red']);
 
 /**
  * Health policies. These are MVP policies for this organisation, not universal risk
@@ -80,6 +82,33 @@ export const PoliciesSchema = z
         defaultBranchMismatch: NonGreenStatus.default('amber'),
       })
       .strict(),
+    /**
+     * Repository controls (workflow files and branch rules). Every check is informative by
+     * default: nothing changes Governance until the owner enforces it. Optional block.
+     */
+    repositoryControls: z
+      .object({
+        enabled: z.boolean().default(true),
+        checks: z
+          .object(
+            Object.fromEntries(
+              REPOSITORY_CHECK_IDS.map((id) => [id, CheckLevel.default('info')]),
+            ) as Record<(typeof REPOSITORY_CHECK_IDS)[number], z.ZodDefault<typeof CheckLevel>>,
+          )
+          .strict()
+          .prefault({}),
+        /** What an enforced check that cannot be determined does to Governance. */
+        unknownEnforcedCheck: z.enum(['info', 'amber']).default('info'),
+        /** Owners whose unpinned actions count as pinned (e.g. "actions", "github"). */
+        exemptActionOwners: z
+          .array(z.string().regex(/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/, 'must be a GitHub owner'))
+          .default([]),
+        maxWorkflowFiles: z.number().int().min(1).max(100).default(30),
+        /** true needs "Administration: read" on the credentials. */
+        readClassicProtection: z.boolean().default(false),
+      })
+      .strict()
+      .prefault({}),
     overall: z
       .object({
         /** A red in one of these makes the project red. A red elsewhere counts as amber. */

@@ -151,6 +151,15 @@ export const en = {
     sbom: 'SBOM',
     artifactSignature: 'Artifact signature',
   },
+  /** Repository controls (Governance): names of the six checks. */
+  repositoryCheck: {
+    'actions-pinned': 'Actions pinned to a SHA',
+    'reusable-workflows-current': 'Reusable workflows current',
+    'branch-protected': 'Branch protected',
+    'pull-request-required': 'Pull request required',
+    'force-push-blocked': 'Force push blocked',
+    'status-checks-required': 'Status checks required',
+  },
   controlState: {
     enabled: 'Enabled',
     'not-configured': 'Not configured',
@@ -245,6 +254,9 @@ export const en = {
     'quality-summary': 'Quality summary',
     'code-quality': 'Code Quality',
     'quality-report': 'Quality report',
+    'workflow-files': 'Workflow files',
+    'repository-rules': 'Branch rules',
+    'scorecard-analysis': 'OpenSSF Scorecard',
   },
   availability: {
     available: 'Available',
@@ -267,6 +279,7 @@ export const en = {
     dependabot: 'Dependabot alerts',
     secretScanning: 'Secret scanning alerts',
     codeQuality: 'Code Quality findings',
+    repositoryRules: 'Branch rules',
   },
   portfolio: {
     title: 'Portfolio',
@@ -1133,6 +1146,9 @@ export const en = {
     'open-medium-low-alerts': '{count} open medium/low alert',
     'open-secret-alerts': '{count} open secret scanning alert',
     'all-required-controls-available': 'The only required control is available',
+    'repository-check-failed': '{check} fails on {count} repository: {repositories}',
+    'repository-check-unknown':
+      '{check} cannot be determined on {count} repository: {repositories}',
   },
   reasons: {
     'workflow-failed': '{workflow} failed on {component} (run #{run})',
@@ -1184,6 +1200,10 @@ export const en = {
     'default-branch-mismatch': '{repository}: default branch {actual}, expected {expected}',
     'repository-unavailable': 'Repository not accessible',
     'governance-compliant': 'Repositories follow the declared standards',
+    'repository-check-failed': '{check} fails on {count} repositories: {repositories}',
+    'repository-check-unknown':
+      '{check} cannot be determined on {count} repositories: {repositories}',
+    'repository-checks-passed': 'Every applicable repository check passes',
     'quality-below-threshold': 'Test coverage {percentage}%, below {threshold}% ({components})',
     'quality-below-red-threshold':
       'Test coverage {percentage}%, below the {threshold}% minimum ({components})',

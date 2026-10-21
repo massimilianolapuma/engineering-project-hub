@@ -1,5 +1,11 @@
 import { z } from 'zod';
-import { ComponentTypeSchema, ControlIdSchema, LifecycleSchema, type ControlId } from './enums';
+import {
+  ComponentTypeSchema,
+  ControlIdSchema,
+  LifecycleSchema,
+  RepositoryCheckIdSchema,
+  type ControlId,
+} from './enums';
 
 export const VersionSourceSchema = z.enum(['auto', 'submodule', 'manifest', 'release']);
 export type VersionSource = z.infer<typeof VersionSourceSchema>;
@@ -52,6 +58,8 @@ export const CoordinatorConfigSchema = z
     manifestPath: relativePath.default('release-manifest.yaml'),
     /** Controls that make no sense for the coordinator (e.g. container scanning). */
     notApplicableControls: z.array(ControlIdSchema).default([]),
+    /** Repository checks that make no sense for the coordinator's repository. */
+    notApplicableChecks: z.array(RepositoryCheckIdSchema).default([]),
     /** Test coverage applies to the coordinator like a service unless overridden. */
     testCoverage: TestCoverageSchema.optional(),
   })
@@ -75,6 +83,8 @@ export const ComponentConfigSchema = z
     releaseTagPrefix: z.string().max(50).optional(),
     /** Controls that make no sense for this component (e.g. container scanning on a Helm repo). */
     notApplicableControls: z.array(ControlIdSchema).default([]),
+    /** Repository checks that make no sense for this component (monorepo: every target must list it). */
+    notApplicableChecks: z.array(RepositoryCheckIdSchema).default([]),
     /**
      * Where the component's current version comes from:
      * - auto: submodule (tag resolved from the SHA pinned by the coordinator) → manifest → latest release

@@ -148,8 +148,82 @@ export const CapabilitySchema = z.enum([
   'dependabot',
   'secretScanning',
   'codeQuality',
+  'repositoryRules',
 ]);
 export type Capability = z.infer<typeof CapabilitySchema>;
+
+/** Repository controls (Governance), in display order. */
+export const RepositoryCheckIdSchema = z.enum([
+  'actions-pinned',
+  'reusable-workflows-current',
+  'branch-protected',
+  'pull-request-required',
+  'force-push-blocked',
+  'status-checks-required',
+]);
+export type RepositoryCheckId = z.infer<typeof RepositoryCheckIdSchema>;
+export const REPOSITORY_CHECK_IDS: readonly RepositoryCheckId[] = RepositoryCheckIdSchema.options;
+
+export const RepositoryCheckStateSchema = z.enum(['pass', 'fail', 'unknown', 'not-applicable']);
+export type RepositoryCheckState = z.infer<typeof RepositoryCheckStateSchema>;
+
+/**
+ * Branch rule types published by name (the types GitHub documented on 2026-10-21). Any other
+ * type is counted in `otherRules` and never published by name.
+ */
+export const BranchRuleTypeSchema = z.enum([
+  'creation',
+  'update',
+  'deletion',
+  'required_linear_history',
+  'merge_queue',
+  'required_deployments',
+  'required_signatures',
+  'pull_request',
+  'required_status_checks',
+  'non_fast_forward',
+  'commit_message_pattern',
+  'commit_author_email_pattern',
+  'committer_email_pattern',
+  'branch_name_pattern',
+  'tag_name_pattern',
+  'workflows',
+  'code_scanning',
+  'code_quality',
+  'code_coverage',
+  'copilot_code_review',
+  'license_compliance_scanning',
+  'file_path_restriction',
+  'max_file_path_length',
+  'file_extension_restriction',
+  'max_file_size',
+]);
+export type BranchRuleType = z.infer<typeof BranchRuleTypeSchema>;
+
+/** OpenSSF Scorecard check names; other rule ids are counted in `otherFailing`. */
+export const ScorecardCheckSchema = z.enum([
+  'Binary-Artifacts',
+  'Branch-Protection',
+  'CI-Tests',
+  'CII-Best-Practices',
+  'Code-Review',
+  'Contributors',
+  'Dangerous-Workflow',
+  'Dependency-Update-Tool',
+  'Fuzzing',
+  'License',
+  'Maintained',
+  'Packaging',
+  'Pinned-Dependencies',
+  'SAST',
+  'SBOM',
+  'Security-Policy',
+  'Signed-Releases',
+  'Token-Permissions',
+  'Vulnerabilities',
+  'Webhooks',
+]);
+export type ScorecardCheck = z.infer<typeof ScorecardCheckSchema>;
 
 export const DimensionSchema = z.enum([
   'delivery',
@@ -217,6 +291,9 @@ export const REASON_CODES = [
   'default-branch-mismatch',
   'repository-unavailable',
   'governance-compliant',
+  'repository-check-failed',
+  'repository-check-unknown',
+  'repository-checks-passed',
   // quality (test coverage)
   'quality-below-threshold',
   'quality-below-red-threshold',

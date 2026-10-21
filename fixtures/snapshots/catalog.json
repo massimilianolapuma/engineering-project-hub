@@ -25,7 +25,8 @@
           "repository": "example-org/platform-mono",
           "defaultBranch": "main",
           "manifestPath": "release-manifest.yaml",
-          "notApplicableControls": []
+          "notApplicableControls": [],
+          "notApplicableChecks": []
         },
         "components": [
           {
@@ -36,6 +37,7 @@
             "type": "webapp",
             "releaseTagPrefix": "web-v",
             "notApplicableControls": [],
+            "notApplicableChecks": [],
             "versionSource": "release"
           },
           {
@@ -46,6 +48,7 @@
             "type": "service",
             "releaseTagPrefix": "api-v",
             "notApplicableControls": [],
+            "notApplicableChecks": [],
             "versionSource": "manifest"
           },
           {
@@ -56,6 +59,7 @@
             "type": "worker",
             "releaseTagPrefix": "worker-v",
             "notApplicableControls": [],
+            "notApplicableChecks": [],
             "versionSource": "release"
           }
         ],
@@ -129,7 +133,8 @@
           "manifestPath": "release-manifest.yaml",
           "notApplicableControls": [
             "containerScanning"
-          ]
+          ],
+          "notApplicableChecks": []
         },
         "components": [
           {
@@ -140,6 +145,7 @@
             "defaultBranch": "main",
             "submodulePath": "services/backend",
             "notApplicableControls": [],
+            "notApplicableChecks": [],
             "versionSource": "auto"
           },
           {
@@ -150,6 +156,7 @@
             "defaultBranch": "main",
             "submodulePath": "apps/frontend",
             "notApplicableControls": [],
+            "notApplicableChecks": [],
             "versionSource": "auto"
           },
           {
@@ -160,6 +167,7 @@
             "defaultBranch": "main",
             "submodulePath": "services/worker",
             "notApplicableControls": [],
+            "notApplicableChecks": [],
             "versionSource": "auto"
           },
           {
@@ -172,6 +180,7 @@
             "notApplicableControls": [
               "containerScanning"
             ],
+            "notApplicableChecks": [],
             "versionSource": "release"
           }
         ],
@@ -267,7 +276,8 @@
           "manifestPath": "release-manifest.yaml",
           "notApplicableControls": [
             "containerScanning"
-          ]
+          ],
+          "notApplicableChecks": []
         },
         "components": [
           {
@@ -278,6 +288,7 @@
             "defaultBranch": "main",
             "submodulePath": "services/api",
             "notApplicableControls": [],
+            "notApplicableChecks": [],
             "versionSource": "auto"
           },
           {
@@ -288,6 +299,7 @@
             "defaultBranch": "main",
             "submodulePath": "apps/web",
             "notApplicableControls": [],
+            "notApplicableChecks": [],
             "versionSource": "auto"
           },
           {
@@ -300,6 +312,7 @@
             "notApplicableControls": [
               "containerScanning"
             ],
+            "notApplicableChecks": [],
             "versionSource": "auto"
           }
         ],
@@ -386,7 +399,8 @@
         "coordinator": {
           "repository": "example-org/project-gamma-coordinator",
           "manifestPath": "release-manifest.yaml",
-          "notApplicableControls": []
+          "notApplicableControls": [],
+          "notApplicableChecks": []
         },
         "components": [
           {
@@ -395,6 +409,7 @@
             "repository": "example-org/project-gamma-service",
             "type": "service",
             "notApplicableControls": [],
+            "notApplicableChecks": [],
             "versionSource": "auto"
           }
         ],
@@ -489,7 +504,8 @@
             "repository": "example-org/project-alpha-coordinator",
             "defaultBranch": "main",
             "manifestPath": "release-manifest.yaml",
-            "notApplicableControls": []
+            "notApplicableControls": [],
+            "notApplicableChecks": []
           },
           "components": [
             {
@@ -499,6 +515,7 @@
               "type": "service",
               "submodulePath": "services/backend",
               "notApplicableControls": [],
+              "notApplicableChecks": [],
               "versionSource": "auto"
             },
             {
@@ -508,6 +525,7 @@
               "type": "webapp",
               "submodulePath": "apps/frontend",
               "notApplicableControls": [],
+              "notApplicableChecks": [],
               "versionSource": "auto"
             },
             {
@@ -517,6 +535,7 @@
               "type": "worker",
               "submodulePath": "services/worker",
               "notApplicableControls": [],
+              "notApplicableChecks": [],
               "versionSource": "auto"
             },
             {
@@ -526,6 +545,7 @@
               "type": "infrastructure",
               "submodulePath": "deploy/helm",
               "notApplicableControls": [],
+              "notApplicableChecks": [],
               "versionSource": "auto"
             }
           ],
@@ -578,7 +598,8 @@
             "repository": "example-org/project-beta-coordinator",
             "defaultBranch": "main",
             "manifestPath": "release-manifest.yaml",
-            "notApplicableControls": []
+            "notApplicableControls": [],
+            "notApplicableChecks": []
           },
           "components": [
             {
@@ -588,6 +609,7 @@
               "type": "webapp",
               "submodulePath": "apps/web",
               "notApplicableControls": [],
+              "notApplicableChecks": [],
               "versionSource": "auto"
             },
             {
@@ -597,6 +619,7 @@
               "type": "infrastructure",
               "submodulePath": "deploy/helm",
               "notApplicableControls": [],
+              "notApplicableChecks": [],
               "versionSource": "auto"
             }
           ],
@@ -650,7 +673,8 @@
             "repository": "example-org/platform-mono",
             "defaultBranch": "main",
             "manifestPath": "release-manifest.yaml",
-            "notApplicableControls": []
+            "notApplicableControls": [],
+            "notApplicableChecks": []
           },
           "components": [
             {
@@ -661,6 +685,7 @@
               "type": "webapp",
               "releaseTagPrefix": "web-v",
               "notApplicableControls": [],
+              "notApplicableChecks": [],
               "versionSource": "release"
             },
             {
@@ -671,6 +696,7 @@
               "type": "service",
               "releaseTagPrefix": "api-v",
               "notApplicableControls": [],
+              "notApplicableChecks": [],
               "versionSource": "release"
             },
             {
@@ -681,6 +707,7 @@
               "type": "worker",
               "releaseTagPrefix": "worker-v",
               "notApplicableControls": [],
+              "notApplicableChecks": [],
               "versionSource": "release"
             }
           ],
@@ -762,7 +789,8 @@
             "repository": "example-org/docs-site",
             "defaultBranch": "main",
             "manifestPath": "release-manifest.yaml",
-            "notApplicableControls": []
+            "notApplicableControls": [],
+            "notApplicableChecks": []
           },
           "components": [],
           "environments": [],

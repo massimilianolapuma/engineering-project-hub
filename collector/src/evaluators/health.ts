@@ -403,6 +403,8 @@ export function evaluateGovernance(
   repos: GovernanceRepo[],
   workflows: WorkflowStatus[],
   policies: Policies,
+  /** Reasons from other governance sources (repository controls), appended before the status. */
+  extraReasons: Reason[] = [],
 ): HealthResult {
   const g = policies.governance;
   const reasons: Reason[] = [];
@@ -446,6 +448,7 @@ export function evaluateGovernance(
       }),
     );
   }
+  reasons.push(...extraReasons);
   const status = statusFrom(reasons);
   if (status === 'green') reasons.push(reason('governance-compliant', 'info'));
   return { status, reasons };

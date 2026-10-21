@@ -127,6 +127,21 @@
                   ]
                 }
               },
+              "notApplicableChecks": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "actions-pinned",
+                    "reusable-workflows-current",
+                    "branch-protected",
+                    "pull-request-required",
+                    "force-push-blocked",
+                    "status-checks-required"
+                  ]
+                }
+              },
               "testCoverage": {
                 "type": "string",
                 "enum": [
@@ -205,6 +220,21 @@
                       "dast",
                       "sbom",
                       "artifactSignature"
+                    ]
+                  }
+                },
+                "notApplicableChecks": {
+                  "default": [],
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "actions-pinned",
+                      "reusable-workflows-current",
+                      "branch-protected",
+                      "pull-request-required",
+                      "force-push-blocked",
+                      "status-checks-required"
                     ]
                   }
                 },

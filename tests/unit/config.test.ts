@@ -155,6 +155,49 @@ describe('catalog validation (config/projects/<id>.yaml)', () => {
     ).toBeUndefined();
   });
 
+  it("catalog accepts notApplicableChecks ['branch-protected'] on a component, rejects 'foo'", () => {
+    const project = (checks: string[], where: 'component' | 'coordinator' = 'component') =>
+      ProjectConfigSchema.safeParse({
+        id: 'p',
+        name: 'P',
+        businessUnit: 'BU',
+        lifecycle: 'production',
+        coordinator: {
+          repository: 'example-org/p',
+          ...(where === 'coordinator' ? { notApplicableChecks: checks } : {}),
+        },
+        components: [
+          {
+            id: 'api',
+            name: 'API',
+            repository: 'example-org/api',
+            type: 'service',
+            ...(where === 'component' ? { notApplicableChecks: checks } : {}),
+          },
+        ],
+        securityControls: Object.fromEntries(
+          [
+            'codeScanning',
+            'secretScanning',
+            'dependabot',
+            'containerScanning',
+            'iacScanning',
+            'dast',
+            'sbom',
+            'artifactSignature',
+          ].map((c) => [c, { required: false }]),
+        ),
+      });
+    const ok = project(['branch-protected']);
+    expect(ok.success).toBe(true);
+    expect(ok.success && ok.data.components[0]!.notApplicableChecks).toEqual(['branch-protected']);
+    expect(project(['foo']).success).toBe(false);
+    expect(project(['actions-pinned'], 'coordinator').success).toBe(true);
+    expect(project(['foo'], 'coordinator').success).toBe(false);
+    const dflt = project([]);
+    expect(dflt.success && dflt.data.coordinator.notApplicableChecks).toEqual([]);
+  });
+
   it('reserves "coordinator" as component id', () => {
     expect(invalid((t) => t.replace('- id: backend', '- id: coordinator'))).toThrow(
       /"coordinator" is reserved/,
@@ -254,6 +297,47 @@ describe('policies.yaml validation', () => {
     expect(policiesText).toMatch(/^# history:/m);
     const p = parseYamlWith(PoliciesSchema, policiesText, 'policies.yaml');
     expect(p.history.maxEntries).toBe(120);
+  });
+
+  it('policies default repositoryControls: all six checks info, maxWorkflowFiles 30, readClassicProtection false', () => {
+    const p = parseYamlWith(PoliciesSchema, policiesText, 'policies.yaml');
+    expect(p.repositoryControls).toEqual({
+      enabled: true,
+      checks: {
+        'actions-pinned': 'info',
+        'reusable-workflows-current': 'info',
+        'branch-protected': 'info',
+        'pull-request-required': 'info',
+        'force-push-blocked': 'info',
+        'status-checks-required': 'info',
+      },
+      unknownEnforcedCheck: 'info',
+      exemptActionOwners: [],
+      maxWorkflowFiles: 30,
+      readClassicProtection: false,
+    });
+    expect(policiesText).toMatch(/^# repositoryControls:/m);
+  });
+
+  const withControls = (repositoryControls: unknown) =>
+    PoliciesSchema.safeParse({
+      ...parseYamlWith(PoliciesSchema, policiesText, 'p.yaml'),
+      repositoryControls,
+    });
+
+  it('repositoryControls rejects maxWorkflowFiles 0 and 101, accepts 1 and 100', () => {
+    expect(withControls({ maxWorkflowFiles: 0 }).success).toBe(false);
+    expect(withControls({ maxWorkflowFiles: 101 }).success).toBe(false);
+    expect(withControls({ maxWorkflowFiles: 1 }).success).toBe(true);
+    expect(withControls({ maxWorkflowFiles: 100 }).success).toBe(true);
+  });
+
+  it('repositoryControls rejects a check level "grey", an unknown check and a bad owner', () => {
+    expect(withControls({ checks: { 'actions-pinned': 'grey' } }).success).toBe(false);
+    expect(withControls({ checks: { 'not-a-check': 'red' } }).success).toBe(false);
+    expect(withControls({ exemptActionOwners: ['not an owner!'] }).success).toBe(false);
+    expect(withControls({ unknownEnforcedCheck: 'red' }).success).toBe(false);
+    expect(withControls({ checks: { 'actions-pinned': 'red' } }).success).toBe(true);
   });
 
   it('rejects a wrong schemaVersion', () => {

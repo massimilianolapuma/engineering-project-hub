@@ -153,6 +153,15 @@ export const it: Dict = {
     sbom: 'SBOM',
     artifactSignature: 'Firma artifact',
   },
+  /** Repository controls (Governance): names of the six checks. */
+  repositoryCheck: {
+    'actions-pinned': 'Action fissate a uno SHA',
+    'reusable-workflows-current': 'Workflow riutilizzabili aggiornati',
+    'branch-protected': 'Branch protetto',
+    'pull-request-required': 'Pull request obbligatoria',
+    'force-push-blocked': 'Force push bloccato',
+    'status-checks-required': 'Status check obbligatori',
+  },
   controlState: {
     enabled: 'Attivo',
     'not-configured': 'Non configurato',
@@ -246,6 +255,9 @@ export const it: Dict = {
     'security-status-file': 'File di stato sicurezza',
     'quality-summary': 'Riepilogo qualità',
     'code-quality': 'Code Quality',
+    'workflow-files': 'File dei workflow',
+    'repository-rules': 'Regole dei branch',
+    'scorecard-analysis': 'OpenSSF Scorecard',
     'quality-report': 'Report di qualità',
   },
   availability: {
@@ -269,6 +281,7 @@ export const it: Dict = {
     dependabot: 'Alert Dependabot',
     secretScanning: 'Alert secret scanning',
     codeQuality: 'Rilievi Code Quality',
+    repositoryRules: 'Regole dei branch',
   },
   portfolio: {
     title: 'Portfolio',
@@ -1143,6 +1156,8 @@ export const it: Dict = {
     'open-medium-low-alerts': '{count} alert medio/basso aperto',
     'open-secret-alerts': '{count} alert secret scanning aperto',
     'all-required-controls-available': "L'unico controllo obbligatorio è disponibile",
+    'repository-check-failed': '{check} non è rispettato in {count} repository: {repositories}',
+    'repository-check-unknown': '{check} non è verificabile in {count} repository: {repositories}',
   },
   reasons: {
     'workflow-failed': '{workflow} fallito su {component} (run #{run})',
@@ -1195,6 +1210,9 @@ export const it: Dict = {
     'default-branch-mismatch': '{repository}: branch principale {actual}, atteso {expected}',
     'repository-unavailable': 'Repository non accessibile',
     'governance-compliant': 'I repository rispettano gli standard dichiarati',
+    'repository-check-failed': '{check} non è rispettato in {count} repository: {repositories}',
+    'repository-check-unknown': '{check} non è verificabile in {count} repository: {repositories}',
+    'repository-checks-passed': 'Tutti i controlli applicabili dei repository sono rispettati',
     'quality-below-threshold': 'Copertura test {percentage}%, sotto il {threshold}% ({components})',
     'quality-below-red-threshold':
       'Copertura test {percentage}%, sotto il minimo del {threshold}% ({components})',

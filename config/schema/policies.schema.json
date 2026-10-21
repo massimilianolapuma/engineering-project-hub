@@ -264,6 +264,104 @@
       },
       "additionalProperties": false
     },
+    "repositoryControls": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "type": "boolean"
+        },
+        "checks": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "actions-pinned": {
+              "default": "info",
+              "type": "string",
+              "enum": [
+                "info",
+                "amber",
+                "red"
+              ]
+            },
+            "reusable-workflows-current": {
+              "default": "info",
+              "type": "string",
+              "enum": [
+                "info",
+                "amber",
+                "red"
+              ]
+            },
+            "branch-protected": {
+              "default": "info",
+              "type": "string",
+              "enum": [
+                "info",
+                "amber",
+                "red"
+              ]
+            },
+            "pull-request-required": {
+              "default": "info",
+              "type": "string",
+              "enum": [
+                "info",
+                "amber",
+                "red"
+              ]
+            },
+            "force-push-blocked": {
+              "default": "info",
+              "type": "string",
+              "enum": [
+                "info",
+                "amber",
+                "red"
+              ]
+            },
+            "status-checks-required": {
+              "default": "info",
+              "type": "string",
+              "enum": [
+                "info",
+                "amber",
+                "red"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "unknownEnforcedCheck": {
+          "default": "info",
+          "type": "string",
+          "enum": [
+            "info",
+            "amber"
+          ]
+        },
+        "exemptActionOwners": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$"
+          }
+        },
+        "maxWorkflowFiles": {
+          "default": 30,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "readClassicProtection": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
     "overall": {
       "type": "object",
       "properties": {

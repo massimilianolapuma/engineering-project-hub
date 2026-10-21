@@ -171,6 +171,7 @@ function baseProject(
       defaultBranch: repo.defaultBranch,
       manifestPath: 'release-manifest.yaml',
       notApplicableControls: [],
+      notApplicableChecks: [],
     },
     environments: [],
     securityControls: {
@@ -288,6 +289,7 @@ export async function discover(
             type: guessType(e.path),
             submodulePath: e.path,
             notApplicableControls: [],
+            notApplicableChecks: [],
             versionSource: 'auto' as const,
           },
         ];
@@ -323,6 +325,7 @@ export async function discover(
               type: guessType(path),
               releaseTagPrefix: `${id}-v`,
               notApplicableControls: [],
+              notApplicableChecks: [],
               versionSource: 'release' as const,
             };
           });
