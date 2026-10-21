@@ -295,7 +295,7 @@ describe('GitHubProvider quality calls', () => {
     size_in_bytes: 300,
     expired: false,
     created_at: created,
-    workflow_run: { id: id * 10, head_branch: branch },
+    workflow_run: { id: id * 10, head_branch: branch, head_repository_id: 7, repository_id: 7 },
     ...extra,
   });
   const list = (artifacts: unknown[]): Route => ({
@@ -325,6 +325,53 @@ describe('GitHubProvider quality calls', () => {
         createdAt: '2026-01-12T10:00:00Z',
         runUrl: 'https://github.com/o/a/actions/runs/20',
       },
+    });
+  });
+
+  it('getQualitySummary ignores fork-run artifacts whose head repository differs', async () => {
+    const fork = art(3, 'main', '2026-01-15T10:00:00Z');
+    fork.workflow_run.head_repository_id = 99;
+    const p = provider({
+      '/repos/o/a/actions/artifacts': list([fork, art(1, 'main', '2026-01-10T10:00:00Z')]),
+      '/repos/o/a/actions/artifacts/1/zip': zipOf('{"same":"repo"}'),
+      '/repos/o/a/actions/artifacts/3/zip': zipOf('{"fork":true}'),
+    });
+    expect(await p.getQualitySummary('o/a', 'main')).toMatchObject({
+      ok: true,
+      data: { summaryText: '{"same":"repo"}' },
+    });
+  });
+
+  it('getQualitySummary finds the matching artifact on page 2 behind 30 PR-branch artifacts', async () => {
+    const page1 = Array.from({ length: 30 }, (_, i) =>
+      art(100 + i, `pr/${i}`, '2026-01-14T10:00:00Z'),
+    );
+    const page2 = [art(1, 'main', '2026-01-10T10:00:00Z')];
+    const zip = makeZip([{ name: 'quality-summary.json', data: '{"p":2}' }]);
+    const p = new GitHubProvider(
+      createGitHubClient(
+        { mode: 'fine-grained-token', token: 'synthetic' },
+        {
+          fetch: (async (input: string | URL | Request) => {
+            const url = new URL(
+              typeof input === 'string' ? input : input instanceof URL ? input.href : input.url,
+            );
+            if (url.pathname.endsWith('/zip'))
+              return new Response(zip as BodyInit, {
+                headers: { 'content-type': 'application/zip' },
+              });
+            const arts = url.searchParams.get('page') === '2' ? page2 : page1;
+            return new Response(JSON.stringify({ total_count: 31, artifacts: arts }), {
+              headers: { 'content-type': 'application/json' },
+            });
+          }) as typeof fetch,
+        },
+      ),
+      'fine-grained-token',
+    );
+    expect(await p.getQualitySummary('o/a', 'main')).toMatchObject({
+      ok: true,
+      data: { summaryText: '{"p":2}' },
     });
   });
 

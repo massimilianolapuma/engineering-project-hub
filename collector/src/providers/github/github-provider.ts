@@ -42,6 +42,8 @@ const MAX_FILE_BYTES = 256 * 1024;
 /** Artifact name / file / size cap of the CI quality summary contract. */
 const QUALITY_ARTIFACT = 'hub-quality-summary';
 const QUALITY_FILE = 'quality-summary.json';
+const ARTIFACT_PAGE_SIZE = 30;
+const MAX_ARTIFACT_PAGES = 3;
 const MAX_QUALITY_ZIP_BYTES = 65_536;
 const CODE_QUALITY_API_VERSION = '2026-03-10';
 
@@ -454,28 +456,44 @@ export class GitHubProvider implements SourceProvider {
   ): Promise<ProviderResult<QualitySummaryArtifactDTO>> {
     const { owner, repo: name } = split(repo);
     return guard(async () => {
-      const { data } = await this.client.rest.actions.listArtifactsForRepo({
-        owner,
-        repo: name,
-        name: QUALITY_ARTIFACT,
-        per_page: 30,
-      });
-      const onBranch = data.artifacts
-        .filter((a) => a.workflow_run?.head_branch === branch)
-        .sort((a, b) => Date.parse(b.created_at ?? '') - Date.parse(a.created_at ?? ''));
-      const newest = onBranch[0];
-      if (!newest) throw Object.assign(new Error('no artifact'), { status: 404 });
-      const runUrlOf = (a: typeof newest) =>
+      type Art = Awaited<
+        ReturnType<Client['rest']['actions']['listArtifactsForRepo']>
+      >['data']['artifacts'][number];
+      // Only same-repository runs on the branch are trusted: a fork PR run can share the
+      // branch name but has a different head repository.
+      const trusted = (a: Art) =>
+        a.workflow_run?.head_branch === branch &&
+        a.workflow_run.head_repository_id != null &&
+        a.workflow_run.head_repository_id === a.workflow_run.repository_id;
+      const runUrlOf = (a: Art) =>
         a.workflow_run?.id != null
           ? `https://github.com/${owner}/${name}/actions/runs/${a.workflow_run.id}`
           : null;
-      const live = onBranch.find((a) => !a.expired);
-      if (!live)
+      let live: Art | undefined;
+      let newestExpired: Art | undefined;
+      for (let page = 1; page <= MAX_ARTIFACT_PAGES && !live; page++) {
+        const { data } = await this.client.rest.actions.listArtifactsForRepo({
+          owner,
+          repo: name,
+          name: QUALITY_ARTIFACT,
+          per_page: ARTIFACT_PAGE_SIZE,
+          page,
+        });
+        const matching = data.artifacts
+          .filter(trusted)
+          .sort((x, y) => Date.parse(y.created_at ?? '') - Date.parse(x.created_at ?? ''));
+        live = matching.find((a) => !a.expired);
+        newestExpired ??= matching[0];
+        if (data.artifacts.length < ARTIFACT_PAGE_SIZE) break;
+      }
+      if (!live) {
+        if (!newestExpired) throw Object.assign(new Error('no artifact'), { status: 404 });
         return {
           summaryText: null,
-          createdAt: newest.created_at ?? null,
-          runUrl: runUrlOf(newest),
+          createdAt: newestExpired.created_at ?? null,
+          runUrl: runUrlOf(newestExpired),
         };
+      }
       if (live.size_in_bytes > MAX_QUALITY_ZIP_BYTES) throw new InvalidData('artifact too large');
       const res = await this.client.rest.actions.downloadArtifact({
         owner,
