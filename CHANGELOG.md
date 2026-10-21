@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-21
+
 ### Added
 
 - History: each collection is kept as a compact point in `history.json` (`kind: hub-history`, schema `1.0`, with the baseline needed for the next diff), bounded by the new optional `history` policies (`enabled`, `maxEntries` 120, `maxAgeDays` 90). The `hub-history` artifact (90 days) is restored at the start of the `collect` job from the hub's own repository with `GITHUB_TOKEN` and `actions: read` (default branch, not a fork, not the current run, at most 5 MiB), treated as untrusted input and rewritten by the collector. A failed restore never overwrites the chain (nothing is uploaded), and the `fresh-history` dispatch input resets it on purpose. A mock run never restores and starts from a synthetic fixture. New collector flags `--history-from`, `--history-fixture`, `--fresh-history` and env `HISTORY_FROM`, `HISTORY_RESTORE_STATE`.
@@ -156,7 +158,8 @@ Tagged after the fact (2026-10-21) and not deployed on its own: its changes ship
 - Read-only by design: no write calls, alert dismissals or workflow triggers. Secret scanning alerts are fetched with `hide_secret=true` and only the secret type is kept.
 - The public demo publishes synthetic mock data only.
 
-[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.3.0...v0.4.0
