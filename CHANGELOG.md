@@ -12,15 +12,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Quality dimension (test coverage): each repository's CI publishes a `hub-quality-summary` artifact (`quality-summary.json`, strict contract `1.0`, zip ≤ 64 KB, JSON Schema in `config/schema/quality-summary.schema.json`); the collector reads the newest default-branch, same-repository run with the existing Actions: read permission. Project coverage is line-weighted over readable or stale reports, each repository counted once; a component without a readable report is "not visible", never 0%, and `lines.valid: 0` is not applicable. New `quality` policies (green 80, amber 60, `missingReportIsAmber`), `freshness.qualityReportStaleDays` (14), catalog `testCoverage: required | not-applicable`, score weight 10, and `overall.optionalDimensions` (default `[quality]`: ignored when grey, so projects stay stable until CI publishes reports). Quality card, "Code quality" section and sixth portfolio bar with a threshold meter (EN/IT).
 - GitHub Code Quality open-findings counts by category and severity (informative, never change the Quality status), with the `codeQuality` capability; a 403 is "not authorised", an ambiguous 404 is "unknown", and more than 300 findings in a repository is "unknown" rather than an under-count. The Code Quality setup endpoint is not called (it needs Administration: write).
 - Data quality lists missing, expired, invalid, not authorised and unknown coverage reports; EN/IT docs for the contract, permissions and a CI example step; ADR 0005.
-- Project score (0–100) computed by the collector to rank and compare projects: weighted mean of the measured dimensions (green 100, amber 60, red 20), capped by the overall status (red ≤ 49, amber and grey ≤ 89), with confidence "measured n of m"; unreadable dimensions are excluded, never counted as zero, and below half measured the site shows "insufficient data". Weights, points, caps and the minimum measured ratio are configurable in an optional `score` block of `config/policies.yaml` (EN/IT docs).
-- "How to read" page (EN/IT): state meanings, the six control symbols, unknown vs not authorised vs not configured vs not applicable, the score formula and caps, thresholds from `policies.yaml`; the status lists (Portfolio, Security, Versions, Workflows, project pages) end with a one-line legend that links to it.
 
 ### Changed
 
 - Snapshot `schemaVersion` 1.4: `qualityHealth`, the `quality` dimension on project snapshots and portfolio summaries, the `codeQuality` capability and the `quality-report` stale source. Older snapshots are not read.
 - Upgrade note (snapshot 1.4): an existing 1.3 `public/data` fails validation until it is re-collected; `npm run ci:build` overwrites `public/data` with mock data.
 - The existing Coverage dimension is labelled "Controls coverage" / "Copertura controlli" (share of required security controls enabled) so it no longer collides with test coverage; its id and policies are unchanged.
-- Visual system "Warm Graphite" on every page: warm neutral greys, one teal accent for links, focus and the primary action, vermilion / ochre / emerald status fills with fixed pill tints, Unknown as a dashed outline; light and dark palettes checked for WCAG AA by a unit test. Each page opens with one sentence, then the list worst first, detail on demand.
+
+## [0.5.0] - 2026-10-20
+
+### Added
+
+- Project score (0–100) computed by the collector to rank and compare projects: weighted mean of the measured dimensions (green 100, amber 60, red 20), capped by the overall status (red ≤ 49, amber and grey ≤ 89), with confidence "measured n of m"; unreadable dimensions are excluded, never counted as zero, and below half measured the site shows "insufficient data". Weights, points, caps and the minimum measured ratio are configurable in an optional `score` block of `config/policies.yaml` (EN/IT docs).
+- "How to read" page (EN/IT): state meanings, the six control symbols, unknown vs not authorised vs not configured vs not applicable, the score formula and caps, thresholds from `policies.yaml`; the status lists (Portfolio, Security, Versions, Workflows, project pages) end with a one-line legend that links to it.
+
+### Changed
+
+- Visual system "Warm Graphite" on every page: warm neutral greys, one teal accent for links, focus and the primary action, vermilion / ochre / emerald status fills with fixed pill tints, Unknown as a dashed outline (a hollow ring for the 10px status dot, which read as a spinner when dashed); light and dark palettes checked for WCAG AA by a unit test. Each page opens with one sentence, then the list worst first, detail on demand.
 - Portfolio as a compact list: status dot, score with confidence, five dimension bars and the main reason; projects with insufficient data sort right after the critical ones. The bars encode the state by height as well as colour (critical full, attention two thirds, healthy one third, unknown a full-height dashed outline). The open-alerts filter says how many projects it hid because their counts are unknown. On phones the filters fold into one "Filters" disclosure and the main nav is a single row that scrolls inside itself.
 - Project page: why-box with reasons as sentences (the rest behind "Show N more"; an unreadable project leads with the cause and one "All 5 dimensions unknown" line), five dimension cards, environments as a DEV → UAT → PROD path, collapsible detail sections. Security grouped per project with blind spots, the shared health badge and severity pills, and totals marked "≥" when counts are incomplete; Versions, Workflows and Data quality list only what needs attention; Catalog editor restyled.
 - Navigation order: Portfolio, Security, Versions, Workflows, Data quality, Catalog; "How to read" as a header utility link.
@@ -30,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Portfolio filters: the search field and the selects share one 40px box with their labels on one line (WebKit ignored `min-height` on native popups); the results count sits on the controls' line; project names no longer wrap on desktop.
 - The `<meta>` Content-Security-Policy no longer lists `frame-ancestors`, which browsers ignore there and report as a console error; clickjacking protection stays in the HTTP headers of `public/_headers`.
 
 ### Removed
@@ -38,6 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unused v0.4.0 components (`HealthTile`, `SeverityKpis`, `Count`, `PinCell`, `EffectiveVersion`, `ReasonList`), styles, token aliases and UI strings.
 
 ## [0.4.0] - 2026-10-18
+
+Not tagged or deployed on its own: its changes ship with 0.5.0.
 
 ### Added
 
@@ -120,8 +131,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Read-only by design: no write calls, alert dismissals or workflow triggers. Secret scanning alerts are fetched with `hide_secret=true` and only the secret type is kept.
 - The public demo publishes synthetic mock data only.
 
-[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.4.0...HEAD
-[0.4.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.3.0...v0.4.0
+[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.3.0...v0.5.0
+[0.4.0]: https://github.com/massimilianolapuma/engineering-project-hub/tree/ce13a1d2f4910960ee62a41c3e96b2b7b2b62934
 [0.3.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/massimilianolapuma/engineering-project-hub/releases/tag/v0.1.0
