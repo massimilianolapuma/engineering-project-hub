@@ -1,4 +1,5 @@
 import {
+  toUtc,
   type CollectionError,
   type Dimension,
   type FindingSource,
@@ -90,7 +91,7 @@ export function unreadablePairs(errors: readonly CollectionError[]): string[] {
 /** The small state the next run needs to diff against: built from the run's snapshots. */
 export function buildBaseline(index: PortfolioIndex, projects: ProjectSnapshot[]): HistoryBaseline {
   return {
-    collectedAt: index.generatedAt,
+    collectedAt: toUtc(index.generatedAt),
     projects: projects.map((p) => ({
       id: p.project.id,
       repositories: monitoredRepositories(p).slice(0, BASELINE_LIST_CAP),

@@ -1,6 +1,7 @@
 import {
   CHANGES_SCHEMA_VERSION,
   DimensionSchema,
+  toUtc,
   type ChangesFile,
   type HealthStatus,
   type PortfolioIndex,
@@ -48,7 +49,7 @@ export function computeChanges(
     return {
       kind: 'hub-changes',
       schemaVersion: CHANGES_SCHEMA_VERSION,
-      generatedAt: index.generatedAt,
+      generatedAt: toUtc(index.generatedAt),
       basis: { state, previousCollectedAt: null, synthetic: false },
       totals: {
         statusChanges: 0,
@@ -112,7 +113,7 @@ export function computeChanges(
   return {
     kind: 'hub-changes',
     schemaVersion: CHANGES_SCHEMA_VERSION,
-    generatedAt: index.generatedAt,
+    generatedAt: toUtc(index.generatedAt),
     basis: {
       state: 'compared',
       previousCollectedAt: last.collectedAt,

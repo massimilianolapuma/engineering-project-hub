@@ -8,7 +8,7 @@ import {
   HealthStatusSchema,
 } from './enums';
 import { RepositoryRefSchema } from './catalog';
-import { httpsUrl, isoDate, nullableCount, shortText } from './primitives';
+import { httpsUrl, nullableCount, shortText, utcDate } from './primitives';
 import { CollectionErrorSchema } from './snapshot';
 
 /*
@@ -16,6 +16,9 @@ import { CollectionErrorSchema } from './snapshot';
  * kind and schemaVersion: the history is the only input that crosses runs and releases, so it
  * must not be tied to the snapshot version. Every object is `.strict()` (publication allowlist).
  */
+
+/** The same instant as an ISO date in UTC ("Z", milliseconds), as history and changes store it. */
+export const toUtc = (iso: string): string => new Date(iso).toISOString();
 
 export const HISTORY_SCHEMA_VERSION = '1.0';
 export const SUPPORTED_HISTORY_SCHEMA_VERSIONS = ['1.0'] as const;
@@ -79,7 +82,7 @@ export type HistoryProjectPoint = z.infer<typeof HistoryProjectPointSchema>;
 export const HistoryEntrySchema = z
   .object({
     /** index.generatedAt of that run. */
-    collectedAt: isoDate,
+    collectedAt: utcDate,
     dataSource: DataSourceSchema,
     authenticationMode: AuthenticationModeSchema,
     collectorVersion: z.string().max(50).regex(COLLECTOR_VERSION_PATTERN),
@@ -91,7 +94,7 @@ export type HistoryEntry = z.infer<typeof HistoryEntrySchema>;
 /** Only for the latest entry: the small state the next run needs to compute its diff. */
 export const HistoryBaselineSchema = z
   .object({
-    collectedAt: isoDate,
+    collectedAt: utcDate,
     projects: z
       .array(
         z
@@ -146,7 +149,7 @@ export const HistoryFileSchema = z
   .object({
     kind: z.literal('hub-history'),
     schemaVersion: z.enum(SUPPORTED_HISTORY_SCHEMA_VERSIONS),
-    generatedAt: isoDate,
+    generatedAt: utcDate,
     retention: z.object({ maxEntries: z.number().int(), maxAgeDays: z.number().int() }).strict(),
     restore: z.object({ state: HistoryRestoreStateSchema, previousEntries: count }).strict(),
     /** Oldest to newest. */
@@ -154,12 +157,15 @@ export const HistoryFileSchema = z
     baseline: HistoryBaselineSchema,
   })
   .strict()
-  .refine((f) => f.baseline.collectedAt === f.entries.at(-1)!.collectedAt, {
+  .refine((f) => Date.parse(f.baseline.collectedAt) === Date.parse(f.entries.at(-1)!.collectedAt), {
     message: 'baseline must describe the latest entry',
     path: ['baseline'],
   })
   .refine(
-    (f) => f.entries.every((e, i) => i === 0 || e.collectedAt > f.entries[i - 1]!.collectedAt),
+    (f) =>
+      f.entries.every(
+        (e, i) => i === 0 || Date.parse(e.collectedAt) > Date.parse(f.entries[i - 1]!.collectedAt),
+      ),
     {
       message: 'entries must be strictly increasing by collectedAt',
       path: ['entries'],
@@ -184,11 +190,11 @@ export const ChangesFileSchema = z
   .object({
     kind: z.literal('hub-changes'),
     schemaVersion: z.literal(CHANGES_SCHEMA_VERSION),
-    generatedAt: isoDate,
+    generatedAt: utcDate,
     basis: z
       .object({
         state: ChangesBasisStateSchema,
-        previousCollectedAt: isoDate.nullable(),
+        previousCollectedAt: utcDate.nullable(),
         /** true when the previous points are mock fixtures. */
         synthetic: z.boolean(),
       })

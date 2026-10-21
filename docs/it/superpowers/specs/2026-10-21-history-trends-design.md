@@ -128,7 +128,7 @@ HistoryProjectPointSchema = z.object({
 }).strict();
 
 HistoryEntrySchema = z.object({
-  collectedAt: isoDate,                       // = index.generatedAt di quell'esecuzione
+  collectedAt: utcDate,                       // = index.generatedAt di quell'esecuzione
   dataSource: DataSourceSchema,
   authenticationMode: AuthenticationModeSchema,
   collectorVersion: z.string().max(50),
@@ -136,7 +136,7 @@ HistoryEntrySchema = z.object({
 }).strict();
 
 HistoryBaselineSchema = z.object({            // solo per l'ultima voce
-  collectedAt: isoDate,
+  collectedAt: utcDate,
   projects: z.array(z.object({
     id: projectId,
     /** Repository i cui alert sono stati raccolti in quell'esecuzione (controlli di sicurezza). */
@@ -165,14 +165,14 @@ HistoryBaselineSchema = z.object({            // solo per l'ultima voce
 HistoryFileSchema = z.object({
   kind: z.literal('hub-history'),
   schemaVersion: z.enum(SUPPORTED_HISTORY_SCHEMA_VERSIONS),   // ['1.0']
-  generatedAt: isoDate,
+  generatedAt: utcDate,
   retention: z.object({ maxEntries: z.number().int(), maxAgeDays: z.number().int() }).strict(),
   restore: z.object({ state: HistoryRestoreStateSchema, previousEntries: z.number().int().min(0) }).strict(),
   entries: z.array(HistoryEntrySchema).min(1).max(1000),       // dalla più vecchia alla più recente
   baseline: HistoryBaselineSchema,
 }).strict()
-  .refine(f => f.baseline.collectedAt === f.entries.at(-1)!.collectedAt)
-  .refine(voci strettamente crescenti per collectedAt);
+  .refine(f => Date.parse(f.baseline.collectedAt) === Date.parse(f.entries.at(-1)!.collectedAt))
+  .refine(voci strettamente crescenti per istante di collectedAt);
 ```
 
 - `HistoryRestoreStateSchema = z.enum(['restored', 'fixture', 'none', 'restore-failed', 'unreadable', 'incompatible', 'source-changed'])` (§5.4).
@@ -195,7 +195,7 @@ ChangesFileSchema = z
   .object({
     kind: z.literal('hub-changes'),
     schemaVersion: z.literal('1.0'),
-    generatedAt: isoDate,
+    generatedAt: utcDate,
     basis: z
       .object({
         state: z.enum([
@@ -206,7 +206,7 @@ ChangesFileSchema = z
           'incompatible',
           'source-changed',
         ]),
-        previousCollectedAt: isoDate.nullable(),
+        previousCollectedAt: utcDate.nullable(),
         synthetic: z.boolean(), // true quando i punti precedenti sono fixture mock
       })
       .strict(),
@@ -299,8 +299,9 @@ Regole del confronto (funzione pura, `collector/src/history/changes.ts`):
 - Lo storico non blocca mai gli snapshot (difesa in profondità). Se costruire o pubblicare lo storico da un file ripristinato fallisce comunque (schema o controllo di pubblicazione), il file viene scartato e l'esecuzione riparte da zero con stato `unreadable`. Se non si riesce a costruire nemmeno uno storico da zero, `history.json` e `changes.json` non vengono scritti per quell'esecuzione, gli snapshot sì, e il report di raccolta indica `History | not written this run` con il motivo sotto "History notes". Le note nominano il controllo fallito (percorso nello schema o pattern di segreto), mai il valore.
 - Le voci ripristinate vengono ripulite prima dell'uso:
   - si scartano le voci con `collectedAt` uguale o successivo all'esecuzione attuale;
-  - le voci vengono ordinate e deduplicate per `collectedAt`;
+  - le voci vengono ordinate e deduplicate per istante di `collectedAt` (mai come stringa) e riscritte in UTC;
   - si eliminano i progetti non più nel catalogo attuale, e le voci rimaste vuote vengono scartate.
+- Le date in `history.json` e `changes.json` sono UTC (`utcDate` = `z.iso.datetime()`, solo `Z`); il collector converte il timestamp dell'esecuzione con `toISOString()`. I refine confrontano istanti (`Date.parse`), quindi `12:00:00Z` prima di `12:00:00.500Z` è valido. Un file ripristinato con un offset è `unreadable`.
 - Uno stato "riparte da zero" non fa mai fallire la raccolta. Lo stato viene scritto in `history.restore.state`, in `changes.basis.state` e come una riga in `collection-report.md`: per esempio `History: restored 12 previous collections` oppure `History: started fresh (restore-failed)`. Il report arriva al riepilogo del job.
 
 ### 5.5 Aggiunta e retention

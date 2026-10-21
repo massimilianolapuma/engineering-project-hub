@@ -128,7 +128,7 @@ HistoryProjectPointSchema = z.object({
 }).strict();
 
 HistoryEntrySchema = z.object({
-  collectedAt: isoDate,                       // = index.generatedAt of that run
+  collectedAt: utcDate,                       // = index.generatedAt of that run
   dataSource: DataSourceSchema,
   authenticationMode: AuthenticationModeSchema,
   collectorVersion: z.string().max(50),
@@ -136,7 +136,7 @@ HistoryEntrySchema = z.object({
 }).strict();
 
 HistoryBaselineSchema = z.object({            // only for the latest entry
-  collectedAt: isoDate,
+  collectedAt: utcDate,
   projects: z.array(z.object({
     id: projectId,
     /** Repositories whose alerts were collected in that run (security controls). */
@@ -165,14 +165,14 @@ HistoryBaselineSchema = z.object({            // only for the latest entry
 HistoryFileSchema = z.object({
   kind: z.literal('hub-history'),
   schemaVersion: z.enum(SUPPORTED_HISTORY_SCHEMA_VERSIONS),   // ['1.0']
-  generatedAt: isoDate,
+  generatedAt: utcDate,
   retention: z.object({ maxEntries: z.number().int(), maxAgeDays: z.number().int() }).strict(),
   restore: z.object({ state: HistoryRestoreStateSchema, previousEntries: z.number().int().min(0) }).strict(),
   entries: z.array(HistoryEntrySchema).min(1).max(1000),       // oldest → newest
   baseline: HistoryBaselineSchema,
 }).strict()
-  .refine(f => f.baseline.collectedAt === f.entries.at(-1)!.collectedAt)
-  .refine(entries strictly increasing by collectedAt);
+  .refine(f => Date.parse(f.baseline.collectedAt) === Date.parse(f.entries.at(-1)!.collectedAt))
+  .refine(entries strictly increasing by the instant of collectedAt);
 ```
 
 - `HistoryRestoreStateSchema = z.enum(['restored', 'fixture', 'none', 'restore-failed', 'unreadable', 'incompatible', 'source-changed'])` (§5.4).
@@ -195,7 +195,7 @@ ChangesFileSchema = z
   .object({
     kind: z.literal('hub-changes'),
     schemaVersion: z.literal('1.0'),
-    generatedAt: isoDate,
+    generatedAt: utcDate,
     basis: z
       .object({
         state: z.enum([
@@ -206,7 +206,7 @@ ChangesFileSchema = z
           'incompatible',
           'source-changed',
         ]),
-        previousCollectedAt: isoDate.nullable(),
+        previousCollectedAt: utcDate.nullable(),
         synthetic: z.boolean(), // true when the previous points are mock fixtures
       })
       .strict(),
@@ -299,8 +299,9 @@ Diff rules (pure function, `collector/src/history/changes.ts`):
 - History never blocks the snapshots (defence in depth). If building or publishing the history from a restored file still fails (schema or publication gate), it is set aside and the run starts fresh with state `unreadable`. If even a fresh history cannot be built, `history.json` and `changes.json` are not written for that run, the snapshots are, and the collection report says `History | not written this run` with the reason under "History notes". Notes name the failing check (schema path or secret pattern), never the value.
 - Restored entries are cleaned before use:
   - entries with `collectedAt` at or after the current run are dropped;
-  - entries are sorted and de-duplicated by `collectedAt`;
+  - entries are sorted and de-duplicated by the instant of `collectedAt` (never by string) and written back in UTC;
   - projects not in the current catalog are removed, and entries left empty are dropped.
+- Dates in `history.json` and `changes.json` are UTC (`utcDate` = `z.iso.datetime()`, `Z` only); the collector converts the run timestamp with `toISOString()`. The refines compare instants (`Date.parse`), so `12:00:00Z` before `12:00:00.500Z` is valid. A restored file with an offset is `unreadable`.
 - A fresh state never fails the collection. The state is written to `history.restore.state`, to `changes.basis.state`, and as one line in `collection-report.md`: for example `History: restored 12 previous collections` or `History: started fresh (restore-failed)`. The report reaches the job summary.
 
 ### 5.5 Appending and retention

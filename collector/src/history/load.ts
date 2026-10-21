@@ -4,6 +4,7 @@ import {
   COLLECTOR_VERSION_PATTERN,
   HistoryFileSchema,
   RepositoryRefSchema,
+  toUtc,
   HistoryProbeSchema,
   SUPPORTED_HISTORY_SCHEMA_VERSIONS,
   type Catalog,
@@ -136,7 +137,11 @@ export function cleanHistory(
   }
   const entries = [...byTime.entries()]
     .sort(([a], [b]) => a - b)
-    .map(([, e]) => ({ ...e, projects: e.projects.filter((p) => ids.has(p.id)) }))
+    .map(([t, e]) => ({
+      ...e,
+      collectedAt: new Date(t).toISOString(),
+      projects: e.projects.filter((p) => ids.has(p.id)),
+    }))
     // Republished as is: must still be a clean version string (defence in depth).
     .filter((e) => e.projects.length > 0 && isCleanVersion(e.collectorVersion));
   const last = entries.at(-1);
@@ -171,7 +176,7 @@ function cleanBaseline(
 ): HistoryBaseline {
   const hosts = policies.publication.allowedLinkHosts;
   return {
-    collectedAt: baseline.collectedAt,
+    collectedAt: toUtc(baseline.collectedAt),
     projects: baseline.projects
       .filter((p) => ids.has(p.id))
       .map((p) => ({

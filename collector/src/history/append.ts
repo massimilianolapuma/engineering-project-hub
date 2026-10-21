@@ -1,6 +1,7 @@
 import {
   HISTORY_SCHEMA_VERSION,
   HistoryFileSchema,
+  toUtc,
   type Catalog,
   type HistoryEntry,
   type HistoryFile,
@@ -17,7 +18,7 @@ import { HISTORY_MAX_BYTES, type PreviousHistory } from './load';
 /** One history entry from the run's per-project summaries. Nothing else is kept per run. */
 export function entryFromRun(index: PortfolioIndex): HistoryEntry {
   return {
-    collectedAt: index.generatedAt,
+    collectedAt: toUtc(index.generatedAt),
     dataSource: index.run.dataSource,
     authenticationMode: index.run.authenticationMode,
     collectorVersion: index.run.collectorVersion,
@@ -67,7 +68,7 @@ export function appendHistory(
   const parsed = HistoryFileSchema.safeParse({
     kind: 'hub-history',
     schemaVersion: HISTORY_SCHEMA_VERSION,
-    generatedAt: index.generatedAt,
+    generatedAt: toUtc(index.generatedAt),
     retention: { maxEntries, maxAgeDays },
     restore: { state: previous.state, previousEntries: entries.length - 1 },
     entries,

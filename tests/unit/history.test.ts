@@ -213,6 +213,52 @@ describe('poisoned restored history', () => {
   });
 });
 
+describe('timestamps', () => {
+  const idx = (generatedAt: string): PortfolioIndex => ({
+    ...structuredClone(GOLDEN_INDEX),
+    generatedAt,
+  });
+
+  it('a restored file with an offset timestamp out of order never crashes the append', async () => {
+    const file = historyFile([
+      historyEntry('2026-01-14T05:00:00Z'),
+      historyEntry('2026-01-14T09:00:00+05:00'), // 04:00Z: earlier, though larger as a string
+    ]);
+    const previous = await loadGithub(file);
+    expect(previous.state).toBe('unreadable');
+    expect(() =>
+      appendHistory(previous, idx(NOW.toISOString()), [], catalog, policies, NOW),
+    ).not.toThrow();
+  });
+
+  it('orders entries by instant, not by string: 12:00:00Z then 12:00:00.500Z is restored', async () => {
+    const previous = await loadGithub(
+      historyFile([historyEntry('2026-01-14T12:00:00Z'), historyEntry('2026-01-14T12:00:00.500Z')]),
+    );
+    expect(previous.state).toBe('restored');
+    const h = appendHistory(previous, idx(NOW.toISOString()), [], catalog, policies, NOW);
+    expect(h.entries.map((e) => e.collectedAt)).toEqual([
+      '2026-01-14T12:00:00.000Z',
+      '2026-01-14T12:00:00.500Z',
+      NOW.toISOString(),
+    ]);
+  });
+
+  it('a run timestamp with an offset is written in UTC', () => {
+    const h = appendHistory(
+      { state: 'none', file: null },
+      idx('2026-01-15T17:00:00+05:00'),
+      [],
+      catalog,
+      policies,
+      NOW,
+    );
+    expect(h.entries[0]!.collectedAt).toBe(NOW.toISOString());
+    expect(h.baseline.collectedAt).toBe(NOW.toISOString());
+    expect(h.generatedAt).toBe(NOW.toISOString());
+  });
+});
+
 describe('cleanHistory', () => {
   const clean = (f: HistoryFile): CleanHistory => cleanHistory(f, catalog, policies, NOW);
 
