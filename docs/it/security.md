@@ -40,11 +40,11 @@
   Nient'altro.
 
 - Storico e cambiamenti: `history.json` conserva, per progetto e raccolta, stati, punteggio, conteggi aperti e conteggi di errori, più gli alert critici/alti aperti dell'ultima esecuzione (id, severità, componente, repository, link), i repository monitorati e le versioni. `changes.json` elenca gli alert nuovi (con lo stesso titolo pubblicato dallo snapshot), gli alert risolti (solo id e link), i cambi di stato, le versioni cambiate e le chiavi degli errori. Entrambi sono strict, sanitizzati e controllati dal gate come lo snapshot.
-- Controlli repository: per repository, lo stato di sei controlli (superato, fallito, sconosciuto, non applicabile), i conteggi dei riferimenti nei workflow (totale, fissati, non fissati, sconosciuti), i riferimenti non fissati (nome del file di workflow, una `target` ricostruita da parti validate e il `ref`, al massimo 20)\*, i workflow riutilizzabili con il ref referenziato, l'ultimo tag e uno stato (al massimo 20)\*, un riepilogo delle regole del branch (origine, nomi dei tipi di regola, approvazioni richieste) e un riepilogo OpenSSF Scorecard (data dell'ultima analisi, numero di alert aperti, nomi dei check falliti). Nient'altro.
+- Controlli repository: per repository, lo stato di sei controlli (superato, fallito, sconosciuto, non applicabile), i conteggi dei riferimenti nei workflow (totale, fissati, non fissati, sconosciuti), i riferimenti non fissati (nome del file di workflow, una `target` ricostruita da parti validate e il `ref`, al massimo 20)\*, i workflow riutilizzabili con il ref referenziato, l'ultimo tag e uno stato (al massimo 20)\*, un riepilogo delle regole del branch (origine, nomi dei tipi di regola, approvazioni richieste) e un riepilogo OpenSSF Scorecard (data dell'ultima analisi, numero di alert aperti, nomi dei check sotto il minimo della policy)\*. Nient'altro.
 - Suggerimenti di scoperta: solo le tre chiavi di custom property configurate e i topic corrispondenti, come brevi valori slug, nelle proposte di `catalog.json`.
 - Esportazioni CSV (`exports/*.csv`): stati, conteggi, versioni e id costruiti dagli stessi dati validati. Nessun titolo, id di regola, path o link.
 
-\* Omessi per i repository non pubblici quando `audience: public`.
+\* Omessi per i repository non pubblici quando `audience: public` (per il riepilogo Scorecard solo i nomi dei check; il loro numero resta).
 
 ## Dati mai pubblicati
 

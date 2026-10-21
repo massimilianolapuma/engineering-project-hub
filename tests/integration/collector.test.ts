@@ -1182,8 +1182,9 @@ describe('repository controls (mock run)', () => {
     expect(repoOf(projects['project-beta']!, 'project-beta-api').scorecard).toMatchObject({
       state: 'available',
       openAlerts: 2,
-      failingChecks: ['Token-Permissions', 'Pinned-Dependencies'],
-      otherFailing: 0,
+      // private repository: names withheld (D9), only their count stays
+      failingChecks: [],
+      otherFailing: 2,
     });
     expect(repoOf(projects['project-alpha']!, 'project-alpha-backend').scorecard).toMatchObject({
       state: 'available',

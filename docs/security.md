@@ -38,11 +38,11 @@
   characters), and a link to the GitHub Actions run (allow-listed host only). GitHub Code
   Quality: counts of open findings by category and by severity. Nothing else.
 - History and changes: `history.json` keeps, per project and collection, the statuses, score, open counts and error counts, plus the open critical/high alerts of the latest run (id, severity, component, repository, link), the monitored repositories and the versions. `changes.json` lists new alerts (with the same title the snapshot publishes), resolved alerts (id and link only), status changes, version moves and error keys. Both are strict, sanitised and gated like the snapshot.
-- Repository controls: per repository, the state of six checks (pass, fail, unknown, not applicable), the counts of workflow references (total, pinned, unpinned, unknown), the unpinned references (workflow file name, a `target` rebuilt from validated parts, and the `ref`, at most 20)\*, the reusable workflows with their referenced ref, the latest tag and a status (at most 20)\*, a summary of the branch rules (source, rule type names, required approvals) and an OpenSSF Scorecard summary (last analysis date, open alert count, failing check names). Nothing else.
+- Repository controls: per repository, the state of six checks (pass, fail, unknown, not applicable), the counts of workflow references (total, pinned, unpinned, unknown), the unpinned references (workflow file name, a `target` rebuilt from validated parts, and the `ref`, at most 20)\*, the reusable workflows with their referenced ref, the latest tag and a status (at most 20)\*, a summary of the branch rules (source, rule type names, required approvals) and an OpenSSF Scorecard summary (last analysis date, open alert count, names of the checks below the policy minimum)\*. Nothing else.
 - Discovery hints: only the three configured custom property keys and the matching topics, as short slug values, in the proposals of `catalog.json`.
 - CSV exports (`exports/*.csv`): statuses, counts, versions and ids built from the same validated data. No titles, rule ids, paths or links.
 
-\* Withheld for non-public repositories when `audience: public`.
+\* Withheld for non-public repositories when `audience: public` (for the Scorecard summary only the check names; their count stays).
 
 ## Data never published
 

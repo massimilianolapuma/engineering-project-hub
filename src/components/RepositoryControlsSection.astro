@@ -327,35 +327,40 @@ const reusableTone = (status: string) =>
       {withScorecard.length === 0 ? (
         <p class="muted">{t.scorecardNone}</p>
       ) : (
-        <ul class="rc-list">
-          {withScorecard.map((r) => (
-            <li data-repository={r.repository}>
-              <code>{repoName(r.repository)}</code> · {t.scorecardLast}:{' '}
-              {r.scorecard.lastAnalysisAt ? (
-                <RelTime iso={r.scorecard.lastAnalysisAt} i18n={i18n} />
-              ) : (
-                d.common.unknown
-              )}
-              <span class="rc-tokens">
-                <span class="sub">{t.scorecardBelow}:</span>
-                {r.scorecard.failingChecks.length === 0 && r.scorecard.otherFailing === 0 ? (
-                  <span class="sub">{t.scorecardNoFailing}</span>
+        <>
+          <p class="note" data-scorecard-withheld>
+            {t.scorecardWithheld}
+          </p>
+          <ul class="rc-list">
+            {withScorecard.map((r) => (
+              <li data-repository={r.repository}>
+                <code>{repoName(r.repository)}</code> · {t.scorecardLast}:{' '}
+                {r.scorecard.lastAnalysisAt ? (
+                  <RelTime iso={r.scorecard.lastAnalysisAt} i18n={i18n} />
                 ) : (
-                  <>
-                    {r.scorecard.failingChecks.map((x) => (
-                      <code class="rc-token">{x}</code>
-                    ))}
-                    {r.scorecard.otherFailing > 0 && (
-                      <span class="sub">
-                        {f(t.scorecardOther, { n: i18n.number(r.scorecard.otherFailing) })}
-                      </span>
-                    )}
-                  </>
+                  d.common.unknown
                 )}
-              </span>
-            </li>
-          ))}
-        </ul>
+                <span class="rc-tokens">
+                  <span class="sub">{t.scorecardBelow}:</span>
+                  {r.scorecard.failingChecks.length === 0 && r.scorecard.otherFailing === 0 ? (
+                    <span class="sub">{t.scorecardNoFailing}</span>
+                  ) : (
+                    <>
+                      {r.scorecard.failingChecks.map((x) => (
+                        <code class="rc-token">{x}</code>
+                      ))}
+                      {r.scorecard.otherFailing > 0 && (
+                        <span class="sub">
+                          {f(t.scorecardOther, { n: i18n.number(r.scorecard.otherFailing) })}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </details>
 

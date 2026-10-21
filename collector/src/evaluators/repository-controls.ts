@@ -326,8 +326,9 @@ function evaluateScorecard(input: RepoControlsInput): RepoEntry['scorecard'] {
     state,
     lastAnalysisAt: a.ok && a.data ? a.data.createdAt : null,
     openAlerts: alerts === null ? null : alerts.length,
-    failingChecks: failing,
-    otherFailing: other.size,
+    // D9: rule names of non-public repositories are withheld like finding titles; only the count stays.
+    failingChecks: input.publicDetails ? failing : [],
+    otherFailing: input.publicDetails ? other.size : failing.length + other.size,
   };
 }
 

@@ -394,6 +394,18 @@ describe('scorecard', () => {
       otherFailing: 1,
     });
   });
+  it('publicDetails false → no check names published, their count moves to otherFailing', () => {
+    const r = repo({
+      scorecardAnalysis: ok({ createdAt: '2026-01-13T00:00:00Z', toolName: 'Scorecard' }),
+      scorecardAlerts: [
+        { ruleId: 'TokenPermissionsID' },
+        { ruleId: 'PinnedDependenciesID' },
+        { ruleId: 'FooID' },
+      ],
+      publicDetails: false,
+    });
+    expect(r.scorecard).toMatchObject({ openAlerts: 3, failingChecks: [], otherFailing: 3 });
+  });
   it('analysis ok(null) → not-used, openAlerts 0 when alerts readable', () =>
     expect(repo({ scorecardAnalysis: ok(null) }).scorecard).toMatchObject({
       state: 'not-used',

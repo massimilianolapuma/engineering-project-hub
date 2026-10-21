@@ -1567,11 +1567,8 @@
           "state": "available",
           "lastAnalysisAt": "2026-01-13T12:00:00.000Z",
           "openAlerts": 2,
-          "failingChecks": [
-            "Token-Permissions",
-            "Pinned-Dependencies"
-          ],
-          "otherFailing": 0
+          "failingChecks": [],
+          "otherFailing": 2
         }
       },
       {
