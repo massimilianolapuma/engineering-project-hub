@@ -62,6 +62,10 @@ updates:
       # not the latest Node major.
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
+      # TypeScript 7 is not supported yet by @astrojs/check and
+      # @astrojs/language-server (npm ci fails with ERESOLVE). Remove when they do.
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
     commit-message:
       prefix: 'chore(deps)'
     open-pull-requests-limit: 5
