@@ -6,9 +6,10 @@ import {
   type ComponentConfig,
   type ProjectConfig,
   type TrackedWorkflowConfig,
+  type TestCoverage,
   type VersionSource,
 } from '@model/catalog';
-import { CONTROL_IDS, type ControlId } from '@model/enums';
+import { CONTROL_IDS, type ControlId, type RepositoryCheckId } from '@model/enums';
 
 /*
  * Pure logic of the catalog editor (no DOM): editable draft model, conversion to the compact
@@ -33,6 +34,9 @@ export interface DraftComponent {
   releaseTagPrefix: string;
   versionSource: VersionSource;
   notApplicableControls: ControlId[];
+  notApplicableChecks: RepositoryCheckId[];
+  /** Undefined = default for the component type. */
+  testCoverage?: TestCoverage;
 }
 export interface DraftEnvironment {
   id: string;
@@ -58,6 +62,8 @@ export interface DraftProject {
     /** Empty = schema default (release-manifest.yaml). */
     manifestPath: string;
     notApplicableControls: ControlId[];
+    notApplicableChecks: RepositoryCheckId[];
+    testCoverage?: TestCoverage;
   };
   components: DraftComponent[];
   environments: DraftEnvironment[];
@@ -91,6 +97,8 @@ export function projectToDraft(p: ProjectConfig): DraftProject {
       defaultBranch: orEmpty(p.coordinator.defaultBranch),
       manifestPath: orEmpty(p.coordinator.manifestPath, DEFAULT_MANIFEST_PATH),
       notApplicableControls: [...p.coordinator.notApplicableControls],
+      notApplicableChecks: [...p.coordinator.notApplicableChecks],
+      testCoverage: p.coordinator.testCoverage,
     },
     components: p.components.map(componentToDraft),
     environments: p.environments.map((e) => ({ ...e })),
@@ -114,6 +122,8 @@ function componentToDraft(c: ComponentConfig): DraftComponent {
     releaseTagPrefix: orEmpty(c.releaseTagPrefix),
     versionSource: c.versionSource,
     notApplicableControls: [...c.notApplicableControls],
+    notApplicableChecks: [...c.notApplicableChecks],
+    testCoverage: c.testCoverage,
   };
 }
 
@@ -164,6 +174,8 @@ export function toProjectInput(p: DraftProject): Record<string, unknown> {
       defaultBranch: opt(p.coordinator.defaultBranch),
       manifestPath: opt(p.coordinator.manifestPath, DEFAULT_MANIFEST_PATH),
       notApplicableControls: optList(p.coordinator.notApplicableControls),
+      notApplicableChecks: optList(p.coordinator.notApplicableChecks),
+      testCoverage: p.coordinator.testCoverage,
     }),
     // Empty for a single-repository project (the coordinator is the only repository).
     components: p.components.length
@@ -179,6 +191,8 @@ export function toProjectInput(p: DraftProject): Record<string, unknown> {
             releaseTagPrefix: opt(c.releaseTagPrefix),
             versionSource: c.versionSource === 'auto' ? undefined : c.versionSource,
             notApplicableControls: optList(c.notApplicableControls),
+            notApplicableChecks: optList(c.notApplicableChecks),
+            testCoverage: c.testCoverage,
           }),
         )
       : undefined,
@@ -334,6 +348,7 @@ export function emptyComponent(id = ''): DraftComponent {
     releaseTagPrefix: '',
     versionSource: 'auto',
     notApplicableControls: [],
+    notApplicableChecks: [],
   };
 }
 export const emptyEnvironment = (): DraftEnvironment => ({ id: '', name: '' });
@@ -355,7 +370,13 @@ export function emptyProject(taken: Iterable<string> = []): DraftProject {
     description: '',
     businessUnit: '',
     lifecycle: 'development',
-    coordinator: { repository: '', defaultBranch: '', manifestPath: '', notApplicableControls: [] },
+    coordinator: {
+      repository: '',
+      defaultBranch: '',
+      manifestPath: '',
+      notApplicableControls: [],
+      notApplicableChecks: [],
+    },
     // A new project starts as a single repository; components are optional.
     components: [],
     environments: [],

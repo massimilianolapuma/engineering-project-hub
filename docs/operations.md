@@ -39,6 +39,7 @@ To change the frequency, edit the `cron` in `deploy-pages.yml`. Keep the stale t
   with at most 4 calls in parallel.
 - A GitHub App installation gets higher limits than a PAT. Prefer the App for large
   catalogs.
+- Repository controls add per unique repository: 1 call for the branch rules, 1 for the workflows directory and up to `maxWorkflowFiles` (30 by default) file reads, 1 for the Scorecard analysis, 1 more for classic protection when enabled, plus at most 3 calls per distinct referenced reusable-workflow repository (50 at most, so 150), once per run. A discovery run adds 1 call per scanned repository when `customProperties` is on. Lower `maxWorkflowFiles` or set `repositoryControls.enabled: false` to cut the cost.
 - If you see `rate-limited` errors, reduce the schedule frequency, split the catalog, or
   lower the concurrency in `collector/src/run.ts`.
 
@@ -82,6 +83,26 @@ validate:snapshots`.
   it.
 - **Emergency** (data exposure): see [security.md → Response to accidental
   exposure](security.md#response-to-accidental-exposure). Disable Pages first.
+
+## Enforcing repository controls
+
+Repository checks are informative by default. To make some of them count for Governance:
+
+1. Open the project pages and read **Repository controls**. Fix or accept what you see; remember
+   that "not visible" means the credentials cannot read the data, not that the check fails.
+2. Optional, for the three branch-rule checks: classic branch protection is invisible without
+   **Administration: read**. Grant that read-only permission to the GitHub App (or the
+   fine-grained token) and set `repositoryControls.readClassicProtection: true`. It is off by
+   default and the call is never made while it is `false`.
+3. In `config/policies.yaml` set one check at a time to `amber` (or `red`) under
+   `repositoryControls.checks`, optionally list `exemptActionOwners` (for example `actions`).
+   Keep `unknownEnforcedCheck: info` until the data is complete.
+4. Run `npm run validate:config`, merge, and read the next collection: the Governance reason
+   `repository-check-failed` names the check and the repositories. Governance moves only when
+   an enforced check fails.
+5. To silence a check for one repository, add it to `notApplicableChecks` in the catalog.
+
+See [Configuration](configuration.md#repository-controls-repositorycontrols).
 
 ## Publishing the quality summary from CI
 
@@ -220,7 +241,9 @@ and history starts again (state `none`).
 `npm run ci:build` runs `collect:mock`, which overwrites `public/data`. A local real-data
 snapshot (for example from `collect:github`) must be re-collected after it.
 
-**Upgrading to snapshot 1.4** (Quality dimension): the site reads only `schemaVersion` 1.4.
+**Upgrading to snapshot 1.5** (repository controls): the site reads only `schemaVersion` 1.5. An existing 1.4 `public/data` fails validation until it is re-collected (`collect:github`, or the next scheduled run). `history.json` 1.0 is still read; the history schema moves to 1.1 on the first collection.
+
+**Earlier note, snapshot 1.4** (Quality dimension): the site reads only `schemaVersion` 1.4.
 An existing 1.3 `public/data` fails validation until it is re-collected (`collect:github`, or
 the next scheduled run). Remember that `npm run ci:build` overwrites `public/data` with mock
 data.

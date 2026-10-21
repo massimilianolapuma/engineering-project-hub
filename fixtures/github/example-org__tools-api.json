@@ -1,0 +1,37 @@
+{
+  "repository": {
+    "owner": "example-org",
+    "visibility": "public",
+    "defaultBranch": "main",
+    "archived": false,
+    "updatedAt": "@now-2d",
+    "name": "tools-api",
+    "fullName": "example-org/tools-api",
+    "htmlUrl": "https://github.com/example-org/tools-api",
+    "topics": ["demo", "project-tools", "type-service"]
+  },
+  "head": {
+    "sha": "dddddddddddddddddddddddddddddddddddddddd",
+    "committedAt": "@now-3d"
+  },
+  "directories": {
+    "": [
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ]
+  },
+  "workflows": [],
+  "workflowRuns": {},
+  "customProperties": [
+    {
+      "name": "hub-component",
+      "value": "api"
+    }
+  ],
+  "codeScanningAlerts": [],
+  "codeScanningAnalysis": null,
+  "dependabotAlerts": [],
+  "secretScanningAlerts": []
+}

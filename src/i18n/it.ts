@@ -153,6 +153,35 @@ export const it: Dict = {
     sbom: 'SBOM',
     artifactSignature: 'Firma artifact',
   },
+  /** Repository controls (Governance): names of the six checks. */
+  repositoryCheck: {
+    'actions-pinned': 'Action fissate a uno SHA',
+    'reusable-workflows-current': 'Workflow riutilizzabili aggiornati',
+    'branch-protected': 'Branch protetto',
+    'pull-request-required': 'Pull request obbligatoria',
+    'force-push-blocked': 'Force push bloccato',
+    'status-checks-required': 'Status check obbligatori',
+  },
+  repositoryCheckState: {
+    pass: 'Superato',
+    fail: 'Fallito',
+    unknown: 'Non visibile',
+    'not-applicable': 'Non applicabile',
+  },
+  reusableStatus: {
+    current: 'Aggiornato',
+    behind: 'Indietro',
+    untagged: 'SHA senza tag',
+    floating: 'Flottante (branch)',
+    unknown: 'Non visibile',
+  },
+  ruleSource: {
+    rulesets: 'Ruleset',
+    classic: 'Protezione classica',
+    both: 'Ruleset e protezione classica',
+    none: 'Nessuna regola',
+    unknown: 'Non visibile',
+  },
   controlState: {
     enabled: 'Attivo',
     'not-configured': 'Non configurato',
@@ -246,6 +275,9 @@ export const it: Dict = {
     'security-status-file': 'File di stato sicurezza',
     'quality-summary': 'Riepilogo qualità',
     'code-quality': 'Code Quality',
+    'workflow-files': 'File dei workflow',
+    'repository-rules': 'Regole dei branch',
+    'scorecard-analysis': 'OpenSSF Scorecard',
     'quality-report': 'Report di qualità',
   },
   availability: {
@@ -269,6 +301,7 @@ export const it: Dict = {
     dependabot: 'Alert Dependabot',
     secretScanning: 'Alert secret scanning',
     codeQuality: 'Rilievi Code Quality',
+    repositoryRules: 'Regole dei branch',
   },
   portfolio: {
     title: 'Portfolio',
@@ -446,6 +479,50 @@ export const it: Dict = {
       shared: 'Report del repository condiviso',
       legend:
         'Sano da {green}% · attenzione da {amber}% · critico sotto {amber}% · senza report = non visibile, mai 0% · le soglie vengono dalle policy',
+    },
+    repoControls: {
+      title: 'Controlli repository',
+      summary: '{passed} di {applicable} controlli superati · {unknown} non visibili',
+      informative: 'Informativo',
+      enforced: 'Conta per Governance',
+      legend:
+        'I controlli informativi non cambiano mai lo stato di Governance. Non visibile non significa fallito.',
+      withheld: 'Dettagli nascosti per i repository non pubblici',
+      notVisibleRepos: 'Non visibili (workflow non leggibili)',
+      off: 'I controlli repository sono spenti nelle policy.',
+      scorecardBelow: 'Check sotto il minimo della tua policy Scorecard',
+      standardWorkflowsLink: 'Workflow standard →',
+      tilePassed: 'Controlli superati',
+      tileUnknown: 'Non visibili',
+      tileUnknownFoot: 'Non visibile non viene mai contato come fallito.',
+      tileScorecard: 'OpenSSF Scorecard',
+      scorecardFoot: '{n} di {total} repository analizzati · {failing} check sotto il minimo',
+      matrixCaption: 'Controlli per repository',
+      colRepository: 'Repository',
+      unpinnedTitle: 'Action non fissate a uno SHA di commit',
+      unpinnedNone: 'Nessun riferimento non fissato.',
+      unpinnedMore: 'e altri {n}',
+      colWorkflow: 'Workflow',
+      colTarget: 'Destinazione',
+      colRef: 'Riferimento',
+      colLatest: 'Ultima',
+      colStatus: 'Stato',
+      reusableTitle: 'Workflow riutilizzabili',
+      reusableNone: 'Nessun workflow riutilizzabile.',
+      branchTitle: 'Regole del branch',
+      branchSource: 'Origine',
+      branchApprovals: 'Approvazioni richieste: {n}',
+      branchOther: '{n} altre regole',
+      branchNoTypes: 'Nessuna regola con nome.',
+      scorecardTitle: 'OpenSSF Scorecard',
+      scorecardLast: 'Ultima analisi',
+      scorecardNone: 'Nessuna analisi pubblicata.',
+      scorecardNoFailing: 'Nessun check sotto il minimo elencato.',
+      scorecardWithheld:
+        'I nomi dei check non vengono pubblicati per i repository non pubblici; solo il loro numero.',
+      scorecardOther: 'e altri {n}',
+      symbolUnknown: 'Non visibile',
+      dimLine: 'Controlli {passed}/{applicable}',
     },
   },
   workflowsPage: {
@@ -685,6 +762,14 @@ export const it: Dict = {
       'not-authorised': 'Concedi Actions: read sul repository.',
       unknown: "Non è stato possibile leggere l'elenco degli artifact.",
     },
+    repoControls: {
+      title: 'Controlli repository',
+      intro:
+        'Repository di cui non è stato possibile leggere i file dei workflow o le regole del branch. I loro controlli risultano non visibili, mai falliti.',
+      none: 'Ogni repository ha esposto i file dei workflow e le regole del branch.',
+      workflows: 'file dei workflow',
+      rules: 'regole del branch',
+    },
     runSummary: 'Dettagli della raccolta: {date} · {source} · collector {version}',
     run: 'Esecuzione collector',
     started: 'Avvio',
@@ -882,13 +967,16 @@ export const it: Dict = {
     proposalKind: {
       coordinator: 'Coordinator',
       monorepo: 'Monorepo',
+      grouped: 'Raggruppato dai suggerimenti',
       single: 'Repository singolo',
     },
     proposalGroup: {
       coordinator: 'Coordinator',
       monorepo: 'Monorepo',
+      grouped: 'Raggruppati dai suggerimenti',
       single: 'Repository singoli',
     },
+    hintedProject: 'Suggerito per il progetto {id}',
     proposalComponents: '{count} componente/i',
     proposalNoComponents: 'Nessun componente',
     alreadyInCatalog: 'Già nel catalogo: {name}',
@@ -998,7 +1086,7 @@ export const it: Dict = {
       security: 'Alert aperti per gravità, alert di secret scanning e controlli richiesti falliti.',
       coverage: 'Quota dei controlli di sicurezza richiesti attivi e visibili.',
       governance:
-        'Standard dei repository: workflow standard, repository archiviati, file di stato sicurezza, branch predefinito.',
+        'Standard dei repository: workflow standard, repository archiviati, file di stato sicurezza, branch di default e i controlli repository che scegli di rendere vincolanti.',
       quality:
         'Copertura delle righe dei test, dal riepilogo pubblicato dalla CI di ogni repository. Un componente senza report leggibile è non visibile, mai 0%.',
     },
@@ -1047,6 +1135,23 @@ export const it: Dict = {
       'Cosa è cambiato confronta solo le fonti di alert monitorate e leggibili in entrambe le raccolte: una fonte illeggibile o rimossa non risulta mai risolta e una appena leggibile o appena aggiunta non risulta mai nuova.',
     trendsCsv:
       'I file CSV sono UTF-8 con BOM, separati da virgole. "unknown" significa non leggibile e non è mai 0; "n/a" significa non applicabile; un apostrofo iniziale protegge il testo che inizia con =, +, - o @.',
+    repoTitle: 'Controlli repository',
+    repoIntro:
+      'Sei controlli di sola lettura per repository, dai file dei workflow e dalle regole del branch. Sono informativi per impostazione predefinita: non cambiano mai uno stato finché il proprietario non li rende vincolanti nelle policy.',
+    repoChecks: {
+      'actions-pinned':
+        'Ogni action e ogni workflow riutilizzabile è referenziato con lo SHA completo del commit, non con un tag o un branch.',
+      'reusable-workflows-current':
+        'I workflow riutilizzabili sono chiamati all’ultima release, o al commit di un tag che è l’ultimo.',
+      'branch-protected': 'Il branch di default ha almeno una regola attiva.',
+      'pull-request-required': 'Le modifiche al branch di default richiedono una pull request.',
+      'force-push-blocked': 'I force push sul branch di default sono bloccati.',
+      'status-checks-required': 'Gli status check devono passare prima del merge.',
+    },
+    repoUnknown:
+      'Non visibile non significa fallito: le credenziali potrebbero non leggere le regole o i file dei workflow. Non viene mai contato come fallito né come superato.',
+    repoInformative:
+      'I controlli "Informativo" compaiono solo nella pagina del progetto. I controlli "Conta per Governance" spostano lo stato di Governance.',
     docsTitle: 'Più dettagli',
     docsText:
       'Ogni policy, il suo valore predefinito e come cambiarla sono descritti nel riferimento di configurazione.',
@@ -1068,6 +1173,7 @@ export const it: Dict = {
     truncated: 'e altri {n}',
     versionMoves: 'Versioni cambiate',
     coordinator: 'Coordinatore',
+    repositoryChecks: 'Controlli repository',
     errors: 'Errori di raccolta',
     resolvedErrorsOne: '{n} errore non si verifica più',
     resolvedErrorsOther: '{n} errori non si verificano più',
@@ -1143,6 +1249,8 @@ export const it: Dict = {
     'open-medium-low-alerts': '{count} alert medio/basso aperto',
     'open-secret-alerts': '{count} alert secret scanning aperto',
     'all-required-controls-available': "L'unico controllo obbligatorio è disponibile",
+    'repository-check-failed': '{check} non è rispettato in {count} repository: {repositories}',
+    'repository-check-unknown': '{check} non è verificabile in {count} repository: {repositories}',
   },
   reasons: {
     'workflow-failed': '{workflow} fallito su {component} (run #{run})',
@@ -1195,6 +1303,9 @@ export const it: Dict = {
     'default-branch-mismatch': '{repository}: branch principale {actual}, atteso {expected}',
     'repository-unavailable': 'Repository non accessibile',
     'governance-compliant': 'I repository rispettano gli standard dichiarati',
+    'repository-check-failed': '{check} non è rispettato in {count} repository: {repositories}',
+    'repository-check-unknown': '{check} non è verificabile in {count} repository: {repositories}',
+    'repository-checks-passed': 'Tutti i controlli applicabili dei repository sono rispettati',
     'quality-below-threshold': 'Copertura test {percentage}%, sotto il {threshold}% ({components})',
     'quality-below-red-threshold':
       'Copertura test {percentage}%, sotto il minimo del {threshold}% ({components})',

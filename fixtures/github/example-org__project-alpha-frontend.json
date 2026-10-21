@@ -12,7 +12,8 @@
   },
   "head": {
     "sha": "ae4b58f791cf66bf510c92ca102cc34470fbdf7d",
-    "committedAt": "@now-5h"
+    "committedAt": "@now-5h",
+    "protected": true
   },
   "latestRelease": {
     "tagName": "v2.2.0",
@@ -22,6 +23,7 @@
     "htmlUrl": "https://github.com/example-org/project-alpha-frontend/releases/tag/v2.2.0"
   },
   "files": {
+    ".github/workflows/ci-main.yml": "name: CI\non: push\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@0123456789abcdef0123456789abcdef01234567\n      - uses: actions/setup-node@0123456789abcdef0123456789abcdef01234567\n      - uses: actions/upload-artifact@0123456789abcdef0123456789abcdef01234567\n",
     ".security/project-security-status.json": "{\n  \"schemaVersion\": \"1.0\",\n  \"generatedAt\": \"@now-5h\",\n  \"repository\": \"example-org/project-alpha-frontend\",\n  \"version\": \"synthetic\",\n  \"commitSha\": \"ae4b58f791cf66bf510c92ca102cc34470fbdf7d\",\n  \"controls\": {\n    \"containerScanning\": {\n      \"status\": \"completed\",\n      \"tool\": \"trivy\",\n      \"critical\": 0,\n      \"high\": 0,\n      \"medium\": 0,\n      \"low\": 0,\n      \"completedAt\": \"@now-5h\"\n    },\n    \"sbom\": {\n      \"status\": \"available\",\n      \"format\": \"cyclonedx\"\n    }\n  }\n}"
   },
   "workflowRuns": {
@@ -129,5 +131,12 @@
     "createdAt": "@now-2d",
     "runId": 9005
   },
-  "codeQualityFindings": [{ "category": "maintainability", "severity": "warning" }]
+  "codeQualityFindings": [{ "category": "maintainability", "severity": "warning" }],
+  "directories": { ".github/workflows": [{ "name": "ci-main.yml", "type": "file" }] },
+  "branchRules": [
+    { "type": "pull_request", "requiredApprovals": 1 },
+    { "type": "required_status_checks", "requiredApprovals": null },
+    { "type": "non_fast_forward", "requiredApprovals": null },
+    { "type": "deletion", "requiredApprovals": null }
+  ]
 }

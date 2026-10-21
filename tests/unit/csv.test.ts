@@ -102,6 +102,9 @@ describe('export rows (golden data)', () => {
       'previous_overall',
       'previous_score',
       'previous_collected_at',
+      'controls_passed',
+      'controls_failed',
+      'controls_unknown',
     ]);
     expect(FINDINGS_HEADERS).toEqual([
       'project_id',
@@ -137,6 +140,26 @@ describe('export rows (golden data)', () => {
     for (const r of portfolioRows(d, history())) expect(r).toHaveLength(PORTFOLIO_HEADERS.length);
     for (const r of findingsRows(d)) expect(r).toHaveLength(FINDINGS_HEADERS.length);
     for (const r of versionsRows(d)) expect(r).toHaveLength(VERSIONS_HEADERS.length);
+  });
+
+  it('portfolio CSV ends with the repository control counts: beta 5, 7, 8', () => {
+    expect(PORTFOLIO_HEADERS.slice(-3)).toEqual([
+      'controls_passed',
+      'controls_failed',
+      'controls_unknown',
+    ]);
+    const rows = asObjects(PORTFOLIO_HEADERS, portfolioRows(golden(), history()));
+    const beta = rows.find((r) => r.project_id === 'project-beta')!;
+    expect([beta.controls_passed, beta.controls_failed, beta.controls_unknown]).toEqual([5, 7, 8]);
+  });
+
+  it('portfolio control counts are n/a, never 0, when nothing was evaluated', () => {
+    const d = golden();
+    for (const pr of d.index.projects)
+      Object.assign(pr.repositoryControls, { passed: 0, failed: 0, unknown: 0 });
+    const rows = asObjects(PORTFOLIO_HEADERS, portfolioRows(d, history()));
+    for (const r of rows)
+      expect([r.controls_passed, r.controls_failed, r.controls_unknown]).toEqual([NA, NA, NA]);
   });
 
   it('portfolioRows on the golden data: gamma unknown score, beta previous values', () => {

@@ -12,7 +12,8 @@
     "newFindings": 1,
     "resolvedFindings": 1,
     "versionMoves": 1,
-    "newErrors": 1
+    "newErrors": 1,
+    "checkChanges": 1
   },
   "projects": [
     {
@@ -33,7 +34,8 @@
       "findingsPartial": false,
       "versionMoves": [],
       "newErrors": [],
-      "resolvedErrors": 0
+      "resolvedErrors": 0,
+      "checkChanges": []
     },
     {
       "id": "project-alpha",
@@ -74,7 +76,8 @@
         }
       ],
       "newErrors": [],
-      "resolvedErrors": 0
+      "resolvedErrors": 0,
+      "checkChanges": []
     },
     {
       "id": "project-beta",
@@ -125,7 +128,15 @@
           "classification": "not-authorised"
         }
       ],
-      "resolvedErrors": 0
+      "resolvedErrors": 0,
+      "checkChanges": [
+        {
+          "repository": "example-org/project-beta-web",
+          "check": "branch-protected",
+          "from": "pass",
+          "to": "fail"
+        }
+      ]
     },
     {
       "id": "project-gamma",
@@ -145,7 +156,8 @@
       "findingsPartial": true,
       "versionMoves": [],
       "newErrors": [],
-      "resolvedErrors": 0
+      "resolvedErrors": 0,
+      "checkChanges": []
     }
   ]
 }

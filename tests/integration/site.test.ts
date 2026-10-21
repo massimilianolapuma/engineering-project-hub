@@ -207,13 +207,13 @@ describe('static site', () => {
         'governance',
         'quality',
       ]);
-      // Governance checks repository standards (standard workflows): not collection errors.
+      // Governance checks repository standards (repository controls, then the workflows).
       expect(cards.map((m) => m[1])).toEqual([
         'workflows',
         'environments',
         'security',
         'coverage',
-        'workflows',
+        'repository-controls',
         'quality',
       ]);
       for (const id of ['workflows', 'environments', 'security', 'coverage', 'quality'])
@@ -253,13 +253,13 @@ describe('static site', () => {
     });
 
     it('keeps an unlisted high alert apart from the other alerts', async () => {
-      // Beta: 1 critical + 2 high open, but only 1 critical and 1 high have a finding record
-      // (the second high comes from container scanning). It must not be counted as "other".
+      // Beta: 1 critical + 3 high open, but only 1 critical and 2 high have a finding record
+      // (the third high comes from container scanning). It must not be counted as "other".
       const html = await page('projects/project-beta');
       const card = between(html, 'data-dimension="security"', '</a>');
-      expect(card).toContain('1 critical · 2 high · 4 other');
+      expect(card).toContain('1 critical · 3 high · 5 other');
       const security = between(html, 'id="security"', '</details>');
-      expect(security).toContain('4 other open alerts are counted here');
+      expect(security).toContain('5 other open alerts are counted here');
       const unlisted = between(security, 'data-unlisted-crit-high', '</p>');
       expect(unlisted).toContain('no detail in the hub');
       expect(unlisted).toContain('1 high');
@@ -315,7 +315,7 @@ describe('static site', () => {
       expect(shown).not.toContain('data-all-unknown');
       const more = between(why, 'data-why-more', '</details>');
       expect(more).toMatch(/<summary[^>]*>Show \d+ more reasons</);
-      expect(more).toContain('2 open high alerts');
+      expect(more).toContain('3 open high alerts');
       expect(why).not.toContain('see the sections below');
     });
 
@@ -367,7 +367,7 @@ describe('static site', () => {
       // Beta: secret scanning is not authorised, so the card's counts are a lower bound.
       const beta = await page('projects/project-beta');
       const card = between(beta, 'data-dimension="security"', '</a>');
-      expect(card).toContain('1 critical · 2 high · 4 other · partial');
+      expect(card).toContain('1 critical · 3 high · 5 other · partial');
       expect(between(beta, 'data-dimension="coverage"', '</a>')).toContain('1 not visible');
     });
 
@@ -380,10 +380,10 @@ describe('static site', () => {
     it('uses one severity vocabulary in Italian, number first', async () => {
       const html = await page('it/projects/project-beta');
       expect(between(html, 'data-dimension="security"', '</a>')).toContain(
-        '1 critico · 2 high · 4 altri',
+        '1 critico · 3 high · 5 altri',
       );
       const security = between(html, 'id="security"', '</details>');
-      expect(security).toContain('Altri 4 alert aperti');
+      expect(security).toContain('Altri 5 alert aperti');
       expect(between(security, 'data-unlisted-crit-high', '</p>')).toContain('1 high');
     });
 
@@ -598,7 +598,7 @@ describe('static site', () => {
 
   it('shows security per project, worst first, with blind spots and no full alert table', async () => {
     const html = await page('security');
-    // Portfolio severity totals: critical 1, high 4, medium 7, low 5 (Gamma unknown, not 0).
+    // Portfolio severity totals: critical 1, high 5, medium 8, low 5 (Gamma unknown, not 0).
     const totals = /<section[^>]*data-security-totals[\s\S]*?<\/section>/.exec(html)?.[0] ?? '';
     // Counts are incomplete, so each known total is a lower bound: "≥ n", read as "at least n".
     const values = [
@@ -606,8 +606,8 @@ describe('static site', () => {
     ].map(([, k, v]) => `${k}=${textOf(v!).trim()}`);
     expect(values).toEqual([
       'critical=≥at least 1',
-      'high=≥at least 4',
-      'medium=≥at least 7',
+      'high=≥at least 5',
+      'medium=≥at least 8',
       'low=≥at least 5',
     ]);
     expect(totals).toMatch(
@@ -659,14 +659,14 @@ describe('static site', () => {
     // Repository counts: in catalog / fully read / partly read / unreadable.
     for (const [key, n] of [
       ['total', 12],
-      ['full', 7],
-      ['partial', 3],
+      ['full', 6],
+      ['partial', 4],
       ['unreadable', 2],
     ] as const)
       expect(html).toMatch(new RegExp(`data-repo-count="${key}"[^>]*>\\s*<span[^>]*>${n}<`));
-    // What we could not read, grouped by classification (403: 4 sources, 404: 1 source).
+    // What we could not read, grouped by classification (403: 5 sources, 404: 1 source).
     expect(html).toContain('What we could not read, by cause');
-    expect(html).toMatch(/data-cause="not-authorised"[^>]*data-sources="4"/);
+    expect(html).toMatch(/data-cause="not-authorised"[^>]*data-sources="5"/);
     expect(html).toMatch(/data-cause="not-found"[^>]*data-sources="1"/);
     expect(html.indexOf('data-cause="not-authorised"')).toBeLessThan(
       html.indexOf('data-cause="not-found"'),
@@ -1222,13 +1222,127 @@ describe('static site', () => {
     expect(findings).toEqual([]);
   });
 
+  describe('repository controls', () => {
+    const between = (html: string, from: string, to: string) =>
+      html.slice(html.indexOf(from), html.indexOf(to, html.indexOf(from)));
+    const rc = (html: string) => {
+      const start = html.search(/<details[^>]*\bid="repository-controls"/);
+      expect(start, 'details#repository-controls').toBeGreaterThan(-1);
+      const tail = html.slice(start);
+      return tail.slice(0, tail.search(/<section[^>]*\bid="quality"/));
+    };
+
+    it('project-beta has #repository-controls with its summary (EN and IT)', async () => {
+      const en = rc(await page('projects/project-beta'));
+      expect(textOf(en)).toContain('5 of 12 checks pass · 8 not visible');
+      expect(textOf(en)).toContain('Repository controls');
+      const it = rc(await page('it/projects/project-beta'));
+      expect(textOf(it)).toContain('5 di 12 controlli superati · 8 non visibili');
+    });
+
+    it('the beta matrix has 4 rows and 6 column headers, each with "Informative"', async () => {
+      const m = rc(await page('projects/project-beta'));
+      const table = m.slice(m.indexOf('<table'), m.indexOf('</table>'));
+      expect(table.match(/<th[^>]*scope="row"/g)).toHaveLength(4);
+      const cols = table.match(/<th[^>]*scope="col"[\s\S]*?<\/th>/g)!;
+      // First column is the repository; the six checks follow.
+      expect(cols).toHaveLength(7);
+      for (const c of cols.slice(1)) expect(textOf(c)).toContain('Informative');
+    });
+
+    it('every matrix cell has a visually hidden state label', async () => {
+      const m = rc(await page('projects/project-beta'));
+      const table = m.slice(m.indexOf('<table'), m.indexOf('</table>'));
+      const cells = table.match(/<td[\s\S]*?<\/td>/g)!;
+      expect(cells).toHaveLength(24);
+      for (const c of cells) {
+        expect(c).toMatch(/class="visually-hidden"[^>]*>(Pass|Fail|Not visible|Not applicable)</);
+      }
+    });
+
+    it('lists the behind reusable workflow, the unpinned action and the withheld details', async () => {
+      const beta = textOf(rc(await page('projects/project-beta')));
+      expect(beta).toContain('example-shared/ci-templates/.github/workflows/build.yml');
+      expect(beta).toContain('v2.1.0');
+      expect(beta).toContain('v2.4.0');
+      expect(beta).toContain('Behind');
+      expect(beta).toContain('Details withheld for non-public repositories');
+      const platform = textOf(rc(await page('projects/platform')));
+      expect(platform).toContain('pnpm/action-setup');
+      expect(platform).toContain('v4');
+    });
+
+    it('never says "none" in the detail folds when workflows were not readable (unknown is not zero)', async () => {
+      const fold = (html: string, name: string) => {
+        const from = html.indexOf(`data-detail="${name}"`);
+        return textOf(html.slice(from, html.indexOf('</details>', from)));
+      };
+      const gamma = await page('projects/project-gamma');
+      for (const name of ['unpinned', 'reusable']) {
+        const text = fold(gamma, name);
+        expect(text).not.toMatch(/No unpinned reference|No reusable workflow/);
+        expect(text).toContain('Not visible');
+      }
+      const gammaIt = await page('it/projects/project-gamma');
+      expect(fold(gammaIt, 'unpinned')).not.toContain('Nessun riferimento non fissato');
+      expect(fold(gammaIt, 'unpinned')).toContain('Non visibili');
+      // Withheld details are named inside the fold, not only in the note above it.
+      const beta = await page('projects/project-beta');
+      expect(fold(beta, 'unpinned')).toContain('Details withheld for non-public repositories');
+    });
+
+    it('the Governance card links to #repository-controls', async () => {
+      const html = await page('projects/project-beta');
+      expect(between(html, 'data-dimension="governance"', '</a>')).toBeTruthy();
+      expect(html).toMatch(/<a[^>]*href="#repository-controls"[^>]*data-dimension="governance"/);
+    });
+
+    it('never publishes workflow text or unconfigured properties', async () => {
+      const { readdir } = await import('node:fs/promises');
+      const files = (await readdir(dist, { recursive: true })).filter((f) =>
+        /\.(html|json|csv|js|xml|txt)$/.test(f),
+      );
+      for (const f of files) {
+        const text = await readFile(join(dist, f), 'utf8');
+        expect(text, f).not.toMatch(/marker-step-7f3e|marker-run-7f3e|CC-1234/);
+      }
+    });
+
+    it('/changes/ lists repository check changes (EN and IT)', async () => {
+      const en = textOf(await page('changes'));
+      expect(en).toContain('Repository checks');
+      expect(en).toContain('project-beta-web');
+      expect(en).toContain('Branch protected');
+      expect(textOf(await page('it/changes'))).toContain('Controlli repository');
+    });
+
+    it('the catalog page shows grouped proposals and the suggested project', async () => {
+      const html = await page('catalog');
+      expect(html).toContain('Grouped by hints');
+      expect(html).toContain('Suggested for project {id}');
+      const it = await page('it/catalog');
+      expect(it).toContain('Raggruppato dai suggerimenti');
+    });
+
+    it('data quality lists the repository whose rules are not authorised', async () => {
+      const html = textOf(await page('data-quality'));
+      expect(html).toContain('project-beta-helm');
+      expect(html).toContain('Branch rules');
+    });
+
+    it('how to read explains repository controls (EN and IT)', async () => {
+      expect(textOf(await page('how-to-read'))).toContain('Repository controls');
+      expect(textOf(await page('it/how-to-read'))).toContain('Controlli repository');
+    });
+  });
+
   it('fails in a controlled way on an unsupported snapshot schemaVersion', async () => {
     const data = join(work, 'bad-data');
     await cp('fixtures/snapshots', data, { recursive: true });
     const idx = join(data, 'index.json');
     await writeFile(
       idx,
-      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.4"', '"schemaVersion": "9.0"'),
+      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.5"', '"schemaVersion": "9.0"'),
     );
     const out = join(work, 'dist-bad');
     await buildSite(data, out);

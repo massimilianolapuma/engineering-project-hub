@@ -41,6 +41,7 @@ dato non aggiornato (`freshness.snapshotStaleHours`) superiore all'intervallo.
   secondari), con al massimo 4 chiamate in parallelo.
 - Un'installazione di GitHub App ha limiti più alti di un PAT. Per cataloghi grandi è
   preferibile la App.
+- I controlli repository aggiungono, per repository univoco: 1 chiamata per le regole del branch, 1 per la cartella dei workflow e fino a `maxWorkflowFiles` (30 per impostazione predefinita) letture di file, 1 per l'analisi Scorecard, 1 in più per la protezione classica se attivata, più al massimo 3 chiamate per ogni repository di workflow riutilizzabili referenziato (al massimo 50, quindi 150), una volta per esecuzione. Una scoperta aggiunge 1 chiamata per repository analizzato quando `customProperties` è attivo. Riduci `maxWorkflowFiles` o imposta `repositoryControls.enabled: false` per ridurre il costo.
 - Se compaiono errori `rate-limited`, riduci la frequenza della pianificazione, suddividi
   il catalogo oppure abbassa la concorrenza in `collector/src/run.ts`.
 
@@ -87,6 +88,28 @@ validate:snapshots`.
 - **Emergenza** (esposizione di dati): vedi [security.md → Risposta a un'esposizione
   accidentale](security.md#risposta-a-unesposizione-accidentale). Per prima cosa disabilita
   Pages.
+
+## Rendere vincolanti i controlli repository
+
+I controlli repository sono informativi per impostazione predefinita. Per farne contare alcuni
+per Governance:
+
+1. Apri le pagine dei progetti e leggi **Controlli repository**. Correggi o accetta quello che
+   vedi; ricorda che "non visibile" significa che le credenziali non leggono il dato, non che il
+   controllo fallisce.
+2. Opzionale, per i tre controlli sulle regole del branch: la protezione classica è invisibile
+   senza **Administration: read**. Concedi questo permesso di sola lettura alla GitHub App (o al
+   token fine-grained) e imposta `repositoryControls.readClassicProtection: true`. È spenta per
+   impostazione predefinita e con `false` la chiamata non viene mai fatta.
+3. In `config/policies.yaml` imposta un controllo alla volta su `amber` (o `red`) sotto
+   `repositoryControls.checks`, elencando se serve `exemptActionOwners` (per esempio `actions`).
+   Mantieni `unknownEnforcedCheck: info` finché i dati non sono completi.
+4. Esegui `npm run validate:config`, fai il merge e leggi la raccolta successiva: il motivo di
+   Governance `repository-check-failed` nomina il controllo e i repository. Governance si muove
+   solo quando fallisce un controllo vincolante.
+5. Per silenziare un controllo su un repository, aggiungilo a `notApplicableChecks` nel catalogo.
+
+Vedi [Configurazione](configuration.md#controlli-repository-repositorycontrols).
 
 ## Pubblicare il riepilogo di qualità dalla CI
 
@@ -228,7 +251,9 @@ tempo, la catena si perde e lo storico riparte (stato `none`).
 `npm run ci:build` esegue `collect:mock`, che sovrascrive `public/data`. Uno snapshot locale
 con dati reali (per esempio da `collect:github`) va raccolto di nuovo dopo di esso.
 
-**Aggiornamento allo snapshot 1.4** (dimensione Qualità): il sito legge solo
+**Aggiornamento allo snapshot 1.5** (controlli repository): il sito legge solo `schemaVersion` 1.5. Un `public/data` 1.4 esistente non supera la validazione finché non viene raccolto di nuovo (`collect:github`, o la prossima esecuzione pianificata). `history.json` 1.0 viene ancora letto; lo schema dello storico passa a 1.1 alla prima raccolta.
+
+**Nota precedente, snapshot 1.4** (dimensione Qualità): il sito legge solo
 `schemaVersion` 1.4. Un `public/data` 1.3 esistente non supera la validazione finché non viene
 raccolto di nuovo (`collect:github`, o la prossima esecuzione pianificata). Ricorda che
 `npm run ci:build` sovrascrive `public/data` con dati mock.

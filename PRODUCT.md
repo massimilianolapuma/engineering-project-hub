@@ -14,7 +14,7 @@ Secondary: DevSecOps engineers (security findings, scanner coverage, CI health) 
 
 ## Product Purpose
 
-A project-level view of multi-repository software delivery. A project is one logical unit (a coordinator repository with submodules, a monorepo, or a single repository); the portal shows its health across delivery, version, security risk, security controls coverage, governance and quality (test coverage, six dimensions in all), plus an overall status composed from those dimensions. Success: a lead can answer "which project needs attention and why" without opening GitHub repository by repository.
+A project-level view of multi-repository software delivery. A project is one logical unit (a coordinator repository with submodules, a monorepo, or a single repository); the portal shows its health across delivery, version, security risk, security controls coverage, governance and quality (test coverage, six dimensions in all), plus an overall status composed from those dimensions. Governance also shows repository controls (actions pinned to a SHA, reusable workflows up to date, a protected default branch, an OpenSSF Scorecard summary): informative by default, and never read as failing when they are not visible. Success: a lead can answer "which project needs attention and why" without opening GitHub repository by repository.
 
 ## Positioning
 

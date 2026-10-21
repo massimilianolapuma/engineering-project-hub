@@ -12,7 +12,8 @@
   },
   "head": {
     "sha": "3214cb086d9f6b265d49568ba63b3eb3afb5b505",
-    "committedAt": "@now-3d"
+    "committedAt": "@now-3d",
+    "protected": true
   },
   "latestRelease": {
     "tagName": "v3.2.0",
@@ -22,6 +23,7 @@
     "htmlUrl": "https://github.com/example-org/project-beta-api/releases/tag/v3.2.0"
   },
   "files": {
+    ".github/workflows/ci.yml": "name: CI\non: push\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-python@0123456789abcdef0123456789abcdef01234567\n      - name: Build marker-step-7f3e\n        run: echo marker-run-7f3e\n      - uses: ./.github/actions/lint\n      - uses: docker/build-push-action@v6\n      - uses: actions/upload-artifact@0123456789abcdef0123456789abcdef01234567\n",
     ".security/project-security-status.json": "{\n  \"schemaVersion\": \"1.0\",\n  \"generatedAt\": \"@now-2d\",\n  \"repository\": \"example-org/project-beta-api\",\n  \"version\": \"synthetic\",\n  \"commitSha\": \"3214cb086d9f6b265d49568ba63b3eb3afb5b505\",\n  \"controls\": {\n    \"containerScanning\": {\n      \"status\": \"completed\",\n      \"tool\": \"trivy\",\n      \"critical\": 0,\n      \"high\": 1,\n      \"medium\": 2,\n      \"low\": 0,\n      \"completedAt\": \"@now-2d\"\n    }\n  }\n}"
   },
   "workflowRuns": {
@@ -88,6 +90,32 @@
       "createdAt": "@now-3d",
       "updatedAt": "@now-3d",
       "htmlUrl": "https://github.com/example-org/project-beta-api/security/code-scanning/3"
+    },
+    {
+      "number": 901,
+      "state": "open",
+      "dismissedReason": null,
+      "ruleId": "TokenPermissionsID",
+      "ruleSeverity": "error",
+      "securitySeverityLevel": "high",
+      "ruleDescription": "Token-Permissions",
+      "toolName": "Scorecard",
+      "createdAt": "@now-2d",
+      "updatedAt": "@now-2d",
+      "htmlUrl": "https://github.com/example-org/project-beta-api/security/code-scanning/901"
+    },
+    {
+      "number": 902,
+      "state": "open",
+      "dismissedReason": null,
+      "ruleId": "PinnedDependenciesID",
+      "ruleSeverity": "warning",
+      "securitySeverityLevel": "medium",
+      "ruleDescription": "Pinned-Dependencies",
+      "toolName": "Scorecard",
+      "createdAt": "@now-2d",
+      "updatedAt": "@now-2d",
+      "htmlUrl": "https://github.com/example-org/project-beta-api/security/code-scanning/902"
     }
   ],
   "codeScanningAnalysis": {
@@ -134,5 +162,11 @@
     { "category": "maintainability", "severity": "none" },
     { "category": "maintainability", "severity": "note" },
     { "category": "maintainability", "severity": "warning" }
-  ]
+  ],
+  "directories": { ".github/workflows": [{ "name": "ci.yml", "type": "file" }] },
+  "branchRules": [
+    { "type": "pull_request", "requiredApprovals": 1 },
+    { "type": "required_status_checks", "requiredApprovals": null }
+  ],
+  "scorecardAnalysis": { "createdAt": "@now-2d", "toolName": "Scorecard" }
 }

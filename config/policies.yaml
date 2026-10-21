@@ -60,6 +60,23 @@ governance:
   missingSecurityStatusFile: amber
   defaultBranchMismatch: amber
 
+# Repository controls: six named checks per repository, read from the workflow files and the
+# branch rules API (read-only). Optional: the defaults below apply when omitted. Every check is
+# informative by default: it is shown but never changes Governance until you enforce it.
+# repositoryControls:
+#   enabled: true # false = none of the calls is made; the section says "off"
+#   checks: # info | amber | red
+#     actions-pinned: info # every `uses:` is pinned to a full commit SHA
+#     reusable-workflows-current: info # reusable workflows are at the latest release or tag
+#     branch-protected: info
+#     pull-request-required: info
+#     force-push-blocked: info
+#     status-checks-required: info
+#   unknownEnforcedCheck: info # info | amber: an enforced check that cannot be determined
+#   exemptActionOwners: [] # e.g. [actions, github]: their unpinned actions count as pinned
+#   maxWorkflowFiles: 30 # 1–100 per repository
+#   readClassicProtection: false # true needs Administration: read on the credentials
+
 overall:
   criticalDimensions: [delivery, version, security]
   requiredDimensions: [delivery, version, security, coverage, governance]

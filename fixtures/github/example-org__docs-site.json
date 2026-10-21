@@ -49,6 +49,12 @@
       }
     ]
   },
+  "customProperties": [
+    {
+      "name": "hub-project",
+      "value": "platform"
+    }
+  ],
   "codeScanningAlerts": [],
   "codeScanningAnalysis": null,
   "dependabotAlerts": [],

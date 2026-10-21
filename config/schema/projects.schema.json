@@ -11,7 +11,14 @@
         "includeArchived": false,
         "maxRepositories": 200,
         "topics": false,
-        "customProperties": false
+        "customProperties": false,
+        "hints": {
+          "projectProperty": "hub-project",
+          "componentProperty": "hub-component",
+          "typeProperty": "hub-component-type",
+          "projectTopicPrefix": "project-",
+          "typeTopicPrefix": "type-"
+        }
       },
       "type": "object",
       "properties": {
@@ -52,6 +59,38 @@
         "customProperties": {
           "default": false,
           "type": "boolean"
+        },
+        "hints": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "projectProperty": {
+              "default": "hub-project",
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,49}$"
+            },
+            "componentProperty": {
+              "default": "hub-component",
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,49}$"
+            },
+            "typeProperty": {
+              "default": "hub-component-type",
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,49}$"
+            },
+            "projectTopicPrefix": {
+              "default": "project-",
+              "type": "string",
+              "pattern": "^[a-z0-9-]{1,30}$"
+            },
+            "typeTopicPrefix": {
+              "default": "type-",
+              "type": "string",
+              "pattern": "^[a-z0-9-]{1,30}$"
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -124,6 +163,21 @@
                     "dast",
                     "sbom",
                     "artifactSignature"
+                  ]
+                }
+              },
+              "notApplicableChecks": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "actions-pinned",
+                    "reusable-workflows-current",
+                    "branch-protected",
+                    "pull-request-required",
+                    "force-push-blocked",
+                    "status-checks-required"
                   ]
                 }
               },
@@ -205,6 +259,21 @@
                       "dast",
                       "sbom",
                       "artifactSignature"
+                    ]
+                  }
+                },
+                "notApplicableChecks": {
+                  "default": [],
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "actions-pinned",
+                      "reusable-workflows-current",
+                      "branch-protected",
+                      "pull-request-required",
+                      "force-push-blocked",
+                      "status-checks-required"
                     ]
                   }
                 },

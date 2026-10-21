@@ -398,6 +398,15 @@ describe('governance health', () => {
       'default-branch-mismatch',
     );
   });
+  it('an amber extra reason makes governance amber; an info one does not', () => {
+    const amber = { code: 'repository-check-failed', level: 'amber', params: {} } as const;
+    const info = { code: 'repository-check-failed', level: 'info', params: {} } as const;
+    expect(evaluateGovernance([repo()], [workflow()], P, [amber]).status).toBe('amber');
+    expect(evaluateGovernance([repo()], [workflow()], P, [info]).status).toBe('green');
+    expect(
+      evaluateGovernance([repo()], [workflow()], P, [info]).reasons.map((r) => r.code),
+    ).toEqual(['repository-check-failed', 'governance-compliant']);
+  });
   it('grey when no repository is accessible', () => {
     expect(evaluateGovernance([repo({ status: 'not-authorised' })], [], P).status).toBe('grey');
   });

@@ -3,6 +3,7 @@ import { CatalogSchema, ProjectConfigSchema, VersionSourceSchema } from './catal
 import {
   AuthenticationModeSchema,
   AvailabilitySchema,
+  BranchRuleTypeSchema,
   CapabilitySchema,
   ComponentTypeSchema,
   ControlIdSchema,
@@ -16,6 +17,9 @@ import {
   HealthStatusSchema,
   LifecycleSchema,
   ReasonSchema,
+  RepositoryCheckIdSchema,
+  RepositoryCheckStateSchema,
+  ScorecardCheckSchema,
   SeveritySchema,
   SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS,
 } from './enums';
@@ -50,6 +54,9 @@ export const CollectionErrorSchema = z
       'security-status-file',
       'quality-summary',
       'code-quality',
+      'workflow-files',
+      'repository-rules',
+      'scorecard-analysis',
     ]),
     classification: ErrorClassificationSchema,
     httpStatus: z.number().int().min(100).max(599).optional(),
@@ -319,6 +326,127 @@ export const QualityHealthSchema = HealthResultSchema.extend({
 }).strict();
 export type QualityHealth = z.infer<typeof QualityHealthSchema>;
 
+const WORKFLOW_FILE_NAME = z
+  .string()
+  .max(100)
+  .regex(/^[A-Za-z0-9._-]+\.ya?ml$/);
+const checkLevel = z.enum(['info', 'amber', 'red']);
+const intCount = z.number().int().min(0);
+const percent = z.number().int().min(0).max(100).nullable();
+
+/**
+ * Repository controls (Governance): six named checks per unique repository, built from workflow
+ * files and the branch rules API. Workflow text is never published: only identifiers rebuilt
+ * from validated parts, refs and workflow file names.
+ */
+export const RepositoryControlsHealthSchema = z
+  .object({
+    enabled: z.boolean(),
+    collectedAt: isoDate,
+    /** Counts over unique repositories x checks. */
+    passed: intCount,
+    failed: intCount,
+    unknown: intCount,
+    notApplicable: intCount,
+    ratio: percent,
+    perCheck: z
+      .array(
+        z
+          .object({
+            id: RepositoryCheckIdSchema,
+            level: checkLevel,
+            passed: intCount,
+            failed: intCount,
+            unknown: intCount,
+            notApplicable: intCount,
+          })
+          .strict(),
+      )
+      .length(6),
+    repositories: z.array(
+      z
+        .object({
+          /** Monorepo: every target on the repository. */
+          componentIds: z.array(z.string().max(64)).min(1),
+          repository: z.string().max(200),
+          checks: z
+            .array(
+              z.object({ id: RepositoryCheckIdSchema, state: RepositoryCheckStateSchema }).strict(),
+            )
+            .length(6),
+          passed: intCount,
+          failed: intCount,
+          unknown: intCount,
+          notApplicable: intCount,
+          ratio: percent,
+          actions: z
+            .object({
+              state: z.enum(['available', 'partial', 'none', 'not-authorised', 'unknown']),
+              workflowFiles: nullableCount,
+              total: nullableCount,
+              pinned: nullableCount,
+              unpinned: nullableCount,
+              unknown: nullableCount,
+              /** Identifiers withheld (non-public repository, public audience). Counts stay. */
+              detailsWithheld: z.boolean(),
+              unpinnedRefs: z
+                .array(
+                  z
+                    .object({
+                      workflow: WORKFLOW_FILE_NAME,
+                      kind: z.enum(['action', 'reusable-workflow', 'docker']),
+                      target: z.string().max(200),
+                      ref: z.string().max(100),
+                    })
+                    .strict(),
+                )
+                .max(20),
+              truncated: intCount,
+            })
+            .strict(),
+          reusableWorkflows: z
+            .array(
+              z
+                .object({
+                  workflow: WORKFLOW_FILE_NAME,
+                  target: z.string().max(250),
+                  ref: z.string().max(100),
+                  latest: z.string().max(100).nullable(),
+                  status: z.enum(['current', 'behind', 'untagged', 'floating', 'unknown']),
+                  /** The referenced repository. */
+                  url: httpsUrl.nullable(),
+                })
+                .strict(),
+            )
+            .max(20),
+          branchRules: z
+            .object({
+              state: z.enum(['available', 'not-authorised', 'unknown']),
+              branch: z.string().max(255).nullable(),
+              protected: z.boolean().nullable(),
+              source: z.enum(['rulesets', 'classic', 'both', 'none', 'unknown']),
+              ruleTypes: z.array(BranchRuleTypeSchema).max(30),
+              otherRules: intCount,
+              requiredApprovals: z.number().int().min(0).max(10).nullable(),
+              classicRead: z.boolean(),
+            })
+            .strict(),
+          scorecard: z
+            .object({
+              state: z.enum(['available', 'not-used', 'not-authorised', 'unknown']),
+              lastAnalysisAt: isoDate.nullable(),
+              openAlerts: nullableCount,
+              failingChecks: z.array(ScorecardCheckSchema).max(20),
+              otherFailing: intCount,
+            })
+            .strict(),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+export type RepositoryControlsHealth = z.infer<typeof RepositoryControlsHealthSchema>;
+
 /**
  * What the SHA pinned by the coordinator corresponds to in the component repository:
  * - tagged: the SHA is exactly a tag (verified version)
@@ -427,6 +555,7 @@ export const ProjectSnapshotSchema = z
     securityCoverage: CoverageSummarySchema,
     governanceHealth: HealthResultSchema,
     qualityHealth: QualityHealthSchema,
+    repositoryControls: RepositoryControlsHealthSchema,
     overallHealth: HealthResultSchema,
     score: ProjectScoreSchema,
     dataFreshness: z
@@ -481,6 +610,16 @@ export const ProjectSummarySchema = z
         percentage: z.number().min(0).max(100).nullable(),
         measured: z.number().int().min(0),
         applicable: z.number().int().min(0),
+      })
+      .strict(),
+    /** Repository controls over unique repositories x checks. Informative: not a dimension. */
+    repositoryControls: z
+      .object({
+        passed: intCount,
+        failed: intCount,
+        unknown: intCount,
+        notApplicable: intCount,
+        ratio: percent,
       })
       .strict(),
     freshness: HealthStatusSchema,
@@ -546,13 +685,27 @@ export type PortfolioIndex = z.infer<typeof PortfolioIndexSchema>;
 
 export const DiscoveryProposalSchema = z
   .object({
-    /** coordinator: has .gitmodules · monorepo: workspace manifest · single: one repository. */
-    kind: z.enum(['coordinator', 'monorepo', 'single']),
+    /** coordinator: .gitmodules · monorepo: workspace manifest · grouped: repositories sharing a hinted project · single: one repository. */
+    kind: z.enum(['coordinator', 'monorepo', 'grouped', 'single']),
     repository: z.string().max(200),
     url: httpsUrl.nullable(),
     /** Id of the catalog project that already uses this repository as coordinator. */
     projectId: z.string().max(64).nullable(),
     evidence: z.array(z.string().max(200)).max(20),
+    /** Existing catalog project suggested by a hint when the repository is not part of it. */
+    hintedProjectId: z.string().max(64).nullable(),
+    /** The configured hint keys that were read (never any other property). */
+    hints: z
+      .array(
+        z
+          .object({
+            source: z.enum(['property', 'topic']),
+            key: z.string().max(50),
+            value: z.string().max(100),
+          })
+          .strict(),
+      )
+      .max(10),
     /** Ready-to-edit project configuration proposed for the catalog. */
     project: ProjectConfigSchema,
   })

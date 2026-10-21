@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.4",
+  "schemaVersion": "1.5",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-beta",
@@ -527,6 +527,48 @@
       "dataClassification": "internal"
     },
     {
+      "id": "example-org/project-beta-api#code-scanning#901",
+      "projectId": "project-beta",
+      "componentId": "api",
+      "repository": "example-org/project-beta-api",
+      "source": "github-code-scanning",
+      "category": "code",
+      "severity": "high",
+      "originalSeverity": "high",
+      "status": "open",
+      "originalStatus": "open",
+      "ruleId": null,
+      "title": null,
+      "detectedAt": "2026-01-13T12:00:00.000Z",
+      "updatedAt": "2026-01-13T12:00:00.000Z",
+      "fixAvailable": null,
+      "htmlUrl": "https://github.com/example-org/project-beta-api/security/code-scanning/901",
+      "tool": "Scorecard",
+      "repositoryPrivate": true,
+      "dataClassification": "internal"
+    },
+    {
+      "id": "example-org/project-beta-api#code-scanning#902",
+      "projectId": "project-beta",
+      "componentId": "api",
+      "repository": "example-org/project-beta-api",
+      "source": "github-code-scanning",
+      "category": "code",
+      "severity": "medium",
+      "originalSeverity": "medium",
+      "status": "open",
+      "originalStatus": "open",
+      "ruleId": null,
+      "title": null,
+      "detectedAt": "2026-01-13T12:00:00.000Z",
+      "updatedAt": "2026-01-13T12:00:00.000Z",
+      "fixAvailable": null,
+      "htmlUrl": "https://github.com/example-org/project-beta-api/security/code-scanning/902",
+      "tool": "Scorecard",
+      "repositoryPrivate": true,
+      "dataClassification": "internal"
+    },
+    {
       "id": "example-org/project-beta-web#dependabot#11",
       "projectId": "project-beta",
       "componentId": "web",
@@ -653,8 +695,8 @@
           "lastScanAt": "2026-01-12T12:00:00.000Z",
           "counts": {
             "critical": 1,
-            "high": 0,
-            "medium": 0,
+            "high": 1,
+            "medium": 1,
             "low": 0,
             "informational": 0,
             "unknown": 0
@@ -1029,14 +1071,14 @@
         "code": "open-high-alerts",
         "level": "amber",
         "params": {
-          "count": 2
+          "count": 3
         }
       },
       {
         "code": "open-medium-low-alerts",
         "level": "amber",
         "params": {
-          "count": 4
+          "count": 5
         }
       },
       {
@@ -1066,8 +1108,8 @@
     ],
     "openCounts": {
       "critical": 1,
-      "high": 2,
-      "medium": 3,
+      "high": 3,
+      "medium": 4,
       "low": 1,
       "informational": 0,
       "unknown": 0
@@ -1075,7 +1117,7 @@
     "countsComplete": false,
     "openSecretAlerts": 0,
     "byCategory": {
-      "code": 1,
+      "code": 3,
       "dependency": 1,
       "secret": 0,
       "container": 5,
@@ -1085,7 +1127,7 @@
       "configuration": 0
     },
     "bySource": {
-      "github-code-scanning": 1,
+      "github-code-scanning": 3,
       "github-dependabot": 1,
       "github-secret-scanning": 0,
       "security-status-file": 5
@@ -1171,6 +1213,60 @@
           "workflow": "Release",
           "file": "rel-release.yml",
           "repository": "example-org/project-beta-web"
+        }
+      },
+      {
+        "code": "repository-check-failed",
+        "level": "info",
+        "params": {
+          "check": "actions-pinned",
+          "repositories": "example-org/project-beta-coordinator, example-org/project-beta-api",
+          "count": 2
+        }
+      },
+      {
+        "code": "repository-check-failed",
+        "level": "info",
+        "params": {
+          "check": "reusable-workflows-current",
+          "repositories": "example-org/project-beta-coordinator",
+          "count": 1
+        }
+      },
+      {
+        "code": "repository-check-failed",
+        "level": "info",
+        "params": {
+          "check": "branch-protected",
+          "repositories": "example-org/project-beta-web",
+          "count": 1
+        }
+      },
+      {
+        "code": "repository-check-failed",
+        "level": "info",
+        "params": {
+          "check": "pull-request-required",
+          "repositories": "example-org/project-beta-web",
+          "count": 1
+        }
+      },
+      {
+        "code": "repository-check-failed",
+        "level": "info",
+        "params": {
+          "check": "force-push-blocked",
+          "repositories": "example-org/project-beta-web",
+          "count": 1
+        }
+      },
+      {
+        "code": "repository-check-failed",
+        "level": "info",
+        "params": {
+          "check": "status-checks-required",
+          "repositories": "example-org/project-beta-web",
+          "count": 1
         }
       }
     ]
@@ -1265,6 +1361,350 @@
       }
     }
   },
+  "repositoryControls": {
+    "enabled": true,
+    "collectedAt": "2026-01-15T12:00:00.000Z",
+    "passed": 5,
+    "failed": 7,
+    "unknown": 8,
+    "notApplicable": 4,
+    "ratio": 42,
+    "perCheck": [
+      {
+        "id": "actions-pinned",
+        "level": "info",
+        "passed": 1,
+        "failed": 2,
+        "unknown": 0,
+        "notApplicable": 1
+      },
+      {
+        "id": "reusable-workflows-current",
+        "level": "info",
+        "passed": 0,
+        "failed": 1,
+        "unknown": 0,
+        "notApplicable": 3
+      },
+      {
+        "id": "branch-protected",
+        "level": "info",
+        "passed": 2,
+        "failed": 1,
+        "unknown": 1,
+        "notApplicable": 0
+      },
+      {
+        "id": "pull-request-required",
+        "level": "info",
+        "passed": 1,
+        "failed": 1,
+        "unknown": 2,
+        "notApplicable": 0
+      },
+      {
+        "id": "force-push-blocked",
+        "level": "info",
+        "passed": 0,
+        "failed": 1,
+        "unknown": 3,
+        "notApplicable": 0
+      },
+      {
+        "id": "status-checks-required",
+        "level": "info",
+        "passed": 1,
+        "failed": 1,
+        "unknown": 2,
+        "notApplicable": 0
+      }
+    ],
+    "repositories": [
+      {
+        "componentIds": [
+          "coordinator"
+        ],
+        "repository": "example-org/project-beta-coordinator",
+        "checks": [
+          {
+            "id": "actions-pinned",
+            "state": "fail"
+          },
+          {
+            "id": "reusable-workflows-current",
+            "state": "fail"
+          },
+          {
+            "id": "branch-protected",
+            "state": "pass"
+          },
+          {
+            "id": "pull-request-required",
+            "state": "unknown"
+          },
+          {
+            "id": "force-push-blocked",
+            "state": "unknown"
+          },
+          {
+            "id": "status-checks-required",
+            "state": "unknown"
+          }
+        ],
+        "passed": 1,
+        "failed": 2,
+        "unknown": 3,
+        "notApplicable": 0,
+        "ratio": 33,
+        "actions": {
+          "state": "available",
+          "workflowFiles": 1,
+          "total": 2,
+          "pinned": 1,
+          "unpinned": 1,
+          "unknown": 0,
+          "detailsWithheld": false,
+          "unpinnedRefs": [
+            {
+              "workflow": "release.yml",
+              "kind": "reusable-workflow",
+              "target": "example-shared/ci-templates/.github/workflows/build.yml",
+              "ref": "v2.1.0"
+            }
+          ],
+          "truncated": 0
+        },
+        "reusableWorkflows": [
+          {
+            "workflow": "release.yml",
+            "target": "example-shared/ci-templates/.github/workflows/build.yml",
+            "ref": "v2.1.0",
+            "latest": "v2.4.0",
+            "status": "behind",
+            "url": "https://github.com/example-shared/ci-templates"
+          }
+        ],
+        "branchRules": {
+          "state": "available",
+          "branch": "main",
+          "protected": true,
+          "source": "classic",
+          "ruleTypes": [],
+          "otherRules": 0,
+          "requiredApprovals": null,
+          "classicRead": false
+        },
+        "scorecard": {
+          "state": "not-used",
+          "lastAnalysisAt": null,
+          "openAlerts": 0,
+          "failingChecks": [],
+          "otherFailing": 0
+        }
+      },
+      {
+        "componentIds": [
+          "api"
+        ],
+        "repository": "example-org/project-beta-api",
+        "checks": [
+          {
+            "id": "actions-pinned",
+            "state": "fail"
+          },
+          {
+            "id": "reusable-workflows-current",
+            "state": "not-applicable"
+          },
+          {
+            "id": "branch-protected",
+            "state": "pass"
+          },
+          {
+            "id": "pull-request-required",
+            "state": "pass"
+          },
+          {
+            "id": "force-push-blocked",
+            "state": "unknown"
+          },
+          {
+            "id": "status-checks-required",
+            "state": "pass"
+          }
+        ],
+        "passed": 3,
+        "failed": 1,
+        "unknown": 1,
+        "notApplicable": 1,
+        "ratio": 75,
+        "actions": {
+          "state": "available",
+          "workflowFiles": 1,
+          "total": 4,
+          "pinned": 2,
+          "unpinned": 2,
+          "unknown": 0,
+          "detailsWithheld": true,
+          "unpinnedRefs": [],
+          "truncated": 0
+        },
+        "reusableWorkflows": [],
+        "branchRules": {
+          "state": "available",
+          "branch": "main",
+          "protected": true,
+          "source": "rulesets",
+          "ruleTypes": [
+            "pull_request",
+            "required_status_checks"
+          ],
+          "otherRules": 0,
+          "requiredApprovals": 1,
+          "classicRead": false
+        },
+        "scorecard": {
+          "state": "available",
+          "lastAnalysisAt": "2026-01-13T12:00:00.000Z",
+          "openAlerts": 2,
+          "failingChecks": [],
+          "otherFailing": 2
+        }
+      },
+      {
+        "componentIds": [
+          "web"
+        ],
+        "repository": "example-org/project-beta-web",
+        "checks": [
+          {
+            "id": "actions-pinned",
+            "state": "pass"
+          },
+          {
+            "id": "reusable-workflows-current",
+            "state": "not-applicable"
+          },
+          {
+            "id": "branch-protected",
+            "state": "fail"
+          },
+          {
+            "id": "pull-request-required",
+            "state": "fail"
+          },
+          {
+            "id": "force-push-blocked",
+            "state": "fail"
+          },
+          {
+            "id": "status-checks-required",
+            "state": "fail"
+          }
+        ],
+        "passed": 1,
+        "failed": 4,
+        "unknown": 0,
+        "notApplicable": 1,
+        "ratio": 20,
+        "actions": {
+          "state": "available",
+          "workflowFiles": 1,
+          "total": 2,
+          "pinned": 2,
+          "unpinned": 0,
+          "unknown": 0,
+          "detailsWithheld": false,
+          "unpinnedRefs": [],
+          "truncated": 0
+        },
+        "reusableWorkflows": [],
+        "branchRules": {
+          "state": "available",
+          "branch": "main",
+          "protected": false,
+          "source": "none",
+          "ruleTypes": [],
+          "otherRules": 0,
+          "requiredApprovals": null,
+          "classicRead": false
+        },
+        "scorecard": {
+          "state": "not-used",
+          "lastAnalysisAt": null,
+          "openAlerts": 0,
+          "failingChecks": [],
+          "otherFailing": 0
+        }
+      },
+      {
+        "componentIds": [
+          "helm"
+        ],
+        "repository": "example-org/project-beta-helm",
+        "checks": [
+          {
+            "id": "actions-pinned",
+            "state": "not-applicable"
+          },
+          {
+            "id": "reusable-workflows-current",
+            "state": "not-applicable"
+          },
+          {
+            "id": "branch-protected",
+            "state": "unknown"
+          },
+          {
+            "id": "pull-request-required",
+            "state": "unknown"
+          },
+          {
+            "id": "force-push-blocked",
+            "state": "unknown"
+          },
+          {
+            "id": "status-checks-required",
+            "state": "unknown"
+          }
+        ],
+        "passed": 0,
+        "failed": 0,
+        "unknown": 4,
+        "notApplicable": 2,
+        "ratio": null,
+        "actions": {
+          "state": "none",
+          "workflowFiles": 0,
+          "total": 0,
+          "pinned": 0,
+          "unpinned": 0,
+          "unknown": 0,
+          "detailsWithheld": false,
+          "unpinnedRefs": [],
+          "truncated": 0
+        },
+        "reusableWorkflows": [],
+        "branchRules": {
+          "state": "not-authorised",
+          "branch": "main",
+          "protected": false,
+          "source": "unknown",
+          "ruleTypes": [],
+          "otherRules": 0,
+          "requiredApprovals": null,
+          "classicRead": false
+        },
+        "scorecard": {
+          "state": "not-used",
+          "lastAnalysisAt": null,
+          "openAlerts": 0,
+          "failingChecks": [],
+          "otherFailing": 0
+        }
+      }
+    ]
+  },
   "overallHealth": {
     "status": "red",
     "reasons": [
@@ -1358,6 +1798,13 @@
       "classification": "not-authorised",
       "httpStatus": 403,
       "detail": "Resource not accessible by integration"
+    },
+    {
+      "repository": "example-org/project-beta-helm",
+      "componentId": "helm",
+      "source": "repository-rules",
+      "classification": "not-authorised",
+      "httpStatus": 403
     }
   ]
 }

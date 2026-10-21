@@ -42,7 +42,8 @@ const ERROR_CLASSES: ReadonlySet<ErrorClassification> = new Set([
 
 /**
  * Records a failed provider call. `expectedNotFound` marks sources where a 404 is a normal
- * state (no release yet, file not present, workflow not defined) rather than an error.
+ * state (no release yet, file not present, workflow not defined) rather than an error. Returns
+ * true when an error was recorded.
  */
 export function recordError(
   ctx: BuildContext,
@@ -51,15 +52,16 @@ export function recordError(
   source: CollectionError['source'],
   result: ProviderResult<unknown> | null,
   opts: { expectedNotFound?: boolean } = {},
-): void {
-  if (!result || result.ok) return;
+): boolean {
+  if (!result || result.ok) return false;
   // Already reported once as the repository error.
-  if (result.error.skipped) return;
+  if (result.error.skipped) return false;
   const { classification } = result.error;
   const reportable =
     ERROR_CLASSES.has(classification) || (classification === 'not-found' && !opts.expectedNotFound);
-  if (!reportable) return;
+  if (!reportable) return false;
   pushError(ctx, repository, componentId, source, result.error);
+  return true;
 }
 
 export function pushError(

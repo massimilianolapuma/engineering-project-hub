@@ -58,6 +58,9 @@ export function useI18n(locale: Locale) {
       if (typeof params.control === 'string' && params.control in d.control) {
         params.control = d.control[params.control as keyof Dict['control']];
       }
+      if (typeof params.check === 'string' && params.check in d.repositoryCheck) {
+        params.check = d.repositoryCheck[params.check as keyof Dict['repositoryCheck']];
+      }
       // Percentages follow the locale decimal separator; the template adds the "%".
       for (const k of ['percentage', 'threshold'] as const) {
         const v = params[k];

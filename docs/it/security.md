@@ -40,9 +40,11 @@
   Nient'altro.
 
 - Storico e cambiamenti: `history.json` conserva, per progetto e raccolta, stati, punteggio, conteggi aperti e conteggi di errori, più gli alert critici/alti aperti dell'ultima esecuzione (id, severità, componente, repository, link), i repository monitorati e le versioni. `changes.json` elenca gli alert nuovi (con lo stesso titolo pubblicato dallo snapshot), gli alert risolti (solo id e link), i cambi di stato, le versioni cambiate e le chiavi degli errori. Entrambi sono strict, sanitizzati e controllati dal gate come lo snapshot.
+- Controlli repository: per repository, lo stato di sei controlli (superato, fallito, sconosciuto, non applicabile), i conteggi dei riferimenti nei workflow (totale, fissati, non fissati, sconosciuti), i riferimenti non fissati (nome del file di workflow, una `target` ricostruita da parti validate e il `ref`, al massimo 20)\*, i workflow riutilizzabili con il ref referenziato, l'ultimo tag e uno stato (al massimo 20)\*, un riepilogo delle regole del branch (origine, nomi dei tipi di regola, approvazioni richieste) e un riepilogo OpenSSF Scorecard (data dell'ultima analisi, numero di alert aperti, nomi dei check sotto il minimo della policy)\*. Nient'altro.
+- Suggerimenti di scoperta: solo le tre chiavi di custom property configurate e i topic corrispondenti, come brevi valori slug, nelle proposte di `catalog.json`.
 - Esportazioni CSV (`exports/*.csv`): stati, conteggi, versioni e id costruiti dagli stessi dati validati. Nessun titolo, id di regola, path o link.
 
-\* Omessi per i repository non pubblici quando `audience: public`.
+\* Omessi per i repository non pubblici quando `audience: public` (per il riepilogo Scorecard solo i nomi dei check; il loro numero resta).
 
 ## Dati mai pubblicati
 
@@ -50,6 +52,8 @@ Valori o frammenti di secret, path dei file e numeri di riga dei secret, contenu
 snippet di codice, contenuti dei commit, log, header HTTP, query string, payload API
 grezzi, stack trace, variabili d'ambiente, token, la chiave privata della App, gli actor
 dei workflow (non raccolti) e tutto ciò che è al di fuori degli schemi degli snapshot.
+
+Per i controlli repository: testo dei workflow, nomi degli step, valori di `run:`, `with:` ed `env:`, espressioni, payload grezzi delle regole e ogni custom property diversa dalle tre chiavi configurate (per esempio una property come `cost-center` non arriva mai all'output). I file dei workflow sono input non attendibile: vengono letti in memoria, limitati (262 144 byte per file, 200 riferimenti per file, 1 000 per repository, 30 file per impostazione predefinita), analizzati con un limite sugli alias (un file che riusa un'ancora più di circa 100 volte non è analizzabile, quindi il pinning del suo repository è sconosciuto) e senza stampare gli avvisi YAML, che citerebbero il sorgente nel log, e ridotti a riferimenti validati prima di qualsiasi altra operazione. Un identificativo più lungo del suo limite pubblicato (un `target` oltre 200 caratteri; un `ref`, un tag o un nome di file di workflow oltre 100) si scarta come sconosciuto e non viene mai troncato, così un solo file di workflow o tag ostile non può fermare una pubblicazione.
 
 Per storico ed esportazioni: nessun titolo degli alert risolti, nessun payload grezzo, nessun
 valore di secret e nessun progetto che non è più nel catalogo (le voci vengono ridotte al
@@ -70,6 +74,22 @@ conteggi, percentuali, SHA, date ISO e link `https://github.com/...` in allowlis
   sono stati verificati sulla pagina GitHub
   [permissions-required-for-github-apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps)
   il 2026-10-03.
+- **Fonti dei controlli repository.** Verificate il 2026-10-21 sulla pagina GitHub
+  [permissions-required-for-fine-grained-personal-access-tokens](https://docs.github.com/en/rest/authentication/permissions-required-for-fine-grained-personal-access-tokens):
+
+  | Dato                                                             | Endpoint                                                 | Permesso                                                                                |
+  | ---------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+  | Regole del branch (ruleset)                                      | `GET /repos/{owner}/{repo}/rules/branches/{branch}`      | **Metadata: read**                                                                      |
+  | Valori delle custom property                                     | `GET /repos/{owner}/{repo}/properties/values`            | **Metadata: read**                                                                      |
+  | File dei workflow                                                | API Contents (`.github/workflows`)                       | **Contents: read**                                                                      |
+  | Ultima release e tag di un repository di workflow riutilizzabili | release e tag                                            | **Contents: read** / Metadata: read                                                     |
+  | Analisi OpenSSF Scorecard                                        | analisi di code scanning (tool `Scorecard`)              | **Code scanning alerts: read**                                                          |
+  | Protezione classica dei branch (opzionale)                       | `GET /repos/{owner}/{repo}/branches/{branch}/protection` | **Administration: read**, spenta per impostazione predefinita (`readClassicProtection`) |
+  - L'endpoint delle property a livello di organizzazione (`GET /orgs/{org}/properties/values`) richiede il permesso di organizzazione **Custom properties: read**, quindi **non viene usato**.
+  - L'hub non chiama mai un endpoint di scrittura e non chiama mai l'endpoint di protezione classica se non con `readClassicProtection: true`.
+  - Significato osservato di `protected` nella chiamata del branch: GitHub lo documenta come "protetto da branch protection o ruleset" per List branches; non è stato verificato su un repository reale. Una regola che l'API non riporta mentre `protected` è `true` è quindi `unknown`, mai fallita e mai superata.
+  - Un 403 è `not-authorised`; un 404 ambiguo è `unknown`; un 404 su `.github/workflows` significa nessun workflow. I repository referenziati non pubblici sono trattati come non visibili (e mai pubblicati) salvo `publication.audience: restricted`.
+
 - **Fonti Qualità** (riepilogo di copertura dei test e Code Quality). Verificate il
   2026-10-21 sulla pagina GitHub
   [permissions-required-for-github-apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps):

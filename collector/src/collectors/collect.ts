@@ -1,15 +1,27 @@
-import { projectTargets, type ProjectConfig, type TrackedWorkflowConfig } from '@model/index';
+import {
+  projectTargets,
+  type Policies,
+  type ProjectConfig,
+  type TrackedWorkflowConfig,
+} from '@model/index';
 import { associateSubmodules } from '../normalizers/association';
+import { exactIdentifier } from '../sanitizers/sanitize';
 import { memoize } from '../util/concurrency';
 import { parseGitmodules, type GitmoduleEntry } from '../util/gitmodules';
+import type { TargetVersions } from '../normalizers/workflow-refs';
 import {
   fail,
+  MAX_WORKFLOW_FILE_NAME,
+  WORKFLOW_FILE,
+  type BranchRuleDTO,
+  type ClassicProtectionDTO,
   type CodeQualityFindingDTO,
   type CodeScanningAlertDTO,
   type CodeScanningAnalysisDTO,
   type CommitRefDTO,
   type CompareDTO,
   type DependabotAlertDTO,
+  type DirectoryEntryDTO,
   type FileDTO,
   type ProviderResult,
   type QualitySummaryArtifactDTO,
@@ -44,6 +56,20 @@ export function lastCompletedRun(runs: WorkflowRunDTO[]): WorkflowRunDTO | undef
   );
 }
 
+/** Raw repository-controls data of one repository (workflow files are parsed and dropped later). */
+export interface RepoControlsData {
+  /** `.github/workflows` listing at the branch; a 404 means "no workflows". */
+  workflowDir: ProviderResult<DirectoryEntryDTO[]>;
+  /** Workflow file text by file name (the first `maxWorkflowFiles`, sorted). Never published. */
+  workflowFiles: Map<string, ProviderResult<FileDTO>>;
+  /** Workflow files left unread: over `maxWorkflowFiles`, or a name over 100 characters. */
+  omittedFiles: number;
+  rules: ProviderResult<BranchRuleDTO[]>;
+  /** null = not read (readClassicProtection is off). */
+  classic: ProviderResult<ClassicProtectionDTO | null> | null;
+  scorecardAnalysis: ProviderResult<CodeScanningAnalysisDTO | null>;
+}
+
 /** Everything collected for one repository, still provider-neutral and unevaluated. */
 export interface RepoData {
   componentId: string;
@@ -62,6 +88,8 @@ export interface RepoData {
   /** Newest default-branch `hub-quality-summary` artifact. */
   qualitySummary: ProviderResult<QualitySummaryArtifactDTO>;
   codeQualityFindings: ProviderResult<CodeQualityFindingDTO[]>;
+  /** null when policies.repositoryControls.enabled is false: none of its calls is made. */
+  controls: RepoControlsData | null;
 }
 
 export interface WorkflowData {
@@ -103,6 +131,7 @@ export interface CollectContext {
   limit: <T>(task: () => Promise<T>) => Promise<T>;
   /** Shared across projects: one fetch per repository and call. */
   cache: Map<string, Promise<unknown>>;
+  policies: Policies;
 }
 
 /** Runs a provider call through the limiter; unexpected exceptions become classified errors. */
@@ -156,6 +185,16 @@ export async function collectRepository(
       secretScanning: skipped(repo),
       qualitySummary: skipped(repo),
       codeQualityFindings: skipped(repo),
+      controls: ctx.policies.repositoryControls.enabled
+        ? {
+            workflowDir: skipped(repo),
+            workflowFiles: new Map(),
+            omittedFiles: 0,
+            rules: skipped(repo),
+            classic: ctx.policies.repositoryControls.readClassicProtection ? skipped(repo) : null,
+            scorecardAnalysis: skipped(repo),
+          }
+        : null,
     };
   }
   const branch = configuredDefaultBranch ?? repo.data.defaultBranch;
@@ -169,6 +208,7 @@ export async function collectRepository(
     secretScanning,
     qualitySummary,
     codeQualityFindings,
+    controls,
   ] = await Promise.all([
     call(ctx, `head:${repository}:${branch}`, () => p.getBranchHead(repository, branch)),
     call(ctx, `release:${repository}`, () => p.getLatestRelease(repository)),
@@ -181,6 +221,7 @@ export async function collectRepository(
     call(ctx, `ss:${repository}`, () => p.listSecretScanningAlerts(repository)),
     call(ctx, `qs:${repository}:${branch}`, () => p.getQualitySummary(repository, branch)),
     call(ctx, `cq:${repository}`, () => p.listCodeQualityFindings(repository)),
+    collectControls(ctx, repository, branch),
   ]);
   // Fall back to the latest tag only when there is no GitHub Release.
   const tag =
@@ -203,7 +244,127 @@ export async function collectRepository(
     secretScanning,
     qualitySummary,
     codeQualityFindings,
+    controls,
   };
+}
+
+const WORKFLOW_DIR = '.github/workflows';
+
+/**
+ * Repository controls: workflow directory and files at the branch, branch rules, optional
+ * classic protection and the Scorecard analysis. Read-only; nothing is requested when the
+ * block is disabled, and classic protection only when `readClassicProtection` is on.
+ */
+async function collectControls(
+  ctx: CollectContext,
+  repository: string,
+  branch: string,
+): Promise<RepoControlsData | null> {
+  const pc = ctx.policies.repositoryControls;
+  if (!pc.enabled) return null;
+  const p = ctx.provider;
+  const [workflowDir, rules, classic, scorecardAnalysis] = await Promise.all([
+    call(ctx, `wfdir:${repository}:${branch}`, () =>
+      p.listDirectory(repository, WORKFLOW_DIR, branch),
+    ),
+    call(ctx, `rules:${repository}:${branch}`, () => p.getBranchRules(repository, branch)),
+    pc.readClassicProtection
+      ? call(ctx, `classic:${repository}:${branch}`, () =>
+          p.getClassicBranchProtection(repository, branch),
+        )
+      : Promise.resolve(null),
+    call(ctx, `sca:${repository}`, () => p.getLatestScorecardAnalysis(repository)),
+  ]);
+  const workflowFiles = new Map<string, ProviderResult<FileDTO>>();
+  let omittedFiles = 0;
+  if (workflowDir.ok) {
+    const all = workflowDir.data
+      .filter((e) => e.type === 'file' && WORKFLOW_FILE.test(e.name))
+      .map((e) => e.name)
+      .sort();
+    // A name longer than the published bound is never read: it counts as unreadable.
+    const names = all.filter((n) => n.length <= MAX_WORKFLOW_FILE_NAME);
+    omittedFiles = all.length - names.length + Math.max(0, names.length - pc.maxWorkflowFiles);
+    await Promise.all(
+      names.slice(0, pc.maxWorkflowFiles).map(async (name) => {
+        workflowFiles.set(
+          name,
+          await call(ctx, `wf:${repository}:${branch}:${name}`, () =>
+            p.getFile(repository, `${WORKFLOW_DIR}/${name}`, branch),
+          ),
+        );
+      }),
+    );
+  }
+  return { workflowDir, workflowFiles, omittedFiles, rules, classic, scorecardAnalysis };
+}
+
+/** At most this many distinct referenced repositories are resolved per run. */
+export const MAX_REFERENCED_REPOSITORIES = 50;
+
+/**
+ * Latest release (or tag) and tags of the repositories that workflows reference as reusable
+ * workflows. Calls go through the shared memo, so a monitored repository is never fetched
+ * twice. `targets` are `owner/repo`; `shaTargets` (lower-case) need the tag list to resolve a
+ * SHA ref. Over the limit, or not visible to the credentials: `visible: false` (never "behind").
+ */
+export async function collectReusableTargets(
+  ctx: CollectContext,
+  targets: string[],
+  shaTargets: ReadonlySet<string> = new Set(),
+): Promise<Map<string, TargetVersions>> {
+  const distinct = new Map<string, string>();
+  for (const t of [...targets].sort())
+    if (!distinct.has(t.toLowerCase())) distinct.set(t.toLowerCase(), t);
+  const result = new Map<string, TargetVersions>();
+  const p = ctx.provider;
+  await Promise.all(
+    [...distinct].map(async ([key, repository], i) => {
+      if (i >= MAX_REFERENCED_REPOSITORIES) {
+        result.set(key, { latest: null, tags: null, visible: false });
+        return;
+      }
+      const repo = await call(ctx, `repo:${repository}`, () => p.getRepository(repository));
+      // A private target must not leak (version, existence) into a public site: treat it as
+      // unreadable unless the audience is restricted.
+      if (
+        !repo.ok ||
+        (repo.data.visibility !== 'public' && ctx.policies.publication.audience !== 'restricted')
+      ) {
+        result.set(key, { latest: null, tags: null, visible: false });
+        return;
+      }
+      const release = await call(ctx, `release:${repository}`, () =>
+        p.getLatestRelease(repository),
+      );
+      const tags = shaTargets.has(key)
+        ? await call(ctx, `tags:${repository}`, () => p.listTags(repository))
+        : null;
+      // No release: fall back to the latest tag. When the tag list was read, its first entry is
+      // that tag (same endpoint and order), so at most 3 calls are made per repository.
+      let latestTag: string | null = null;
+      if (!release.ok && release.error.classification === 'not-found') {
+        if (tags) latestTag = tags.ok ? (tags.data[0]?.name ?? null) : null;
+        else {
+          const tag = await call(ctx, `tag:${repository}`, () => p.getLatestTag(repository));
+          latestTag = tag.ok ? tag.data.name : null;
+        }
+      }
+      result.set(key, {
+        // Tag names come from repositories the hub does not monitor: kept only when exact
+        // (at most 100 characters, unchanged by scrubbing), never truncated.
+        latest: exactIdentifier(release.ok ? release.data.tagName : latestTag, 100),
+        tags: tags?.ok
+          ? tags.data.flatMap((t) => {
+              const name = exactIdentifier(t.name, 100);
+              return name ? [{ ...t, name }] : [];
+            })
+          : null,
+        visible: true,
+      });
+    }),
+  );
+  return result;
 }
 
 export async function collectProject(

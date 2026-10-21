@@ -12,7 +12,8 @@
   },
   "head": {
     "sha": "d3a5814a6e7959fc09128637bc5469d3e725aea9",
-    "committedAt": "@now-1d"
+    "committedAt": "@now-1d",
+    "protected": true
   },
   "latestRelease": {
     "tagName": "v1.2.0",
@@ -22,6 +23,7 @@
     "htmlUrl": "https://github.com/example-org/project-alpha-worker/releases/tag/v1.2.0"
   },
   "files": {
+    ".github/workflows/ci-main.yml": "name: CI\non: push\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@0123456789abcdef0123456789abcdef01234567\n      - uses: actions/setup-go@0123456789abcdef0123456789abcdef01234567\n      - uses: actions/upload-artifact@0123456789abcdef0123456789abcdef01234567\n",
     ".security/project-security-status.json": "{\n  \"schemaVersion\": \"1.0\",\n  \"generatedAt\": \"@now-1d\",\n  \"repository\": \"example-org/project-alpha-worker\",\n  \"version\": \"synthetic\",\n  \"commitSha\": \"d3a5814a6e7959fc09128637bc5469d3e725aea9\",\n  \"controls\": {\n    \"containerScanning\": {\n      \"status\": \"not-configured\"\n    },\n    \"sbom\": {\n      \"status\": \"not-configured\"\n    }\n  }\n}"
   },
   "workflowRuns": {
@@ -90,5 +92,12 @@
     "createdAt": "@now-2d",
     "runId": 9008
   },
-  "codeQualityFindings": []
+  "codeQualityFindings": [],
+  "directories": { ".github/workflows": [{ "name": "ci-main.yml", "type": "file" }] },
+  "branchRules": [
+    { "type": "pull_request", "requiredApprovals": 1 },
+    { "type": "required_status_checks", "requiredApprovals": null },
+    { "type": "non_fast_forward", "requiredApprovals": null },
+    { "type": "deletion", "requiredApprovals": null }
+  ]
 }

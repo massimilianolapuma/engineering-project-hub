@@ -1,0 +1,34 @@
+{
+  "repository": {
+    "owner": "example-shared",
+    "name": "ci-templates",
+    "fullName": "example-shared/ci-templates",
+    "htmlUrl": "https://github.com/example-shared/ci-templates",
+    "visibility": "public",
+    "defaultBranch": "main",
+    "archived": false,
+    "updatedAt": "@now-10d",
+    "topics": []
+  },
+  "latestRelease": {
+    "tagName": "v2.4.0",
+    "name": "v2.4.0",
+    "publishedAt": "@now-10d",
+    "prerelease": false,
+    "htmlUrl": "https://github.com/example-shared/ci-templates/releases/tag/v2.4.0"
+  },
+  "tags": [
+    {
+      "name": "v2.4.0",
+      "sha": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678"
+    },
+    {
+      "name": "v2.3.0",
+      "sha": "b2c3d4e5f60718293a4b5c6d7e8f901234567890"
+    },
+    {
+      "name": "v2.1.0",
+      "sha": "c3d4e5f60718293a4b5c6d7e8f9012345678901a"
+    }
+  ]
+}

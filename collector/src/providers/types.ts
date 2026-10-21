@@ -1,5 +1,10 @@
 import type { AuthenticationMode, DataSource, ErrorClassification } from '@model/index';
 
+/** A workflow file name under `.github/workflows/` that the collector may read. */
+export const WORKFLOW_FILE = /^[A-Za-z0-9._-]+\.ya?ml$/;
+/** Published bound of a workflow file name (snapshot schema). */
+export const MAX_WORKFLOW_FILE_NAME = 100;
+
 /*
  * Provider-neutral DTOs. Providers project API responses onto these minimal shapes
  * (allowlist): raw payloads never leave the provider layer.
@@ -33,6 +38,28 @@ export interface CommitRefDTO {
   sha: string;
   htmlUrl: string | null;
   committedAt: string | null;
+  /** The branch's `protected` flag; null when the API does not report it. */
+  protected?: boolean | null;
+}
+
+/** One active rule applying to a branch (rulesets). Parameters other than the approval count are dropped. */
+export interface BranchRuleDTO {
+  type: string;
+  requiredApprovals: number | null;
+}
+
+/** Classic branch protection, reduced to the booleans the repository checks need. */
+export interface ClassicProtectionDTO {
+  pullRequestReviews: boolean;
+  requiredApprovals: number | null;
+  statusChecks: boolean;
+  forcePushBlocked: boolean;
+  deletionBlocked: boolean;
+}
+
+export interface CustomPropertyDTO {
+  name: string;
+  value: string | string[] | null;
 }
 
 export interface ReleaseDTO {
@@ -186,8 +213,12 @@ export interface SourceProvider {
     owner: string,
     opts: { includePrivate: boolean; max: number },
   ): Promise<ProviderResult<RepositoryDTO[]>>;
-  /** Discovery: entries of a directory ("" = repository root). Names only, never contents. */
-  listDirectory(repo: string, path: string): Promise<ProviderResult<DirectoryEntryDTO[]>>;
+  /** Discovery: entries of a directory ("" = repository root) at an optional ref. Names only, never contents. */
+  listDirectory(
+    repo: string,
+    path: string,
+    ref?: string,
+  ): Promise<ProviderResult<DirectoryEntryDTO[]>>;
   /** Discovery: workflows defined in the repository. */
   listWorkflows(repo: string): Promise<ProviderResult<WorkflowDTO[]>>;
   getBranchHead(repo: string, branch: string): Promise<ProviderResult<CommitRefDTO>>;
@@ -197,7 +228,10 @@ export interface SourceProvider {
   listTags(repo: string): Promise<ProviderResult<TagDTO[]>>;
   /** Compares base...head (e.g. latest release tag ... submodule SHA). */
   compareCommits(repo: string, base: string, head: string): Promise<ProviderResult<CompareDTO>>;
-  /** Only called with allow-listed paths (.gitmodules, release manifest, security status file). */
+  /**
+   * Only called with allow-listed paths (.gitmodules, release manifest, security status file,
+   * `.github/workflows/<name>` where `<name>` matches WORKFLOW_FILE).
+   */
   getFile(repo: string, path: string, ref?: string): Promise<ProviderResult<FileDTO>>;
   getSubmoduleRef(
     repo: string,
@@ -214,6 +248,17 @@ export interface SourceProvider {
   getLatestCodeScanningAnalysis(
     repo: string,
   ): Promise<ProviderResult<CodeScanningAnalysisDTO | null>>;
+  /** Rules of active rulesets applying to the branch (1 page of 100). */
+  getBranchRules(repo: string, branch: string): Promise<ProviderResult<BranchRuleDTO[]>>;
+  /** Classic protection; only called when policies.repositoryControls.readClassicProtection. 404 → ok(null). */
+  getClassicBranchProtection(
+    repo: string,
+    branch: string,
+  ): Promise<ProviderResult<ClassicProtectionDTO | null>>;
+  /** Newest OpenSSF Scorecard analysis (code scanning analyses filtered by tool). */
+  getLatestScorecardAnalysis(repo: string): Promise<ProviderResult<CodeScanningAnalysisDTO | null>>;
+  /** Discovery: custom property values. The consumer keeps only the configured keys. */
+  getCustomPropertyValues(repo: string): Promise<ProviderResult<CustomPropertyDTO[]>>;
   listDependabotAlerts(repo: string): Promise<ProviderResult<DependabotAlertDTO[]>>;
   listSecretScanningAlerts(repo: string): Promise<ProviderResult<SecretScanningAlertDTO[]>>;
   /** Newest `hub-quality-summary` artifact of a branch, unzipped to the summary JSON text. */

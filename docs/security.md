@@ -38,9 +38,11 @@
   characters), and a link to the GitHub Actions run (allow-listed host only). GitHub Code
   Quality: counts of open findings by category and by severity. Nothing else.
 - History and changes: `history.json` keeps, per project and collection, the statuses, score, open counts and error counts, plus the open critical/high alerts of the latest run (id, severity, component, repository, link), the monitored repositories and the versions. `changes.json` lists new alerts (with the same title the snapshot publishes), resolved alerts (id and link only), status changes, version moves and error keys. Both are strict, sanitised and gated like the snapshot.
+- Repository controls: per repository, the state of six checks (pass, fail, unknown, not applicable), the counts of workflow references (total, pinned, unpinned, unknown), the unpinned references (workflow file name, a `target` rebuilt from validated parts, and the `ref`, at most 20)\*, the reusable workflows with their referenced ref, the latest tag and a status (at most 20)\*, a summary of the branch rules (source, rule type names, required approvals) and an OpenSSF Scorecard summary (last analysis date, open alert count, names of the checks below the policy minimum)\*. Nothing else.
+- Discovery hints: only the three configured custom property keys and the matching topics, as short slug values, in the proposals of `catalog.json`.
 - CSV exports (`exports/*.csv`): statuses, counts, versions and ids built from the same validated data. No titles, rule ids, paths or links.
 
-\* Withheld for non-public repositories when `audience: public`.
+\* Withheld for non-public repositories when `audience: public` (for the Scorecard summary only the check names; their count stays).
 
 ## Data never published
 
@@ -48,6 +50,8 @@ Secret values or fragments, file paths and line numbers of secrets, file content
 snippets, commit contents, logs, HTTP headers, query strings, raw API payloads, stack
 traces, environment variables, tokens, the App private key, workflow actors (not
 collected), and anything outside the snapshot schemas.
+
+For repository controls: workflow text, step names, `run:`, `with:` and `env:` values, expressions, raw rules payloads and every custom property other than the three configured keys (for example a property such as `cost-center` never reaches the output). Workflow files are untrusted input: they are read in memory, bounded (262 144 bytes per file, 200 references per file, 1 000 per repository, 30 files by default), parsed with an alias limit (a file that reuses an anchor more than about 100 times is unparsable, so its repository's pinning is unknown) and without printing YAML warnings, which would quote the source in the log, and reduced to validated references before anything else happens. An identifier longer than its published bound (a `target` over 200 characters; a `ref`, tag or workflow file name over 100) is dropped as unknown and never truncated, so a single hostile workflow file or tag cannot stop a publication.
 
 For history and exports: no titles of resolved alerts, no raw payloads, no secret values and
 no project that is no longer in the catalog (entries are pruned to the current catalog).
@@ -67,6 +71,23 @@ allow-listed `https://github.com/...` links are published.
   checked against GitHub's
   [permissions-required-for-github-apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps)
   page on 2026-10-03.
+- **Repository controls sources.** Checked on 2026-10-21 on GitHub's
+  [permissions-required-for-fine-grained-personal-access-tokens](https://docs.github.com/en/rest/authentication/permissions-required-for-fine-grained-personal-access-tokens)
+  page:
+
+  | Data                                                      | Endpoint                                                 | Permission                                                         |
+  | --------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------ |
+  | Branch rules (rulesets)                                   | `GET /repos/{owner}/{repo}/rules/branches/{branch}`      | **Metadata: read**                                                 |
+  | Custom property values of a repository                    | `GET /repos/{owner}/{repo}/properties/values`            | **Metadata: read**                                                 |
+  | Workflow files                                            | Contents API (`.github/workflows`)                       | **Contents: read**                                                 |
+  | Latest release and tags of a reusable workflow repository | releases and tags                                        | **Contents: read** / Metadata: read                                |
+  | OpenSSF Scorecard analyses                                | code scanning analyses (tool `Scorecard`)                | **Code scanning alerts: read**                                     |
+  | Classic branch protection (optional)                      | `GET /repos/{owner}/{repo}/branches/{branch}/protection` | **Administration: read**, off by default (`readClassicProtection`) |
+  - The organisation-wide property endpoint (`GET /orgs/{org}/properties/values`) needs the organisation permission **Custom properties: read**, so it is **not used**.
+  - The hub never calls a write endpoint, and never calls the classic protection endpoint unless `readClassicProtection: true`.
+  - Observed meaning of `protected` on the branch call: GitHub documents it as "protected by branch protections or rulesets" for List branches; it was not verified against a live repository. A rule that the rules API does not report while `protected` is `true` is therefore `unknown`, never a fail and never a pass.
+  - A 403 is `not-authorised`; an ambiguous 404 is `unknown`; a 404 on `.github/workflows` means no workflows. Referenced repositories that are not public are treated as not visible (and never published) unless `publication.audience: restricted`.
+
 - **Quality sources** (test coverage summary and Code Quality). Checked on 2026-10-21 on
   GitHub's
   [permissions-required-for-github-apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps)

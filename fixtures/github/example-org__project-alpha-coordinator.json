@@ -12,7 +12,8 @@
   },
   "head": {
     "sha": "4e8100969f2ec6777df476c40eeedec80aca4380",
-    "committedAt": "@now-1d"
+    "committedAt": "@now-1d",
+    "protected": true
   },
   "latestRelease": {
     "tagName": "v1.4.0",
@@ -22,6 +23,7 @@
     "htmlUrl": "https://github.com/example-org/project-alpha-coordinator/releases/tag/v1.4.0"
   },
   "files": {
+    ".github/workflows/rel-release.yml": "name: Release\non: workflow_dispatch\njobs:\n  build:\n    uses: example-shared/ci-templates/.github/workflows/build.yml@a1b2c3d4e5f60718293a4b5c6d7e8f9012345678\n  publish:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@0123456789abcdef0123456789abcdef01234567\n",
     "release-manifest.yaml": "schemaVersion: '1.0'\nversion: 1.4.0\ncomponents:\n  backend:\n    version: 1.4.0\n  frontend:\n    version: 2.1.0\n  worker:\n    version: 1.2.0\n  helm:\n    version: 0.9.0\nenvironments:\n  dev:\n    version: 1.4.0\n  test:\n    version: 1.4.0\n  uat:\n    version: 1.4.0\n  prod:\n    version: 1.3.0\n",
     ".gitmodules": "[submodule \"backend\"]\n\tpath = services/backend\n\turl = https://github.com/example-org/project-alpha-backend.git\n[submodule \"frontend\"]\n\tpath = apps/frontend\n\turl = ../project-alpha-frontend.git\n[submodule \"worker\"]\n\tpath = services/worker\n\turl = git@github.com:example-org/project-alpha-worker.git\n[submodule \"helm\"]\n\tpath = deploy/helm\n\turl = https://github.com/example-org/project-alpha-helm.git\n"
   },
@@ -69,5 +71,12 @@
     "createdAt": "@now-2d",
     "runId": 9001
   },
-  "codeQualityFindings": []
+  "codeQualityFindings": [],
+  "directories": { ".github/workflows": [{ "name": "rel-release.yml", "type": "file" }] },
+  "branchRules": [
+    { "type": "pull_request", "requiredApprovals": 1 },
+    { "type": "required_status_checks", "requiredApprovals": null },
+    { "type": "non_fast_forward", "requiredApprovals": null },
+    { "type": "deletion", "requiredApprovals": null }
+  ]
 }

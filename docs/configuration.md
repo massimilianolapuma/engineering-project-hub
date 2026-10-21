@@ -37,6 +37,14 @@ discovery:
   includeForks: false
   includeArchived: false
   maxRepositories: 200 # API budget per run
+  topics: true # read repository topics as hints
+  customProperties: true # one extra call per scanned repository (Metadata: read)
+  hints: # all optional; these are the defaults
+    projectProperty: hub-project # custom property → project id
+    componentProperty: hub-component # custom property → component id
+    typeProperty: hub-component-type # custom property → component type
+    projectTopicPrefix: project- # topic "project-tools" → project "tools"
+    typeTopicPrefix: type- # topic "type-worker" → type worker
 ```
 
 Discovery is **read-only and proposal-only**. The results are published in `catalog.json`
@@ -46,6 +54,7 @@ and shown in the catalog editor (`/catalog/`):
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | `coordinator` | the repository has a `.gitmodules` whose submodules point to scanned repositories                                                        | one per submodule (`submodulePath`)                              |
 | `monorepo`    | a workspace manifest: npm/yarn `workspaces`, `pnpm-workspace.yaml`, `lerna.json`, `go.work`, Cargo `[workspace]`, `turbo.json`/`nx.json` | one per workspace directory (`path`, `releaseTagPrefix: <id>-v`) |
+| `grouped`     | two or more single repositories that share the same hinted project (see below)                                                           | one per extra repository (`versionSource: release`)              |
 | `single`      | anything else                                                                                                                            | none (the repository is the project)                             |
 
 - Repositories that are submodules of a discovered coordinator are not proposed on their
@@ -54,6 +63,11 @@ and shown in the catalog editor (`/catalog/`):
   as such, so they can be compared and merged.
 - Workflows found in each repository are proposed as tracked workflows. Files starting
   with `ci`, `build`, `test`, `release`, `rel-`, `cd` or `deploy` are marked critical.
+- **Hints** (`topics`, `customProperties`, `hints`). Per scanned repository the collector reads its topics (already part of the repository list) and, when `customProperties` is on, its custom property values (`GET /repos/{owner}/{repo}/properties/values`, **Metadata: read**). Only the three configured property keys are kept: every other property is dropped before anything is stored, so it never reaches `catalog.json`.
+  - A property beats a topic. Project and component values must be slugs, and the type must be a component type; anything else is ignored and the proposal's evidence says so. Several `project-*` topics are ambiguous and ignored.
+  - Structure detection (coordinator, monorepo, single) is unchanged. A hinted type replaces the guessed one, and a hinted component id replaces the slug.
+  - Single repositories that share a hinted project and are not claimed by a coordinator become one `grouped` proposal (the coordinator is the repository hinted `coordinator`, else the first alphabetically). When the hinted project already exists in the catalog and the repository is not part of it, the editor shows "Suggested for project X". Nothing is merged automatically.
+  - A 403 on the properties call is recorded as a discovery error and topic hints still apply.
 - Calls used: list the owner's repositories, `.gitmodules`, the root and workspace
   directory listings, the workspace manifests and the workflows list. No new GitHub App
   permission is needed (Metadata, Contents, Actions).
@@ -267,8 +281,8 @@ _Multi-repository_, _Monorepo_ or _Single repository_.
 Two panels start from the last collector run:
 
 - **Discovered repositories** lists the discovery proposals (`discovery` in `catalog.json`)
-  grouped by kind (_Coordinator_, _Monorepo_, _Single repository_) with the repository link,
-  the evidence and the number of components, plus the scanned count and the repositories
+  grouped by kind (_Coordinator_, _Monorepo_, _Grouped by hints_, _Single repository_) with the repository link,
+  the evidence and the number of components (a proposal whose repository hints at an existing project, without being part of it, carries a _Suggested for project X_ badge), plus the scanned count and the repositories
   that could not be scanned (classification only). A proposal not in the catalog has
   _Add as project_: it imports the proposed configuration into the editor (the id gets a
   `-2`, `-3`… suffix if taken) and selects it. A proposal already in the catalog (same
@@ -353,6 +367,71 @@ frontend change.
 | `history.maxAgeDays`                    | 90                                                                           | Older collections are dropped (integer 1 to 400).                                                                      |
 | `publication.audience`                  | public                                                                       | `public` withholds finding titles and rule ids of non-public repositories. `restricted` needs access-controlled Pages. |
 | `publication.allowedLinkHosts`          | [github.com]                                                                 | Only links to these hosts are published.                                                                               |
+
+### Repository controls (`repositoryControls`)
+
+Six read-only checks per repository, from its workflow files and its branch rules, feed
+**Governance** through reasons. The block is optional and **every check is `info` by default**:
+it is shown on the project page ("Repository controls") but never changes a status until you
+enforce it ([ADR 0007](architecture/adr/0007-repository-controls-informative-by-default.md)).
+
+```yaml
+repositoryControls:
+  enabled: true # false: none of the calls is made, the section says "off"
+  checks: # info | amber | red
+    actions-pinned: info # every `uses:` is a full commit SHA
+    reusable-workflows-current: info # reusable workflows are at the latest release or tag
+    branch-protected: info # at least one active rule on the default branch
+    pull-request-required: info
+    force-push-blocked: info
+    status-checks-required: info
+  unknownEnforcedCheck: info # info | amber: an enforced check that cannot be determined
+  exemptActionOwners: [] # e.g. [actions, github]: their unpinned actions count as pinned
+  maxWorkflowFiles: 30 # 1 to 100 workflow files read per repository
+  readClassicProtection: false # true needs Administration: read on the credentials
+```
+
+| Key                                        | Default | Meaning                                                                                                                     |
+| ------------------------------------------ | ------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `repositoryControls.enabled`               | true    | Turns the whole feature off (no calls, no section content).                                                                 |
+| `repositoryControls.checks.<id>`           | info    | `info` is shown only; `amber` or `red` makes a failing repository move Governance to that status.                           |
+| `repositoryControls.unknownEnforcedCheck`  | info    | Level of an **enforced** check that is unknown on some repository. Informative checks never produce an unknown reason.      |
+| `repositoryControls.exemptActionOwners`    | []      | Owners whose actions are not required to be pinned (for example first-party `actions`).                                     |
+| `repositoryControls.maxWorkflowFiles`      | 30      | Workflow files read per repository (1 to 100). Files beyond it make the counts unknown and the check unknown, never a pass. |
+| `repositoryControls.readClassicProtection` | false   | Also reads classic branch protection. Needs **Administration: read**; the call is never made while this is `false`.         |
+
+How the checks read the data:
+
+- **Not visible is not failing.** A 403 is "not authorised", an ambiguous 404 is "unknown", and
+  a missing `.github/workflows` directory means "no workflows" (not applicable). Unknown is
+  never a fail and never a pass.
+- **Branch rules** come from `GET /repos/{owner}/{repo}/rules/branches/{branch}` (active
+  repository and organisation rulesets). A rule that the rules API does not report while the
+  branch says `protected: true` is `unknown`, not a fail, because classic protection is invisible
+  without Administration: read.
+- **Private repositories**: with `publication.audience: public` the unpinned references and the
+  reusable workflow targets of non-public repositories are withheld (the counts stay), and a
+  reusable workflow in a non-public repository is shown as not visible.
+- Catalog: `notApplicableChecks: [pull-request-required]` on a coordinator or a component marks
+  a check as not applicable for that repository (neither counted nor listed as unknown).
+
+**Opting in to enforcement.** Start from the defaults, read the section on a few projects, then
+raise one check at a time. Example, after reviewing the current results: enforce pinned actions
+and branch protection as attention (amber):
+
+```yaml
+repositoryControls:
+  checks:
+    actions-pinned: amber
+    branch-protected: amber
+  exemptActionOwners: [actions]
+  unknownEnforcedCheck: info
+```
+
+With this block a repository that fails `actions-pinned` or `branch-protected` makes Governance
+amber (reason `repository-check-failed`, naming the check and the repositories); unknown results
+stay informative; and the score only moves when a Governance status moves. Step by step
+instructions are in [Operations](operations.md#enforcing-repository-controls).
 
 ### Project score
 
@@ -532,13 +611,19 @@ more files next to the snapshot, plus three CSV files. The snapshot schema is un
 collection. How it persists in Actions is described in
 [Operations](operations.md#history-between-runs).
 
-| File                           | Content                                                                                                                             |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `history.json`                 | `kind: hub-history`, schema `1.0`: one compact point per project and collection, plus the baseline needed to compute the next diff. |
-| `changes.json`                 | `kind: hub-changes`, schema `1.0`: what moved since the previous collection, or why that cannot be said.                            |
-| `exports/portfolio.csv`        | One row per project, with the previous collection's status and score.                                                               |
-| `exports/findings-summary.csv` | One row per project and repository: open alerts by severity, no titles.                                                             |
-| `exports/versions.csv`         | One row per coordinator, component and environment.                                                                                 |
+From v0.8.0 the history schema is `1.1`: each point also carries the repository check counts
+(`controls`), and the baseline the pass/fail state of each check, so "What changed" can list
+checks that moved between pass and fail (and the portfolio CSV gains `controls_passed`,
+`controls_failed` and `controls_unknown`). A `1.0` history is still read; it simply has nothing
+to compare for the checks.
+
+| File                           | Content                                                                                                                                                   |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `history.json`                 | `kind: hub-history`, schema `1.1` (`1.0` is still read): one compact point per project and collection, plus the baseline needed to compute the next diff. |
+| `changes.json`                 | `kind: hub-changes`, schema `1.0`: what moved since the previous collection, or why that cannot be said.                                                  |
+| `exports/portfolio.csv`        | One row per project, with the previous collection's status and score.                                                                                     |
+| `exports/findings-summary.csv` | One row per project and repository: open alerts by severity, no titles.                                                                                   |
+| `exports/versions.csv`         | One row per coordinator, component and environment.                                                                                                       |
 
 Both JSON files are versioned separately from the snapshot, so history survives a snapshot
 schema bump. A missing or invalid file never fails the site build: the pages say why.

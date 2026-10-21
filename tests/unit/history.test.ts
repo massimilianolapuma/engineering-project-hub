@@ -517,6 +517,7 @@ describe('appendHistory', () => {
       open: { critical: 1, high: 2, medium: null, low: 4 },
       countsComplete: false,
       collectionErrors: 3,
+      controls: { passed: 6, failed: 0, unknown: 0 },
     });
   });
 
@@ -531,6 +532,7 @@ describe('appendHistory', () => {
     expect(b.errors).toContain('example-org/project-beta-api|secret-scanning|not-authorised');
     expect(b.findings.map((f) => f.id)).toEqual([
       'example-org/project-beta-api#code-scanning#3',
+      'example-org/project-beta-api#code-scanning#901',
       'example-org/project-beta-web#dependabot#11',
     ]);
     expect(b.versions).toContainEqual({ kind: 'component', componentId: 'api', version: '3.1.0' });
@@ -809,6 +811,94 @@ describe('computeChanges', () => {
     expect(alphaOf(unknownNow).versionMoves).toEqual([]);
   });
 
+  describe('repository check changes', () => {
+    const BACKEND = 'example-org/project-alpha-backend';
+    const setCheck = (
+      r: ReturnType<typeof runOf>,
+      repo: string,
+      check: string,
+      state: 'pass' | 'fail' | 'unknown' | 'not-applicable',
+    ) => {
+      r.project.repositoryControls.repositories
+        .find((x) => x.repository === repo)!
+        .checks.find((c) => c.id === check)!.state = state;
+    };
+
+    it('pass → fail and fail → pass are listed; unknown → fail is not', () => {
+      const c = changesFor(
+        previousOf(alphaNow(), {
+          checks: [`${BACKEND}|branch-protected|pass`, `${BACKEND}|pull-request-required|fail`],
+        }),
+        (r) => {
+          setCheck(r, BACKEND, 'branch-protected', 'fail');
+          setCheck(r, BACKEND, 'pull-request-required', 'pass');
+          // Not in the baseline (unknown then): never a change.
+          setCheck(r, BACKEND, 'force-push-blocked', 'fail');
+        },
+      );
+      expect(alphaOf(c).checkChanges).toEqual([
+        { repository: BACKEND, check: 'branch-protected', from: 'pass', to: 'fail' },
+        { repository: BACKEND, check: 'pull-request-required', from: 'fail', to: 'pass' },
+      ]);
+      expect(c.totals.checkChanges).toBe(2);
+    });
+
+    it('pass → unknown and pass → not-applicable are not changes', () => {
+      const c = changesFor(
+        previousOf(alphaNow(), {
+          checks: [`${BACKEND}|branch-protected|pass`, `${BACKEND}|pull-request-required|pass`],
+        }),
+        (r) => {
+          setCheck(r, BACKEND, 'branch-protected', 'unknown');
+          setCheck(r, BACKEND, 'pull-request-required', 'not-applicable');
+        },
+      );
+      expect(alphaOf(c).checkChanges).toEqual([]);
+      expect(c.totals.checkChanges).toBe(0);
+    });
+
+    it('a baseline without checks is not compared', () => {
+      const c = changesFor(previousOf(alphaNow()), (r) =>
+        setCheck(r, BACKEND, 'branch-protected', 'fail'),
+      );
+      expect(alphaOf(c).checkChanges).toEqual([]);
+      expect(c.totals.checkChanges).toBe(0);
+    });
+
+    it('the baseline records only pass and fail states', () => {
+      const r = runOf('project-beta');
+      const b = buildBaseline(r.index, [r.project]).projects[0]!;
+      expect(b.checks).toContain('example-org/project-beta-web|branch-protected|fail');
+      expect(b.checks).toContain('example-org/project-beta-coordinator|branch-protected|pass');
+      expect(b.checks!.every((k) => /\|(pass|fail)$/.test(k))).toBe(true);
+      expect(b.checks!.some((k) => k.startsWith('example-org/project-beta-helm|'))).toBe(false);
+    });
+
+    it('the history point carries the controls counts', () => {
+      const r = runOf('project-beta');
+      expect(entryFromRun(r.index).projects[0]!.controls).toEqual({
+        passed: 5,
+        failed: 7,
+        unknown: 8,
+      });
+    });
+
+    it('no controls are recorded when nothing was evaluated (checks off), never 0/0/0', () => {
+      const r = runOf('project-beta');
+      Object.assign(r.index.projects[0]!.repositoryControls, { passed: 0, failed: 0, unknown: 0 });
+      expect(entryFromRun(r.index).projects[0]!.controls).toBeUndefined();
+    });
+
+    it('a 1.0 history file is read (no controls) and checkChanges is [] with no error', async () => {
+      const previous = await loadGithub(githubHistory());
+      expect(previous.state).toBe('restored');
+      const c = changesFor(previous);
+      expect(alphaOf(c).checkChanges).toEqual([]);
+      expect(c.totals.checkChanges).toBe(0);
+      expect(c.basis.state).toBe('compared');
+    });
+  });
+
   it('new error key listed; previous-only key counted in resolvedErrors', () => {
     const c = changesFor(
       previousOf(alphaNow(), { errors: ['example-org/gone|dependabot|not-found'] }),
@@ -840,6 +930,7 @@ describe('computeChanges', () => {
       newFindings: [],
       versionMoves: [],
       newErrors: [],
+      checkChanges: [],
     });
     expect(c.totals).toEqual({
       statusChanges: 0,
@@ -847,6 +938,7 @@ describe('computeChanges', () => {
       resolvedFindings: 0,
       versionMoves: 0,
       newErrors: 0,
+      checkChanges: 0,
     });
   });
 
@@ -861,6 +953,7 @@ describe('computeChanges', () => {
         resolvedFindings: 0,
         versionMoves: 0,
         newErrors: 0,
+        checkChanges: 0,
       });
       expect(alphaOf(c)).toMatchObject({ added: false, previous: null, newFindings: [] });
     },

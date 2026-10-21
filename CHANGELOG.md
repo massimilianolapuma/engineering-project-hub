@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Repository controls: six read-only checks per repository (actions pinned to a commit SHA, reusable workflows up to date, default branch protected, pull request required, force push blocked, status checks required), from workflow files (Contents: read, parsed in memory, never published) and the branch rules API (Metadata: read). They are **informative by default** and feed Governance only when you set a level in the new optional `repositoryControls` policies (`enabled`, `checks`, `unknownEnforcedCheck`, `exemptActionOwners`, `maxWorkflowFiles`, `readClassicProtection`). Unknown is never a fail. A "Repository controls" section on the project page (matrix with symbols and text, detail lists), a How to read entry, Data quality rows and a `repositoryRules` capability. EN/IT docs and ADR 0007.
+- OpenSSF Scorecard summary per repository, from the existing code scanning analyses and alerts.
+- Discovery hints: custom properties (one call per scanned repository) and topics suggest project, component and type, group repositories into a `grouped` proposal and suggest an existing project in the catalog editor. Only the three configured property keys are kept.
+- "What changed" lists repository checks that moved between pass and fail, and the portfolio CSV gains `controls_passed`, `controls_failed` and `controls_unknown`. History schema 1.1 (1.0 is still read).
+
+### Changed
+
+- Snapshot `schemaVersion` 1.5 (`repositoryControls` on projects and summaries, `grouped` discovery proposals with hints, the `repositoryRules` capability and three new collection error sources). Older snapshots are not read.
+- Upgrade note (snapshot 1.5): an existing 1.4 `public/data` fails validation until it is re-collected; `npm run ci:build` overwrites `public/data` with mock data.
+- The Governance dimension card now links to the Repository controls section (the standard workflows link moved to the end of that section).
+- With `publication.audience: public`, unpinned references and reusable workflow targets of non-public repositories are withheld, and a non-public reusable-workflow repository is shown as not visible.
+- Workflow files and tags are untrusted input: an identifier longer than its published bound (a target over 200 characters; a ref, tag or workflow file name over 100) is unknown and never truncated, so it can never stop a publication. YAML warnings are not printed (they would quote the source).
+- Upgrade note (first v0.8.0 collection): "What changed" may list `workflow-files` and `repository-rules` collection errors as new errors, because these sources did not exist in the previous collection.
+
 ## [0.7.0] - 2026-10-21
 
 ### Added

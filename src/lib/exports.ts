@@ -48,6 +48,9 @@ export const PORTFOLIO_HEADERS: readonly string[] = [
   'previous_overall',
   'previous_score',
   'previous_collected_at',
+  'controls_passed',
+  'controls_failed',
+  'controls_unknown',
 ];
 
 export const FINDINGS_HEADERS: readonly string[] = [
@@ -82,6 +85,13 @@ export const VERSIONS_HEADERS: readonly string[] = [
 /** The security dimension of a summary is the health status of the security view. */
 const securityOf = (s: ProjectSummary): CsvValue => s.security;
 
+/** Repository check counts; n/a when the checks are off (nothing was evaluated), never 0. */
+function controlCounts(s: ProjectSummary): CsvValue[] {
+  const c = s.repositoryControls;
+  const evaluated = c.passed + c.failed + c.unknown > 0;
+  return evaluated ? [c.passed, c.failed, c.unknown] : [NA, NA, NA];
+}
+
 export function portfolioRows(data: SiteData, history: HistoryFile | null): CsvValue[][] {
   const previous = history?.entries.at(-2) ?? null;
   return data.index.projects.map((s) => {
@@ -115,6 +125,7 @@ export function portfolioRows(data: SiteData, history: HistoryFile | null): CsvV
       before ? before.overall : NA,
       before ? before.score : NA,
       before && previous ? previous.collectedAt : NA,
+      ...controlCounts(s),
     ];
   });
 }

@@ -1181,7 +1181,7 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
 
   /* ---------- Discovered repositories (proposals of the last collector run) ---------- */
 
-  const KINDS = ['coordinator', 'monorepo', 'single'] as const;
+  const KINDS = ['coordinator', 'monorepo', 'grouped', 'single'] as const;
 
   /** Draft project already covering a proposal: same coordinator repository, else its projectId. */
   function matchFor(proposal: DiscoveryProposal): DraftProject | undefined {
@@ -1305,6 +1305,16 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
             h('span', { class: 'visually-hidden' }, ` ${S.opensNewTab}`),
           )
         : h('code', { class: 'ce-proposal__repo', id: repoId }, pr.repository),
+      pr.hintedProjectId &&
+        h(
+          'p',
+          { class: 'ce-proposal__hint' },
+          h(
+            'span',
+            { class: 'pill ce-kind__pill' },
+            fill(S.hintedProject, { id: pr.hintedProjectId }),
+          ),
+        ),
       pr.evidence.length > 0 &&
         h('ul', { class: 'ce-evidence' }, ...pr.evidence.map((e) => h('li', {}, e))),
       ...status,

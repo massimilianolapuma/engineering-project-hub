@@ -25,6 +25,10 @@ import {
   type GovernanceRepo,
 } from './evaluators/health';
 import { evaluateQuality, type QualityInput } from './evaluators/quality';
+import {
+  evaluateRepositoryChecks,
+  evaluateRepositoryControls,
+} from './evaluators/repository-controls';
 import { evaluateScore } from './evaluators/score';
 import {
   recordError,
@@ -33,6 +37,8 @@ import {
   toWorkflowStatus,
   type BuildContext,
 } from './normalizers/model';
+import { recordControlsErrors, toControlsInputs } from './normalizers/repository-controls-model';
+import type { TargetVersions } from './normalizers/workflow-refs';
 import {
   isCoverageApplicable,
   normaliseQualitySummary,
@@ -63,6 +69,8 @@ export function buildProjectSnapshot(
   raw: RawProjectData,
   policies: Policies,
   now: Date,
+  /** Latest versions of the repositories referenced as reusable workflows (key owner/repo, lower-case). */
+  reusable: Map<string, TargetVersions> = new Map(),
 ): ProjectSnapshot {
   const { config } = raw;
   const generatedAt = now.toISOString();
@@ -241,7 +249,20 @@ export function buildProjectSnapshot(
     },
     policies,
   );
-  const governanceHealth = evaluateGovernance(governanceRepos, workflows, policies);
+
+  // Repository controls: evaluated once per unique repository, feeding Governance by reasons.
+  const controlsEnabled = policies.repositoryControls.enabled;
+  if (controlsEnabled) for (const r of uniqueRepos) recordControlsErrors(ctx, r);
+  const controlsRepos = (
+    controlsEnabled ? toControlsInputs(ctx, raw, uniqueRepos, reusable) : []
+  ).map((input) => evaluateRepositoryChecks(input, policies));
+  const repositoryControls = evaluateRepositoryControls(controlsRepos, policies, generatedAt);
+  const governanceHealth = evaluateGovernance(
+    governanceRepos,
+    workflows,
+    policies,
+    repositoryControls.reasons,
+  );
 
   // Quality: one report per repository (monorepos share it), applicability per component.
   const applicable = (componentId: string) => {
@@ -380,6 +401,7 @@ export function buildProjectSnapshot(
     securityCoverage: coverage,
     governanceHealth,
     qualityHealth,
+    repositoryControls: repositoryControls.health,
     overallHealth,
     score,
     dataFreshness: {
@@ -419,6 +441,13 @@ export function toProjectSummary(s: ProjectSnapshot): ProjectSummary {
       percentage: s.qualityHealth.percentage,
       measured: s.qualityHealth.measured,
       applicable: s.qualityHealth.applicable,
+    },
+    repositoryControls: {
+      passed: s.repositoryControls.passed,
+      failed: s.repositoryControls.failed,
+      unknown: s.repositoryControls.unknown,
+      notApplicable: s.repositoryControls.notApplicable,
+      ratio: s.repositoryControls.ratio,
     },
     freshness: s.dataFreshness.status,
     openCounts: s.securityHealth.openCounts,

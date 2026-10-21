@@ -147,6 +147,29 @@ const qualityReports = projects.flatMap((p) =>
       : [],
   ),
 );
+/* Repositories whose workflow files or branch rules could not be read: their checks are "not
+   visible", never failing. */
+const repoControls = projects.flatMap((p) =>
+  p.repositoryControls.enabled
+    ? p.repositoryControls.repositories.flatMap((r) => {
+        const workflows =
+          r.actions.state === 'not-authorised' || r.actions.state === 'unknown'
+            ? r.actions.state
+            : null;
+        const rules = r.branchRules.state !== 'available' ? r.branchRules.state : null;
+        return workflows || rules
+          ? [
+              {
+                project: p.project,
+                repository: r.repository,
+                workflows,
+                rules,
+              },
+            ]
+          : [];
+      })
+    : [],
+);
 const [beforeFile, afterFile] = q.unmappedSentence.split('{file}');
 const [beforeDate, afterDate] = q.lastUpdate.split('{date}');
 
@@ -378,6 +401,48 @@ const lead = [
                   </span>
                 </span>
                 <span class="muted">{q.qualityReportFix[r.state]}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section class="card dq-card" aria-labelledby="h-repo-controls">
+        <h2 id="h-repo-controls">{q.repoControls.title}</h2>
+        <p class="muted">{q.repoControls.intro}</p>
+        {repoControls.length === 0 ? (
+          <p class="muted">{q.repoControls.none}</p>
+        ) : (
+          <ul class="dq-rows">
+            {repoControls.map((r) => (
+              <li class="dq-row" id={anchor(r.project.id)} data-repo-controls={r.repository}>
+                <span>
+                  <a
+                    class="dq-project"
+                    href={`${href(locale, `projects/${r.project.id}`)}#repository-controls`}
+                  >
+                    {r.project.name}
+                  </a>{' '}
+                  · <span class="mono">{repoName(r.repository)}</span>
+                </span>
+                <span class="dq-status">
+                  {r.workflows && (
+                    <span class="status-col">
+                      <Pill
+                        tone="grey"
+                        label={`${q.repoControls.workflows}: ${d.availability[r.workflows]}`}
+                      />
+                    </span>
+                  )}
+                  {r.rules && (
+                    <span class="status-col">
+                      <Pill
+                        tone="grey"
+                        label={`${q.repoControls.rules}: ${d.availability[r.rules]}`}
+                      />
+                    </span>
+                  )}
+                </span>
               </li>
             ))}
           </ul>

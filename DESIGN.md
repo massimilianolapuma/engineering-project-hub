@@ -337,6 +337,10 @@ The trend pattern. The sparkline is inline SVG on a fixed 0 to 100 scale (so two
 
 One card per project (the same surface card), projects with changes first, then worst status first. Each change is a short row: dimension, from badge, arrow, to badge; score "58 → 40"; new and resolved critical/high alerts with a severity pill and a GitHub link; version moves in monospace. Totals sit in one sentence under the lede, each number linking to its first occurrence. A basis other than a real comparison replaces the cards with one sentence and never says "no changes".
 
+### Repository controls section
+
+The project page's "Repository controls" fold (after Controls coverage, before Code quality). Three tiles in the quality-tile style (checks passed with its ratio; not visible, with a dashed outline; OpenSSF Scorecard), a matrix with one row per unique repository and one column per check, and four collapsible detail lists (unpinned references, reusable workflows, branch rules, Scorecard). Cells use the control symbols with visually hidden state text: pass ✓, fail ✕, not visible "?" in a dashed outline, not applicable "–"; colour only helps. Each column header carries a small "Informative" tag (or "Counts for Governance" when enforced) and a legend sentence says informative checks never change the Governance status and that not visible does not mean failing. The matrix scrolls inside its own region (a focusable region) so the page never scrolls sideways at phone width.
+
 ### Score
 
 The score in 700 tabular figures with the confidence as visible secondary text ("measured 4 of 5"), so it is readable without hover. With insufficient data: an em dash and "insufficient data · measured 1 of 5". Header size adds "/ 100".

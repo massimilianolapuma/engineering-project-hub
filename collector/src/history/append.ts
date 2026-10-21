@@ -37,6 +37,17 @@ export function entryFromRun(index: PortfolioIndex): HistoryEntry {
       },
       countsComplete: s.countsComplete,
       collectionErrors: s.collectionErrorCount,
+      // Omitted when nothing was evaluated (checks off): 0/0/0 would read as "measured".
+      ...(s.repositoryControls.passed + s.repositoryControls.failed + s.repositoryControls.unknown >
+      0
+        ? {
+            controls: {
+              passed: s.repositoryControls.passed,
+              failed: s.repositoryControls.failed,
+              unknown: s.repositoryControls.unknown,
+            },
+          }
+        : {}),
     })),
   };
 }

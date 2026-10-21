@@ -13,3 +13,12 @@ discovery:
   includeForks: false
   includeArchived: false
   maxRepositories: 200
+  # Hints read from custom properties and topics (read-only; only these keys are ever kept).
+  topics: true
+  customProperties: true # one extra call per scanned repository (Metadata: read)
+  hints:
+    projectProperty: hub-project # property → project id
+    componentProperty: hub-component # property → component id
+    typeProperty: hub-component-type # property → component type
+    projectTopicPrefix: project- # topic "project-tools" → project "tools"
+    typeTopicPrefix: type- # topic "type-worker" → type worker

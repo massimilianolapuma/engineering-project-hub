@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.4",
+  "schemaVersion": "1.5",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-gamma",
@@ -455,6 +455,199 @@
         "none": null
       }
     }
+  },
+  "repositoryControls": {
+    "enabled": true,
+    "collectedAt": "2026-01-15T12:00:00.000Z",
+    "passed": 0,
+    "failed": 0,
+    "unknown": 12,
+    "notApplicable": 0,
+    "ratio": null,
+    "perCheck": [
+      {
+        "id": "actions-pinned",
+        "level": "info",
+        "passed": 0,
+        "failed": 0,
+        "unknown": 2,
+        "notApplicable": 0
+      },
+      {
+        "id": "reusable-workflows-current",
+        "level": "info",
+        "passed": 0,
+        "failed": 0,
+        "unknown": 2,
+        "notApplicable": 0
+      },
+      {
+        "id": "branch-protected",
+        "level": "info",
+        "passed": 0,
+        "failed": 0,
+        "unknown": 2,
+        "notApplicable": 0
+      },
+      {
+        "id": "pull-request-required",
+        "level": "info",
+        "passed": 0,
+        "failed": 0,
+        "unknown": 2,
+        "notApplicable": 0
+      },
+      {
+        "id": "force-push-blocked",
+        "level": "info",
+        "passed": 0,
+        "failed": 0,
+        "unknown": 2,
+        "notApplicable": 0
+      },
+      {
+        "id": "status-checks-required",
+        "level": "info",
+        "passed": 0,
+        "failed": 0,
+        "unknown": 2,
+        "notApplicable": 0
+      }
+    ],
+    "repositories": [
+      {
+        "componentIds": [
+          "coordinator"
+        ],
+        "repository": "example-org/project-gamma-coordinator",
+        "checks": [
+          {
+            "id": "actions-pinned",
+            "state": "unknown"
+          },
+          {
+            "id": "reusable-workflows-current",
+            "state": "unknown"
+          },
+          {
+            "id": "branch-protected",
+            "state": "unknown"
+          },
+          {
+            "id": "pull-request-required",
+            "state": "unknown"
+          },
+          {
+            "id": "force-push-blocked",
+            "state": "unknown"
+          },
+          {
+            "id": "status-checks-required",
+            "state": "unknown"
+          }
+        ],
+        "passed": 0,
+        "failed": 0,
+        "unknown": 6,
+        "notApplicable": 0,
+        "ratio": null,
+        "actions": {
+          "state": "unknown",
+          "workflowFiles": null,
+          "total": null,
+          "pinned": null,
+          "unpinned": null,
+          "unknown": null,
+          "detailsWithheld": true,
+          "unpinnedRefs": [],
+          "truncated": 0
+        },
+        "reusableWorkflows": [],
+        "branchRules": {
+          "state": "unknown",
+          "branch": null,
+          "protected": null,
+          "source": "unknown",
+          "ruleTypes": [],
+          "otherRules": 0,
+          "requiredApprovals": null,
+          "classicRead": false
+        },
+        "scorecard": {
+          "state": "unknown",
+          "lastAnalysisAt": null,
+          "openAlerts": null,
+          "failingChecks": [],
+          "otherFailing": 0
+        }
+      },
+      {
+        "componentIds": [
+          "service"
+        ],
+        "repository": "example-org/project-gamma-service",
+        "checks": [
+          {
+            "id": "actions-pinned",
+            "state": "unknown"
+          },
+          {
+            "id": "reusable-workflows-current",
+            "state": "unknown"
+          },
+          {
+            "id": "branch-protected",
+            "state": "unknown"
+          },
+          {
+            "id": "pull-request-required",
+            "state": "unknown"
+          },
+          {
+            "id": "force-push-blocked",
+            "state": "unknown"
+          },
+          {
+            "id": "status-checks-required",
+            "state": "unknown"
+          }
+        ],
+        "passed": 0,
+        "failed": 0,
+        "unknown": 6,
+        "notApplicable": 0,
+        "ratio": null,
+        "actions": {
+          "state": "unknown",
+          "workflowFiles": null,
+          "total": null,
+          "pinned": null,
+          "unpinned": null,
+          "unknown": null,
+          "detailsWithheld": true,
+          "unpinnedRefs": [],
+          "truncated": 0
+        },
+        "reusableWorkflows": [],
+        "branchRules": {
+          "state": "unknown",
+          "branch": null,
+          "protected": null,
+          "source": "unknown",
+          "ruleTypes": [],
+          "otherRules": 0,
+          "requiredApprovals": null,
+          "classicRead": false
+        },
+        "scorecard": {
+          "state": "unknown",
+          "lastAnalysisAt": null,
+          "openAlerts": null,
+          "failingChecks": [],
+          "otherFailing": 0
+        }
+      }
+    ]
   },
   "overallHealth": {
     "status": "grey",

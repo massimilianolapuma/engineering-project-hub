@@ -6,7 +6,13 @@
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { ControlState, Dimension, HealthStatus, Severity } from '@model/index';
+import {
+  RepositoryCheckIdSchema,
+  type ControlState,
+  type Dimension,
+  type HealthStatus,
+  type Severity,
+} from '@model/index';
 import ControlSymbol from '../../components/ControlSymbol.astro';
 import DimensionBars from '../../components/DimensionBars.astro';
 import ExtLink from '../../components/ExtLink.astro';
@@ -154,12 +160,14 @@ function docsUrl(): string | null {
 }
 const docs = docsUrl();
 
+const REPO_CHECKS = RepositoryCheckIdSchema.options;
 const SECTIONS = [
   ['states', h.statesTitle],
   ['symbols', h.symbolsTitle],
   ['unknowns', h.termsTitle],
   ['score', h.scoreTitle],
   ['thresholds', h.thresholdsTitle],
+  ['repository-controls', h.repoTitle],
   ['trends', h.trendsTitle],
 ] as const;
 ---
@@ -443,6 +451,24 @@ const SECTIONS = [
       </table>
     </div>
     <p class="note">{h.staleSourceNote}</p>
+  </section>
+
+  <section
+    class="card htr-section"
+    id="repository-controls"
+    aria-labelledby="repository-controls-title"
+  >
+    <h2 id="repository-controls-title">{h.repoTitle}</h2>
+    <p class="muted">{h.repoIntro}</p>
+    <ul class="htr-points">
+      {REPO_CHECKS.map((id) => (
+        <li>
+          <strong>{d.repositoryCheck[id]}.</strong> {h.repoChecks[id]}
+        </li>
+      ))}
+      <li>{h.repoUnknown}</li>
+      <li>{h.repoInformative}</li>
+    </ul>
   </section>
 
   <section class="card htr-section" id="trends" aria-labelledby="trends-title">

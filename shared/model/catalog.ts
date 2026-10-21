@@ -1,5 +1,11 @@
 import { z } from 'zod';
-import { ComponentTypeSchema, ControlIdSchema, LifecycleSchema, type ControlId } from './enums';
+import {
+  ComponentTypeSchema,
+  ControlIdSchema,
+  LifecycleSchema,
+  RepositoryCheckIdSchema,
+  type ControlId,
+} from './enums';
 
 export const VersionSourceSchema = z.enum(['auto', 'submodule', 'manifest', 'release']);
 export type VersionSource = z.infer<typeof VersionSourceSchema>;
@@ -52,6 +58,8 @@ export const CoordinatorConfigSchema = z
     manifestPath: relativePath.default('release-manifest.yaml'),
     /** Controls that make no sense for the coordinator (e.g. container scanning). */
     notApplicableControls: z.array(ControlIdSchema).default([]),
+    /** Repository checks that make no sense for the coordinator's repository. */
+    notApplicableChecks: z.array(RepositoryCheckIdSchema).default([]),
     /** Test coverage applies to the coordinator like a service unless overridden. */
     testCoverage: TestCoverageSchema.optional(),
   })
@@ -75,6 +83,8 @@ export const ComponentConfigSchema = z
     releaseTagPrefix: z.string().max(50).optional(),
     /** Controls that make no sense for this component (e.g. container scanning on a Helm repo). */
     notApplicableControls: z.array(ControlIdSchema).default([]),
+    /** Repository checks that make no sense for this component (monorepo: every target must list it). */
+    notApplicableChecks: z.array(RepositoryCheckIdSchema).default([]),
     /**
      * Where the component's current version comes from:
      * - auto: submodule (tag resolved from the SHA pinned by the coordinator) → manifest → latest release
@@ -200,6 +210,20 @@ export type ProjectConfig = z.infer<typeof ProjectConfigSchema>;
  * Automatic discovery of repositories. Discovery only produces *proposals* (shown in the
  * catalog editor): nothing enters the portal until a project file is saved.
  */
+const hintKey = z.string().regex(/^[a-z0-9][a-z0-9_-]{0,49}$/, 'must be a property key');
+const hintPrefix = z.string().regex(/^[a-z0-9-]{1,30}$/, 'must be a topic prefix');
+/** Which custom properties / topics carry the project, component and type hints. */
+export const DiscoveryHintsSchema = z
+  .object({
+    projectProperty: hintKey.default('hub-project'),
+    componentProperty: hintKey.default('hub-component'),
+    typeProperty: hintKey.default('hub-component-type'),
+    projectTopicPrefix: hintPrefix.default('project-'),
+    typeTopicPrefix: hintPrefix.default('type-'),
+  })
+  .strict();
+export type DiscoveryHints = z.infer<typeof DiscoveryHintsSchema>;
+
 export const DiscoveryConfigSchema = z
   .object({
     enabled: z.boolean().default(false),
@@ -213,9 +237,11 @@ export const DiscoveryConfigSchema = z
     includeArchived: z.boolean().default(false),
     /** Upper bound on scanned repositories per run (API budget). */
     maxRepositories: z.number().int().min(1).max(1000).default(200),
-    /** Reserved: discovery through repository topics / custom properties. */
+    /** Read repository topics as project / type hints (already part of the repository list). */
     topics: z.boolean().default(false),
+    /** Read custom property values (one call per scanned repository); only `hints` keys are kept. */
     customProperties: z.boolean().default(false),
+    hints: DiscoveryHintsSchema.prefault({}),
   })
   .strict();
 export type DiscoveryConfig = z.infer<typeof DiscoveryConfigSchema>;
@@ -236,6 +262,13 @@ export const CatalogSchema = z
       maxRepositories: 200,
       topics: false,
       customProperties: false,
+      hints: {
+        projectProperty: 'hub-project',
+        componentProperty: 'hub-component',
+        typeProperty: 'hub-component-type',
+        projectTopicPrefix: 'project-',
+        typeTopicPrefix: 'type-',
+      },
     }),
     /** May be empty when discovery is used to bootstrap the catalog. */
     projects: z.array(ProjectConfigSchema).default([]),

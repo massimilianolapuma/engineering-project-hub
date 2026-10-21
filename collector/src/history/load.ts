@@ -208,6 +208,8 @@ const isCleanFinding = (f: { componentId: string; repository: string }): boolean
   RepositoryRefSchema.safeParse(f.repository).success &&
   isScrubbed(f.repository, 200);
 
+const CHECK_KEY = /^[A-Za-z0-9._-]{1,100}\/[A-Za-z0-9._-]{1,100}\|[a-z-]{1,40}\|(?:pass|fail)$/;
+
 function cleanBaseline(
   baseline: HistoryBaseline,
   ids: ReadonlySet<string>,
@@ -227,6 +229,8 @@ function cleanBaseline(
             : [];
         }),
         versions: p.versions.map((v) => ({ ...v, version: scrubIdentifier(v.version, 100) })),
+        // Only well-formed "owner/repo|check|pass|fail" keys are kept; they are only compared.
+        ...(p.checks ? { checks: p.checks.filter((k) => CHECK_KEY.test(k)) } : {}),
       })),
   };
 }
