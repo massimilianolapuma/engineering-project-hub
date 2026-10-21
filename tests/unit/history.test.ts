@@ -524,6 +524,14 @@ describe('computeChanges', () => {
     expect(c.totals.newFindings).toBe(0);
   });
 
+  it('an alert still open at a lower severity is not resolved', () => {
+    const c = changesFor(previousOf(alphaNow(), { findings: [dependabot7] }), ({ project }) => {
+      project.securityFindings.find((f) => f.id === dependabot7.id)!.severity = 'medium';
+    });
+    expect(alphaOf(c).resolvedFindings).toEqual([]);
+    expect(c.totals.resolvedFindings).toBe(0);
+  });
+
   it('a baseline cut at 500 alerts: the next run lists no new alerts and flags findingsPartial', () => {
     const r = runOf('project-alpha');
     r.index.generatedAt = daysAgo(1);

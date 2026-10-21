@@ -169,7 +169,10 @@ function diffAlerts(
     before.repositories.length >= BASELINE_LIST_CAP;
   const current = openCriticalHigh(snapshot);
   const wasIds = new Set(before.findings.map((f) => f.id));
-  const nowIds = new Set(current.map((f) => f.id));
+  // "Resolved" means no longer open: an alert still open at a lower severity is not resolved.
+  const nowIds = new Set(
+    snapshot.securityFindings.filter((f) => f.status === 'open').map((f) => f.id),
+  );
 
   const fresh = (wasCut ? [] : current)
     .filter(
