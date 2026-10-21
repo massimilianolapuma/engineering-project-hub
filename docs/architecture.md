@@ -76,7 +76,12 @@ flowchart TB
    the latest tag), security status file, code scanning alerts and latest analysis,
    Dependabot alerts, and secret scanning alerts (`hide_secret=true`), the
    `hub-quality-summary` artifact (newest default-branch, same-repository run; zip capped
-   at 64 KB) and the GitHub Code Quality findings. When the metadata call fails,
+   at 64 KB) and the GitHub Code Quality findings. **Repository controls** add, per unique
+   repository (a monorepo is read once): the branch rules of the default branch, the files of
+   `.github/workflows` (at most 30 by default, parsed in memory into validated `uses:`
+   references), the latest OpenSSF Scorecard analysis and, only when enabled, classic branch
+   protection. The latest release or tag of every referenced reusable-workflow repository is
+   resolved once per run (at most 50 repositories). When the metadata call fails,
    dependent calls are skipped and inherit its classified error.
 4. **Collect per project**: the release manifest and `.gitmodules` from the coordinator,
    the submodule SHAs, and the tracked workflow runs (the last 20 on the default branch),
@@ -85,8 +90,9 @@ flowchart TB
    no tag matches, the SHA is compared with the latest release (ahead / behind / diverged).
 5. **Normalise**: provider values become the model's enums. `originalSeverity` and
    `originalStatus` are kept.
-6. **Evaluate**: delivery, version, security risk, coverage (controls), governance, quality
-   (test coverage), freshness and overall.
+6. **Evaluate**: delivery, version, security risk, coverage (controls), governance (with
+   the six repository checks, informative unless enforced), quality (test coverage),
+   freshness and overall.
 7. **Sanitise and validate**: free text is scrubbed and links are filtered. Every document
    is parsed with the strict schemas (allowlist), then the serialised JSON goes through the
    credential gate. Any failure stops the run before anything is written.
@@ -109,16 +115,17 @@ never restores: it starts from `fixtures/history/history.json`.
 
 ## Trust boundaries
 
-| Boundary                               | Controls                                                                                                                                                                                                                                                                                                      |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GitHub API → collector                 | Read-only credentials. Only allow-listed DTO fields are mapped. Raw payloads never leave the provider.                                                                                                                                                                                                        |
-| Collector → snapshots                  | Strict Zod schemas (unknown keys rejected), text scrubbing, URL host allowlist, credential gate.                                                                                                                                                                                                              |
-| CI artifact → collector                | Only the `hub-quality-summary` artifact of a default-branch run from the same repository is read: zip ≤ 64 KB, one file, strict schema, `repository` must match. Failure means `invalid` and nothing is published.                                                                                            |
-| Actions artifact → collector (history) | Only the hub's own `hub-history` artifact of a default-branch run of the deploy or collect workflow, not from a fork, not the current run, at most 5 MiB. The collector then parses it strictly (8 MiB cap), re-sanitises links and text, and rewrites it. Failure starts history fresh, never fails the run. |
-| Collect job → build job                | Only the sanitised `snapshots` artifact crosses. The build job has no secrets.                                                                                                                                                                                                                                |
-| Build → GitHub Pages                   | Output scan. Deploy uses OIDC (`pages: write`, `id-token: write`) only in the deploy job.                                                                                                                                                                                                                     |
-| Pages → browser                        | Static files only. CSP `default-src 'self'` with no inline scripts. No GitHub API calls. No tokens in storage.                                                                                                                                                                                                |
-| Browser → GitHub (links)               | GitHub applies its own authorisation. The portal never proxies or bypasses it.                                                                                                                                                                                                                                |
+| Boundary                               | Controls                                                                                                                                                                                                                                                                                                                                                                             |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GitHub API → collector                 | Read-only credentials. Only allow-listed DTO fields are mapped. Raw payloads never leave the provider.                                                                                                                                                                                                                                                                               |
+| Collector → snapshots                  | Strict Zod schemas (unknown keys rejected), text scrubbing, URL host allowlist, credential gate.                                                                                                                                                                                                                                                                                     |
+| CI artifact → collector                | Only the `hub-quality-summary` artifact of a default-branch run from the same repository is read: zip ≤ 64 KB, one file, strict schema, `repository` must match. Failure means `invalid` and nothing is published.                                                                                                                                                                   |
+| Actions artifact → collector (history) | Only the hub's own `hub-history` artifact of a default-branch run of the deploy or collect workflow, not from a fork, not the current run, at most 5 MiB. The collector then parses it strictly (8 MiB cap), re-sanitises links and text, and rewrites it. Failure starts history fresh, never fails the run.                                                                        |
+| Workflow files → collector             | Untrusted input. Read through the Contents API, bounded (262 144 bytes per file, 200 references per file, 1 000 per repository, 30 files by default), parsed in memory with an alias limit, reduced to validated `uses:` references. Workflow text, step names, `run:`, `with:` and `env:` never leave the parser and are never published; `target` is rebuilt from validated parts. |
+| Collect job → build job                | Only the sanitised `snapshots` artifact crosses. The build job has no secrets.                                                                                                                                                                                                                                                                                                       |
+| Build → GitHub Pages                   | Output scan. Deploy uses OIDC (`pages: write`, `id-token: write`) only in the deploy job.                                                                                                                                                                                                                                                                                            |
+| Pages → browser                        | Static files only. CSP `default-src 'self'` with no inline scripts. No GitHub API calls. No tokens in storage.                                                                                                                                                                                                                                                                       |
+| Browser → GitHub (links)               | GitHub applies its own authorisation. The portal never proxies or bypasses it.                                                                                                                                                                                                                                                                                                       |
 
 ## Snapshot model
 
@@ -133,7 +140,7 @@ never restores: it starts from `fixtures/history/history.json`.
   critical workflows, error counts, unresolved submodules and the project `score`.
 
 `history.json` (`kind: hub-history`) and `changes.json` (`kind: hub-changes`) are versioned
-separately (both `1.0`) from the snapshot (`1.4`), so history survives a snapshot schema
+separately (history `1.1`, changes `1.0`) from the snapshot (`1.5`), so history survives a snapshot schema
 bump and an existing `public/data` stays readable. `history.json` has one compact point per
 project and collection plus the baseline of the latest run; `changes.json` is the diff
 the site renders. Unknown is never 0: a null score is a gap.
@@ -145,7 +152,12 @@ the site renders. Unknown is never 0: a null score is a gap.
 - `securityFindings[]` (`SecurityFinding`) and `securityControls[]` (repository ×
   control state)
 - `deliveryHealth`, `versionHealth`, `securityHealth` (with counts and breakdowns),
-  `securityCoverage`, `governanceHealth`, `qualityHealth` and `overallHealth`
+  `securityCoverage`, `governanceHealth`, `repositoryControls`, `qualityHealth` and
+  `overallHealth`
+- `repositoryControls`: `{ enabled, collectedAt, passed, failed, unknown, notApplicable, ratio,
+perCheck[], repositories[] }`. Each repository has its six check states, the workflow
+  reference counts and (non-public repositories: withheld) the unpinned references, the
+  reusable workflows, a branch rules summary and a Scorecard summary. Unknown is never 0.
 - `qualityHealth`: `{ status, reasons, percentage, linesCovered, linesValid, measured,
 applicable, notVisible, stale, collectedAt }`, `perComponent[]` (state, percentage,
   lines, commit SHA, report date, tool, run link) and `findings` (Code Quality counts by
@@ -166,7 +178,7 @@ Normalised enums:
 | Error class      | `not-found`, `not-authorised`, `not-configured`, `rate-limited`, `invalid-data`, `error`                                                 |
 
 Generated JSON Schemas are in `config/schema/`. The site supports the snapshot versions
-listed in `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS` (currently `1.4`).
+listed in `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS` (currently `1.5`).
 
 ## Health rules (MVP policies)
 
@@ -249,6 +261,7 @@ universal risk ratings.
 - [ADR 0004: Configuration store, discovery and the path to a backend](architecture/adr/0004-configuration-store-and-discovery.md)
 - [ADR 0005: Test coverage from a CI summary artifact, not from Sonar or GitHub UI](architecture/adr/0005-test-coverage-from-ci-summary-artifact.md)
 - [ADR 0006: History persisted through the hub's own Actions artifacts](architecture/adr/0006-history-persisted-through-own-actions-artifacts.md)
+- [ADR 0007: Repository controls from workflow files and the rules API, informative by default](architecture/adr/0007-repository-controls-informative-by-default.md)
 
 Further decisions:
 

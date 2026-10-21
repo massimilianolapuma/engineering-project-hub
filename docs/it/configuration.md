@@ -38,6 +38,14 @@ discovery:
   includeForks: false
   includeArchived: false
   maxRepositories: 200 # budget API per esecuzione
+  topics: true # legge i topic dei repository come suggerimenti
+  customProperties: true # una chiamata in più per repository analizzato (Metadata: read)
+  hints: # tutti opzionali; questi sono i valori predefiniti
+    projectProperty: hub-project # custom property → id del progetto
+    componentProperty: hub-component # custom property → id del componente
+    typeProperty: hub-component-type # custom property → tipo del componente
+    projectTopicPrefix: project- # topic "project-tools" → progetto "tools"
+    typeTopicPrefix: type- # topic "type-worker" → tipo worker
 ```
 
 La scoperta è **in sola lettura e produce solo proposte**. I risultati vengono pubblicati
@@ -47,6 +55,7 @@ in `catalog.json` e mostrati nell'editor del catalogo (`/it/catalog/`):
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
 | `coordinator` | il repository ha un `.gitmodules` con submodule che puntano a repository analizzati                                                              | uno per submodule (`submodulePath`)                                 |
 | `monorepo`    | c'è un manifest di workspace: `workspaces` npm/yarn, `pnpm-workspace.yaml`, `lerna.json`, `go.work`, `[workspace]` Cargo, `turbo.json`/`nx.json` | uno per cartella del workspace (`path`, `releaseTagPrefix: <id>-v`) |
+| `grouped`     | due o più repository singoli che condividono lo stesso progetto suggerito (vedi sotto)                                                           | uno per ogni repository in più (`versionSource: release`)           |
 | `single`      | in tutti gli altri casi                                                                                                                          | nessuno (il repository è il progetto)                               |
 
 - I repository che sono submodule di un coordinator scoperto non vengono proposti da soli.
@@ -55,6 +64,11 @@ in `catalog.json` e mostrati nell'editor del catalogo (`/it/catalog/`):
 - I workflow trovati in ogni repository vengono proposti come workflow monitorati. Sono
   marcati critici i file che iniziano con `ci`, `build`, `test`, `release`, `rel-`, `cd` o
   `deploy`.
+- **Suggerimenti** (`topics`, `customProperties`, `hints`). Per ogni repository analizzato il collector legge i topic (già presenti nell'elenco dei repository) e, con `customProperties` attivo, i valori delle custom property (`GET /repos/{owner}/{repo}/properties/values`, **Metadata: read**). Si tengono solo le tre chiavi configurate: ogni altra property viene scartata prima di salvare qualsiasi cosa, quindi non arriva mai a `catalog.json`.
+  - Una property prevale su un topic. I valori di progetto e componente devono essere slug e il tipo un tipo di componente; altrimenti vengono ignorati e le evidenze della proposta lo dicono. Più topic `project-*` sono ambigui e ignorati.
+  - Il rilevamento della struttura (coordinator, monorepo, single) non cambia. Un tipo suggerito sostituisce quello dedotto e un id di componente suggerito sostituisce lo slug.
+  - I repository singoli che condividono un progetto suggerito e non sono reclamati da un coordinator diventano una sola proposta `grouped` (il coordinator è il repository con suggerimento `coordinator`, altrimenti il primo in ordine alfabetico). Se il progetto suggerito esiste già nel catalogo e il repository non ne fa parte, l'editor mostra "Suggerito per il progetto X". Non viene unito nulla in automatico.
+  - Un 403 sulla chiamata delle property è registrato come errore di scoperta e i suggerimenti dai topic restano validi.
 - Chiamate usate: elenco dei repository dell'owner, `.gitmodules`, elenco della root e
   delle cartelle di workspace, manifest di workspace ed elenco dei workflow. Non serve
   nessun nuovo permesso della GitHub App (Metadata, Contents, Actions).
@@ -353,6 +367,74 @@ interventi sul codice o sul frontend.
 | `history.maxAgeDays`                    | 90                                                                           | Le raccolte più vecchie vengono scartate (intero da 1 a 400).                                                                                      |
 | `publication.audience`                  | public                                                                       | `public` omette titoli dei finding e rule id dei repository non pubblici. `restricted` richiede Pages con controllo degli accessi.                 |
 | `publication.allowedLinkHosts`          | [github.com]                                                                 | Vengono pubblicati solo i link verso questi host.                                                                                                  |
+
+### Controlli repository (`repositoryControls`)
+
+Sei controlli di sola lettura per repository, dai file dei workflow e dalle regole del branch,
+alimentano **Governance** tramite motivi. Il blocco è opzionale e **ogni controllo è `info` per
+impostazione predefinita**: compare nella pagina del progetto ("Controlli repository") ma non
+cambia mai uno stato finché non lo rendi vincolante
+([ADR 0007](architecture/adr/0007-repository-controls-informative-by-default.md)).
+
+```yaml
+repositoryControls:
+  enabled: true # false: nessuna chiamata, la sezione dice "spenti"
+  checks: # info | amber | red
+    actions-pinned: info # ogni `uses:` è uno SHA completo di commit
+    reusable-workflows-current: info # i workflow riutilizzabili sono all'ultima release o tag
+    branch-protected: info # almeno una regola attiva sul branch di default
+    pull-request-required: info
+    force-push-blocked: info
+    status-checks-required: info
+  unknownEnforcedCheck: info # info | amber: un controllo vincolante non determinabile
+  exemptActionOwners: [] # es. [actions, github]: le loro action non fissate contano come fissate
+  maxWorkflowFiles: 30 # da 1 a 100 file di workflow letti per repository
+  readClassicProtection: false # true richiede Administration: read sulle credenziali
+```
+
+| Chiave                                     | Predefinito | Significato                                                                                                                            |
+| ------------------------------------------ | ----------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `repositoryControls.enabled`               | true        | Spegne tutta la funzione (nessuna chiamata, nessun contenuto della sezione).                                                           |
+| `repositoryControls.checks.<id>`           | info        | `info` è solo mostrato; `amber` o `red` fa portare Governance a quello stato a un repository che fallisce.                             |
+| `repositoryControls.unknownEnforcedCheck`  | info        | Livello di un controllo **vincolante** sconosciuto su qualche repository. I controlli informativi non producono mai un motivo unknown. |
+| `repositoryControls.exemptActionOwners`    | []          | Owner le cui action non devono essere fissate (per esempio le `actions` ufficiali).                                                    |
+| `repositoryControls.maxWorkflowFiles`      | 30          | File di workflow letti per repository (da 1 a 100). Oltre il limite i conteggi e il controllo diventano sconosciuti, mai superati.     |
+| `repositoryControls.readClassicProtection` | false       | Legge anche la protezione classica dei branch. Richiede **Administration: read**; con `false` la chiamata non viene mai fatta.         |
+
+Come i controlli leggono i dati:
+
+- **Non visibile non significa fallito.** Un 403 è "non autorizzato", un 404 ambiguo è
+  "sconosciuto" e l'assenza della cartella `.github/workflows` significa "nessun workflow"
+  (non applicabile). Sconosciuto non è mai fallito e non è mai superato.
+- **Regole del branch**: da `GET /repos/{owner}/{repo}/rules/branches/{branch}` (ruleset attivi
+  di repository e organizzazione). Una regola che l'API non riporta mentre il branch dice
+  `protected: true` è `unknown`, non fallita, perché la protezione classica è invisibile senza
+  Administration: read.
+- **Repository privati**: con `publication.audience: public` i riferimenti non fissati e le
+  destinazioni dei workflow riutilizzabili dei repository non pubblici sono nascosti (i conteggi
+  restano) e un workflow riutilizzabile in un repository non pubblico risulta non visibile.
+- Catalogo: `notApplicableChecks: [pull-request-required]` su un coordinator o un componente
+  segna un controllo come non applicabile per quel repository (non contato e non elencato come
+  sconosciuto).
+
+**Passare ai controlli vincolanti.** Parti dai valori predefiniti, leggi la sezione su qualche
+progetto, poi alza un controllo alla volta. Esempio, dopo aver rivisto i risultati attuali:
+rendere vincolanti action fissate e protezione del branch come attenzione (amber):
+
+```yaml
+repositoryControls:
+  checks:
+    actions-pinned: amber
+    branch-protected: amber
+  exemptActionOwners: [actions]
+  unknownEnforcedCheck: info
+```
+
+Con questo blocco un repository che fallisce `actions-pinned` o `branch-protected` porta
+Governance ad amber (motivo `repository-check-failed`, che nomina il controllo e i repository);
+i risultati sconosciuti restano informativi; e il punteggio si muove solo quando si muove uno
+stato di Governance. Le istruzioni passo passo sono in
+[Operatività](operations.md#rendere-vincolanti-i-controlli-repository).
 
 ### Punteggio del progetto
 

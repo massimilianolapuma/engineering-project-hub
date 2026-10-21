@@ -76,9 +76,14 @@ flowchart TB
    fallback sull'ultimo tag), file di stato sicurezza, alert di code scanning e ultima
    analisi, alert Dependabot e alert di secret scanning (`hide_secret=true`), l'artifact
    `hub-quality-summary` (l'esecuzione più recente sul branch predefinito dello stesso
-   repository; zip limitato a 64 KB) e i finding di GitHub Code Quality. Se la chiamata dei
-   metadati fallisce, le chiamate dipendenti vengono saltate ed ereditano il suo errore
-   classificato.
+   repository; zip limitato a 64 KB) e i finding di GitHub Code Quality. I **controlli repository** aggiungono, per ogni
+   repository univoco (un monorepo è letto una volta sola): le regole del branch di default, i
+   file di `.github/workflows` (al massimo 30 per impostazione predefinita, analizzati in
+   memoria in riferimenti `uses:` validati), l'ultima analisi OpenSSF Scorecard e, solo se
+   attivata, la protezione classica dei branch. L'ultima release o tag di ogni repository di
+   workflow riutilizzabili referenziato è risolta una volta per esecuzione (al massimo 50
+   repository). Se la chiamata dei metadati fallisce, le chiamate dipendenti vengono saltate
+   ed ereditano il suo errore classificato.
 4. **Raccolta per progetto**: il release manifest e `.gitmodules` dal coordinator, gli SHA
    dei submodule e le esecuzioni dei workflow monitorati (le ultime 20 sul branch
    predefinito), più i nomi del job e dello step falliti nell'ultima esecuzione fallita. Ogni
@@ -88,7 +93,8 @@ flowchart TB
 5. **Normalizzazione**: i valori dei provider diventano gli enum del modello.
    `originalSeverity` e `originalStatus` vengono conservati.
 6. **Valutazione**: delivery, versioni, rischio sicurezza, copertura (controlli),
-   governance, qualità (copertura dei test), aggiornamento dei dati e stato complessivo.
+   governance (con i sei controlli repository, informativi se non resi vincolanti), qualità
+   (copertura dei test), aggiornamento dei dati e stato complessivo.
 7. **Sanitizzazione e validazione**: il testo libero viene ripulito e i link vengono
    filtrati. Ogni documento è sottoposto a parsing con gli schemi strict (allowlist), poi il
    JSON serializzato passa per il gate delle credenziali. Qualsiasi errore interrompe
@@ -115,16 +121,17 @@ prossimo artifact `hub-history` (90 giorni). Un'esecuzione mock non ripristina m
 
 ## Confini di fiducia
 
-| Confine                                | Controlli                                                                                                                                                                                                                                                                                                                                                                            |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| API GitHub → collector                 | Credenziali in sola lettura. Vengono mappati solo i campi DTO in allowlist. I payload grezzi non escono mai dal provider.                                                                                                                                                                                                                                                            |
-| Collector → snapshot                   | Schemi Zod strict (chiavi sconosciute rifiutate), pulizia del testo, allowlist degli host URL, gate delle credenziali.                                                                                                                                                                                                                                                               |
-| Artifact CI → collector                | Viene letto solo l'artifact `hub-quality-summary` di un'esecuzione sul branch predefinito dello stesso repository: zip ≤ 64 KB, un solo file, schema strict, `repository` deve coincidere. Un errore significa `invalid` e nulla viene pubblicato.                                                                                                                                   |
-| Artifact Actions → collector (storico) | Solo l'artifact `hub-history` del proprio repository, di un'esecuzione sul branch predefinito del workflow di deploy o di raccolta, non da un fork, non l'esecuzione corrente, al massimo 5 MiB. Il collector lo legge poi in modo strict (limite 8 MiB), ripulisce di nuovo link e testo e lo riscrive. Un errore fa ripartire lo storico da zero, non fa mai fallire l'esecuzione. |
-| Job collect → job build                | Passa solo l'artifact sanitizzato `snapshots`. Il job build non ha secret.                                                                                                                                                                                                                                                                                                           |
-| Build → GitHub Pages                   | Scansione dell'output. Il deploy usa OIDC (`pages: write`, `id-token: write`) solo nel job deploy.                                                                                                                                                                                                                                                                                   |
-| Pages → browser                        | Solo file statici. CSP `default-src 'self'` senza script inline. Nessuna chiamata all'API di GitHub. Nessun token nello storage.                                                                                                                                                                                                                                                     |
-| Browser → GitHub (link)                | GitHub applica la propria autorizzazione. Il portale non la inoltra né la aggira mai.                                                                                                                                                                                                                                                                                                |
+| Confine                                | Controlli                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API GitHub → collector                 | Credenziali in sola lettura. Vengono mappati solo i campi DTO in allowlist. I payload grezzi non escono mai dal provider.                                                                                                                                                                                                                                                                                                               |
+| Collector → snapshot                   | Schemi Zod strict (chiavi sconosciute rifiutate), pulizia del testo, allowlist degli host URL, gate delle credenziali.                                                                                                                                                                                                                                                                                                                  |
+| Artifact CI → collector                | Viene letto solo l'artifact `hub-quality-summary` di un'esecuzione sul branch predefinito dello stesso repository: zip ≤ 64 KB, un solo file, schema strict, `repository` deve coincidere. Un errore significa `invalid` e nulla viene pubblicato.                                                                                                                                                                                      |
+| Artifact Actions → collector (storico) | Solo l'artifact `hub-history` del proprio repository, di un'esecuzione sul branch predefinito del workflow di deploy o di raccolta, non da un fork, non l'esecuzione corrente, al massimo 5 MiB. Il collector lo legge poi in modo strict (limite 8 MiB), ripulisce di nuovo link e testo e lo riscrive. Un errore fa ripartire lo storico da zero, non fa mai fallire l'esecuzione.                                                    |
+| File dei workflow → collector          | Input non attendibile. Letti tramite l'API Contents, limitati (262 144 byte per file, 200 riferimenti per file, 1 000 per repository, 30 file per impostazione predefinita), analizzati in memoria con un limite sugli alias e ridotti a riferimenti `uses:` validati. Testo dei workflow, nomi degli step, `run:`, `with:` ed `env:` non escono mai dal parser e non vengono mai pubblicati; `target` è ricostruita da parti validate. |
+| Job collect → job build                | Passa solo l'artifact sanitizzato `snapshots`. Il job build non ha secret.                                                                                                                                                                                                                                                                                                                                                              |
+| Build → GitHub Pages                   | Scansione dell'output. Il deploy usa OIDC (`pages: write`, `id-token: write`) solo nel job deploy.                                                                                                                                                                                                                                                                                                                                      |
+| Pages → browser                        | Solo file statici. CSP `default-src 'self'` senza script inline. Nessuna chiamata all'API di GitHub. Nessun token nello storage.                                                                                                                                                                                                                                                                                                        |
+| Browser → GitHub (link)                | GitHub applica la propria autorizzazione. Il portale non la inoltra né la aggira mai.                                                                                                                                                                                                                                                                                                                                                   |
 
 ## Modello degli snapshot
 
@@ -140,7 +147,7 @@ prossimo artifact `hub-history` (90 giorni). Un'esecuzione mock non ripristina m
   conteggi degli errori, i submodule non risolti e lo `score` del progetto.
 
 `history.json` (`kind: hub-history`) e `changes.json` (`kind: hub-changes`) hanno una versione
-separata (entrambi `1.0`) da quella dello snapshot (`1.4`), così lo storico sopravvive a un
+separata (storico `1.1`, changes `1.0`) da quella dello snapshot (`1.5`), così lo storico sopravvive a un
 cambio di schema dello snapshot e un `public/data` esistente resta leggibile. `history.json`
 ha un punto compatto per progetto e raccolta più la base dell'ultima esecuzione;
 `changes.json` è il confronto che il sito mostra. Sconosciuto non è mai 0: un punteggio null
@@ -153,7 +160,13 @@ ha un punto compatto per progetto e raccolta più la base dell'ultima esecuzione
 - `securityFindings[]` (`SecurityFinding`) e `securityControls[]` (repository × stato del
   controllo)
 - `deliveryHealth`, `versionHealth`, `securityHealth` (con conteggi e suddivisioni),
-  `securityCoverage`, `governanceHealth`, `qualityHealth` e `overallHealth`
+  `securityCoverage`, `governanceHealth`, `repositoryControls`, `qualityHealth` e
+  `overallHealth`
+- `repositoryControls`: `{ enabled, collectedAt, passed, failed, unknown, notApplicable, ratio,
+perCheck[], repositories[] }`. Ogni repository ha i suoi sei stati di controllo, i
+  conteggi dei riferimenti nei workflow e (repository non pubblici: nascosti) i riferimenti
+  non fissati, i workflow riutilizzabili, un riepilogo delle regole del branch e uno di
+  Scorecard. Sconosciuto non è mai 0.
 - `qualityHealth`: `{ status, reasons, percentage, linesCovered, linesValid, measured,
 applicable, notVisible, stale, collectedAt }`, `perComponent[]` (stato, percentuale,
   righe, SHA del commit, data del report, strumento, link all'esecuzione) e `findings`
@@ -175,7 +188,7 @@ Enum normalizzati:
 | Classe di errore      | `not-found`, `not-authorised`, `not-configured`, `rate-limited`, `invalid-data`, `error`                                                 |
 
 Gli JSON Schema generati si trovano in `config/schema/`. Il sito supporta le versioni di
-snapshot elencate in `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS` (attualmente `1.4`).
+snapshot elencate in `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS` (attualmente `1.5`).
 
 ## Regole di salute (policy dell'MVP)
 
@@ -264,6 +277,7 @@ valutazioni del rischio universali.
 - [ADR 0004: Archivio della configurazione, scoperta e percorso verso un backend](architecture/adr/0004-configuration-store-and-discovery.md)
 - [ADR 0005: Copertura dei test da un artifact di riepilogo della CI, non da Sonar o dalla UI di GitHub](architecture/adr/0005-test-coverage-from-ci-summary-artifact.md)
 - [ADR 0006: Storico conservato tramite gli artifact Actions del repository stesso](architecture/adr/0006-history-persisted-through-own-actions-artifacts.md)
+- [ADR 0007: Controlli repository da file dei workflow e API delle regole, informativi per impostazione predefinita](architecture/adr/0007-repository-controls-informative-by-default.md)
 
 Altre decisioni:
 
