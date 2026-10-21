@@ -56,6 +56,11 @@ describe('classifyUses', () => {
       pinned: false,
     });
   });
+  it('a ref must start with a letter or digit', () => {
+    for (const ref of ['.', '/', '-x', '.v1', '/main'])
+      expect(classifyUses(`actions/checkout@${ref}`).kind, ref).toBe('invalid');
+    expect(classifyUses('actions/checkout@release/1.x').kind).toBe('action');
+  });
   it('docker image by tag', () => {
     expect(classifyUses('docker://alpine:3.20')).toMatchObject({
       kind: 'docker',

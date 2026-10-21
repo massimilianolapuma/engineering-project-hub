@@ -137,7 +137,7 @@ A workflow file name longer than 100 characters (the published bound) is never r
   - owner: `^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$`;
   - repo: `^[A-Za-z0-9._-]{1,100}$`;
   - path segments: `^[A-Za-z0-9._-]{1,100}$`, at most 5 segments;
-  - ref: `^[A-Za-z0-9._/-]{1,100}$`.
+  - ref: `^[A-Za-z0-9][A-Za-z0-9._/-]{0,99}$`.
 - Length bounds: a rebuilt `target` longer than 200 characters, a `ref` or docker tag longer than 100, or any part that `scrubIdentifier` would alter makes the reference `invalid` (counted as unknown). An identifier is never truncated, so a published one is never a garbled prefix and never fails the snapshot schema.
 - `exemptActionOwners` (policies, default `[]`) lists owners whose unpinned actions count as pinned. A typical value is `["actions", "github"]`, but the default stays strict **(BC)**.
 
@@ -284,7 +284,7 @@ RepositoryControlsHealthSchema = z.object({
   passed, failed, unknown, notApplicable: int ≥ 0,         // over unique repositories × checks
   ratio: z.number().int().min(0).max(100).nullable(),
   perCheck: z.array({ id: RepositoryCheckId, level: z.enum(['info','amber','red']),
-                      passed, failed, unknown, notApplicable }),          // 6 items, display order
+                      passed, failed, unknown, notApplicable }).length(6), // display order
   repositories: z.array({
     componentIds: z.array(z.string().max(64)).min(1),      // monorepo: every target on the repo
     repository: z.string().max(200),

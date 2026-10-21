@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upgrade note (snapshot 1.5): an existing 1.4 `public/data` fails validation until it is re-collected; `npm run ci:build` overwrites `public/data` with mock data.
 - The Governance dimension card now links to the Repository controls section (the standard workflows link moved to the end of that section).
 - With `publication.audience: public`, unpinned references and reusable workflow targets of non-public repositories are withheld, and a non-public reusable-workflow repository is shown as not visible.
+- Workflow files and tags are untrusted input: an identifier longer than its published bound (a target over 200 characters; a ref, tag or workflow file name over 100) is unknown and never truncated, so it can never stop a publication. YAML warnings are not printed (they would quote the source).
+- Upgrade note (first v0.8.0 collection): "What changed" may list `workflow-files` and `repository-rules` collection errors as new errors, because these sources did not exist in the previous collection.
 
 ## [0.7.0] - 2026-10-21
 

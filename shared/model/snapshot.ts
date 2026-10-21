@@ -349,18 +349,20 @@ export const RepositoryControlsHealthSchema = z
     unknown: intCount,
     notApplicable: intCount,
     ratio: percent,
-    perCheck: z.array(
-      z
-        .object({
-          id: RepositoryCheckIdSchema,
-          level: checkLevel,
-          passed: intCount,
-          failed: intCount,
-          unknown: intCount,
-          notApplicable: intCount,
-        })
-        .strict(),
-    ),
+    perCheck: z
+      .array(
+        z
+          .object({
+            id: RepositoryCheckIdSchema,
+            level: checkLevel,
+            passed: intCount,
+            failed: intCount,
+            unknown: intCount,
+            notApplicable: intCount,
+          })
+          .strict(),
+      )
+      .length(6),
     repositories: z.array(
       z
         .object({

@@ -137,7 +137,7 @@ Un nome di file di workflow più lungo di 100 caratteri (il limite pubblicato) n
   - owner: `^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$`;
   - repo: `^[A-Za-z0-9._-]{1,100}$`;
   - segmenti di percorso: `^[A-Za-z0-9._-]{1,100}$`, al massimo 5 segmenti;
-  - ref: `^[A-Za-z0-9._/-]{1,100}$`.
+  - ref: `^[A-Za-z0-9][A-Za-z0-9._/-]{0,99}$`.
 - Limiti di lunghezza: un `target` ricostruito più lungo di 200 caratteri, un `ref` o un tag docker più lungo di 100, o una parte che `scrubIdentifier` modificherebbe rendono il riferimento `invalid` (contato come unknown). Un identificativo non viene mai troncato, quindi quello pubblicato non è mai un prefisso alterato e non fa mai fallire lo schema dello snapshot.
 - `exemptActionOwners` (policy, default `[]`) elenca gli owner le cui action non pinnate contano come pinnate. Un valore tipico è `["actions", "github"]`, ma il default resta rigoroso **(SB)**.
 

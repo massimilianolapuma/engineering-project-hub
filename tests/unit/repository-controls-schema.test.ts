@@ -252,6 +252,14 @@ describe('repository controls output always passes the published schema', () => 
   });
 });
 
+describe('schema shape', () => {
+  it('perCheck holds exactly the six checks', async () => {
+    const health = await runOnce(1, policies());
+    expect(issues(health)).toEqual([]);
+    expect(issues({ ...health, perCheck: health.perCheck.slice(0, 5) })).not.toEqual([]);
+  });
+});
+
 describe('over-long identifiers never abort publication', () => {
   const P = policies();
   const evaluate = (input: Partial<RepoControlsInput>) =>
