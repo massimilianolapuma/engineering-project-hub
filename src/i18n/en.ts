@@ -6,6 +6,7 @@ export const en = {
   },
   nav: {
     portfolio: 'Portfolio',
+    changes: 'What changed',
     workflows: 'Workflows',
     versions: 'Versions',
     security: 'Security',
@@ -1022,6 +1023,34 @@ export const en = {
     docsText:
       'Every policy, its default and how to change it is described in the configuration reference.',
     docsLink: 'Configuration reference',
+  },
+  trend: {
+    title: 'Trend',
+    col: 'Trend',
+    up: 'Score up {n} points over {days} days ({count} collections)',
+    down: 'Score down {n} points over {days} days ({count} collections)',
+    flat: 'Score unchanged over {days} days ({count} collections)',
+    short: '{sign}{n} · {days} d',
+    none: 'No history yet',
+    invalid: 'History could not be read',
+    notEnough: 'Not enough measured points',
+    gapNote:
+      'Gaps are collections where the score could not be measured; they are never drawn as 0.',
+    strip: 'Overall status per collection',
+    stripSummary: 'Overall status per collection: {summary}',
+    sparkline: 'Score per collection, from 0 to 100',
+    summary: 'From {first} on {firstDate} to {last} on {lastDate}, {count} collections.',
+    table: 'Show history as a table',
+    date: 'Collected',
+    notTracked: 'not tracked',
+    changesLink: 'What changed for this project',
+    openHigh: 'Open critical / high',
+    guideTop: '100',
+    guideBottom: '0',
+  },
+  exports: {
+    portfolio: 'Download CSV',
+    hint: 'UTF-8 CSV with BOM, comma-separated. "unknown" means not readable, never 0.',
   },
   errorsPage: {
     title: 'Snapshot data unavailable',

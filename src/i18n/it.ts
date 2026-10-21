@@ -8,6 +8,7 @@ export const it: Dict = {
   },
   nav: {
     portfolio: 'Portfolio',
+    changes: 'Cosa è cambiato',
     workflows: 'Workflow',
     versions: 'Versioni',
     security: 'Sicurezza',
@@ -1031,6 +1032,34 @@ export const it: Dict = {
     docsText:
       'Ogni policy, il suo valore predefinito e come cambiarla sono descritti nel riferimento di configurazione.',
     docsLink: 'Riferimento di configurazione',
+  },
+  trend: {
+    title: 'Andamento',
+    col: 'Andamento',
+    up: 'Punteggio in aumento di {n} punti in {days} giorni ({count} raccolte)',
+    down: 'Punteggio in calo di {n} punti in {days} giorni ({count} raccolte)',
+    flat: 'Punteggio invariato in {days} giorni ({count} raccolte)',
+    short: '{sign}{n} · {days} g',
+    none: 'Ancora nessuno storico',
+    invalid: 'Lo storico non è leggibile',
+    notEnough: 'Punti misurati insufficienti',
+    gapNote:
+      'I vuoti sono raccolte in cui il punteggio non era misurabile; non vengono mai disegnati come 0.',
+    strip: 'Stato complessivo per raccolta',
+    stripSummary: 'Stato complessivo per raccolta: {summary}',
+    sparkline: 'Punteggio per raccolta, da 0 a 100',
+    summary: 'Da {first} il {firstDate} a {last} il {lastDate}, {count} raccolte.',
+    table: 'Mostra lo storico come tabella',
+    date: 'Raccolto',
+    notTracked: 'non rilevato',
+    changesLink: 'Cosa è cambiato per questo progetto',
+    openHigh: 'Aperti critici / alti',
+    guideTop: '100',
+    guideBottom: '0',
+  },
+  exports: {
+    portfolio: 'Scarica CSV',
+    hint: 'CSV UTF-8 con BOM, separato da virgole. "unknown" significa non leggibile, mai 0.',
   },
   errorsPage: {
     title: 'Dati snapshot non disponibili',

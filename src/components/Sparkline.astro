@@ -1,0 +1,63 @@
+---
+/**
+ * Score sparkline: inline SVG on a fixed 0-100 scale. The accessible name summarises the
+ * values; the numbers are always written next to it by the caller. A null score is a gap (the
+ * line breaks, it never drops to 0) and a lone point is a dot (round caps on a zero-length line).
+ */
+import { sparklineSegments } from '../lib/trend';
+interface Props {
+  scores: (number | null)[];
+  width: number;
+  height: number;
+  label: string;
+  /** Faint 0 and 100 guide lines (the large variant on the project page). */
+  guides?: boolean;
+}
+const { scores, width, height, label, guides = false } = Astro.props;
+const pad = 3;
+const segments = sparklineSegments(scores, width - 2 * pad, height - 2 * pad);
+---
+
+<svg
+  class="spark"
+  viewBox={`0 0 ${width} ${height}`}
+  width={width}
+  height={height}
+  role="img"
+  aria-label={label}
+  focusable="false"
+>
+  {guides && (
+    <>
+      <line class="spark__guide" x1="0" x2={width} y1={pad} y2={pad} />
+      <line class="spark__guide" x1="0" x2={width} y1={height - pad} y2={height - pad} />
+    </>
+  )}
+  <g transform={`translate(${pad} ${pad})`}>
+    {segments.map((d) => (
+      <path class="spark__line" d={d} />
+    ))}
+  </g>
+</svg>
+
+<style>
+  .spark {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+  .spark__line {
+    fill: none;
+    stroke: var(--text);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .spark__guide {
+    stroke: var(--border-strong);
+    stroke-width: 1;
+    stroke-dasharray: 2 3;
+    opacity: 0.6;
+  }
+</style>

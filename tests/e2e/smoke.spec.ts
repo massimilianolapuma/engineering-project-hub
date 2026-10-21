@@ -248,3 +248,16 @@ test('phone: filters fold into one disclosure and the nav scrolls inside itself'
   await expect(box).toHaveJSProperty('open', true);
   await expect(box.locator('> summary')).toBeHidden();
 });
+
+test('project trend table opens with the keyboard', async ({ page }) => {
+  await page.goto('/projects/project-alpha/');
+  const summary = page.locator('#trend summary');
+  await summary.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#trend table')).toBeVisible();
+  await expect(page.locator('#trend tr[data-trend-row]')).toHaveCount(13);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+});

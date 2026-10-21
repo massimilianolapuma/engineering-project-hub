@@ -21,9 +21,10 @@ import QualitySection from '../../../components/QualitySection.astro';
 import RelTime from '../../../components/RelTime.astro';
 import ScoreBadge from '../../../components/ScoreBadge.astro';
 import StatusBadge from '../../../components/StatusBadge.astro';
+import TrendSection from '../../../components/TrendSection.astro';
 import UnknownValue from '../../../components/UnknownValue.astro';
 import Base from '../../../layouts/Base.astro';
-import { loadSiteData } from '../../../lib/data';
+import { loadHistory, loadSiteData } from '../../../lib/data';
 import { displayVersion } from '../../../lib/format';
 import { pageContext } from '../../../lib/page';
 import { loadSitePolicies } from '../../../lib/policies';
@@ -410,6 +411,8 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
           </a>
         ))}
       </section>
+
+      <TrendSection projectId={s.project.id} history={loadHistory()} locale={locale} />
 
       <section id="environments" class="block" aria-labelledby="h-env">
         <h2 id="h-env">{d.project.environments}</h2>

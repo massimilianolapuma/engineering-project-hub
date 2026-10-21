@@ -1,10 +1,18 @@
 import type { Locale } from '../i18n';
 
 export type PageKey =
-  'portfolio' | 'workflows' | 'versions' | 'security' | 'dataQuality' | 'catalog' | 'howToRead';
+  | 'portfolio'
+  | 'changes'
+  | 'workflows'
+  | 'versions'
+  | 'security'
+  | 'dataQuality'
+  | 'catalog'
+  | 'howToRead';
 
 const PATHS: Record<PageKey, string> = {
   portfolio: '',
+  changes: 'changes/',
   workflows: 'workflows/',
   versions: 'versions/',
   security: 'security/',

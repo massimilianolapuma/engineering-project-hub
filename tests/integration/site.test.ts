@@ -822,6 +822,92 @@ describe('static site', () => {
     });
   });
 
+  describe('trend', () => {
+    const rowOf = (html: string, name: string) => {
+      const from = html.slice(html.indexOf(`data-name="${name}"`));
+      return from.slice(0, from.indexOf('</tr>'));
+    };
+
+    it.each([
+      ['', 'Trend'],
+      ['it', 'Andamento'],
+    ])('portfolio /%s has a Trend column header', async (v, label) => {
+      const html = await page(v);
+      expect(html).toMatch(
+        new RegExp(`<th role="columnheader" scope="col"[^>]*>\\s*${label}\\s*</th>`),
+      );
+    });
+
+    it('draws a sparkline with a text label and delta for project alpha', async () => {
+      const row = rowOf(await page(''), 'project alpha');
+      expect(row).toMatch(
+        /<svg[^>]*role="img"[^>]*aria-label="Score up 14 points over 12 days \(13 collections\)"[\s\S]*?<path/,
+      );
+      expect(row).toContain('+14 · 12 d');
+      // Direction is never colour alone: an arrow glyph comes with the number.
+      expect(row).toMatch(/▲/);
+      expect(rowOf(await page('it'), 'project alpha')).toContain(
+        'Punteggio in aumento di 14 punti in 12 giorni (13 raccolte)',
+      );
+    });
+
+    it('says "Not enough measured points" for gamma and draws no path', async () => {
+      const row = rowOf(await page(''), 'project gamma');
+      expect(row).toContain('Not enough measured points');
+      expect(row).not.toContain('spark__line');
+    });
+
+    it('links to exports/portfolio.csv with a download attribute', async () => {
+      const html = await page('');
+      expect(html).toMatch(/<a[^>]*href="[^"]*exports\/portfolio\.csv"[^>]*download/);
+      expect(html).toContain('Download CSV');
+      expect(html).toContain('never 0');
+      expect(await page('it')).toContain('Scarica CSV');
+    });
+
+    it('project alpha has #trend with a table of 13 rows and one unknown score', async () => {
+      const html = await page('projects/project-alpha');
+      const at = html.indexOf('id="trend"');
+      expect(at).toBeGreaterThan(html.indexOf('class="dimcards"'));
+      const block = html.slice(at, html.indexOf('</section>', at));
+      expect(block).toMatch(/<details[^>]*>\s*<summary[^>]*>Show history as a table/);
+      expect(block.match(/data-trend-row/g)).toHaveLength(13);
+      const gap = block.slice(block.indexOf('2026-01-09'));
+      const cells = gap.slice(0, gap.indexOf('</tr>'));
+      expect(cells).toContain('unknown-value');
+      expect(block).toContain('Gaps are collections where the score could not be measured');
+      expect(block).toMatch(/role="img"[^>]*aria-label="[^"]*\d/);
+      expect(block).toContain('changes/#p-project-alpha');
+    });
+
+    it('project platform has 10 rows: no invented points', async () => {
+      const html = await page('projects/platform');
+      const at = html.indexOf('id="trend"');
+      expect(html.slice(at, html.indexOf('</section>', at)).match(/data-trend-row/g)).toHaveLength(
+        10,
+      );
+    });
+
+    it('IT project page shows the gap note in Italian', async () => {
+      expect(await page('it/projects/project-alpha')).toContain('I vuoti sono raccolte');
+    });
+
+    it('renders portfolio and project pages without history.json and changes.json', async () => {
+      const data = join(work, 'no-history');
+      await cp('fixtures/snapshots', data, { recursive: true });
+      await rm(join(data, 'history.json'));
+      await rm(join(data, 'changes.json'));
+      const out = join(work, 'dist-no-history');
+      await buildSite(data, out);
+      const home = await readFile(join(out, 'index.html'), 'utf8');
+      expect(home).toContain('No history yet');
+      expect(home).not.toContain('spark__line');
+      const proj = await readFile(join(out, 'projects/project-alpha/index.html'), 'utf8');
+      expect(proj).toContain('No history yet');
+      expect(proj).not.toContain('data-trend-row');
+    }, 180_000);
+  });
+
   it.each(['catalog', 'it/catalog'])(
     'embeds the published catalog and suggestions on /%s without inline code',
     async (v) => {

@@ -1,0 +1,71 @@
+---
+/**
+ * Overall status per collection, one cell each. Status is never colour alone: the cell height
+ * repeats it (critical full, attention two thirds, healthy one third) and unknown is a dashed
+ * full-height outline with no fill. Decorative: the text summary next to it carries the counts.
+ */
+import type { HealthStatus } from '@model/index';
+import { STRIP_HEIGHT, type TrendPoint } from '../lib/trend';
+interface Props {
+  points: TrendPoint[];
+}
+const { points } = Astro.props;
+const H = 24;
+const CELL = 6;
+const GAP = 2;
+const width = Math.max(1, points.length * (CELL + GAP) - GAP);
+const cell = (status: HealthStatus) => {
+  const h = Math.round(STRIP_HEIGHT[status] * H);
+  return { h, y: H - h };
+};
+---
+
+<svg
+  class="strip"
+  viewBox={`0 0 ${width} ${H}`}
+  width={width}
+  height={H}
+  preserveAspectRatio="none"
+  style={`max-width: ${points.length * 12}px`}
+  aria-hidden="true"
+  focusable="false"
+>
+  {points.map((p, i) => {
+    const { h, y } = cell(p.overall);
+    return (
+      <rect
+        class={`strip__cell strip__cell--${p.overall}`}
+        x={i * (CELL + GAP)}
+        y={y}
+        width={CELL}
+        height={h}
+        rx="1"
+      />
+    );
+  })}
+</svg>
+
+<style>
+  .strip {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: 24px;
+  }
+  .strip__cell--red {
+    fill: var(--red);
+  }
+  .strip__cell--amber {
+    fill: var(--amber);
+  }
+  .strip__cell--green {
+    fill: var(--green);
+  }
+  .strip__cell--grey {
+    fill: none;
+    stroke: var(--unknown);
+    stroke-width: 1.5;
+    stroke-dasharray: 2 2;
+    vector-effect: non-scaling-stroke;
+  }
+</style>
