@@ -893,3 +893,268 @@ describe('GitHubProvider: organisation teams (Members: read)', () => {
     });
   });
 });
+
+describe('GitHubProvider: dependency-graph SBOM export', () => {
+  const UUID = '0b9c5f3e-8f4b-4d3a-9d7e-2c1a6b5d4e3f';
+  const API = '/repos/o/a/dependency-graph/sbom';
+  const SIGNED = 'https://objects.githubusercontent.com/sbom/report.json?sig=abc';
+
+  interface Call {
+    path: string;
+    redirect: RequestInit['redirect'];
+    headers: Headers;
+  }
+  /** One handler for the API and for the download link; every request is recorded. */
+  function sbomProvider(handler: (url: URL) => Response, opts: { sbomMaxBytes?: number } = {}) {
+    const calls: Call[] = [];
+    const fetcher = (async (input: string | URL | Request, init?: RequestInit) => {
+      const url = new URL(
+        typeof input === 'string' ? input : input instanceof URL ? input.href : input.url,
+      );
+      calls.push({
+        path: url.origin + url.pathname,
+        redirect: init?.redirect,
+        headers: new Headers(init?.headers),
+      });
+      return handler(url);
+    }) as typeof fetch;
+    const p = new GitHubProvider(
+      createGitHubClient({ mode: 'fine-grained-token', token: 'synthetic' }, { fetch: fetcher }),
+      'fine-grained-token',
+      { fetch: fetcher, ...opts },
+    );
+    return { p, calls };
+  }
+  const json = (status: number, body: unknown, headers: Record<string, string> = {}) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { 'content-type': 'application/json', ...headers },
+    });
+  const sbomUrl = `https://api.github.com/repos/o/a/dependency-graph/sbom/fetch-report/${UUID}`;
+
+  it('requestDependencySbom extracts the uuid from sbom_url', async () => {
+    const { p, calls } = sbomProvider(() => json(201, { sbom_url: sbomUrl }));
+    expect(await p.requestDependencySbom('o/a')).toEqual({ ok: true, data: { uuid: UUID } });
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.path).toBe(`https://api.github.com${API}/generate-report`);
+  });
+
+  it('requestDependencySbom with a foreign sbom_url path → invalid-data', async () => {
+    for (const sbom_url of [
+      'https://api.github.com/repos/o/a/other/path',
+      'https://evil.example/x/dependency-graph/sbom/fetch-report/not-a-uuid',
+      undefined,
+    ]) {
+      const { p } = sbomProvider(() => json(201, { sbom_url }));
+      expect(await p.requestDependencySbom('o/a')).toMatchObject({
+        ok: false,
+        error: { classification: 'invalid-data' },
+      });
+    }
+  });
+
+  it('fetchDependencySbom 202 → pending', async () => {
+    const { p, calls } = sbomProvider(() => json(202, {}));
+    expect(await p.fetchDependencySbom('o/a', UUID)).toEqual({
+      ok: true,
+      data: { state: 'pending' },
+    });
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.redirect).toBe('manual');
+    expect(calls[0]!.path).toBe(`https://api.github.com${API}/fetch-report/${UUID}`);
+  });
+
+  it('fetchDependencySbom 302 to an allowed host → ready text, downloaded without Authorization', async () => {
+    const { p, calls } = sbomProvider((url) =>
+      url.pathname.includes('/fetch-report/')
+        ? new Response(null, { status: 302, headers: { location: SIGNED } })
+        : new Response('{"spdxVersion":"SPDX-2.3"}'),
+    );
+    expect(await p.fetchDependencySbom('o/a', UUID)).toEqual({
+      ok: true,
+      data: { state: 'ready', text: '{"spdxVersion":"SPDX-2.3"}' },
+    });
+    expect(calls).toHaveLength(2);
+    expect(calls[0]!.headers.get('authorization')).toBeTruthy();
+    expect(calls[1]!.path).toBe('https://objects.githubusercontent.com/sbom/report.json');
+    expect(calls[1]!.headers.has('authorization')).toBe(false);
+    expect(calls[1]!.redirect).toBe('error');
+  });
+
+  it('fetchDependencySbom 302 to https://evil.example → invalid-data, no download request made', async () => {
+    const { p, calls } = sbomProvider(
+      () => new Response(null, { status: 302, headers: { location: 'https://evil.example/x' } }),
+    );
+    expect(await p.fetchDependencySbom('o/a', UUID)).toMatchObject({
+      ok: false,
+      error: { classification: 'invalid-data', message: 'SBOM download host not allowed' },
+    });
+    expect(calls).toHaveLength(1);
+  });
+
+  it('fetchDependencySbom over the byte cap → invalid-data, incomplete', async () => {
+    const { p } = sbomProvider(
+      (url) =>
+        url.pathname.includes('/fetch-report/')
+          ? new Response(null, { status: 302, headers: { location: SIGNED } })
+          : new Response('x'.repeat(2000)),
+      { sbomMaxBytes: 1000 },
+    );
+    expect(await p.fetchDependencySbom('o/a', UUID)).toMatchObject({
+      ok: false,
+      error: { classification: 'invalid-data', message: 'SBOM too large', incomplete: true },
+    });
+  });
+
+  it('a missing Location, a malformed uuid and an unexpected status are invalid-data', async () => {
+    const noLocation = sbomProvider(() => new Response(null, { status: 302 }));
+    expect(await noLocation.p.fetchDependencySbom('o/a', UUID)).toMatchObject({
+      ok: false,
+      error: { classification: 'invalid-data' },
+    });
+    const bad = sbomProvider(() => json(202, {}));
+    expect(await bad.p.fetchDependencySbom('o/a', '../../admin')).toMatchObject({
+      ok: false,
+      error: { classification: 'invalid-data' },
+    });
+    expect(bad.calls).toHaveLength(0);
+    const odd = sbomProvider(() => json(200, { sbom: {} }));
+    expect(await odd.p.fetchDependencySbom('o/a', UUID)).toMatchObject({
+      ok: false,
+      error: { classification: 'invalid-data' },
+    });
+  });
+
+  it('a failing download is a classified error, never a thrown one', async () => {
+    const { p } = sbomProvider((url) =>
+      url.pathname.includes('/fetch-report/')
+        ? new Response(null, { status: 302, headers: { location: SIGNED } })
+        : new Response('nope', { status: 500 }),
+    );
+    expect(await p.fetchDependencySbom('o/a', UUID)).toMatchObject({
+      ok: false,
+      error: { classification: 'error' },
+    });
+  });
+
+  it('403 "Dependency graph is disabled for this repository" → not-configured; plain 403 → not-authorised', async () => {
+    const disabled = sbomProvider(() =>
+      json(403, { message: 'Dependency graph is disabled for this repository' }),
+    );
+    expect(await disabled.p.requestDependencySbom('o/a')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-configured', httpStatus: 403 },
+    });
+    expect(await disabled.p.fetchDependencySbom('o/a', UUID)).toMatchObject({
+      ok: false,
+      error: { classification: 'not-configured' },
+    });
+    const plain = sbomProvider(() =>
+      json(403, { message: 'Resource not accessible by integration' }),
+    );
+    expect(await plain.p.requestDependencySbom('o/a')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-authorised' },
+    });
+  });
+
+  it('both calls send X-GitHub-Api-Version 2026-03-10', async () => {
+    const { p, calls } = sbomProvider((url) =>
+      url.pathname.endsWith('/generate-report') ? json(201, { sbom_url: sbomUrl }) : json(202, {}),
+    );
+    await p.requestDependencySbom('o/a');
+    await p.fetchDependencySbom('o/a', UUID);
+    expect(calls.map((c) => c.headers.get('x-github-api-version'))).toEqual([
+      '2026-03-10',
+      '2026-03-10',
+    ]);
+  });
+});
+
+describe('MockProvider: dependency-graph SBOM export', () => {
+  async function make(fixture: unknown) {
+    const dir = await mkdtemp(join(tmpdir(), 'hub-mock-sbom-'));
+    await writeFile(join(dir, 'o__a.json'), JSON.stringify(fixture));
+    return new MockProvider(dir, () => new Date('2026-01-15T12:00:00Z'));
+  }
+  const repository = {
+    owner: 'o',
+    name: 'a',
+    fullName: 'o/a',
+    htmlUrl: 'https://github.com/o/a',
+    visibility: 'public',
+    defaultBranch: 'main',
+    archived: false,
+    updatedAt: null,
+    topics: [],
+  };
+
+  it('expand builds a valid SPDX 2.3 document with a DESCRIBES root and no real package names', async () => {
+    const { summariseSpdx } = await import('../../collector/src/normalizers/sbom');
+    const p = await make({
+      repository,
+      dependencySbom: {
+        expand: {
+          name: 'o/a',
+          created: '@now-1h',
+          packages: [
+            { count: 3, license: 'MIT', purl: 'maven' },
+            { count: 2, license: null, purl: null },
+          ],
+          extra: [{ name: 'canary-pkg', license: 'Apache-2.0', purl: 'maven' }],
+        },
+      },
+    });
+    const req = await p.requestDependencySbom('o/a');
+    expect(req.ok).toBe(true);
+    if (!req.ok) return;
+    const fetched = await p.fetchDependencySbom('o/a', req.data.uuid);
+    expect(fetched).toMatchObject({ ok: true, data: { state: 'ready' } });
+    if (!fetched.ok || fetched.data.state !== 'ready') return;
+    const summary = summariseSpdx(JSON.parse(fetched.data.text), [])!;
+    expect(summary.specVersion).toBe('2.3');
+    expect(summary.generatedAt).toBe('2026-01-15T11:00:00.000Z');
+    expect(summary.packages).toBe(6);
+    expect(summary.withoutLicense).toBe(2);
+    expect(summary.licenses).toEqual([
+      { id: 'MIT', count: 3 },
+      { id: 'Apache-2.0', count: 1 },
+    ]);
+    expect(summary.ecosystems).toEqual([
+      { id: 'maven', count: 4 },
+      { id: 'unknown', count: 2 },
+    ]);
+  });
+
+  it('pending makes every fetch pending; $error fails the request; absent is not-configured', async () => {
+    const pending = await make({ repository, dependencySbom: { pending: true } });
+    const req = await pending.requestDependencySbom('o/a');
+    expect(req.ok && (await pending.fetchDependencySbom('o/a', req.data.uuid))).toEqual({
+      ok: true,
+      data: { state: 'pending' },
+    });
+    const denied = await make({
+      repository,
+      dependencySbom: { $error: { classification: 'not-authorised', httpStatus: 403 } },
+    });
+    expect(await denied.requestDependencySbom('o/a')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-authorised' },
+    });
+    const absent = await make({ repository });
+    expect(await absent.requestDependencySbom('o/a')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-configured' },
+    });
+  });
+
+  it('a document fixture is returned verbatim', async () => {
+    const p = await make({ repository, dependencySbom: { document: { spdxVersion: 'SPDX-2.3' } } });
+    const req = await p.requestDependencySbom('o/a');
+    const fetched = req.ok && (await p.fetchDependencySbom('o/a', req.data.uuid));
+    expect(fetched).toEqual({
+      ok: true,
+      data: { state: 'ready', text: '{"spdxVersion":"SPDX-2.3"}' },
+    });
+  });
+});

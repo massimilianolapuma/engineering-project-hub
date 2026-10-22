@@ -22,6 +22,8 @@ import {
   type ReleaseDTO,
   type RepositoryDTO,
   type RunFailureDTO,
+  type SbomFetchDTO,
+  type SbomRequestDTO,
   type SecretScanningAlertDTO,
   type SourceProvider,
   type SubmoduleRefDTO,
@@ -68,6 +70,70 @@ export interface RepoFixture {
   qualitySummary?:
     { summary: unknown; createdAt: string; expired?: boolean; runId: number } | ErrorFixture;
   codeQualityFindings?: CodeQualityFindingDTO[] | ErrorFixture;
+  /**
+   * Dependency-graph SBOM export. `pending`: every fetch answers 202; `document`: a ready SPDX
+   * document; `expand`: a synthetic SPDX 2.3 document built from counts (no real package names).
+   * Absent → "dependency graph not enabled" (not-configured).
+   */
+  dependencySbom?:
+    { pending: true } | { document: unknown } | { expand: SbomExpand } | ErrorFixture;
+}
+
+/** Synthetic SPDX document: a root package, then `count` packages per entry, then `extra`. */
+export interface SbomExpand {
+  name: string;
+  spdxVersion?: string;
+  created: string;
+  packages: { count: number; license: string | null; purl: string | null }[];
+  extra?: { name: string; license: string | null; purl: string | null }[];
+}
+
+const MOCK_SBOM_UUID = '00000000-0000-4000-8000-000000000000';
+
+function spdxFromExpand(e: SbomExpand): unknown {
+  const pkg = (id: string, name: string, license: string | null, purl: string | null) => ({
+    SPDXID: id,
+    name,
+    versionInfo: '1.0.0',
+    licenseConcluded: license ?? 'NOASSERTION',
+    licenseDeclared: 'NOASSERTION',
+    ...(purl
+      ? {
+          externalRefs: [
+            {
+              referenceCategory: 'PACKAGE-MANAGER',
+              referenceType: 'purl',
+              referenceLocator: `pkg:${purl}/${name}@1.0.0`,
+            },
+          ],
+        }
+      : {}),
+  });
+  const packages: unknown[] = [{ SPDXID: 'SPDXRef-root', name: `com.github.${e.name}` }];
+  let n = 0;
+  for (const group of e.packages) {
+    for (let i = 0; i < group.count; i++, n++)
+      packages.push(
+        pkg(`SPDXRef-p${n}`, `synthetic-${group.purl ?? 'none'}-${n}`, group.license, group.purl),
+      );
+  }
+  for (const extra of e.extra ?? [])
+    packages.push(pkg(`SPDXRef-p${n++}`, extra.name, extra.license, extra.purl));
+  return {
+    spdxVersion: e.spdxVersion ?? 'SPDX-2.3',
+    dataLicense: 'CC0-1.0',
+    SPDXID: 'SPDXRef-DOCUMENT',
+    name: `com.github.${e.name}`,
+    creationInfo: { created: e.created, creators: ['Tool: synthetic-fixture'] },
+    packages,
+    relationships: [
+      {
+        spdxElementId: 'SPDXRef-DOCUMENT',
+        relationshipType: 'DESCRIBES',
+        relatedSpdxElement: 'SPDXRef-root',
+      },
+    ],
+  };
 }
 
 interface TeamFixture {
@@ -88,6 +154,12 @@ interface ErrorFixture {
 const isError = (v: unknown): v is ErrorFixture =>
   typeof v === 'object' && v !== null && '$error' in v;
 const NOT_FOUND: ProviderError = { classification: 'not-found', httpStatus: 404 };
+const notEnabled = (): ProviderResult<never> =>
+  fail({
+    classification: 'not-configured',
+    httpStatus: 403,
+    message: 'Dependency graph is not enabled for this repository',
+  });
 
 const TOKEN_IN_TEXT = /@now(?:[+-]\d+[mhd])?/g;
 
@@ -294,5 +366,18 @@ export class MockProvider implements SourceProvider {
 
   listCodeQualityFindings(repo: string) {
     return this.pick(repo, (f) => f.codeQualityFindings);
+  }
+
+  async requestDependencySbom(repo: string): Promise<ProviderResult<SbomRequestDTO>> {
+    const r = await this.pick(repo, (f) => f.dependencySbom, notEnabled());
+    return r.ok ? ok({ uuid: MOCK_SBOM_UUID }) : r;
+  }
+
+  async fetchDependencySbom(repo: string, _uuid: string): Promise<ProviderResult<SbomFetchDTO>> {
+    const r = await this.pick(repo, (f) => f.dependencySbom, notEnabled());
+    if (!r.ok) return r;
+    if ('pending' in r.data) return ok({ state: 'pending' });
+    const document = 'expand' in r.data ? spdxFromExpand(r.data.expand) : r.data.document;
+    return ok({ state: 'ready', text: JSON.stringify(document) });
   }
 }

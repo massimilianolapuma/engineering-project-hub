@@ -186,6 +186,14 @@ export interface QualitySummaryArtifactDTO {
   runUrl: string | null;
 }
 
+/** Result of asking GitHub to generate the dependency-graph SBOM report. */
+export interface SbomRequestDTO {
+  uuid: string;
+}
+
+/** `ready` carries the downloaded SPDX text: parsed and dropped by the collector, never published. */
+export type SbomFetchDTO = { state: 'pending' } | { state: 'ready'; text: string };
+
 export interface CodeQualityFindingDTO {
   category: string;
   severity: string;
@@ -289,6 +297,13 @@ export interface SourceProvider {
     branch: string,
   ): Promise<ProviderResult<QualitySummaryArtifactDTO>>;
   listCodeQualityFindings(repo: string): Promise<ProviderResult<CodeQualityFindingDTO[]>>;
+  /**
+   * Asks GitHub to generate the dependency-graph SBOM (GET .../sbom/generate-report): the single
+   * call that makes GitHub run a job (ADR 0009). Only called when the owner opted in.
+   */
+  requestDependencySbom(repo: string): Promise<ProviderResult<SbomRequestDTO>>;
+  /** Polls the report: 202 → pending; 302 → the SPDX text, downloaded from an allow-listed host. */
+  fetchDependencySbom(repo: string, uuid: string): Promise<ProviderResult<SbomFetchDTO>>;
 }
 
 /**

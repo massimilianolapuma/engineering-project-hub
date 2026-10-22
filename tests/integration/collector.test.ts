@@ -1004,6 +1004,8 @@ describe('sanitisation end to end', () => {
         runUrl: url,
       }),
     listCodeQualityFindings: async () => ok([{ category: poison, severity: poison }]),
+    requestDependencySbom: async () => fail({ classification: 'not-configured' }),
+    fetchDependencySbom: async () => fail({ classification: 'not-configured' }),
     listSecretScanningAlerts: async () =>
       ok([
         {

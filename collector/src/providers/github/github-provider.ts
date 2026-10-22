@@ -26,6 +26,8 @@ import {
   type QualitySummaryArtifactDTO,
   type ReleaseDTO,
   type RepositoryDTO,
+  type SbomFetchDTO,
+  type SbomRequestDTO,
   type RunFailureDTO,
   type SecretScanningAlertDTO,
   type SourceProvider,
@@ -34,6 +36,7 @@ import {
   type WorkflowRunDTO,
   WORKFLOW_FILE,
 } from '../types';
+import { DownloadError, downloadBounded } from '../../util/bounded-fetch';
 import { readZipEntry, ZipError } from '../../util/zip';
 import { classifyGitHubError } from './errors';
 
@@ -52,6 +55,18 @@ const ARTIFACT_PAGE_SIZE = 30;
 const MAX_ARTIFACT_PAGES = 3;
 const MAX_QUALITY_ZIP_BYTES = 65_536;
 const CODE_QUALITY_API_VERSION = '2026-03-10';
+
+/** Version header of the SBOM export (and attestations) endpoints. */
+const SBOM_API_VERSION = '2026-03-10';
+/**
+ * The 302 target of the SBOM report is not documented: exact host or `.`-suffix match, anything
+ * else fails closed (the observed host is recorded in docs/security.md).
+ */
+export const SBOM_DOWNLOAD_HOST_SUFFIXES = ['githubusercontent.com', 'github.com'] as const;
+const SBOM_UUID = /^[0-9a-fA-F-]{36}$/;
+const SBOM_REPORT_URL = /\/dependency-graph\/sbom\/fetch-report\/([0-9a-fA-F-]{36})$/;
+const SBOM_DOWNLOAD_TIMEOUT_MS = 20_000;
+const DEFAULT_SBOM_MAX_BYTES = 16 * 1024 * 1024;
 
 const silentLog = { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} };
 
@@ -154,12 +169,20 @@ class FindingsPageCapExceeded extends Error {
   override readonly name = 'FindingsPageCapExceeded';
 }
 
+export interface GitHubProviderOptions {
+  /** Streaming byte cap of the SBOM download (policies.supplyChain.sbom.maxBytes). */
+  sbomMaxBytes?: number;
+  /** Injected in tests: used for the SBOM download link, which never gets the credential. */
+  fetch?: typeof globalThis.fetch;
+}
+
 export class GitHubProvider implements SourceProvider {
   readonly dataSource = 'github' as const;
 
   constructor(
     private readonly client: Client,
     readonly authenticationMode: AuthenticationMode,
+    private readonly options: GitHubProviderOptions = {},
   ) {}
 
   getRepository(repo: string): Promise<ProviderResult<RepositoryDTO>> {
@@ -714,5 +737,63 @@ export class GitHubProvider implements SourceProvider {
         { failWhenCapped: true },
       ),
     );
+  }
+
+  requestDependencySbom(repo: string): Promise<ProviderResult<SbomRequestDTO>> {
+    return guard(async () => {
+      const { data } = await this.client.request(
+        'GET /repos/{owner}/{repo}/dependency-graph/sbom/generate-report',
+        { ...split(repo), headers: { 'X-GitHub-Api-Version': SBOM_API_VERSION } },
+      );
+      // The report URL is never called: only the uuid is kept, and only from the expected path.
+      const url = (data as { sbom_url?: unknown } | null)?.sbom_url;
+      const uuid = typeof url === 'string' ? SBOM_REPORT_URL.exec(url)?.[1] : undefined;
+      if (!uuid) throw new InvalidData('unexpected sbom_url');
+      return { uuid };
+    });
+  }
+
+  async fetchDependencySbom(repo: string, uuid: string): Promise<ProviderResult<SbomFetchDTO>> {
+    const step = await guard(async () => {
+      if (!SBOM_UUID.test(uuid)) throw new InvalidData('invalid report id');
+      const res = await this.client.request(
+        'GET /repos/{owner}/{repo}/dependency-graph/sbom/fetch-report/{sbom_uuid}',
+        {
+          ...split(repo),
+          sbom_uuid: uuid,
+          headers: { 'X-GitHub-Api-Version': SBOM_API_VERSION },
+          // The temporary download link is read from the Location header, never followed here.
+          request: { redirect: 'manual' },
+        },
+      );
+      // Octokit types this route as 302 only; 202 (still generating) is documented.
+      const status: number = res.status;
+      if (status === 202) return { pending: true as const };
+      const location = (res.headers as Record<string, string | undefined>).location;
+      if (status !== 302 || !location) throw new InvalidData('unexpected SBOM response');
+      return { pending: false as const, location };
+    });
+    if (!step.ok) return step;
+    if (step.data.pending) return ok({ state: 'pending' });
+    try {
+      const text = await downloadBounded(step.data.location, {
+        allowedHostSuffixes: SBOM_DOWNLOAD_HOST_SUFFIXES,
+        maxBytes: this.options.sbomMaxBytes ?? DEFAULT_SBOM_MAX_BYTES,
+        timeoutMs: SBOM_DOWNLOAD_TIMEOUT_MS,
+        ...(this.options.fetch ? { fetch: this.options.fetch } : {}),
+      });
+      return ok({ state: 'ready', text });
+    } catch (e) {
+      if (!(e instanceof DownloadError)) throw e;
+      if (e.kind === 'host')
+        return fail({ classification: 'invalid-data', message: 'SBOM download host not allowed' });
+      if (e.kind === 'too-large')
+        return fail({
+          classification: 'invalid-data',
+          message: 'SBOM too large',
+          incomplete: true,
+        });
+      return fail({ classification: 'error', message: 'SBOM download failed' });
+    }
   }
 }
