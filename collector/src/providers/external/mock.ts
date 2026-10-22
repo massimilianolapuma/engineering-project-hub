@@ -4,7 +4,15 @@ import type { ProviderId, ProvidersFile } from '@model/index';
 import type { Clock } from '../../util/clock';
 import { resolveTokens } from '../mock/mock-provider';
 import { fail, ok, type ProviderError, type ProviderResult } from '../types';
-import type { ExternalProviders, QualityProvider, SonarProjectDTO } from './types';
+import type {
+  ArgoApplicationDTO,
+  DeploymentProvider,
+  ExternalProviders,
+  HarborArtifactDTO,
+  QualityProvider,
+  RegistryProvider,
+  SonarProjectDTO,
+} from './types';
 
 /**
  * Mock external providers (fixtures/providers/<id>.json, all synthetic). A fixture is
@@ -48,9 +56,19 @@ export function createMockExternalProviders(
     id: 'sonarqube',
     getProject: (key) => lookup<SonarProjectDTO>('sonarqube', key),
   };
+  const harbor: RegistryProvider = {
+    id: 'harbor',
+    getArtifact: (project, repository, reference) =>
+      lookup<HarborArtifactDTO>('harbor', `${project}/${repository}:${reference}`),
+  };
+  const argocd: DeploymentProvider = {
+    id: 'argocd',
+    getApplication: (app) =>
+      lookup<ArgoApplicationDTO>('argocd', `${app.namespace ?? '-'}/${app.name}`),
+  };
   return {
     sonarqube: providers.sonarqube.enabled ? sonarqube : null,
-    harbor: null,
-    argocd: null,
+    harbor: providers.harbor.enabled ? harbor : null,
+    argocd: providers.argocd.enabled ? argocd : null,
   };
 }
