@@ -191,6 +191,8 @@ export function resolveTokens<T>(value: T, now: Date): T {
 export class MockProvider implements SourceProvider {
   readonly dataSource = 'mock' as const;
   readonly authenticationMode = 'mock' as const;
+  /** Fixtures only: nothing is ever requested from GitHub, whatever the owner's switch says. */
+  readonly dependencyGraphExport = true;
   private readonly cache = new Map<string, Promise<RepoFixture | null>>();
 
   constructor(

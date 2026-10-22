@@ -178,6 +178,11 @@ class FindingsPageCapExceeded extends Error {
 }
 
 export interface GitHubProviderOptions {
+  /**
+   * Owner opt-in (policies.supplyChain.sbom.dependencyGraph, default false). Only when true may
+   * `requestDependencySbom` call generate-report, the one call that asks GitHub to run a job.
+   */
+  dependencyGraphExport?: boolean;
   /** Streaming byte cap of the SBOM download (policies.supplyChain.sbom.maxBytes). */
   sbomMaxBytes?: number;
   /** Injected in tests: used for the SBOM download link, which never gets the credential. */
@@ -186,12 +191,15 @@ export interface GitHubProviderOptions {
 
 export class GitHubProvider implements SourceProvider {
   readonly dataSource = 'github' as const;
+  readonly dependencyGraphExport: boolean;
 
   constructor(
     private readonly client: Client,
     readonly authenticationMode: AuthenticationMode,
     private readonly options: GitHubProviderOptions = {},
-  ) {}
+  ) {
+    this.dependencyGraphExport = options.dependencyGraphExport === true;
+  }
 
   getRepository(repo: string): Promise<ProviderResult<RepositoryDTO>> {
     return guard(async () => {
@@ -836,6 +844,15 @@ export class GitHubProvider implements SourceProvider {
   }
 
   requestDependencySbom(repo: string): Promise<ProviderResult<SbomRequestDTO>> {
+    // Gate of the single "compute" call (ADR 0009): without the owner's opt-in nothing is sent.
+    if (!this.dependencyGraphExport)
+      return Promise.resolve(
+        fail({
+          classification: 'not-configured',
+          message: 'dependency-graph SBOM export is off',
+          skipped: true,
+        }),
+      );
     return guard(async () => {
       const { data } = await this.client.request(
         'GET /repos/{owner}/{repo}/dependency-graph/sbom/generate-report',

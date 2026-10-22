@@ -254,6 +254,12 @@ export const fail = <T = never>(error: ProviderError): ProviderResult<T> => ({ o
 export interface SourceProvider {
   readonly dataSource: DataSource;
   readonly authenticationMode: AuthenticationMode;
+  /**
+   * Whether the dependency-graph SBOM export may be used. The real GitHub provider follows the
+   * owner's opt-in switch (`policies.supplyChain.sbom.dependencyGraph`, off by default); the mock
+   * provider reads fixtures and is always true. When false, `requestDependencySbom` makes no call.
+   */
+  readonly dependencyGraphExport: boolean;
   getRepository(repo: string): Promise<ProviderResult<RepositoryDTO>>;
   /** Discovery: repositories of an owner (organisation or user); public only unless asked. */
   listOwnerRepositories(

@@ -143,7 +143,7 @@ Per-source state for each control:
 
 Collected only when `supplyChain.enabled` (default `true`) **and** `supplyChain.sbom.dependencyGraph` (default **`false`**: opt-in, the one place where the hub asks GitHub to run a job; ADR 0009), once per unique repository.
 
-**Export off (the default).** Nothing is requested. The `dependency-graph` source is off and skipped (§5.1 rule 4). The SBOM control is resolved from `supply-chain-summary` (the CI artifact, CycloneDX or SPDX counts) and then `status-file`. With neither, the SBOM counts are unknown (`null`): never healthy and never 0.
+**Export off (the default).** Nothing is requested (the switch gates only the real GitHub provider; the mock provider serves fixtures whatever it says). The `dependency-graph` source is off and skipped (§5.1 rule 4). The SBOM control is resolved from `supply-chain-summary` (the CI artifact, CycloneDX or SPDX counts) and then `status-file`. With neither, the SBOM counts are unknown (`null`): never healthy and never 0.
 
 1. **Request:** `GET /repos/{o}/{r}/dependency-graph/sbom/generate-report` (header `X-GitHub-Api-Version: 2026-03-10`). `201 { sbom_url }`. The collector extracts the UUID with `^…/dependency-graph/sbom/fetch-report/([0-9a-fA-F-]{36})$` from `sbom_url` and never calls `sbom_url` itself.
    - The request is issued **early** for every repository, before the other calls of that repository, so GitHub works while the hub collects the rest.
@@ -484,7 +484,7 @@ Shared rules: every state has text and a symbol; "present" and "verified" are di
 
 ### 5.13 Mock data (synthetic; exact values in the plan, Task 8)
 
-`GOLDEN_NOW = 2026-01-15T12:00:00.000Z`. External providers are enabled only by `fixtures/providers/providers.yaml`. The dependency-graph rows below need the opt-in: the demo `config/policies.yaml` (the mock source reads fixtures only, so nothing is requested from GitHub) sets `supplyChain.sbom.dependencyGraph: true` explicitly, with a comment saying a real deployment keeps it `false` unless it accepts the ADR 0009 exception.
+`GOLDEN_NOW = 2026-01-15T12:00:00.000Z`. External providers are enabled only by `fixtures/providers/providers.yaml`. The `dependencyGraph` switch gates only the **real GitHub provider's** `generate-report` call. The mock provider returns the fixture SBOM data whatever the switch says (nothing is ever requested from GitHub), so the dependency-graph rows below need no opt-in. The demo `config/policies.yaml` keeps `supplyChain.sbom.dependencyGraph: false`: a real collection run with `config/` never triggers the export.
 
 | Repository / item | SBOM                                                                                                                                                                               | Attestations / images                                                         | Tools / providers                                                                                       |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |

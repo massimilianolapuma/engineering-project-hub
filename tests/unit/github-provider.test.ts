@@ -905,7 +905,10 @@ describe('GitHubProvider: dependency-graph SBOM export', () => {
     headers: Headers;
   }
   /** One handler for the API and for the download link; every request is recorded. */
-  function sbomProvider(handler: (url: URL) => Response, opts: { sbomMaxBytes?: number } = {}) {
+  function sbomProvider(
+    handler: (url: URL) => Response,
+    opts: { sbomMaxBytes?: number; dependencyGraphExport?: boolean } = {},
+  ) {
     const calls: Call[] = [];
     const fetcher = (async (input: string | URL | Request, init?: RequestInit) => {
       const url = new URL(
@@ -921,7 +924,7 @@ describe('GitHubProvider: dependency-graph SBOM export', () => {
     const p = new GitHubProvider(
       createGitHubClient({ mode: 'fine-grained-token', token: 'synthetic' }, { fetch: fetcher }),
       'fine-grained-token',
-      { fetch: fetcher, ...opts },
+      { fetch: fetcher, dependencyGraphExport: true, ...opts },
     );
     return { p, calls };
   }
@@ -931,6 +934,37 @@ describe('GitHubProvider: dependency-graph SBOM export', () => {
       headers: { 'content-type': 'application/json', ...headers },
     });
   const sbomUrl = `https://api.github.com/repos/o/a/dependency-graph/sbom/fetch-report/${UUID}`;
+
+  it('export switch off (the default): generate-report is never requested', async () => {
+    const { p, calls } = sbomProvider(() => json(201, { sbom_url: sbomUrl }), {
+      dependencyGraphExport: false,
+    });
+    expect(p.dependencyGraphExport).toBe(false);
+    expect(await p.requestDependencySbom('o/a')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-configured', skipped: true },
+    });
+    expect(calls).toHaveLength(0);
+    // The default provider (no option) is off too.
+    const dflt = new GitHubProvider(
+      createGitHubClient(
+        { mode: 'fine-grained-token', token: 'synthetic' },
+        {
+          fetch: (() => {
+            throw new Error('network');
+          }) as typeof fetch,
+        },
+      ),
+      'fine-grained-token',
+    );
+    expect(dflt.dependencyGraphExport).toBe(false);
+    expect(await dflt.requestDependencySbom('o/a')).toMatchObject({ ok: false });
+  });
+
+  it('the mock provider serves fixture SBOM data whatever the owner switch says', async () => {
+    const mock = new MockProvider('fixtures/github', () => new Date(0));
+    expect(mock.dependencyGraphExport).toBe(true);
+  });
 
   it('requestDependencySbom extracts the uuid from sbom_url', async () => {
     const { p, calls } = sbomProvider(() => json(201, { sbom_url: sbomUrl }));

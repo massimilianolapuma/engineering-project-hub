@@ -143,7 +143,7 @@ Stato per fonte per ogni controllo:
 
 Raccolto solo con `supplyChain.enabled` (default `true`) **e** `supplyChain.sbom.dependencyGraph` (default **`false`**: opt-in, l'unico punto in cui l'hub chiede a GitHub di eseguire un job; ADR 0009), una volta per repository unico.
 
-**Export spento (il default).** Non viene richiesto nulla. La fonte `dependency-graph` è spenta e saltata (§5.1 regola 4). Il controllo SBOM si risolve da `supply-chain-summary` (l'artefatto CI, conteggi CycloneDX o SPDX) e poi da `status-file`. Senza nessuno dei due, i conteggi SBOM sono sconosciuti (`null`): mai sani e mai 0.
+**Export spento (il default).** Non viene richiesto nulla (l'interruttore governa solo il provider GitHub reale; il provider mock serve le fixture qualunque cosa dica). La fonte `dependency-graph` è spenta e saltata (§5.1 regola 4). Il controllo SBOM si risolve da `supply-chain-summary` (l'artefatto CI, conteggi CycloneDX o SPDX) e poi da `status-file`. Senza nessuno dei due, i conteggi SBOM sono sconosciuti (`null`): mai sani e mai 0.
 
 1. **Richiesta:** `GET /repos/{o}/{r}/dependency-graph/sbom/generate-report` (header `X-GitHub-Api-Version: 2026-03-10`). `201 { sbom_url }`. Il collector estrae l'UUID da `sbom_url` con `^…/dependency-graph/sbom/fetch-report/([0-9a-fA-F-]{36})$` e non chiama mai `sbom_url` direttamente.
    - La richiesta parte **presto** per ogni repository, prima delle altre chiamate di quel repository, così GitHub lavora mentre l'hub raccoglie il resto.
@@ -484,7 +484,7 @@ Regole comuni: ogni stato ha testo e simbolo; "presente" e "verificata" sono par
 
 ### 5.13 Dati mock (sintetici; valori esatti nel piano, Task 8)
 
-`GOLDEN_NOW = 2026-01-15T12:00:00.000Z`. I provider esterni sono abilitati solo da `fixtures/providers/providers.yaml`. Le righe del dependency graph qui sotto richiedono l'opt-in: il `config/policies.yaml` della demo (la sorgente mock legge solo fixture, quindi nulla viene richiesto a GitHub) imposta esplicitamente `supplyChain.sbom.dependencyGraph: true`, con un commento che dice che un'installazione reale lo tiene `false` salvo accettare l'eccezione dell'ADR 0009.
+`GOLDEN_NOW = 2026-01-15T12:00:00.000Z`. I provider esterni sono abilitati solo da `fixtures/providers/providers.yaml`. L'interruttore `dependencyGraph` governa solo la chiamata `generate-report` del **provider GitHub reale**. Il provider mock restituisce i dati SBOM delle fixture qualunque sia l'interruttore (nulla viene mai richiesto a GitHub), quindi le righe del dependency graph qui sotto non richiedono opt-in. Il `config/policies.yaml` della demo tiene `supplyChain.sbom.dependencyGraph: false`: una raccolta reale con `config/` non attiva mai l'export.
 
 | Repository / elemento | SBOM                                                                                                                                                                                    | Attestazioni / immagini                                                                      | Tool / provider                                                                                                    |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |

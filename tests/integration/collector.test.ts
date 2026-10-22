@@ -854,6 +854,7 @@ describe('sanitisation end to end', () => {
   const poisoned: SourceProvider = {
     dataSource: 'github',
     authenticationMode: 'fine-grained-token',
+    dependencyGraphExport: false,
     getRepository: async (repo) =>
       ok({
         owner: 'example-org',

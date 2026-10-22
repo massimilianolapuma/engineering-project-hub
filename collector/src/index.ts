@@ -87,6 +87,7 @@ async function main(): Promise<number> {
       : new GitHubProvider(
           createGitHubClient(auth, { baseUrl: values['api-url'] ?? process.env.GITHUB_API_URL }),
           auth.mode,
+          { dependencyGraphExport: policies.supplyChain.sbom.dependencyGraph },
         );
 
   console.log(

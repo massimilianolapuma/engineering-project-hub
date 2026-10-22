@@ -557,9 +557,9 @@ describe('policies: supply chain, quality sources and version levels', () => {
     expect(p.freshness.supplyChainSummaryStaleDays).toBe(14);
   });
 
-  it('the demo file enables the export explicitly and flags GPL licenses (informative)', () => {
+  it('the demo file keeps the export off and flags GPL licenses (informative)', () => {
     const p = PoliciesSchema.parse(raw);
-    expect(p.supplyChain.sbom.dependencyGraph).toBe(true);
+    expect(p.supplyChain.sbom.dependencyGraph).toBe(false);
     expect(p.supplyChain.sbom.flaggedLicenses).toEqual(['GPL-3.0-only', 'AGPL-3.0-only']);
     expect(p.supplyChain.levels).toEqual({ unsignedArtifact: 'info', flaggedLicense: 'info' });
   });
