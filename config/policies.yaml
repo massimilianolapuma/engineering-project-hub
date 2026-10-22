@@ -13,6 +13,7 @@ freshness:
   securityScanStaleDays: 7 # last code scanning analysis older than this = stale
   securityStatusFileStaleDays: 7 # .security/project-security-status.json older than this = stale
   qualityReportStaleDays: 14 # hub-quality-summary generated longer ago = stale (still counted, caps at amber)
+  # supplyChainSummaryStaleDays: 14 # hub-supply-chain-summary generated longer ago = stale (default 14)
 
 delivery:
   queuedThresholdMinutes: 60 # queued / in progress for longer = attention
@@ -37,6 +38,8 @@ quality:
   greenThresholdPercent: 80 # at or above = green
   amberThresholdPercent: 60 # at or above = amber, below = red
   missingReportIsAmber: true # some applicable component without a visible report → at most amber
+  # sources: [ci-summary, sonarqube] # report sources per component, in order of precedence (default)
+  # qualityGateFailed: info # info | amber: a failed SonarQube quality gate (default info)
 
 # History: a compact record of every collection kept between runs (history.json) and the
 # "what changed" diff (changes.json). Optional: the defaults below apply when omitted.
@@ -53,6 +56,27 @@ version:
   unmappedSubmodule: amber
   untaggedSubmodule: amber # coordinator pins a SHA that is not a release tag
   manifestSubmoduleMismatch: amber # manifest version ≠ version pinned by the submodule
+  # environmentOutOfSync: info # info | amber | red: Argo CD reports an environment out of sync (default info)
+  # environmentDegraded: info # info | amber | red: Argo CD reports an environment degraded (default info)
+
+# Supply chain evidence: SBOM, signatures and attestations, Trivy / Checkov / ZAP by code-scanning
+# tool name. Every level is informative by default. Optional: the defaults apply when omitted.
+supplyChain:
+  # enabled: true # false = no supply-chain evidence collected
+  sbom:
+    # The SBOM export asks GitHub to run a job (GET .../dependency-graph/sbom/generate-report): the
+    # single exception to "read-only, GET only" (ADR 0009). It is OFF by default. This demo turns
+    # it on because the mock source reads fixtures only; keep it false in a real deployment unless
+    # you accept that exception.
+    dependencyGraph: true
+    # maxBytes: 16777216 · pollAttempts: 3 · pollIntervalSeconds: 5
+    flaggedLicenses: [GPL-3.0-only, AGPL-3.0-only] # demo: informative
+  # attestations: { releaseAssets: true, maxAssets: 5 }
+  # toolControls: # code-scanning tool name (case-insensitive) → control; optional category prefix
+  #   containerScanning: [{ tool: Trivy }]
+  #   iacScanning: [{ tool: Checkov }]
+  #   dast: [{ tool: ZAP }]
+  # levels: { unsignedArtifact: info, flaggedLicense: info } # info | amber | red
 
 governance:
   missingStandardWorkflow: amber

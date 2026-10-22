@@ -16,7 +16,9 @@
       "dependabot": "available",
       "secretScanning": "partial",
       "codeQuality": "available",
-      "repositoryRules": "partial"
+      "repositoryRules": "partial",
+      "dependencyGraph": "not-used",
+      "attestations": "not-used"
     },
     "inaccessibleSources": [
       {

@@ -3,7 +3,7 @@
  * Engineering Project Hub collector CLI.
  *
  *   tsx collector/src/index.ts [--source mock|github] [--out public/data] [--config config]
- *                              [--exceptions <file>] [--fixtures fixtures/github] [--now 2026-01-15T12:00:00Z]
+ *                              [--exceptions <file>] [--providers <file>] [--fixtures fixtures/github] [--now 2026-01-15T12:00:00Z]
  *                              [--history-from <dir>] [--history-fixture <file>] [--fresh-history]
  *
  * --source defaults to $DATA_SOURCE, then "mock". The previous history is read from
@@ -13,7 +13,12 @@
  */
 import { parseArgs } from 'node:util';
 import { DataSourceSchema } from '@model/index';
-import { ConfigError, loadConfig, resolveExceptionsPath } from './config/load';
+import {
+  ConfigError,
+  loadConfig,
+  resolveExceptionsPath,
+  resolveProvidersPath,
+} from './config/load';
 import { AuthConfigError, resolveAuth } from './providers/auth';
 import { createGitHubClient, GitHubProvider } from './providers/github/github-provider';
 import { buildHistoryExtras } from './history/extras';
@@ -36,6 +41,7 @@ async function main(): Promise<number> {
       out: { type: 'string', default: 'public/data' },
       config: { type: 'string', default: 'config' },
       exceptions: { type: 'string' },
+      providers: { type: 'string' },
       fixtures: { type: 'string', default: 'fixtures/github' },
       now: { type: 'string' },
       'history-from': { type: 'string' },
@@ -61,8 +67,14 @@ async function main(): Promise<number> {
     config: values.config,
     exceptions: values.exceptions,
   });
+  const providersPath = resolveProvidersPath({
+    source,
+    config: values.config,
+    providers: values.providers,
+  });
   const { catalog, policies, exceptions } = await loadConfig(values.config, {
     exceptionsFile: file,
+    providersFile: providersPath.file,
     allowDateTokens,
     now: clock(),
   });

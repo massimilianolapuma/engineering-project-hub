@@ -4,7 +4,7 @@
 
 **Goal:** Give the five non-native security controls (`containerScanning`, `iacScanning`, `dast`, `sbom`, `artifactSignature`) real sources and add three optional, read-only external providers:
 
-- **GitHub-native (on by default, informative):** SBOM summary from the asynchronous dependency-graph export; attestations of release-asset digests; a `hub-supply-chain-summary` CI artifact (image digests, cosign / gh attestation results, CycloneDX or SPDX counts); Trivy / Checkov / ZAP recognised by code-scanning tool name.
+- **GitHub-native (on by default, informative):** SBOM summary from the `hub-supply-chain-summary` CI artifact, and from the asynchronous dependency-graph export only when the owner opts in (**off by default**, controller ruling); attestations of release-asset digests; a `hub-supply-chain-summary` CI artifact (image digests, cosign / gh attestation results, CycloneDX or SPDX counts); Trivy / Checkov / ZAP recognised by code-scanning tool name.
 - **External (off by default):** SonarQube as a second Quality source, Harbor for image scans and signatures, Argo CD for deployed versions per environment.
 
 Nothing turns red by default, and with external providers off no status changes.
@@ -39,9 +39,13 @@ Expect drift and **adapt to what is there**:
 
 Keep the interfaces below. Never revert v0.7.0–v0.9.0 code.
 
+**Controller ruling (overrides the spec where they differ):** the dependency-graph SBOM export is **off by default** (opt-in switch, the single exception recorded in ADR 0009), because `generate-report` asks GitHub to run a job. The spec (EN + IT, D3, §5.2, §5.13, §7) is updated accordingly.
+
+**Drift actually found (v0.7.0–v0.9.0 merged):** snapshot is `1.6` on `main`, so this release sets `1.7`; history stays `1.2`; `shared/model/primitives.ts` had no `sha` (added there, `snapshot.ts` imports it); ADR 0009 and 0010 are free.
+
 ## Global Constraints
 
-- Read-only. GitHub: GET only. External providers: GET only, to the configured host only. The single GitHub call that asks GitHub to compute something is `GET …/dependency-graph/sbom/generate-report` (D3, ADR 0009), behind `supplyChain.sbom.dependencyGraph`.
+- Read-only. GitHub: GET only. External providers: GET only, to the configured host only. The single GitHub call that asks GitHub to compute something is `GET …/dependency-graph/sbom/generate-report` (D3, ADR 0009). It is **opt-in, off by default** (`supplyChain.sbom.dependencyGraph: false`); with it off, nothing is requested, the SBOM control's default source is the `hub-supply-chain-summary` CI artifact (CycloneDX counts) and otherwise its counts are unknown (`null`), never healthy and never 0. Only the demo `config/policies.yaml` sets it to `true`, because the mock source reads fixtures only.
 - **Never send `refresh` to Argo CD.** Never call Harbor scan, Sonar write or any `POST`/`PUT`/`DELETE`.
 - No new runtime or dev dependency. HTTP with Node `fetch`, zip with the existing `collector/src/util/zip.ts`.
 - Strict Zod on every published field. Never publish: package names, versions or purls; license texts or `LicenseRef-` names (folded into `LicenseRef-*`); SBOM documents; attestation bundles; ZAP request/response data; Sonar issues; Harbor vulnerability lists or scanner names; Argo CD `repoURL`, destination, resources or unmatched images; base URLs of external providers; credentials.
@@ -49,7 +53,7 @@ Keep the interfaces below. Never revert v0.7.0–v0.9.0 code.
 - Credentials only from env: `SONARQUBE_TOKEN`, `HARBOR_ROBOT_NAME` + `HARBOR_ROBOT_SECRET`, `ARGOCD_TOKEN`. Never logged, never in errors, added to `sensitiveEnvValues()`. Harbor name without secret (or the reverse) is a structural config error (exit 1). Enabled provider without credential → items `not-authorised`, provider state `not-authorised`, one warning line, exit 0 (D9).
 - Unknown ≠ 0: pending / too-large / invalid SBOM → counts `null`; not-configured provider → `off`, never "0 vulnerabilities" or "unsigned"; presence is `present`, never `verified`.
 - Defaults, verbatim from the spec:
-  - `supplyChain.enabled: true`, `supplyChain.sbom.dependencyGraph: true`, `sbom.maxBytes: 16777216`, `sbom.pollAttempts: 3`, `sbom.pollIntervalSeconds: 5`, `sbom.flaggedLicenses: []`;
+  - `supplyChain.enabled: true`, `supplyChain.sbom.dependencyGraph: false` (controller ruling: opt-in), `sbom.maxBytes: 16777216`, `sbom.pollAttempts: 3`, `sbom.pollIntervalSeconds: 5`, `sbom.flaggedLicenses: []`;
   - `supplyChain.attestations.releaseAssets: true`, `attestations.maxAssets: 5`;
   - `supplyChain.toolControls: { containerScanning: [{tool: Trivy}], iacScanning: [{tool: Checkov}], dast: [{tool: ZAP}] }`;
   - `supplyChain.precedence` as in spec §5.1;
@@ -57,7 +61,7 @@ Keep the interfaces below. Never revert v0.7.0–v0.9.0 code.
   - `freshness.supplyChainSummaryStaleDays: 14`;
   - `quality.sources: [ci-summary, sonarqube]`, `quality.qualityGateFailed: info`;
   - `version.environmentOutOfSync: info`, `version.environmentDegraded: info`.
-- The demo `config/policies.yaml` sets `supplyChain.sbom.flaggedLicenses: [GPL-3.0-only, AGPL-3.0-only]` with the comment "demo: informative". `config/providers.yaml` ships with all three providers `enabled: false`.
+- The demo `config/policies.yaml` sets `supplyChain.sbom.flaggedLicenses: [GPL-3.0-only, AGPL-3.0-only]` with the comment "demo: informative", and `supplyChain.sbom.dependencyGraph: true` explicitly (the mock reads fixtures only; the comment says a real deployment keeps it `false` unless it accepts the ADR 0009 exception). `config/providers.yaml` ships with all three providers `enabled: false`.
 - Artifact `hub-supply-chain-summary`, file `supply-chain-summary.json`, zip cap 65 536 bytes, contract `schemaVersion: '1.0'`.
 - Snapshot `SNAPSHOT_SCHEMA_VERSION = '1.7'`, `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS = ['1.7']`. Policies `schemaVersion` stays `'1.0'`. `providers.yaml` `schemaVersion: '1.0'`.
 - Every UI string is EN + IT (parity: `tests/unit/i18n.test.ts`). Every new or changed doc has an EN and an IT version.
@@ -126,7 +130,7 @@ Keep the interfaces below. Never revert v0.7.0–v0.9.0 code.
     - `http://… rejected; https://user:pw@host rejected; https://h/?q rejected; https://h/sonar accepted; https://h/a/../b rejected`;
     - `timeoutSeconds 0 and 61 rejected; maxItems 1001 rejected`.
   - `config.test.ts`:
-    - `policies defaults: supplyChain.enabled true, sbom.maxBytes 16777216, pollAttempts 3, attestations.maxAssets 5, levels info, quality.sources [ci-summary, sonarqube], version.environmentOutOfSync info, freshness.supplyChainSummaryStaleDays 14`;
+    - `policies defaults: supplyChain.enabled true, sbom.dependencyGraph false, sbom.maxBytes 16777216, pollAttempts 3, attestations.maxAssets 5, levels info, quality.sources [ci-summary, sonarqube], version.environmentOutOfSync info, freshness.supplyChainSummaryStaleDays 14`;
     - `precedence.iacScanning [harbor] rejected; precedence.sbom [] rejected; precedence.sbom duplicate rejected`;
     - `toolControls Trivy under container and iac without categories rejected; with trivy-image / trivy-config accepted`;
     - `catalog: sonarProjectKey "a b" rejected; containerImages repository "Alpha/Backend" rejected; tagTemplate "v{version}" accepted, "latest" rejected; argocdApplication name "Beta_Prod" rejected; duplicate image across targets rejected`.
@@ -653,7 +657,7 @@ export function toEnvironments(config: ProjectConfig, manifest: ReleaseManifest 
   - `CollectionErrorSchema.source` and `staleSources[].source` additions (spec §5.10).
 - Modify: `collector/src/collectors/collect.ts`:
   - `RepoData` gains `sbomRequest`, `sbomFetch`, `attestations: Map<digest, ProviderResult<AttestationPresenceDTO>> | 'skipped'`, `analyses: Map<tool, ProviderResult<CodeScanningAnalysisDTO[]>>`, `supplyChainSummary`;
-  - `collectRepository` issues `requestDependencySbom` first (when enabled), runs the other calls, then polls `fetchDependencySbom` (≤ `pollAttempts` waits of `pollIntervalSeconds`; inject the sleep through `CollectContext.sleep` so tests use 0);
+  - `collectRepository` issues `requestDependencySbom` first (only when `supplyChain.enabled` **and** `sbom.dependencyGraph` are true; with the default `false` no request is made and `capabilities.dependencyGraph` stays `not-used`), runs the other calls, then polls `fetchDependencySbom` (≤ `pollAttempts` waits of `pollIntervalSeconds`; inject the sleep through `CollectContext.sleep` so tests use 0);
   - `RawProjectData` gains `sonar: Map<key, ProviderResult<SonarProjectDTO>>`, `harbor: Map<ref, ProviderResult<HarborArtifactDTO>>`, `argocd: Map<envId, ProviderResult<ArgoApplicationDTO> | 'off'>`, collected through `ExternalProviders` with a per-provider limiter of 2 and the `maxItems` cap (beyond → `fail({ classification: 'error', message: 'cap reached' })`).
 - Modify: `collector/src/build-snapshot.ts`: build candidates → `toRepositoryControls` with `resolveControl` → `externalCountsFrom` → `evaluateSecurity` / coverage; `buildSupplyChain`; quality with `QualityInput` v2; `toEnvironments` with deployments; summary fields; errors (`dependency-sbom`, `attestations`, `supply-chain-summary`, `code-scanning-analyses`, `sonarqube`, `harbor`, `argocd`; `not-configured` dependency graph is not an error; SBOM `pending` is not an error).
 - Modify: `collector/src/run.ts`: capabilities `dependencyGraph` (from `sbomRequest`) and `attestations`; `run.providers` (`off` when disabled; otherwise `available` / `partial` / `not-authorised` / `unknown` with the existing usable/denied rules, `items` = calls made, `errors` = failed items); the report line (spec §5.10); a warning line per enabled provider without credential.
@@ -831,7 +835,7 @@ The mock providers store raw API-shaped JSON for Harbor and Argo CD (so the proj
   - Threat model rows: T11 (a provider pointed at another host / SSRF through mapped names → host pinning, encoding, redirect refusal), T12 (secrets or internal data from external APIs → projections, scrubbing, canaries, publication gate with the new env names), T13 (presence mistaken for verification → evidence levels).
   - "Data never published": package names, license texts, `LicenseRef` names, bundles, ZAP request/response data, Sonar issues, Harbor vulnerability lists and scanner names, Argo CD `repoURL` / destination / resources, base URLs.
   - The observed SBOM download host (from a real run; if not yet observed, say "not yet observed; the allowlist fails closed").
-  - The SBOM export request as the single compute call (ADR 0009) and the switch.
+  - The SBOM export request as the single compute call (ADR 0009): off by default, the opt-in switch, and the CI-summary fallback.
 - `docs/operations.md`: enabling each provider step by step (config entry, mapping, secret, first run, reading the Providers card); a CI example job for `hub-supply-chain-summary`:
 
   ```yaml

@@ -152,8 +152,62 @@ export const CapabilitySchema = z.enum([
   'secretScanning',
   'codeQuality',
   'repositoryRules',
+  'dependencyGraph',
+  'attestations',
 ]);
 export type Capability = z.infer<typeof CapabilitySchema>;
+
+/** Where the state of a control comes from (the first definitive source in the precedence list wins). */
+export const ControlSourceSchema = z.enum([
+  'github',
+  'code-scanning',
+  'dependency-graph',
+  'attestations',
+  'supply-chain-summary',
+  'harbor',
+  'status-file',
+]);
+export type ControlSource = z.infer<typeof ControlSourceSchema>;
+
+/**
+ * How strong the evidence is. verified: CI ran a verification and reported success.
+ * present: the evidence exists in GitHub or Harbor, nobody verified it in this run.
+ * reported: results reported by a scanning tool.
+ */
+export const ControlEvidenceSchema = z.enum(['verified', 'present', 'reported']);
+export type ControlEvidence = z.infer<typeof ControlEvidenceSchema>;
+
+/** Optional external providers (config/providers.yaml). Off by default. */
+export const ProviderIdSchema = z.enum(['sonarqube', 'harbor', 'argocd']);
+export type ProviderId = z.infer<typeof ProviderIdSchema>;
+export const ProviderStateSchema = z.enum([
+  'off',
+  'available',
+  'partial',
+  'not-authorised',
+  'unknown',
+]);
+export type ProviderState = z.infer<typeof ProviderStateSchema>;
+
+/** Package ecosystems published in SBOM summaries (purl types; anything else is "other"). */
+export const EcosystemSchema = z.enum([
+  'npm',
+  'maven',
+  'pypi',
+  'nuget',
+  'golang',
+  'cargo',
+  'gem',
+  'composer',
+  'githubactions',
+  'docker',
+  'pub',
+  'swift',
+  'hex',
+  'other',
+  'unknown',
+]);
+export type Ecosystem = z.infer<typeof EcosystemSchema>;
 
 /** Repository controls (Governance), in display order. */
 export const RepositoryCheckIdSchema = z.enum([
@@ -265,6 +319,9 @@ export const REASON_CODES = [
   'environment-behind',
   'environment-mismatch',
   'environment-version-unknown',
+  'environment-out-of-sync',
+  'environment-degraded',
+  'environment-deployment-unknown',
   'coordinator-version-unknown',
   'manifest-missing',
   'manifest-invalid',
@@ -276,6 +333,9 @@ export const REASON_CODES = [
   'open-secret-alerts',
   'required-control-failed',
   'required-control-stale',
+  // supply chain
+  'supply-chain-unsigned-artifact',
+  'supply-chain-flagged-license',
   'coverage-incomplete',
   'security-data-unavailable',
   'private-details-withheld',
@@ -313,6 +373,7 @@ export const REASON_CODES = [
   'quality-report-not-authorised',
   'quality-report-unknown',
   'quality-report-stale',
+  'quality-gate-failed',
   'quality-not-applicable',
   'quality-all-above-threshold',
   // freshness / overall

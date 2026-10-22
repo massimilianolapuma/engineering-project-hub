@@ -4,7 +4,12 @@ import {
   normaliseSeverity,
   normaliseStatus,
 } from '../../collector/src/normalizers/security';
-import { QualitySummarySchema } from '@model/index';
+import {
+  OCI_REPOSITORY_RE,
+  QualitySummarySchema,
+  SupplyChainSummarySchema,
+  spdxLicenseExpression,
+} from '@model/index';
 import { ok } from '../../collector/src/providers/types';
 import { countOpen, toFindings } from '../../collector/src/normalizers/security-model';
 import type { BuildContext } from '../../collector/src/normalizers/model';
@@ -237,5 +242,115 @@ describe('security findings: match keys and exceptions', () => {
     expect(countOpen([{ ...f!, exception: null }]).medium).toBe(1);
     expect(countOpen([accepted]).medium).toBe(0);
     expect(countOpen([expired]).medium).toBe(1);
+  });
+});
+
+describe('SupplyChainSummarySchema (hub-supply-chain-summary contract)', () => {
+  const digest = `sha256:${'a'.repeat(64)}`;
+  const example = () => ({
+    schemaVersion: '1.0',
+    repository: 'example-org/project-alpha-frontend',
+    ref: 'refs/heads/main',
+    commitSha: 'ae4b58f791cf66bf510c92ca102cc34470fbdf7d',
+    generatedAt: '2026-01-14T10:00:00Z',
+    sbom: {
+      format: 'cyclonedx',
+      specVersion: '1.6',
+      tool: 'syft',
+      packages: 812,
+      withoutLicense: 9,
+      licenses: [{ id: 'MIT', count: 640 }],
+      ecosystems: [{ id: 'npm', count: 812 }],
+    },
+    images: [
+      {
+        name: 'example-org/project-alpha-frontend',
+        tag: '2.2.0',
+        digest,
+        signature: { status: 'verified', tool: 'cosign' },
+        provenance: { status: 'verified', tool: 'gh-attestation' },
+        sbomAttestation: { status: 'missing' },
+      },
+    ],
+  });
+  const image = (over: Record<string, unknown>) => {
+    const doc = example();
+    Object.assign(doc.images[0]!, over);
+    return SupplyChainSummarySchema.safeParse(doc).success;
+  };
+
+  it('accepts the spec example, and a document with neither sbom nor images', () => {
+    expect(SupplyChainSummarySchema.safeParse(example()).success).toBe(true);
+    const { sbom: _s, images: _i, ...bare } = example();
+    void _s;
+    void _i;
+    expect(SupplyChainSummarySchema.safeParse(bare).success).toBe(true);
+  });
+
+  it('rejects an extra key in images[0] and at the top level', () => {
+    expect(image({ certificate: 'x' })).toBe(false);
+    expect(SupplyChainSummarySchema.safeParse({ ...example(), extra: 1 }).success).toBe(false);
+  });
+
+  it('rejects digest "sha256:abc"', () => {
+    expect(image({ digest: 'sha256:abc' })).toBe(false);
+  });
+
+  it('rejects withoutLicense > packages', () => {
+    const doc = example();
+    doc.sbom.withoutLicense = 900;
+    expect(SupplyChainSummarySchema.safeParse(doc).success).toBe(false);
+  });
+
+  it('rejects image names with a registry host; accepts a plain repository path', () => {
+    for (const name of ['ghcr.io/x/y', 'localhost/x', 'registry:5000/x']) {
+      expect(image({ name }), name).toBe(false);
+    }
+    expect(image({ name: 'example-org/project-alpha-frontend' })).toBe(true);
+    expect(image({ name: 'alpine' })).toBe(true);
+    expect(OCI_REPOSITORY_RE.test('Example/Upper')).toBe(false);
+  });
+
+  it('folds LicenseRef-* license ids and rejects unsafe ones', () => {
+    const doc = example();
+    doc.sbom.licenses = [{ id: 'LicenseRef-acme-1', count: 3 }];
+    const parsed = SupplyChainSummarySchema.parse(doc);
+    expect(parsed.sbom!.licenses).toEqual([{ id: 'LicenseRef-*', count: 3 }]);
+    doc.sbom.licenses = [{ id: '<script>', count: 1 }];
+    expect(SupplyChainSummarySchema.safeParse(doc).success).toBe(false);
+  });
+
+  it('rejects an unknown verification status, tool and ecosystem', () => {
+    expect(image({ signature: { status: 'trusted', tool: 'cosign' } })).toBe(false);
+    expect(image({ signature: { status: 'verified', tool: 'gpg' } })).toBe(false);
+    const doc = example();
+    doc.sbom.ecosystems = [{ id: 'bitbucket', count: 1 }];
+    expect(SupplyChainSummarySchema.safeParse(doc).success).toBe(false);
+  });
+
+  it('caps images at 10', () => {
+    const doc = example();
+    doc.images = Array.from({ length: 11 }, () => structuredClone(doc.images[0]!));
+    expect(SupplyChainSummarySchema.safeParse(doc).success).toBe(false);
+  });
+});
+
+describe('spdxLicenseExpression', () => {
+  it('keeps publishable expressions, folds LicenseRef, drops the rest', () => {
+    expect(spdxLicenseExpression('MIT OR Apache-2.0')).toBe('MIT OR Apache-2.0');
+    expect(spdxLicenseExpression('MIT AND (Apache-2.0 OR BSD-3-Clause)')).toBe(
+      'MIT AND (Apache-2.0 OR BSD-3-Clause)',
+    );
+    expect(spdxLicenseExpression('GPL-2.0-only WITH Classpath-exception-2.0')).toBe(
+      'GPL-2.0-only WITH Classpath-exception-2.0',
+    );
+    expect(spdxLicenseExpression('LicenseRef-acme-1 AND MIT')).toBe('LicenseRef-*');
+    expect(spdxLicenseExpression('NOASSERTION')).toBeNull();
+    expect(spdxLicenseExpression('NONE')).toBeNull();
+    expect(spdxLicenseExpression('')).toBeNull();
+    expect(spdxLicenseExpression('MIT; rm -rf')).toBeNull();
+    expect(spdxLicenseExpression('<script>')).toBeNull();
+    expect(spdxLicenseExpression(`${'MIT OR '.repeat(20)}MIT`)).toBeNull();
+    expect(spdxLicenseExpression(undefined)).toBeNull();
   });
 });

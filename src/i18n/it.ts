@@ -322,6 +322,8 @@ export const it: Dict = {
     secretScanning: 'Alert secret scanning',
     codeQuality: 'Rilievi Code Quality',
     repositoryRules: 'Regole dei branch',
+    dependencyGraph: 'Esportazione SBOM (dependency graph)',
+    attestations: 'Attestazioni degli artefatti',
   },
   portfolio: {
     title: 'Portfolio',
@@ -1478,6 +1480,10 @@ export const it: Dict = {
     'environment-behind': '{environment} esegue {version}, il coordinator è a {expected}',
     'environment-mismatch': '{environment} dichiara {version}, il coordinator è a {expected}',
     'environment-version-unknown': '{environment}: versione non dichiarata',
+    'environment-out-of-sync': '{environment} non è allineato alla sua sorgente Git (Argo CD)',
+    'environment-degraded': '{environment} segnala salute {health} (Argo CD)',
+    'environment-deployment-unknown':
+      '{environment}: la versione distribuita non è leggibile da Argo CD',
     'coordinator-version-unknown': 'Versione del coordinator non determinabile',
     'manifest-missing': 'Nessun release manifest: versioni note solo in parte',
     'manifest-invalid': 'Release manifest non valido',
@@ -1488,6 +1494,9 @@ export const it: Dict = {
     'open-secret-alerts': '{count} alert secret scanning aperti',
     'required-control-failed': 'Controllo obbligatorio fallito: {control}',
     'required-control-stale': 'Controllo obbligatorio non aggiornato: {control}',
+    'supply-chain-unsigned-artifact':
+      '{count} repository con artefatti non firmati o non verificati: {repositories}',
+    'supply-chain-flagged-license': '{count} repository con licenze segnalate: {repositories}',
     'coverage-incomplete': 'Copertura controlli incompleta ({percentage}%)',
     'security-data-unavailable': 'Alcuni dati di sicurezza non sono leggibili',
     'private-details-withheld': 'Dettagli dei repository non pubblici omessi',
@@ -1524,6 +1533,7 @@ export const it: Dict = {
     'quality-report-not-authorised': 'Report di qualità non autorizzato: {components}',
     'quality-report-unknown': 'Report di qualità sconosciuto: {components}',
     'quality-report-stale': 'Report di qualità obsoleto: {components}',
+    'quality-gate-failed': 'Quality gate fallito: {components}',
     'quality-not-applicable': 'La copertura test non si applica a nessun componente ({components})',
     'quality-all-above-threshold': 'Copertura test {percentage}%, sopra la soglia ({components})',
     'source-stale': 'Sorgente non aggiornata',

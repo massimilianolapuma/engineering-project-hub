@@ -320,6 +320,8 @@ export const en = {
     secretScanning: 'Secret scanning alerts',
     codeQuality: 'Code Quality findings',
     repositoryRules: 'Branch rules',
+    dependencyGraph: 'SBOM export (dependency graph)',
+    attestations: 'Artifact attestations',
   },
   portfolio: {
     title: 'Portfolio',
@@ -1466,6 +1468,9 @@ export const en = {
     'environment-behind': '{environment} runs {version}, coordinator is {expected}',
     'environment-mismatch': '{environment} declares {version}, coordinator is {expected}',
     'environment-version-unknown': '{environment}: version not declared',
+    'environment-out-of-sync': '{environment} is out of sync with its Git source (Argo CD)',
+    'environment-degraded': '{environment} reports health {health} (Argo CD)',
+    'environment-deployment-unknown': '{environment}: deployed version cannot be read from Argo CD',
     'coordinator-version-unknown': 'Coordinator version cannot be determined',
     'manifest-missing': 'No release manifest: versions only partially known',
     'manifest-invalid': 'Release manifest is invalid',
@@ -1476,6 +1481,9 @@ export const en = {
     'open-secret-alerts': '{count} open secret scanning alerts',
     'required-control-failed': 'Required control failed: {control}',
     'required-control-stale': 'Required control stale: {control}',
+    'supply-chain-unsigned-artifact':
+      '{count} repositories with unsigned or unverified artifacts: {repositories}',
+    'supply-chain-flagged-license': '{count} repositories with flagged licenses: {repositories}',
     'coverage-incomplete': 'Controls coverage incomplete ({percentage}%)',
     'security-data-unavailable': 'Some security data could not be read',
     'private-details-withheld': 'Details of non-public repositories withheld',
@@ -1512,6 +1520,7 @@ export const en = {
     'quality-report-not-authorised': 'Quality report not authorised: {components}',
     'quality-report-unknown': 'Quality report unknown: {components}',
     'quality-report-stale': 'Quality report stale: {components}',
+    'quality-gate-failed': 'Quality gate failed: {components}',
     'quality-not-applicable': 'Test coverage does not apply to any component ({components})',
     'quality-all-above-threshold':
       'Test coverage {percentage}%, above the threshold ({components})',

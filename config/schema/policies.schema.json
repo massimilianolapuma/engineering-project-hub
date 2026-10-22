@@ -33,6 +33,11 @@
           "default": 14,
           "type": "number",
           "exclusiveMinimum": 0
+        },
+        "supplyChainSummaryStaleDays": {
+          "default": 14,
+          "type": "number",
+          "exclusiveMinimum": 0
         }
       },
       "additionalProperties": false
@@ -154,6 +159,29 @@
         "missingReportIsAmber": {
           "default": true,
           "type": "boolean"
+        },
+        "sources": {
+          "default": [
+            "ci-summary",
+            "sonarqube"
+          ],
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "ci-summary",
+              "sonarqube"
+            ]
+          }
+        },
+        "qualityGateFailed": {
+          "default": "info",
+          "type": "string",
+          "enum": [
+            "info",
+            "amber"
+          ]
         }
       },
       "additionalProperties": false
@@ -217,6 +245,24 @@
           "enum": [
             "red",
             "amber"
+          ]
+        },
+        "environmentOutOfSync": {
+          "default": "info",
+          "type": "string",
+          "enum": [
+            "info",
+            "amber",
+            "red"
+          ]
+        },
+        "environmentDegraded": {
+          "default": "info",
+          "type": "string",
+          "enum": [
+            "info",
+            "amber",
+            "red"
           ]
         }
       },
@@ -483,6 +529,299 @@
               ]
             },
             "secret": {
+              "default": "info",
+              "type": "string",
+              "enum": [
+                "info",
+                "amber",
+                "red"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "supplyChain": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "type": "boolean"
+        },
+        "sbom": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "dependencyGraph": {
+              "default": false,
+              "type": "boolean"
+            },
+            "maxBytes": {
+              "default": 16777216,
+              "type": "integer",
+              "minimum": 1024,
+              "maximum": 67108864
+            },
+            "pollAttempts": {
+              "default": 3,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            },
+            "pollIntervalSeconds": {
+              "default": 5,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30
+            },
+            "flaggedLicenses": {
+              "default": [],
+              "maxItems": 50,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9.+-]{1,64}$"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "attestations": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "releaseAssets": {
+              "default": true,
+              "type": "boolean"
+            },
+            "maxAssets": {
+              "default": 5,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            }
+          },
+          "additionalProperties": false
+        },
+        "toolControls": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "containerScanning": {
+              "default": [
+                {
+                  "tool": "Trivy"
+                }
+              ],
+              "maxItems": 10,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "tool": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 50
+                  },
+                  "category": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "tool"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "iacScanning": {
+              "default": [
+                {
+                  "tool": "Checkov"
+                }
+              ],
+              "maxItems": 10,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "tool": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 50
+                  },
+                  "category": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "tool"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "dast": {
+              "default": [
+                {
+                  "tool": "ZAP"
+                }
+              ],
+              "maxItems": 10,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "tool": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 50
+                  },
+                  "category": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "tool"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "precedence": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "containerScanning": {
+              "default": [
+                "code-scanning",
+                "harbor",
+                "status-file"
+              ],
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "github",
+                  "code-scanning",
+                  "dependency-graph",
+                  "attestations",
+                  "supply-chain-summary",
+                  "harbor",
+                  "status-file"
+                ]
+              }
+            },
+            "iacScanning": {
+              "default": [
+                "code-scanning",
+                "status-file"
+              ],
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "github",
+                  "code-scanning",
+                  "dependency-graph",
+                  "attestations",
+                  "supply-chain-summary",
+                  "harbor",
+                  "status-file"
+                ]
+              }
+            },
+            "dast": {
+              "default": [
+                "code-scanning",
+                "status-file"
+              ],
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "github",
+                  "code-scanning",
+                  "dependency-graph",
+                  "attestations",
+                  "supply-chain-summary",
+                  "harbor",
+                  "status-file"
+                ]
+              }
+            },
+            "sbom": {
+              "default": [
+                "supply-chain-summary",
+                "dependency-graph",
+                "status-file"
+              ],
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "github",
+                  "code-scanning",
+                  "dependency-graph",
+                  "attestations",
+                  "supply-chain-summary",
+                  "harbor",
+                  "status-file"
+                ]
+              }
+            },
+            "artifactSignature": {
+              "default": [
+                "supply-chain-summary",
+                "attestations",
+                "harbor",
+                "status-file"
+              ],
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "github",
+                  "code-scanning",
+                  "dependency-graph",
+                  "attestations",
+                  "supply-chain-summary",
+                  "harbor",
+                  "status-file"
+                ]
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "levels": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "unsignedArtifact": {
+              "default": "info",
+              "type": "string",
+              "enum": [
+                "info",
+                "amber",
+                "red"
+              ]
+            },
+            "flaggedLicense": {
               "default": "info",
               "type": "string",
               "enum": [

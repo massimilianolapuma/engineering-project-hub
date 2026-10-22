@@ -14,9 +14,11 @@ import {
   PoliciesSchema,
   PortfolioIndexSchema,
   ProjectSnapshotSchema,
+  ProvidersFileSchema,
   QualitySummarySchema,
   ReleaseManifestSchema,
   SecurityStatusFileSchema,
+  SupplyChainSummarySchema,
 } from '../shared/model';
 
 export const SCHEMA_TARGETS: [string, z.ZodType][] = [
@@ -30,6 +32,8 @@ export const SCHEMA_TARGETS: [string, z.ZodType][] = [
   ['project-snapshot.schema.json', ProjectSnapshotSchema],
   ['quality-summary.schema.json', QualitySummarySchema],
   ['exceptions.schema.json', ExceptionsFileSchema],
+  ['providers.schema.json', ProvidersFileSchema],
+  ['supply-chain-summary.schema.json', SupplyChainSummarySchema],
   ['policy-case.schema.json', PolicyCaseSchema],
 ];
 

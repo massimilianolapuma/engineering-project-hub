@@ -9,6 +9,8 @@ export const isoDate = z.iso.datetime({ offset: true });
 export const utcDate = z.iso.datetime();
 /** Links are sanitised before validation; this only re-checks the shape. */
 export const httpsUrl = z.url({ protocol: /^https$/ }).max(500);
+/** Full commit SHA (40 lowercase hex characters). */
+export const sha = z.string().regex(/^[0-9a-f]{40}$/);
 export const shortText = z.string().max(200);
 /** null means "unknown" — never the same as 0. */
 export const nullableCount = z.number().int().min(0).nullable();

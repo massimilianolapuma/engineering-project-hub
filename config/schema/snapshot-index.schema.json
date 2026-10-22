@@ -63,7 +63,9 @@
               "dependabot",
               "secretScanning",
               "codeQuality",
-              "repositoryRules"
+              "repositoryRules",
+              "dependencyGraph",
+              "attestations"
             ]
           },
           "additionalProperties": {
@@ -84,7 +86,9 @@
             "dependabot",
             "secretScanning",
             "codeQuality",
-            "repositoryRules"
+            "repositoryRules",
+            "dependencyGraph",
+            "attestations"
           ]
         },
         "inaccessibleSources": {

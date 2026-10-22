@@ -1,9 +1,11 @@
 import { z } from 'zod';
 import {
+  ControlSourceSchema,
   DimensionSchema,
   EnforcementLevelSchema,
   REPOSITORY_CHECK_IDS,
   SeveritySchema,
+  type ControlSource,
 } from './enums';
 
 const NonGreenStatus = z.enum(['red', 'amber', 'grey']);
@@ -11,6 +13,45 @@ const RedOrAmber = z.enum(['red', 'amber']);
 /** info = shown, never changes the status. */
 const CheckLevel = EnforcementLevelSchema;
 const SlaDays = z.number().int().min(1).max(3650).nullable();
+
+const ToolRuleSchema = z
+  .object({
+    /** Code-scanning tool name (the SARIF driver name), matched case-insensitively. */
+    tool: z.string().min(1).max(50),
+    /** When set, a prefix of the analysis / alert category. */
+    category: z.string().min(1).max(100).optional(),
+  })
+  .strict();
+
+/** Sources each control may be resolved from, in the order they are allowed to appear. */
+const PRECEDENCE_SOURCES = {
+  containerScanning: ['code-scanning', 'harbor', 'status-file'],
+  iacScanning: ['code-scanning', 'status-file'],
+  dast: ['code-scanning', 'status-file'],
+  sbom: ['supply-chain-summary', 'dependency-graph', 'status-file'],
+  artifactSignature: ['supply-chain-summary', 'attestations', 'harbor', 'status-file'],
+} as const satisfies Record<string, readonly ControlSource[]>;
+
+const precedenceList = (control: keyof typeof PRECEDENCE_SOURCES) =>
+  z
+    .array(ControlSourceSchema)
+    .min(1)
+    .superRefine((list, ctx) => {
+      const allowed: readonly ControlSource[] = PRECEDENCE_SOURCES[control];
+      list.forEach((source, i) => {
+        if (!allowed.includes(source)) {
+          ctx.addIssue({
+            code: 'custom',
+            path: [i],
+            message: `"${source}" cannot resolve ${control} (allowed: ${allowed.join(', ')})`,
+          });
+        }
+        if (list.indexOf(source) !== i) {
+          ctx.addIssue({ code: 'custom', path: [i], message: `duplicate source "${source}"` });
+        }
+      });
+    })
+    .default([...PRECEDENCE_SOURCES[control]]);
 
 /**
  * Health policies. These are MVP policies for this organisation, not universal risk
@@ -27,6 +68,8 @@ export const PoliciesSchema = z
         securityStatusFileStaleDays: z.number().positive().default(7),
         /** generatedAt of a hub-quality-summary older than this = stale (still counted). */
         qualityReportStaleDays: z.number().positive().default(14),
+        /** generatedAt of a hub-supply-chain-summary older than this = stale. */
+        supplyChainSummaryStaleDays: z.number().positive().default(14),
       })
       .strict(),
     delivery: z
@@ -61,6 +104,14 @@ export const PoliciesSchema = z
         amberThresholdPercent: z.number().min(0).max(100).default(60),
         /** Some applicable components without a visible report → at most amber. */
         missingReportIsAmber: z.boolean().default(true),
+        /** Report sources per component, in order of precedence. */
+        sources: z
+          .array(z.enum(['ci-summary', 'sonarqube']))
+          .min(1)
+          .refine((l) => new Set(l).size === l.length, 'sources must be unique')
+          .default(['ci-summary', 'sonarqube']),
+        /** What a failed SonarQube quality gate does to Quality. */
+        qualityGateFailed: z.enum(['info', 'amber']).default('info'),
       })
       .strict()
       .refine((q) => q.amberThresholdPercent <= q.greenThresholdPercent, {
@@ -78,6 +129,10 @@ export const PoliciesSchema = z
         untaggedSubmodule: NonGreenStatus.default('amber'),
         /** The manifest declares a version different from the one the submodule pins. */
         manifestSubmoduleMismatch: RedOrAmber.default('amber'),
+        /** Argo CD reports an environment out of sync with its Git source. */
+        environmentOutOfSync: CheckLevel.default('info'),
+        /** Argo CD reports an environment degraded (or missing, suspended). */
+        environmentDegraded: CheckLevel.default('info'),
       })
       .strict(),
     governance: z
@@ -142,6 +197,99 @@ export const PoliciesSchema = z
             medium: CheckLevel.default('info'),
             low: CheckLevel.default('info'),
             secret: CheckLevel.default('info'),
+          })
+          .strict()
+          .prefault({}),
+      })
+      .strict()
+      .prefault({}),
+    /**
+     * Supply chain evidence: SBOM, signatures and attestations, Trivy / Checkov / ZAP by
+     * code-scanning tool name. Informative by default. The SBOM export asks GitHub to run a job
+     * (the single exception to "read-only, GET only"), so it is off unless the owner opts in.
+     * Optional block.
+     */
+    supplyChain: z
+      .object({
+        enabled: z.boolean().default(true),
+        sbom: z
+          .object({
+            /** true = GET .../dependency-graph/sbom/generate-report (ADR 0009). Off by default. */
+            dependencyGraph: z.boolean().default(false),
+            maxBytes: z.number().int().min(1024).max(67108864).default(16777216),
+            pollAttempts: z.number().int().min(1).max(10).default(3),
+            pollIntervalSeconds: z.number().int().min(1).max(30).default(5),
+            /** SPDX ids that make a package "flagged" (informative), case-insensitive. */
+            flaggedLicenses: z
+              .array(z.string().regex(/^[A-Za-z0-9.+-]{1,64}$/))
+              .max(50)
+              .default([]),
+          })
+          .strict()
+          .prefault({}),
+        attestations: z
+          .object({
+            releaseAssets: z.boolean().default(true),
+            maxAssets: z.number().int().min(1).max(20).default(5),
+          })
+          .strict()
+          .prefault({}),
+        /** Code-scanning tools mapped to a control. */
+        toolControls: z
+          .object({
+            containerScanning: z
+              .array(ToolRuleSchema)
+              .max(10)
+              .default([{ tool: 'Trivy' }]),
+            iacScanning: z
+              .array(ToolRuleSchema)
+              .max(10)
+              .default([{ tool: 'Checkov' }]),
+            dast: z
+              .array(ToolRuleSchema)
+              .max(10)
+              .default([{ tool: 'ZAP' }]),
+          })
+          .strict()
+          .prefault({})
+          .superRefine((rules, ctx) => {
+            const seen = new Map<string, { control: string; category: string | undefined }[]>();
+            for (const control of ['containerScanning', 'iacScanning', 'dast'] as const) {
+              for (const rule of rules[control]) {
+                const key = rule.tool.toLowerCase();
+                seen.set(key, [...(seen.get(key) ?? []), { control, category: rule.category }]);
+              }
+            }
+            for (const [tool, uses] of seen) {
+              const controls = new Set(uses.map((u) => u.control));
+              const ambiguous =
+                controls.size > 1 &&
+                (uses.some((u) => u.category === undefined) ||
+                  new Set(uses.map((u) => u.category)).size !== uses.length);
+              if (ambiguous) {
+                ctx.addIssue({
+                  code: 'custom',
+                  path: [],
+                  message: `tool "${tool}" is mapped to several controls: give each rule a different category`,
+                });
+              }
+            }
+          }),
+        /** Source order per control (first definitive source wins). */
+        precedence: z
+          .object({
+            containerScanning: precedenceList('containerScanning'),
+            iacScanning: precedenceList('iacScanning'),
+            dast: precedenceList('dast'),
+            sbom: precedenceList('sbom'),
+            artifactSignature: precedenceList('artifactSignature'),
+          })
+          .strict()
+          .prefault({}),
+        levels: z
+          .object({
+            unsignedArtifact: CheckLevel.default('info'),
+            flaggedLicense: CheckLevel.default('info'),
           })
           .strict()
           .prefault({}),

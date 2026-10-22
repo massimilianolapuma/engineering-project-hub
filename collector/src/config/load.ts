@@ -7,10 +7,13 @@ import {
   CatalogSettingsSchema,
   ExceptionsFileSchema,
   PoliciesSchema,
+  PROVIDERS_OFF,
   ProjectConfigSchema,
+  ProvidersFileSchema,
   type Catalog,
   type ExceptionsFile,
   type Policies,
+  type ProvidersFile,
 } from '@model/index';
 import { validateExceptions, type ExceptionIssue } from '../policy/exceptions';
 import { resolveRelativeTime } from '../util/clock';
@@ -65,10 +68,17 @@ export interface LoadedExceptions {
   warnings: ExceptionIssue[];
 }
 
+export interface LoadedProviders {
+  /** fixture = the mock source; config = the owner's file; none = no file (all off). */
+  source: 'config' | 'fixture' | 'none';
+  file: ProvidersFile;
+}
+
 export interface LoadedConfig {
   catalog: Catalog;
   policies: Policies;
   exceptions: LoadedExceptions;
+  providers: LoadedProviders;
 }
 
 async function readOptional(file: string): Promise<string | null> {
@@ -228,9 +238,51 @@ export async function loadExceptions(
   };
 }
 
+/** The providers file is a short list of three blocks: 64 KiB is far beyond it. */
+const MAX_PROVIDERS_BYTES = 64 * 1024;
+
+/**
+ * Where the collector reads the providers file from: the mock source reads the fixture (which
+ * enables the three providers against fixtures/providers/*.json), the github source reads the
+ * owner's file in the config directory (absent = every provider off).
+ */
+export function resolveProvidersPath(o: {
+  source: 'mock' | 'github';
+  config: string;
+  providers?: string;
+}): { file: string; fixture: boolean } {
+  const mock = o.source === 'mock';
+  return {
+    file:
+      o.providers ??
+      (mock ? 'fixtures/providers/providers.yaml' : join(o.config, 'providers.yaml')),
+    fixture: mock,
+  };
+}
+
+/** Loads and validates providers.yaml. A missing file is "all providers off". */
+export async function loadProviders(
+  file: string,
+  opts: { fixture?: boolean } = {},
+): Promise<LoadedProviders> {
+  const text = await readOptional(file);
+  if (text === null) return { source: 'none', file: PROVIDERS_OFF };
+  if (Buffer.byteLength(text) > MAX_PROVIDERS_BYTES)
+    throw new ConfigError(`${file} is too large (at most ${MAX_PROVIDERS_BYTES} bytes)`, file);
+  return {
+    source: opts.fixture ? 'fixture' : 'config',
+    file: parseYamlWith(ProvidersFileSchema, text, file),
+  };
+}
+
 export async function loadConfig(
   configDir = 'config',
-  opts: { exceptionsFile?: string; allowDateTokens?: boolean; now?: Date } = {},
+  opts: {
+    exceptionsFile?: string;
+    providersFile?: string;
+    allowDateTokens?: boolean;
+    now?: Date;
+  } = {},
 ): Promise<LoadedConfig> {
   const policiesFile = join(configDir, 'policies.yaml');
   const catalog = await loadCatalog(configDir);
@@ -244,5 +296,8 @@ export async function loadConfig(
       allowDateTokens: opts.allowDateTokens ?? false,
     },
   );
-  return { catalog, policies, exceptions };
+  const providers = await loadProviders(opts.providersFile ?? join(configDir, 'providers.yaml'), {
+    fixture: opts.allowDateTokens ?? false,
+  });
+  return { catalog, policies, exceptions, providers };
 }

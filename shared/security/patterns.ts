@@ -43,6 +43,10 @@ export function sensitiveEnvValues(env: NodeJS.ProcessEnv = process.env): string
     'GH_TOKEN',
     'ACTIONS_RUNTIME_TOKEN',
     'ACTIONS_ID_TOKEN_REQUEST_TOKEN',
+    'SONARQUBE_TOKEN',
+    'HARBOR_ROBOT_NAME',
+    'HARBOR_ROBOT_SECRET',
+    'ARGOCD_TOKEN',
   ];
   return names
     .map((n) => env[n])
