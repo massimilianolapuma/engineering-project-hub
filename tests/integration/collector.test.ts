@@ -1484,6 +1484,39 @@ describe('risk governance (mock run)', () => {
     });
   });
 
+  describe('exceptions on a source that was not fully read', () => {
+    const ALPHA = 'example-org/project-alpha-backend';
+    async function runWith(patch: (p: MockProvider) => void) {
+      const { catalog, policies, exceptions } = await loadMockConfig();
+      const clock = fixedClock(GOLDEN_NOW);
+      const provider = new MockProvider('fixtures/github', clock);
+      patch(provider);
+      return runCollection({ catalog, policies, provider, clock, exceptions });
+    }
+    const alphaException = (r: Awaited<ReturnType<typeof mockRun>>) =>
+      byId(r.projects)['project-alpha']!.securityExceptions.find((e) => e.id === 'EXC-ALPHA-001')!;
+
+    it('a page-capped (incomplete) code scanning read makes the exception unverifiable, matched null', async () => {
+      const r = await runWith((p) => {
+        const original = p.listCodeScanningAlerts.bind(p);
+        p.listCodeScanningAlerts = async (repo) =>
+          repo.toLowerCase() === ALPHA
+            ? fail({ classification: 'error', incomplete: true })
+            : original(repo);
+      });
+      expect(alphaException(r)).toMatchObject({ state: 'unverifiable', matched: null });
+    });
+
+    it('a skipped repository makes its exceptions unverifiable, never stale or active', async () => {
+      const r = await runWith((p) => {
+        const original = p.getRepository.bind(p);
+        p.getRepository = async (repo) =>
+          repo.toLowerCase() === ALPHA ? fail({ classification: 'not-found' }) : original(repo);
+      });
+      expect(alphaException(r)).toMatchObject({ state: 'unverifiable', matched: null });
+    });
+  });
+
   it('Beta: withheld selector, unverifiable secret exception, critical #3 within SLA', async () => {
     const beta = byId((await mockRun()).projects)['project-beta']!;
     expect(beta.securityHealth.status).toBe('red');

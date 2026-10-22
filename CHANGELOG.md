@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - "What changed" lists newly overdue alerts and expired exceptions (`newlyOverdue`, `expiredExceptions` in `changes.json`), the trend table gains an Overdue column, and the CSV files gain `overdue`, `overdue_critical_high`, `accepted`, `exception_issues` (portfolio) and `overdue`, `accepted` (findings summary).
 - ADR 0008 (EN and IT), and EN/IT documentation for exceptions, SLAs and `policy:check`.
 
+### Fixed
+
+- Unmeasured overdue counts are shown as "not measured" (never "0 overdue") on project cards and the portfolio tooltip, and incomplete counts read as lower bounds ("≥ n"), including "Nothing overdue in the sources that could be read".
+- Italian SLA classes and accepted findings agree in number ("1 alto", "2 problemi accettati").
+- An exception with `created` in the future is an error in the loader and in `policy:check`; a collection that still meets one never applies it and reports it as `invalid` in Data quality.
+- `policy:check` runs the collector's loader on the exceptions file and the loader checks on decision-case exceptions; a mistyped `--exceptions` path or an unreadable `--snapshot` directory exits 2.
+- The exceptions engine reads a missing readability entry as unreadable (unverifiable). The advisory pattern in the JSON Schema accepts lower case like the validator, and selectors, date tokens and the exceptions file size are bounded.
+
 ### Changed
 
 - Snapshot `schemaVersion` 1.6 (exceptions, per-finding `exception` and `sla`, risk summaries, run metadata). Upgrade note: an existing 1.5 `public/data` fails validation until it is re-collected; `npm run ci:build` overwrites `public/data` with mock data.

@@ -192,6 +192,30 @@ describe('an exception created in the future is never active', () => {
   });
 });
 
+describe('broad selectors', () => {
+  it('one rule exception accepts every matching alert, matched counts all, findingIds is capped at 50', () => {
+    const findings = Array.from({ length: 51 }, (_, i) =>
+      finding('code-scanning', i + 1, { ruleId: 'js/path-injection', tool: 'CodeQL' }),
+    );
+    const r = run([entry({ match: { rule: 'js/path-injection' } })], findings);
+    expect(r.records[0]).toMatchObject({ state: 'active', matched: 51 });
+    expect(r.records[0]!.findingIds).toHaveLength(50);
+    expect(r.findings.every((f) => f.exception?.state === 'active')).toBe(true);
+  });
+
+  it('one advisory exception accepts every alert that carries the advisory', () => {
+    const findings = [4, 5].map((n) =>
+      finding('dependabot', n, { advisoryIds: ['GHSA-aaaa-bbbb-cccc'] }),
+    );
+    const r = run(
+      [entry({ source: 'dependabot', match: { advisory: 'ghsa-aaaa-bbbb-cccc' } })],
+      findings,
+    );
+    expect(r.records[0]).toMatchObject({ state: 'active', matched: 2 });
+    expect(r.findings.every((f) => f.exception?.id === 'EXC-0001')).toBe(true);
+  });
+});
+
 describe('a missing readability entry', () => {
   it('reads as unreadable: the exception is unverifiable, never active or stale', () => {
     const r = applyExceptions({
