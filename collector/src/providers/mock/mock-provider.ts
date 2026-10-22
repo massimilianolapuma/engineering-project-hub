@@ -173,7 +173,7 @@ const notEnabled = (): ProviderResult<never> =>
 
 const TOKEN_IN_TEXT = /@now(?:[+-]\d+[mhd])?/g;
 
-function resolveTokens<T>(value: T, now: Date): T {
+export function resolveTokens<T>(value: T, now: Date): T {
   if (typeof value === 'string') {
     // Whole-value tokens and tokens embedded in file contents (e.g. a status file's generatedAt).
     return (resolveRelativeTime(value, now) ??

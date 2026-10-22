@@ -20,6 +20,7 @@ import {
   resolveProvidersPath,
 } from './config/load';
 import { AuthConfigError, resolveAuth } from './providers/auth';
+import { ProviderAuthError } from './providers/external/auth';
 import { createGitHubClient, GitHubProvider } from './providers/github/github-provider';
 import { buildHistoryExtras } from './history/extras';
 import { historyDir, loadPreviousHistory } from './history/load';
@@ -144,6 +145,7 @@ main()
     if (
       e instanceof ConfigError ||
       e instanceof AuthConfigError ||
+      e instanceof ProviderAuthError ||
       e instanceof SnapshotValidationError ||
       e instanceof SanitizationError
     ) {

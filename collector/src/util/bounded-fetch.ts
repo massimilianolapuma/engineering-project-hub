@@ -57,8 +57,21 @@ export async function downloadBounded(url: string, opts: DownloadOptions): Promi
     await response.body?.cancel().catch(() => undefined);
     throw new DownloadError('too-large');
   }
-  if (!response.body) return '';
+  const bytes = await readBodyCapped(response, opts.maxBytes);
+  if (bytes === null) throw new DownloadError('too-large');
+  return Buffer.from(bytes).toString('utf8');
+}
 
+/**
+ * Reads a response body as a stream and gives up (cancelling it) as soon as it crosses
+ * `maxBytes`: the rest of an oversized body is never read. null = over the cap.
+ * A network failure while reading throws a DownloadError('network').
+ */
+export async function readBodyCapped(
+  response: Response,
+  maxBytes: number,
+): Promise<Uint8Array | null> {
+  if (!response.body) return new Uint8Array(0);
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
@@ -67,15 +80,14 @@ export async function downloadBounded(url: string, opts: DownloadOptions): Promi
       const { done, value } = await reader.read();
       if (done) break;
       total += value.byteLength;
-      if (total > opts.maxBytes) {
+      if (total > maxBytes) {
         await reader.cancel().catch(() => undefined);
-        throw new DownloadError('too-large');
+        return null;
       }
       chunks.push(value);
     }
-  } catch (e) {
-    if (e instanceof DownloadError) throw e;
+  } catch {
     throw new DownloadError('network');
   }
-  return Buffer.concat(chunks).toString('utf8');
+  return Buffer.concat(chunks);
 }
