@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-22
+
 ### Added
 
 - Security exceptions with a mandatory expiry: an optional, reviewed `config/exceptions.yaml` (owner, reason, `created`, `expires`, optional ticket; selectors `alert`, `rule` with an optional `tool`, `advisory`; secret scanning accepts only `alert`). The hub never dismisses alerts on GitHub: an accepted finding keeps `status: open`, is listed apart ("Accepted by exception") and leaves the counts and the Security status until the exception expires. Four states (active, expired, stale, not verifiable); an unreadable source never reads as accepted. For non-public repositories under a public audience the rule or advisory, tool, reason and ticket are withheld. JSON Schemas `exceptions.schema.json` and `policy-case.schema.json`, kept in sync with Zod by a test.
@@ -199,7 +201,8 @@ Tagged after the fact (2026-10-21) and not deployed on its own: its changes ship
 - Read-only by design: no write calls, alert dismissals or workflow triggers. Secret scanning alerts are fetched with `hide_secret=true` and only the secret type is kept.
 - The public demo publishes synthetic mock data only.
 
-[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.5.0...v0.6.0
