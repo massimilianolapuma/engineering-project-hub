@@ -174,7 +174,7 @@
           "lastScanAt": null,
           "counts": null,
           "reportUrl": null,
-          "source": "status-file",
+          "source": "supply-chain-summary",
           "evidence": null
         },
         {
@@ -185,7 +185,7 @@
           "lastScanAt": null,
           "counts": null,
           "reportUrl": null,
-          "source": "status-file",
+          "source": "supply-chain-summary",
           "evidence": null
         }
       ]
@@ -263,23 +263,23 @@
         {
           "control": "sbom",
           "required": false,
-          "state": "not-authorised",
+          "state": "unknown",
           "tool": null,
           "lastScanAt": null,
           "counts": null,
           "reportUrl": null,
-          "source": "status-file",
+          "source": "supply-chain-summary",
           "evidence": null
         },
         {
           "control": "artifactSignature",
           "required": false,
-          "state": "not-authorised",
+          "state": "unknown",
           "tool": null,
           "lastScanAt": null,
           "counts": null,
           "reportUrl": null,
-          "source": "status-file",
+          "source": "supply-chain-summary",
           "evidence": null
         }
       ]
@@ -449,12 +449,12 @@
       {
         "control": "sbom",
         "required": false,
-        "state": "not-authorised"
+        "state": "unknown"
       },
       {
         "control": "artifactSignature",
         "required": false,
-        "state": "not-authorised"
+        "state": "unknown"
       }
     ]
   },
@@ -474,10 +474,17 @@
     "status": "grey",
     "reasons": [
       {
+        "code": "quality-report-not-authorised",
+        "level": "info",
+        "params": {
+          "components": "service"
+        }
+      },
+      {
         "code": "quality-report-unknown",
         "level": "info",
         "params": {
-          "components": "coordinator, service"
+          "components": "coordinator"
         }
       }
     ],
@@ -507,7 +514,7 @@
       },
       {
         "componentId": "service",
-        "state": "unknown",
+        "state": "not-authorised",
         "sharedRepository": false,
         "percentage": null,
         "linesCovered": null,
@@ -516,7 +523,7 @@
         "generatedAt": null,
         "tool": null,
         "runUrl": null,
-        "source": "ci-summary",
+        "source": "sonarqube",
         "qualityGate": null,
         "newCoverage": null
       }
@@ -726,6 +733,92 @@
       }
     ]
   },
+  "supplyChain": {
+    "enabled": true,
+    "collectedAt": "2026-01-15T12:00:00.000Z",
+    "totals": {
+      "repositories": 2,
+      "sbomAvailable": null,
+      "signedImages": 0,
+      "unsignedImages": 0,
+      "attestedAssets": null,
+      "flagged": null
+    },
+    "repositories": [
+      {
+        "componentIds": [
+          "coordinator"
+        ],
+        "repository": "example-org/project-gamma-coordinator",
+        "sbom": {
+          "state": "unknown",
+          "source": "supply-chain-summary",
+          "format": null,
+          "specVersion": null,
+          "generatedAt": null,
+          "packages": null,
+          "withoutLicense": null,
+          "flagged": null,
+          "licenses": [],
+          "otherLicenses": 0,
+          "ecosystems": []
+        },
+        "attestations": {
+          "state": "unknown",
+          "release": null,
+          "checked": 0,
+          "withProvenance": null,
+          "withSbom": null,
+          "withoutDigest": 0
+        },
+        "images": [],
+        "tools": [],
+        "otherTools": [],
+        "summary": {
+          "state": "unknown",
+          "generatedAt": null,
+          "commitSha": null,
+          "runUrl": null
+        }
+      },
+      {
+        "componentIds": [
+          "service"
+        ],
+        "repository": "example-org/project-gamma-service",
+        "sbom": {
+          "state": "unknown",
+          "source": "supply-chain-summary",
+          "format": null,
+          "specVersion": null,
+          "generatedAt": null,
+          "packages": null,
+          "withoutLicense": null,
+          "flagged": null,
+          "licenses": [],
+          "otherLicenses": 0,
+          "ecosystems": []
+        },
+        "attestations": {
+          "state": "unknown",
+          "release": null,
+          "checked": 0,
+          "withProvenance": null,
+          "withSbom": null,
+          "withoutDigest": 0
+        },
+        "images": [],
+        "tools": [],
+        "otherTools": [],
+        "summary": {
+          "state": "unknown",
+          "generatedAt": null,
+          "commitSha": null,
+          "runUrl": null
+        }
+      }
+    ]
+  },
   "overallHealth": {
     "status": "grey",
     "reasons": [
@@ -793,6 +886,13 @@
       "classification": "not-authorised",
       "httpStatus": 403,
       "detail": "Resource not accessible by integration"
+    },
+    {
+      "repository": "example-org/project-gamma-service",
+      "componentId": "service",
+      "source": "sonarqube",
+      "classification": "not-authorised",
+      "httpStatus": 403
     }
   ]
 }

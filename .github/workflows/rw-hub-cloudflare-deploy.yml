@@ -38,6 +38,12 @@
 #         GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
 #         GH_APP_INSTALLATION_ID: ${{ secrets.GH_APP_INSTALLATION_ID }}
 #         CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+#         # Optional external providers (<config-path>/providers.yaml enables them; all off
+#         # by default). Pass only the ones you enabled; the values are never printed:
+#         SONARQUBE_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
+#         HARBOR_ROBOT_NAME: ${{ secrets.HARBOR_ROBOT_NAME }}
+#         HARBOR_ROBOT_SECRET: ${{ secrets.HARBOR_ROBOT_SECRET }}
+#         ARGOCD_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
 #
 # Cloudflare Access must cover the custom domain AND <project>.pages.dev and
 # *.<project>.pages.dev, otherwise the preview hostnames bypass the login
@@ -87,6 +93,14 @@ on:
       GH_APP_INSTALLATION_ID:
         required: false
       GH_READ_TOKEN:
+        required: false
+      SONARQUBE_TOKEN:
+        required: false
+      HARBOR_ROBOT_NAME:
+        required: false
+      HARBOR_ROBOT_SECRET:
+        required: false
+      ARGOCD_TOKEN:
         required: false
       CLOUDFLARE_API_TOKEN:
         required: true
@@ -194,6 +208,11 @@ jobs:
           GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
           GH_APP_INSTALLATION_ID: ${{ secrets.GH_APP_INSTALLATION_ID }}
           GH_READ_TOKEN: ${{ secrets.GH_READ_TOKEN }}
+          # Optional external providers: only read when enabled in providers.yaml.
+          SONARQUBE_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
+          HARBOR_ROBOT_NAME: ${{ secrets.HARBOR_ROBOT_NAME }}
+          HARBOR_ROBOT_SECRET: ${{ secrets.HARBOR_ROBOT_SECRET }}
+          ARGOCD_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
         run: npx tsx collector/src/index.ts --source github --config "$CONFIG_DIR" --out public/data
 
       - name: Validate snapshots

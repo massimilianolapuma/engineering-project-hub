@@ -20,7 +20,13 @@
     "name": "v1.4.0",
     "publishedAt": "@now-3d",
     "prerelease": false,
-    "htmlUrl": "https://github.com/example-org/project-alpha-backend/releases/tag/v1.4.0"
+    "htmlUrl": "https://github.com/example-org/project-alpha-backend/releases/tag/v1.4.0",
+    "assets": [
+      {
+        "name": "backend-1.4.0.jar",
+        "digest": "sha256:a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1"
+      }
+    ]
   },
   "files": {
     ".github/workflows/ci-main.yml": "name: CI\non: push\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@0123456789abcdef0123456789abcdef01234567\n      - uses: actions/setup-java@0123456789abcdef0123456789abcdef01234567\n      - uses: actions/upload-artifact@0123456789abcdef0123456789abcdef01234567\n",
@@ -151,21 +157,127 @@
       "generatedAt": "@now-2d",
       "tool": "coverlet",
       "format": "cobertura",
-      "lines": { "covered": 6800, "valid": 8000 }
+      "lines": {
+        "covered": 6800,
+        "valid": 8000
+      }
     },
     "createdAt": "@now-2d",
     "runId": 9002
   },
   "codeQualityFindings": [
-    { "category": "maintainability", "severity": "warning" },
-    { "category": "maintainability", "severity": "note" }
+    {
+      "category": "maintainability",
+      "severity": "warning"
+    },
+    {
+      "category": "maintainability",
+      "severity": "note"
+    }
   ],
-  "directories": { ".github/workflows": [{ "name": "ci-main.yml", "type": "file" }] },
+  "directories": {
+    ".github/workflows": [
+      {
+        "name": "ci-main.yml",
+        "type": "file"
+      }
+    ]
+  },
   "branchRules": [
-    { "type": "pull_request", "requiredApprovals": 1 },
-    { "type": "required_status_checks", "requiredApprovals": null },
-    { "type": "non_fast_forward", "requiredApprovals": null },
-    { "type": "deletion", "requiredApprovals": null }
+    {
+      "type": "pull_request",
+      "requiredApprovals": 1
+    },
+    {
+      "type": "required_status_checks",
+      "requiredApprovals": null
+    },
+    {
+      "type": "non_fast_forward",
+      "requiredApprovals": null
+    },
+    {
+      "type": "deletion",
+      "requiredApprovals": null
+    }
   ],
-  "scorecardAnalysis": { "createdAt": "@now-3d", "toolName": "Scorecard" }
+  "scorecardAnalysis": {
+    "createdAt": "@now-3d",
+    "toolName": "Scorecard"
+  },
+  "dependencySbom": {
+    "expand": {
+      "name": "project-alpha-backend",
+      "created": "@now-1h",
+      "packages": [
+        {
+          "count": 119,
+          "license": "Apache-2.0",
+          "purl": "maven"
+        },
+        {
+          "count": 70,
+          "license": "MIT",
+          "purl": "maven"
+        },
+        {
+          "count": 12,
+          "license": "BSD-3-Clause",
+          "purl": "maven"
+        },
+        {
+          "count": 6,
+          "license": "EPL-2.0",
+          "purl": "maven"
+        },
+        {
+          "count": 6,
+          "license": null,
+          "purl": "maven"
+        }
+      ],
+      "extra": [
+        {
+          "name": "canary-internal-pkg-7f3a",
+          "license": "Apache-2.0",
+          "purl": "maven"
+        }
+      ]
+    }
+  },
+  "attestations": {
+    "sha256:a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1": {
+      "provenance": true,
+      "sbom": true
+    }
+  },
+  "supplyChainSummary": {
+    "summary": {
+      "schemaVersion": "1.0",
+      "repository": "example-org/project-alpha-backend",
+      "ref": "refs/heads/main",
+      "commitSha": "95c7fbdc2c7d81daf6bf050dab7bdd4c1e160a82",
+      "generatedAt": "@now-1d",
+      "images": [
+        {
+          "name": "example-org/project-alpha-backend",
+          "tag": "1.4.0",
+          "digest": "sha256:b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+          "signature": {
+            "status": "verified",
+            "tool": "cosign"
+          },
+          "provenance": {
+            "status": "verified",
+            "tool": "gh-attestation"
+          },
+          "sbomAttestation": {
+            "status": "verified"
+          }
+        }
+      ]
+    },
+    "createdAt": "@now-1d",
+    "runId": 9101
+  }
 }

@@ -58,7 +58,7 @@ export function href(locale: Locale, page: PageKey | `projects/${string}`): stri
 
 /** Static CSV export (shared by both locales), honouring the base path. */
 export function exportHref(
-  name: 'portfolio.csv' | 'findings-summary.csv' | 'versions.csv',
+  name: 'portfolio.csv' | 'findings-summary.csv' | 'versions.csv' | 'supply-chain.csv',
 ): string {
   return `${base()}exports/${name}`;
 }

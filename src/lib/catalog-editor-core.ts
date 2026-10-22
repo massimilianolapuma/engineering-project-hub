@@ -2,8 +2,10 @@ import { Document, isMap, isScalar, isSeq, visit, type YAMLMap } from 'yaml';
 import type { z } from 'zod';
 import {
   CatalogSchema,
+  type ArgocdApplication,
   type Catalog,
   type ComponentConfig,
+  type ContainerImage,
   type ProjectConfig,
   type TrackedWorkflowConfig,
   type TestCoverage,
@@ -39,10 +41,16 @@ export interface DraftComponent {
   notApplicableChecks: RepositoryCheckId[];
   /** Undefined = default for the component type. */
   testCoverage?: TestCoverage;
+  /** Provider mappings are not edited here, but they are kept when a project is saved. */
+  sonarProjectKey?: string;
+  sonarBranch?: string;
+  containerImages?: ContainerImage[];
 }
 export interface DraftEnvironment {
   id: string;
   name: string;
+  /** Not edited here, but kept when a project is saved. */
+  argocdApplication?: ArgocdApplication;
 }
 export interface DraftWorkflow {
   id: string;
@@ -68,6 +76,9 @@ export interface DraftProject {
     notApplicableControls: ControlId[];
     notApplicableChecks: RepositoryCheckId[];
     testCoverage?: TestCoverage;
+    sonarProjectKey?: string;
+    sonarBranch?: string;
+    containerImages?: ContainerImage[];
   };
   components: DraftComponent[];
   environments: DraftEnvironment[];
@@ -104,6 +115,9 @@ export function projectToDraft(p: ProjectConfig): DraftProject {
       notApplicableControls: [...p.coordinator.notApplicableControls],
       notApplicableChecks: [...p.coordinator.notApplicableChecks],
       testCoverage: p.coordinator.testCoverage,
+      sonarProjectKey: p.coordinator.sonarProjectKey,
+      sonarBranch: p.coordinator.sonarBranch,
+      containerImages: p.coordinator.containerImages?.map((i) => ({ ...i })),
     },
     components: p.components.map(componentToDraft),
     environments: p.environments.map((e) => ({ ...e })),
@@ -129,6 +143,9 @@ function componentToDraft(c: ComponentConfig): DraftComponent {
     notApplicableControls: [...c.notApplicableControls],
     notApplicableChecks: [...c.notApplicableChecks],
     testCoverage: c.testCoverage,
+    sonarProjectKey: c.sonarProjectKey,
+    sonarBranch: c.sonarBranch,
+    containerImages: c.containerImages?.map((i) => ({ ...i })),
   };
 }
 
@@ -162,6 +179,18 @@ function compact<T extends Record<string, unknown>>(o: T): T {
   return Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as T;
 }
 
+/** Image mappings as written to YAML: the default tag template is left out. */
+const imagesInput = (images: ContainerImage[] | undefined) =>
+  images?.length
+    ? images.map((i) =>
+        compact({
+          project: i.project,
+          repository: i.repository,
+          tagTemplate: i.tagTemplate === '{version}' ? undefined : i.tagTemplate,
+        }),
+      )
+    : undefined;
+
 /**
  * Compact project document as written to config/projects/<id>.yaml: required fields always
  * present (so validation reports them by name), optional fields omitted when empty or default.
@@ -182,6 +211,9 @@ export function toProjectInput(p: DraftProject): Record<string, unknown> {
       notApplicableControls: optList(p.coordinator.notApplicableControls),
       notApplicableChecks: optList(p.coordinator.notApplicableChecks),
       testCoverage: p.coordinator.testCoverage,
+      sonarProjectKey: p.coordinator.sonarProjectKey,
+      sonarBranch: p.coordinator.sonarBranch,
+      containerImages: imagesInput(p.coordinator.containerImages),
     }),
     // Empty for a single-repository project (the coordinator is the only repository).
     components: p.components.length
@@ -199,11 +231,16 @@ export function toProjectInput(p: DraftProject): Record<string, unknown> {
             notApplicableControls: optList(c.notApplicableControls),
             notApplicableChecks: optList(c.notApplicableChecks),
             testCoverage: c.testCoverage,
+            sonarProjectKey: c.sonarProjectKey,
+            sonarBranch: c.sonarBranch,
+            containerImages: imagesInput(c.containerImages),
           }),
         )
       : undefined,
     environments: p.environments.length
-      ? p.environments.map((e) => ({ id: t(e.id), name: t(e.name) }))
+      ? p.environments.map((e) =>
+          compact({ id: t(e.id), name: t(e.name), argocdApplication: e.argocdApplication }),
+        )
       : undefined,
     trackedWorkflows: p.trackedWorkflows.length
       ? p.trackedWorkflows.map((w) =>
@@ -263,11 +300,22 @@ const SPACED_KEYS = new Set([
   'securityControls',
 ]);
 
+/** `containerImages: [{ project: alpha, repository: backend }]`, like the hand-written files. */
+function flowImages(target: unknown) {
+  if (!isMap(target)) return;
+  const images = target.get('containerImages', true);
+  if (!isSeq(images)) return;
+  images.flow = true;
+  images.items.forEach((i) => isMap(i) && (i.flow = true));
+}
+
 /** Flow style for environments and control requirements, a blank line before sections. */
 function styleProject(item: YAMLMap) {
   for (const pair of item.items) {
     const key = isScalar(pair.key) ? String(pair.key.value) : '';
     if (SPACED_KEYS.has(key) && isScalar(pair.key)) pair.key.spaceBefore = true;
+    if (key === 'coordinator') flowImages(pair.value);
+    if (key === 'components' && isSeq(pair.value)) pair.value.items.forEach(flowImages);
     if (key === 'environments' && isSeq(pair.value))
       pair.value.items.forEach((e) => isMap(e) && (e.flow = true));
     if (key === 'securityControls' && isMap(pair.value))
@@ -282,7 +330,10 @@ function render(doc: Document): string {
     },
   });
   // Prettier style: "{ id: dev }" but "[a, b]" (only for unquoted scalar lists).
-  return doc.toString({ lineWidth: 0 }).replace(/^(\s*[A-Za-z]+: )\[ ([^"'\n]*) \]$/gm, '$1[$2]');
+  return doc
+    .toString({ lineWidth: 0 })
+    .replace(/^(\s*[A-Za-z]+: )\[ ([^"'\n]*) \]$/gm, '$1[$2]')
+    .replace(/^(\s*containerImages: )\[ (\{[^\n]*\}) \]$/gm, '$1[$2]');
 }
 
 /**

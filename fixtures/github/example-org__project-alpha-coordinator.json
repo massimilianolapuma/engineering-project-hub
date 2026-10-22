@@ -66,17 +66,52 @@
       "generatedAt": "@now-2d",
       "tool": "coverlet",
       "format": "cobertura",
-      "lines": { "covered": 2100, "valid": 2500 }
+      "lines": {
+        "covered": 2100,
+        "valid": 2500
+      }
     },
     "createdAt": "@now-2d",
     "runId": 9001
   },
   "codeQualityFindings": [],
-  "directories": { ".github/workflows": [{ "name": "rel-release.yml", "type": "file" }] },
+  "directories": {
+    ".github/workflows": [
+      {
+        "name": "rel-release.yml",
+        "type": "file"
+      }
+    ]
+  },
   "branchRules": [
-    { "type": "pull_request", "requiredApprovals": 1 },
-    { "type": "required_status_checks", "requiredApprovals": null },
-    { "type": "non_fast_forward", "requiredApprovals": null },
-    { "type": "deletion", "requiredApprovals": null }
-  ]
+    {
+      "type": "pull_request",
+      "requiredApprovals": 1
+    },
+    {
+      "type": "required_status_checks",
+      "requiredApprovals": null
+    },
+    {
+      "type": "non_fast_forward",
+      "requiredApprovals": null
+    },
+    {
+      "type": "deletion",
+      "requiredApprovals": null
+    }
+  ],
+  "dependencySbom": {
+    "expand": {
+      "name": "project-alpha-coordinator",
+      "created": "@now-1h",
+      "packages": [
+        {
+          "count": 12,
+          "license": "MIT",
+          "purl": "githubactions"
+        }
+      ]
+    }
+  }
 }

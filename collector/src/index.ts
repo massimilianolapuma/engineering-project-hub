@@ -20,7 +20,8 @@ import {
   resolveProvidersPath,
 } from './config/load';
 import { AuthConfigError, resolveAuth } from './providers/auth';
-import { ProviderAuthError } from './providers/external/auth';
+import { ProviderAuthError, resolveProviderAuth } from './providers/external/auth';
+import { createExternalProviders } from './providers/external/create';
 import { createGitHubClient, GitHubProvider } from './providers/github/github-provider';
 import { buildHistoryExtras } from './history/extras';
 import { historyDir, loadPreviousHistory } from './history/load';
@@ -73,7 +74,7 @@ async function main(): Promise<number> {
     config: values.config,
     providers: values.providers,
   });
-  const { catalog, policies, exceptions } = await loadConfig(values.config, {
+  const { catalog, policies, exceptions, providers } = await loadConfig(values.config, {
     exceptionsFile: file,
     providersFile: providersPath.file,
     allowDateTokens,
@@ -87,13 +88,39 @@ async function main(): Promise<number> {
       : new GitHubProvider(
           createGitHubClient(auth, { baseUrl: values['api-url'] ?? process.env.GITHUB_API_URL }),
           auth.mode,
-          { dependencyGraphExport: policies.supplyChain.sbom.dependencyGraph },
+          {
+            dependencyGraphExport: policies.supplyChain.sbom.dependencyGraph,
+            sbomMaxBytes: policies.supplyChain.sbom.maxBytes,
+          },
         );
+
+  // Credentials come from the environment only and are never printed: only variable names.
+  const mock = auth.mode === 'mock';
+  const providerAuth = resolveProviderAuth(providers.file, process.env, { mock });
+  for (const id of ['sonarqube', 'harbor', 'argocd'] as const)
+    if (providerAuth[id].enabled && providerAuth[id].authHeader === null)
+      console.warn(
+        `⚠ ${id} is enabled but its credential is not set: its items are reported as not authorised`,
+      );
+  const external = createExternalProviders(
+    providers.file,
+    providerAuth,
+    mock ? { mock, providersFile: providersPath.file, clock } : { mock },
+  );
 
   console.log(
     `Collecting ${catalog.projects.length} project(s) · source=${source} · auth=${provider.authenticationMode}`,
   );
-  const result = await runCollection({ catalog, policies, provider, clock, exceptions });
+  const result = await runCollection({
+    catalog,
+    policies,
+    provider,
+    clock,
+    exceptions,
+    providers: providers.file,
+    external,
+    providerAuth,
+  });
   // The previous history is read before writeSnapshots, which replaces the output directory.
   let extras: HistoryExtras = { history: null, changes: null };
   if (policies.history.enabled) {

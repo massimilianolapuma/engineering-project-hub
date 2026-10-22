@@ -4649,6 +4649,851 @@
       ],
       "additionalProperties": false
     },
+    "supplyChain": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "collectedAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        "totals": {
+          "type": "object",
+          "properties": {
+            "repositories": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "sbomAvailable": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "signedImages": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "unsignedImages": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "attestedAssets": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "flagged": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "repositories",
+            "sbomAvailable",
+            "signedImages",
+            "unsignedImages",
+            "attestedAssets",
+            "flagged"
+          ],
+          "additionalProperties": false
+        },
+        "repositories": {
+          "maxItems": 200,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "componentIds": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "repository": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "sbom": {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "available",
+                      "partial",
+                      "not-configured",
+                      "not-authorised",
+                      "pending",
+                      "too-large",
+                      "invalid",
+                      "unknown",
+                      "off"
+                    ]
+                  },
+                  "source": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "supply-chain-summary",
+                          "dependency-graph"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "format": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "spdx",
+                          "cyclonedx"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "specVersion": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 20
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "generatedAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "packages": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "withoutLicense": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "flagged": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "licenses": {
+                    "maxItems": 10,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "count": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "count"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "otherLicenses": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "ecosystems": {
+                    "maxItems": 16,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "enum": [
+                            "npm",
+                            "maven",
+                            "pypi",
+                            "nuget",
+                            "golang",
+                            "cargo",
+                            "gem",
+                            "composer",
+                            "githubactions",
+                            "docker",
+                            "pub",
+                            "swift",
+                            "hex",
+                            "other",
+                            "unknown"
+                          ]
+                        },
+                        "count": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "count"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "state",
+                  "source",
+                  "format",
+                  "specVersion",
+                  "generatedAt",
+                  "packages",
+                  "withoutLicense",
+                  "flagged",
+                  "licenses",
+                  "otherLicenses",
+                  "ecosystems"
+                ],
+                "additionalProperties": false
+              },
+              "attestations": {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "available",
+                      "none",
+                      "not-authorised",
+                      "unknown",
+                      "not-applicable",
+                      "off"
+                    ]
+                  },
+                  "release": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "checked": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "withProvenance": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "withSbom": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "withoutDigest": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "state",
+                  "release",
+                  "checked",
+                  "withProvenance",
+                  "withSbom",
+                  "withoutDigest"
+                ],
+                "additionalProperties": false
+              },
+              "images": {
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "componentId": {
+                      "type": "string",
+                      "maxLength": 64
+                    },
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "supply-chain-summary",
+                        "harbor"
+                      ]
+                    },
+                    "name": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "tag": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 128
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "digest": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^sha256:[0-9a-f]{64}$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "signature": {
+                      "type": "string",
+                      "enum": [
+                        "verified",
+                        "present",
+                        "missing",
+                        "not-verified",
+                        "failed",
+                        "unknown"
+                      ]
+                    },
+                    "provenance": {
+                      "type": "string",
+                      "enum": [
+                        "verified",
+                        "present",
+                        "missing",
+                        "not-verified",
+                        "failed",
+                        "unknown"
+                      ]
+                    },
+                    "scan": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "state": {
+                              "type": "string",
+                              "enum": [
+                                "scanned",
+                                "scan-failed",
+                                "scan-pending",
+                                "not-scanned",
+                                "not-found",
+                                "not-authorised",
+                                "unknown"
+                              ]
+                            },
+                            "scannedAt": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "date-time",
+                                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "counts": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "critical": {
+                                      "anyOf": [
+                                        {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 9007199254740991
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "high": {
+                                      "anyOf": [
+                                        {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 9007199254740991
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "medium": {
+                                      "anyOf": [
+                                        {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 9007199254740991
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "low": {
+                                      "anyOf": [
+                                        {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 9007199254740991
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "informational": {
+                                      "anyOf": [
+                                        {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 9007199254740991
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "unknown": {
+                                      "anyOf": [
+                                        {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 9007199254740991
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "critical",
+                                    "high",
+                                    "medium",
+                                    "low",
+                                    "informational",
+                                    "unknown"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "fixable": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "state",
+                            "scannedAt",
+                            "counts",
+                            "fixable"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "componentId",
+                    "source",
+                    "name",
+                    "tag",
+                    "digest",
+                    "signature",
+                    "provenance",
+                    "scan"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "tools": {
+                "maxItems": 10,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "control": {
+                      "type": "string",
+                      "enum": [
+                        "containerScanning",
+                        "iacScanning",
+                        "dast"
+                      ]
+                    },
+                    "tool": {
+                      "type": "string",
+                      "maxLength": 50
+                    },
+                    "state": {
+                      "type": "string",
+                      "enum": [
+                        "enabled",
+                        "not-configured",
+                        "configured-not-run",
+                        "not-authorised",
+                        "failed",
+                        "stale",
+                        "unknown",
+                        "collection-failed",
+                        "not-applicable"
+                      ]
+                    },
+                    "lastAnalysisAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "open": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "critical": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "high": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "medium": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "low": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "informational": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "unknown": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "critical",
+                            "high",
+                            "medium",
+                            "low",
+                            "informational",
+                            "unknown"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "control",
+                    "tool",
+                    "state",
+                    "lastAnalysisAt",
+                    "open"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "otherTools": {
+                "maxItems": 10,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 50
+                }
+              },
+              "summary": {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "readable",
+                      "stale",
+                      "missing",
+                      "expired",
+                      "invalid",
+                      "not-authorised",
+                      "unknown",
+                      "off"
+                    ]
+                  },
+                  "generatedAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "commitSha": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{40}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "runUrl": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 500,
+                        "format": "uri"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "state",
+                  "generatedAt",
+                  "commitSha",
+                  "runUrl"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "componentIds",
+              "repository",
+              "sbom",
+              "attestations",
+              "images",
+              "tools",
+              "otherTools",
+              "summary"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "enabled",
+        "collectedAt",
+        "totals",
+        "repositories"
+      ],
+      "additionalProperties": false
+    },
     "overallHealth": {
       "type": "object",
       "properties": {
@@ -4988,6 +5833,7 @@
     "governanceHealth",
     "qualityHealth",
     "repositoryControls",
+    "supplyChain",
     "overallHealth",
     "score",
     "dataFreshness",

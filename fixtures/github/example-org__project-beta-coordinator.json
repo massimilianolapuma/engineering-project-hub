@@ -72,15 +72,38 @@
       "generatedAt": "@now-2d",
       "tool": "coverlet",
       "format": "cobertura",
-      "lines": { "covered": 456, "valid": 1200 }
+      "lines": {
+        "covered": 456,
+        "valid": 1200
+      }
     },
     "createdAt": "@now-2d",
     "runId": 9011
   },
   "codeQualityFindings": [
-    { "category": "maintainability", "severity": "warning" },
-    { "category": "maintainability", "severity": "note" }
+    {
+      "category": "maintainability",
+      "severity": "warning"
+    },
+    {
+      "category": "maintainability",
+      "severity": "note"
+    }
   ],
-  "directories": { ".github/workflows": [{ "name": "release.yml", "type": "file" }] },
-  "branchRules": []
+  "directories": {
+    ".github/workflows": [
+      {
+        "name": "release.yml",
+        "type": "file"
+      }
+    ]
+  },
+  "branchRules": [],
+  "dependencySbom": {
+    "$error": {
+      "classification": "not-configured",
+      "httpStatus": 403,
+      "message": "Dependency graph is not enabled for this repository"
+    }
+  }
 }

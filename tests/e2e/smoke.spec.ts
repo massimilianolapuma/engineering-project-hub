@@ -169,7 +169,7 @@ test('project detail explains why it is critical and cards open their section', 
 test('project page: Quality card links to #quality', async ({ page }) => {
   await page.goto('/projects/project-beta/');
   const card = page.locator('a[data-dimension="quality"]');
-  await expect(card).toContainText('Tests: 67.2% of lines · threshold 80%');
+  await expect(card).toContainText('Tests: 66.7% of lines · threshold 80%');
   await card.click();
   await expect(page).toHaveURL(/#quality$/);
   const section = page.locator('section#quality');

@@ -151,27 +151,18 @@ describe('Argo CD provider', () => {
 });
 
 describe('mock Argo CD provider', () => {
-  it('reads fixtures/providers/argocd.json keyed "<namespace|->/<name>"', async () => {
+  it('reads fixtures/providers/argocd.json (raw API responses) keyed "<namespace|->/<name>" through the same projection', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'hub-mock-argo-'));
-    const dto = {
-      sync: 'synced',
-      health: 'healthy',
-      revision: null,
-      targetRevision: null,
-      images: [],
-      deployedAt: null,
-    };
-    await writeFile(join(dir, 'argocd.json'), JSON.stringify({ 'argocd/a': dto, '-/b': dto }));
+    await writeFile(join(dir, 'argocd.json'), JSON.stringify({ 'argocd/a': base, '-/b': base }));
     const providers = ProvidersFileSchema.parse({
       schemaVersion: '1.0',
       argocd: { enabled: true, baseUrl: 'https://argocd.example.invalid' },
     });
     const { argocd } = createMockExternalProviders(dir, () => new Date(0), providers);
-    expect(await argocd!.getApplication({ name: 'a', namespace: 'argocd' })).toEqual({
-      ok: true,
-      data: dto,
-    });
-    expect(await argocd!.getApplication({ name: 'b' })).toEqual({ ok: true, data: dto });
+    const a = await argocd!.getApplication({ name: 'a', namespace: 'argocd' });
+    expect(a).toMatchObject({ ok: true, data: { sync: 'out-of-sync', targetRevision: 'v1.4.0' } });
+    expect(JSON.stringify(a)).not.toContain('canary-6c1d');
+    expect(await argocd!.getApplication({ name: 'b' })).toMatchObject({ ok: true });
     expect(await argocd!.getApplication({ name: 'c' })).toMatchObject({
       error: { classification: 'not-found' },
     });

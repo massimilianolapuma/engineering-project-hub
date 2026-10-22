@@ -17,8 +17,8 @@
       "secretScanning": "partial",
       "codeQuality": "available",
       "repositoryRules": "partial",
-      "dependencyGraph": "not-used",
-      "attestations": "not-used"
+      "dependencyGraph": "partial",
+      "attestations": "partial"
     },
     "inaccessibleSources": [
       {
@@ -37,6 +37,21 @@
         "classification": "not-authorised"
       },
       {
+        "repository": "example-org/project-beta-api",
+        "source": "dependency-sbom",
+        "classification": "not-authorised"
+      },
+      {
+        "repository": "example-org/project-beta-api",
+        "source": "attestations",
+        "classification": "not-authorised"
+      },
+      {
+        "repository": "example-org/project-beta-coordinator",
+        "source": "argocd",
+        "classification": "not-authorised"
+      },
+      {
         "repository": "example-org/project-beta-helm",
         "source": "repository-rules",
         "classification": "not-authorised"
@@ -50,12 +65,17 @@
         "repository": "example-org/project-gamma-service",
         "source": "repository",
         "classification": "not-authorised"
+      },
+      {
+        "repository": "example-org/project-gamma-service",
+        "source": "sonarqube",
+        "classification": "not-authorised"
       }
     ],
     "repositories": {
       "total": 12,
-      "ok": 6,
-      "withErrors": 4,
+      "ok": 5,
+      "withErrors": 5,
       "unavailable": 2
     },
     "configValid": true,
@@ -65,6 +85,26 @@
       "orphaned": [
         "EXC-LEGACY-001"
       ]
+    },
+    "providers": {
+      "sonarqube": {
+        "enabled": true,
+        "state": "partial",
+        "items": 3,
+        "errors": 1
+      },
+      "harbor": {
+        "enabled": true,
+        "state": "available",
+        "items": 3,
+        "errors": 1
+      },
+      "argocd": {
+        "enabled": true,
+        "state": "partial",
+        "items": 5,
+        "errors": 1
+      }
     },
     "policy": {
       "snapshotStaleHours": 24,
@@ -109,6 +149,12 @@
         "unknown": 1,
         "notApplicable": 0,
         "ratio": 80
+      },
+      "supplyChain": {
+        "repositories": 1,
+        "sbomAvailable": 1,
+        "unsignedImages": 0,
+        "flagged": 2
       },
       "freshness": "amber",
       "openCounts": {
@@ -171,12 +217,18 @@
         "notApplicable": 5,
         "ratio": 100
       },
-      "freshness": "green",
+      "supplyChain": {
+        "repositories": 5,
+        "sbomAvailable": 3,
+        "unsignedImages": 0,
+        "flagged": 0
+      },
+      "freshness": "amber",
       "openCounts": {
         "critical": 0,
         "high": 1,
-        "medium": 3,
-        "low": 3,
+        "medium": 4,
+        "low": 6,
         "informational": 0,
         "unknown": 0
       },
@@ -191,7 +243,7 @@
       "secretScanning": "enabled",
       "failedCriticalWorkflows": 0,
       "collectedAt": "2026-01-15T12:00:00.000Z",
-      "collectionErrorCount": 0,
+      "collectionErrorCount": 1,
       "unresolvedSubmodules": 0
     },
     {
@@ -220,8 +272,8 @@
       "governance": "amber",
       "quality": {
         "status": "amber",
-        "percentage": 67.2,
-        "measured": 2,
+        "percentage": 66.7,
+        "measured": 3,
         "applicable": 3
       },
       "repositoryControls": {
@@ -231,12 +283,18 @@
         "notApplicable": 4,
         "ratio": 42
       },
+      "supplyChain": {
+        "repositories": 4,
+        "sbomAvailable": 0,
+        "unsignedImages": 2,
+        "flagged": null
+      },
       "freshness": "amber",
       "openCounts": {
         "critical": 1,
         "high": 3,
         "medium": 4,
-        "low": 1,
+        "low": 2,
         "informational": 0,
         "unknown": 0
       },
@@ -251,7 +309,7 @@
       "secretScanning": "not-authorised",
       "failedCriticalWorkflows": 1,
       "collectedAt": "2026-01-15T12:00:00.000Z",
-      "collectionErrorCount": 4,
+      "collectionErrorCount": 7,
       "unresolvedSubmodules": 1
     },
     {
@@ -289,6 +347,12 @@
         "notApplicable": 0,
         "ratio": null
       },
+      "supplyChain": {
+        "repositories": 2,
+        "sbomAvailable": null,
+        "unsignedImages": 0,
+        "flagged": null
+      },
       "freshness": "grey",
       "openCounts": {
         "critical": null,
@@ -309,7 +373,7 @@
       "secretScanning": "not-authorised",
       "failedCriticalWorkflows": null,
       "collectedAt": "2026-01-15T12:00:00.000Z",
-      "collectionErrorCount": 2,
+      "collectionErrorCount": 3,
       "unresolvedSubmodules": 0
     }
   ]

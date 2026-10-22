@@ -87,7 +87,7 @@ describe('static site', () => {
     expect(row).toMatch(/class="pill pill--unknown score__label"[^>]*>[^<]*insufficient data/);
     expect(row).toMatch(/dimbars__bar--grey/);
     expect(row).toMatch(/href="[^"]*data-quality\/#project-gamma"/);
-    expect(row).toContain('2 collection errors');
+    expect(row).toContain('3 collection errors');
     expect(row).not.toMatch(/>\s*0\s*</);
   });
 
@@ -318,9 +318,9 @@ describe('static site', () => {
       // (the third high comes from container scanning). It must not be counted as "other".
       const html = await page('projects/project-beta');
       const card = between(html, 'data-dimension="security"', '</a>');
-      expect(card).toContain('1 critical · 3 high · 5 other');
+      expect(card).toContain('1 critical · 3 high · 6 other');
       const security = between(html, 'id="security"', '</details>');
-      expect(security).toContain('5 other open alerts are counted here');
+      expect(security).toContain('6 other open alerts are counted here');
       const unlisted = between(security, 'data-unlisted-crit-high', '</p>');
       expect(unlisted).toContain('no detail in the hub');
       expect(unlisted).toContain('1 high');
@@ -335,7 +335,7 @@ describe('static site', () => {
       expect(head).toMatch(/class="pill pill--unknown score__label"[^>]*>[^<]*insufficient data/);
       expect(head).not.toMatch(/class="score__value"[^>]*>\s*0\s*</);
       const why = between(html, 'id="h-why"', '</section>');
-      expect(why).toContain('2 collection errors');
+      expect(why).toContain('3 collection errors');
       expect(why).toContain('Not found (404)');
       expect(why).toMatch(/href="[^"]*data-quality\/"/);
     });
@@ -430,7 +430,7 @@ describe('static site', () => {
       // Beta: secret scanning is not authorised, so the card's counts are a lower bound.
       const beta = await page('projects/project-beta');
       const card = between(beta, 'data-dimension="security"', '</a>');
-      expect(card).toContain('1 critical · 3 high · 5 other · partial');
+      expect(card).toContain('1 critical · 3 high · 6 other · partial');
       expect(between(beta, 'data-dimension="coverage"', '</a>')).toContain('1 not visible');
     });
 
@@ -443,10 +443,10 @@ describe('static site', () => {
     it('uses one severity vocabulary in Italian, number first', async () => {
       const html = await page('it/projects/project-beta');
       expect(between(html, 'data-dimension="security"', '</a>')).toContain(
-        '1 critico · 3 high · 5 altri',
+        '1 critico · 3 high · 6 altri',
       );
       const security = between(html, 'id="security"', '</details>');
-      expect(security).toContain('Altri 5 alert aperti');
+      expect(security).toContain('Altri 6 alert aperti');
       expect(between(security, 'data-unlisted-crit-high', '</p>')).toContain('1 high');
     });
 
@@ -460,7 +460,7 @@ describe('static site', () => {
     it('agrees in gender and number in Italian', async () => {
       const html = await page('it/projects/project-gamma');
       expect(html).not.toContain('coordinator sconosciuto');
-      expect(between(html, 'id="h-why"', '</section>')).toContain('2 errori di raccolta');
+      expect(between(html, 'id="h-why"', '</section>')).toContain('3 errori di raccolta');
     });
 
     it('renders the Italian project page in Italian', async () => {
@@ -484,10 +484,12 @@ describe('static site', () => {
       const html = await page('projects/project-beta');
       const q = section(html);
       expect(q).toMatch(/<h2[^>]*>Code quality</);
-      expect(textOf(q)).toMatch(/67(\.2)?%/);
-      expect(textOf(q)).toContain('Does not mean 0%.');
-      // The blind spot is named; the not-applicable chart shows the "na" symbol, never 0%.
-      expect(between(q, 'data-quality-component="web"', '</tr>')).toContain('Not visible');
+      expect(textOf(q)).toMatch(/66\.7%/);
+      // Nothing is hidden any more, so the "not 0%" caveat is not needed.
+      expect(textOf(q)).not.toContain('Does not mean 0%.');
+      // Web has no CI summary, but SonarQube reads it: it is measured, not a blind spot.
+      expect(between(q, 'data-quality-component="web"', '</tr>')).toContain('65%');
+      // The not-applicable chart shows the "na" symbol, never 0%.
       expect(between(q, 'data-quality-component="helm"', '</tr>')).toMatch(
         /data-symbol="na"[\s\S]*?<svg[^>]*octicon-dash/,
       );
@@ -498,12 +500,12 @@ describe('static site', () => {
       expect(q).not.toMatch(/href="[^"]*code-quality/);
       // The card line on the dimension card.
       expect(between(html, 'data-dimension="quality"', '</a>')).toContain(
-        'Tests: 67.2% of lines · threshold 80%',
+        'Tests: 66.7% of lines · threshold 80%',
       );
       const it = section(await page('it/projects/project-beta'));
       expect(it).toMatch(/<h2[^>]*>Qualità del codice</);
-      expect(textOf(it)).toContain('67,2%');
-      expect(textOf(it)).toContain('Non significa 0%.');
+      expect(textOf(it)).toContain('66,7%');
+      expect(textOf(it)).not.toContain('Non significa 0%.');
     });
 
     it('never shows an unmeasured project as 0% or "0 of 0 lines"', async () => {
@@ -552,15 +554,15 @@ describe('static site', () => {
       expect(html).toMatch(/<abbr class="dimbars__label" title="Quality"/);
     });
 
-    it('data-quality lists project-beta web as missing report', async () => {
+    it('data-quality lists gamma service as a report that cannot be read, and no longer beta web', async () => {
       const html = await page('data-quality');
       const reports = html.slice(html.indexOf('id="h-quality-reports"'));
       expect(reports.indexOf('id="h-quality-reports"')).toBe(0);
-      const row = between(reports, 'data-quality-report="project-beta:web"', '</li>');
-      expect(row).toContain('Project Beta');
-      expect(row).toContain('web');
-      expect(row).toContain('Missing');
-      expect(reports).toContain('data-quality-report="project-gamma:service"');
+      // Beta web has no CI summary but SonarQube reads it, so it is not listed.
+      expect(reports).not.toContain('data-quality-report="project-beta:web"');
+      const row = between(reports, 'data-quality-report="project-gamma:service"', '</li>');
+      expect(row).toContain('Project Gamma');
+      expect(row).toContain('Not authorised');
       // Readable and not-applicable reports are not listed.
       expect(reports).not.toContain('data-quality-report="project-beta:api"');
       expect(reports).not.toContain('data-quality-report="project-beta:helm"');
@@ -673,8 +675,8 @@ describe('static site', () => {
     expect(values).toEqual([
       'critical=≥at least 1',
       'high=≥at least 6',
-      'medium=≥at least 8',
-      'low=≥at least 4',
+      'medium=≥at least 9',
+      'low=≥at least 8',
     ]);
     expect(totals).toMatch(
       /<span aria-hidden="true"[^>]*>≥<\/span>\s*<span class="visually-hidden"[^>]*>at least </,
@@ -727,15 +729,15 @@ describe('static site', () => {
     // Repository counts: in catalog / fully read / partly read / unreadable.
     for (const [key, n] of [
       ['total', 12],
-      ['full', 6],
-      ['partial', 4],
+      ['full', 5],
+      ['partial', 5],
       ['unreadable', 2],
     ] as const)
       expect(html).toMatch(new RegExp(`data-repo-count="${key}"[^>]*>\\s*<span[^>]*>${n}<`));
-    // What we could not read, grouped by classification (403: 5 sources, 404: 1 source).
+    // What we could not read, grouped by classification (403: 9 sources, 404: 2 sources).
     expect(html).toContain('What we could not read, by cause');
-    expect(html).toMatch(/data-cause="not-authorised"[^>]*data-sources="5"/);
-    expect(html).toMatch(/data-cause="not-found"[^>]*data-sources="1"/);
+    expect(html).toMatch(/data-cause="not-authorised"[^>]*data-sources="9"/);
+    expect(html).toMatch(/data-cause="not-found"[^>]*data-sources="2"/);
     expect(html.indexOf('data-cause="not-authorised"')).toBeLessThan(
       html.indexOf('data-cause="not-found"'),
     );
@@ -884,8 +886,21 @@ describe('static site', () => {
       );
     });
 
+    it('supply-chain.csv has its header and one row per project and repository', async () => {
+      const text = await csv('supply-chain.csv');
+      expect(text.startsWith('\uFEFFproject_id,repository,component_ids,sbom_state,')).toBe(true);
+      expect(text.split('\r\n').filter(Boolean)).toHaveLength(13);
+      expect(text.split('\r\n').find((r) => r.startsWith('platform,'))).toContain(',1530,3,2,');
+      expect(text).not.toMatch(/canary/);
+    });
+
     it("no CSV cell begins with = + - @ unless prefixed by '", async () => {
-      for (const name of ['portfolio.csv', 'findings-summary.csv', 'versions.csv']) {
+      for (const name of [
+        'portfolio.csv',
+        'findings-summary.csv',
+        'versions.csv',
+        'supply-chain.csv',
+      ]) {
         const rows = (await csv(name)).replace('\uFEFF', '').split('\r\n').filter(Boolean);
         for (const row of rows)
           for (const cell of row.split(',')) expect(cell).not.toMatch(/^[=+\-@]/);
@@ -1317,10 +1332,10 @@ describe('static site', () => {
     it('shows the five totals with their labels', async () => {
       const t = text(await page('changes'));
       expect(t).toContain(
-        '6 status changes · 1 new and 1 resolved critical/high alerts · 1 version moves · 1 new collection errors',
+        '6 status changes · 1 new and 1 resolved critical/high alerts · 1 version moves · 6 new collection errors',
       );
       expect(text(await page('it/changes'))).toContain(
-        '6 cambi di stato · 1 alert critici/alti nuovi e 1 risolti · 1 versioni cambiate · 1 nuovi errori di raccolta',
+        '6 cambi di stato · 1 alert critici/alti nuovi e 1 risolti · 1 versioni cambiate · 6 nuovi errori di raccolta',
       );
       expect(t).toContain('Compared with the collection of 14 Jan 2026');
       expect(t).toContain('Demo data: earlier collections are synthetic.');
@@ -1384,13 +1399,15 @@ describe('static site', () => {
       expect(text(card(html, 'project-alpha'))).not.toContain('No changes.');
       // Gamma could only be partly compared, so it never claims a plain "No changes."
       const gamma = text(card(html, 'project-gamma'));
-      expect(gamma).toContain('No changes in what could be compared.');
+      // It lists its one new error (SonarQube not authorised) and says what it could not compare.
+      expect(gamma).toContain('SonarQube');
+      expect(gamma).toContain('Some alerts were not compared');
       expect(gamma).not.toContain('No changes.');
     });
 
     it('does not say "No changes." when a project\'s alerts could not be compared', async () => {
       const gamma = text(card(await page('changes'), 'project-gamma'));
-      expect(gamma).toContain('No changes in what could be compared.');
+      expect(gamma).toContain('Some alerts were not compared');
       expect(gamma).not.toContain('No changes.');
     });
 

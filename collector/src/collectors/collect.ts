@@ -4,7 +4,11 @@ import {
   type ProjectConfig,
   type TrackedWorkflowConfig,
 } from '@model/index';
-import type { ArgoApplicationDTO, SonarProjectDTO } from '../providers/external/types';
+import type {
+  ArgoApplicationDTO,
+  HarborArtifactDTO,
+  SonarProjectDTO,
+} from '../providers/external/types';
 import { associateSubmodules } from '../normalizers/association';
 import { exactIdentifier } from '../sanitizers/sanitize';
 import { memoize } from '../util/concurrency';
@@ -17,6 +21,7 @@ import {
   type BranchRuleDTO,
   type ClassicProtectionDTO,
   type CodeQualityFindingDTO,
+  type AttestationPresenceDTO,
   type CodeScanningAlertDTO,
   type CodeScanningAnalysisDTO,
   type CommitRefDTO,
@@ -28,6 +33,9 @@ import {
   type QualitySummaryArtifactDTO,
   type ReleaseDTO,
   type RunFailureDTO,
+  type SbomFetchDTO,
+  type SbomRequestDTO,
+  type SupplyChainSummaryArtifactDTO,
   type RepositoryDTO,
   type SecretScanningAlertDTO,
   type SourceProvider,
@@ -89,6 +97,16 @@ export interface RepoData {
   /** Newest default-branch `hub-quality-summary` artifact. */
   qualitySummary: ProviderResult<QualitySummaryArtifactDTO>;
   codeQualityFindings: ProviderResult<CodeQualityFindingDTO[]>;
+  /** Result of asking GitHub for the SBOM export; null = not requested (switch off, or skipped). */
+  sbomRequest: ProviderResult<SbomRequestDTO> | null;
+  /** Last answer of the export poll; null when nothing was requested or the request failed. */
+  sbomFetch: ProviderResult<SbomFetchDTO> | null;
+  /** Attestation presence per release-asset digest; 'skipped' = not looked up. */
+  attestations: Map<string, ProviderResult<AttestationPresenceDTO>> | 'skipped';
+  /** Code-scanning analyses by lower-case tool name of the mapped tools (policies toolControls). */
+  analyses: Map<string, ProviderResult<CodeScanningAnalysisDTO[]>>;
+  /** Newest `hub-supply-chain-summary` artifact; null when supplyChain.enabled is false. */
+  supplyChainSummary: ProviderResult<SupplyChainSummaryArtifactDTO> | null;
   /** null when policies.repositoryControls.enabled is false: none of its calls is made. */
   controls: RepoControlsData | null;
 }
@@ -127,6 +145,8 @@ export interface RawProjectData {
   workflows: WorkflowData[];
   /** SonarQube projects by project key; absent or empty when SonarQube is off. */
   sonar?: Map<string, ProviderResult<SonarProjectDTO>>;
+  /** Harbor artifacts by `project/repository:reference`; absent or empty when Harbor is off. */
+  harbor?: Map<string, ProviderResult<HarborArtifactDTO>>;
   /** Tags of the coordinator repository (resolve an Argo CD revision to a version); null = not read. */
   coordinatorTags?: ProviderResult<TagDTO[]> | null;
   /** Argo CD applications by environment id ('off' when Argo CD is off). */
@@ -139,6 +159,8 @@ export interface CollectContext {
   /** Shared across projects: one fetch per repository and call. */
   cache: Map<string, Promise<unknown>>;
   policies: Policies;
+  /** Waits between SBOM export polls (default: a real timer; tests and mock runs pass a no-op). */
+  sleep?: (ms: number) => Promise<void>;
 }
 
 /** Runs a provider call through the limiter; unexpected exceptions become classified errors. */
@@ -192,6 +214,11 @@ export async function collectRepository(
       secretScanning: skipped(repo),
       qualitySummary: skipped(repo),
       codeQualityFindings: skipped(repo),
+      sbomRequest: null,
+      sbomFetch: null,
+      attestations: 'skipped',
+      analyses: new Map(),
+      supplyChainSummary: ctx.policies.supplyChain.enabled ? skipped(repo) : null,
       controls: ctx.policies.repositoryControls.enabled
         ? {
             workflowDir: skipped(repo),
@@ -205,6 +232,15 @@ export async function collectRepository(
     };
   }
   const branch = configuredDefaultBranch ?? repo.data.defaultBranch;
+  const sc = ctx.policies.supplyChain;
+  // The SBOM export is the one call that makes GitHub run a job (ADR 0009): only when the
+  // supply chain is on and the provider may use it (the real one follows the owner's opt-in).
+  // Issued first, so GitHub works while the other calls of the repository run.
+  const sbomRequestPending =
+    sc.enabled && p.dependencyGraphExport
+      ? call(ctx, `sbomreq:${repository}`, () => p.requestDependencySbom(repository))
+      : null;
+  const analysisTools = sc.enabled ? mappedTools(ctx.policies) : [];
   const [
     head,
     release,
@@ -216,6 +252,8 @@ export async function collectRepository(
     qualitySummary,
     codeQualityFindings,
     controls,
+    supplyChainSummary,
+    analysisResults,
   ] = await Promise.all([
     call(ctx, `head:${repository}:${branch}`, () => p.getBranchHead(repository, branch)),
     call(ctx, `release:${repository}`, () => p.getLatestRelease(repository)),
@@ -229,7 +267,24 @@ export async function collectRepository(
     call(ctx, `qs:${repository}:${branch}`, () => p.getQualitySummary(repository, branch)),
     call(ctx, `cq:${repository}`, () => p.listCodeQualityFindings(repository)),
     collectControls(ctx, repository, branch),
+    sc.enabled
+      ? call(ctx, `scs:${repository}:${branch}`, () => p.getSupplyChainSummary(repository, branch))
+      : Promise.resolve(null),
+    Promise.all(
+      analysisTools.map(
+        async (tool) =>
+          [
+            tool.toLowerCase(),
+            await call(ctx, `csan:${repository}:${tool.toLowerCase()}:${branch}`, () =>
+              p.listCodeScanningAnalyses(repository, tool, `refs/heads/${branch}`),
+            ),
+          ] as const,
+      ),
+    ),
   ]);
+  const sbomRequest = sbomRequestPending ? await sbomRequestPending : null;
+  const sbomFetch = sbomRequest?.ok ? await pollSbom(ctx, repository, sbomRequest.data.uuid) : null;
+  const attestations = await collectAttestations(ctx, repository, release);
   // Fall back to the latest tag only when there is no GitHub Release.
   const tag =
     !release.ok && release.error.classification === 'not-found'
@@ -251,8 +306,74 @@ export async function collectRepository(
     secretScanning,
     qualitySummary,
     codeQualityFindings,
+    sbomRequest,
+    sbomFetch,
+    attestations,
+    analyses: new Map(analysisResults),
+    supplyChainSummary,
     controls,
   };
+}
+
+/** Distinct code-scanning tools of the mapped controls (Trivy, Checkov, ZAP by default). */
+export function mappedTools(policies: Policies): string[] {
+  const seen = new Map<string, string>();
+  const rules = policies.supplyChain.toolControls;
+  for (const rule of [...rules.containerScanning, ...rules.iacScanning, ...rules.dast])
+    if (!seen.has(rule.tool.toLowerCase())) seen.set(rule.tool.toLowerCase(), rule.tool);
+  return [...seen.values()];
+}
+
+const realSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Polls the SBOM export: the first fetch, then at most `pollAttempts` more, each after
+ * `pollIntervalSeconds`. A report that is still being generated stays "pending" (never 0).
+ */
+async function pollSbom(
+  ctx: CollectContext,
+  repository: string,
+  uuid: string,
+): Promise<ProviderResult<SbomFetchDTO>> {
+  const { pollAttempts, pollIntervalSeconds } = ctx.policies.supplyChain.sbom;
+  const sleep = ctx.sleep ?? realSleep;
+  let last: ProviderResult<SbomFetchDTO> = { ok: true, data: { state: 'pending' } };
+  for (let attempt = 0; attempt <= pollAttempts; attempt++) {
+    if (attempt > 0) await sleep(pollIntervalSeconds * 1000);
+    last = await call(ctx, `sbomfetch:${repository}:${attempt}`, () =>
+      ctx.provider.fetchDependencySbom(repository, uuid),
+    );
+    if (!last.ok || last.data.state !== 'pending') return last;
+  }
+  return last;
+}
+
+/**
+ * Attestation presence of the latest release's assets: at most `maxAssets` assets that have a
+ * digest, sorted by name, one after the other. After the first 403 the remaining assets are
+ * not asked. A tag fallback (no release) has no assets: 'skipped'.
+ */
+async function collectAttestations(
+  ctx: CollectContext,
+  repository: string,
+  release: ProviderResult<ReleaseDTO>,
+): Promise<RepoData['attestations']> {
+  const { enabled, attestations } = ctx.policies.supplyChain;
+  if (!enabled || !attestations.releaseAssets || !release.ok) return 'skipped';
+  const digests = release.data.assets
+    .filter((a): a is typeof a & { digest: string } => typeof a.digest === 'string')
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .slice(0, attestations.maxAssets)
+    .map((a) => a.digest);
+  const results = new Map<string, ProviderResult<AttestationPresenceDTO>>();
+  for (const digest of digests) {
+    const result = await call(ctx, `att:${repository}:${digest}`, () =>
+      ctx.provider.getAttestationPresence(repository, digest),
+    );
+    results.set(digest, result);
+    if (!result.ok && result.error.classification === 'not-authorised') break;
+  }
+  return results;
 }
 
 const WORKFLOW_DIR = '.github/workflows';
@@ -372,6 +493,27 @@ export async function collectReusableTargets(
     }),
   );
   return result;
+}
+
+/**
+ * Tags of each coordinator repository, read only when Argo CD is on and an environment maps an
+ * application: they turn an Argo CD revision (a SHA) into a version.
+ */
+export async function collectCoordinatorTags(
+  ctx: CollectContext,
+  raws: RawProjectData[],
+): Promise<void> {
+  await Promise.all(
+    raws.map(async (raw) => {
+      const coordinator = raw.repos[0];
+      if (!coordinator?.repo.ok || !raw.config.environments.some((e) => e.argocdApplication))
+        return;
+      const repository = raw.config.coordinator.repository;
+      raw.coordinatorTags = await call(ctx, `tags:${repository}`, () =>
+        ctx.provider.listTags(repository),
+      );
+    }),
+  );
 }
 
 export async function collectProject(

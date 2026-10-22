@@ -171,7 +171,15 @@
             "submodulePath": "services/backend",
             "notApplicableControls": [],
             "notApplicableChecks": [],
-            "versionSource": "auto"
+            "versionSource": "auto",
+            "sonarProjectKey": "example-org_project-alpha-backend",
+            "containerImages": [
+              {
+                "project": "alpha",
+                "repository": "backend",
+                "tagTemplate": "{version}"
+              }
+            ]
           },
           {
             "id": "frontend",
@@ -182,7 +190,14 @@
             "submodulePath": "apps/frontend",
             "notApplicableControls": [],
             "notApplicableChecks": [],
-            "versionSource": "auto"
+            "versionSource": "auto",
+            "containerImages": [
+              {
+                "project": "alpha",
+                "repository": "frontend",
+                "tagTemplate": "{version}"
+              }
+            ]
           },
           {
             "id": "worker",
@@ -212,7 +227,12 @@
         "environments": [
           {
             "id": "dev",
-            "name": "DEV"
+            "name": "DEV",
+            "argocdApplication": {
+              "name": "alpha-dev",
+              "namespace": "argocd",
+              "project": "alpha"
+            }
           },
           {
             "id": "test",
@@ -220,11 +240,21 @@
           },
           {
             "id": "uat",
-            "name": "UAT"
+            "name": "UAT",
+            "argocdApplication": {
+              "name": "alpha-uat",
+              "namespace": "argocd",
+              "project": "alpha"
+            }
           },
           {
             "id": "prod",
-            "name": "PROD"
+            "name": "PROD",
+            "argocdApplication": {
+              "name": "alpha-prod",
+              "namespace": "argocd",
+              "project": "alpha"
+            }
           }
         ],
         "trackedWorkflows": [
@@ -318,7 +348,14 @@
             "submodulePath": "services/api",
             "notApplicableControls": [],
             "notApplicableChecks": [],
-            "versionSource": "auto"
+            "versionSource": "auto",
+            "containerImages": [
+              {
+                "project": "beta",
+                "repository": "api",
+                "tagTemplate": "{version}"
+              }
+            ]
           },
           {
             "id": "web",
@@ -329,7 +366,8 @@
             "submodulePath": "apps/web",
             "notApplicableControls": [],
             "notApplicableChecks": [],
-            "versionSource": "auto"
+            "versionSource": "auto",
+            "sonarProjectKey": "example-org_project-beta-web"
           },
           {
             "id": "helm",
@@ -348,7 +386,12 @@
         "environments": [
           {
             "id": "dev",
-            "name": "DEV"
+            "name": "DEV",
+            "argocdApplication": {
+              "name": "beta-dev",
+              "namespace": "argocd",
+              "project": "beta"
+            }
           },
           {
             "id": "uat",
@@ -356,7 +399,12 @@
           },
           {
             "id": "prod",
-            "name": "PROD"
+            "name": "PROD",
+            "argocdApplication": {
+              "name": "beta-prod",
+              "namespace": "argocd",
+              "project": "beta"
+            }
           }
         ],
         "trackedWorkflows": [
@@ -442,7 +490,8 @@
             "type": "service",
             "notApplicableControls": [],
             "notApplicableChecks": [],
-            "versionSource": "auto"
+            "versionSource": "auto",
+            "sonarProjectKey": "example-org_project-gamma-service"
           }
         ],
         "environments": [

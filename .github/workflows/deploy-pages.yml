@@ -25,7 +25,8 @@
 #   "github-pages" (created by GitHub) with deployment branch rule "main".
 #   Variable DATA_SOURCE (mock | github, default mock) and — for github — the
 #   secrets GH_APP_ID / GH_APP_PRIVATE_KEY / GH_APP_INSTALLATION_ID or
-#   GH_READ_TOKEN.
+#   GH_READ_TOKEN. Optional external providers (config/providers.yaml, off by
+#   default): SONARQUBE_TOKEN, HARBOR_ROBOT_NAME + HARBOR_ROBOT_SECRET, ARGOCD_TOKEN.
 #
 # Local test (nektos/act with podman as the container engine) — collect/build
 # only; deploy needs real OIDC and the Pages API:
@@ -66,6 +67,10 @@ jobs:
       GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
       GH_APP_INSTALLATION_ID: ${{ secrets.GH_APP_INSTALLATION_ID }}
       GH_READ_TOKEN: ${{ secrets.GH_READ_TOKEN }}
+      SONARQUBE_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
+      HARBOR_ROBOT_NAME: ${{ secrets.HARBOR_ROBOT_NAME }}
+      HARBOR_ROBOT_SECRET: ${{ secrets.HARBOR_ROBOT_SECRET }}
+      ARGOCD_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
 
   # ==========================================================================
   # build — no secrets

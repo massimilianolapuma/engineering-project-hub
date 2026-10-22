@@ -90,6 +90,33 @@ export const VERSIONS_HEADERS: readonly string[] = [
   'manifest_consistency',
   'pin_status',
   'environment_status',
+  // Argo CD (environment rows; n/a elsewhere). `environment_declared_version` is the manifest's
+  // version of the environment: `declared_version` above is the component one.
+  'environment_source',
+  'environment_declared_version',
+  'sync_status',
+  'health_status',
+];
+
+export const SUPPLY_CHAIN_HEADERS: readonly string[] = [
+  'project_id',
+  'repository',
+  'component_ids',
+  'sbom_state',
+  'sbom_source',
+  'packages',
+  'without_license',
+  'flagged',
+  'attestation_state',
+  'assets_checked',
+  'assets_with_provenance',
+  'images',
+  'images_signed',
+  'images_unsigned',
+  'container_scanning_source',
+  'iac_scanning_source',
+  'dast_source',
+  'summary_state',
 ];
 
 /** The security dimension of a summary is the health status of the security view. */
@@ -219,6 +246,10 @@ function projectVersionRows(p: ProjectSnapshot): CsvValue[][] {
       NA,
       NA,
       NA,
+      NA,
+      NA,
+      NA,
+      NA,
     ],
   ];
   for (const k of p.components)
@@ -236,6 +267,10 @@ function projectVersionRows(p: ProjectSnapshot): CsvValue[][] {
       k.manifestConsistency,
       k.pin?.status ?? null,
       NA,
+      NA,
+      NA,
+      NA,
+      NA,
     ]);
   for (const e of p.environments)
     rows.push([
@@ -252,9 +287,47 @@ function projectVersionRows(p: ProjectSnapshot): CsvValue[][] {
       NA,
       NA,
       e.status,
+      e.source,
+      e.declaredVersion,
+      e.deployment ? e.deployment.sync : NA,
+      e.deployment ? e.deployment.health : NA,
     ]);
   return rows;
 }
 
 export const versionsRows = (data: SiteData): CsvValue[][] =>
   data.projects.flatMap(projectVersionRows);
+
+/** One row per project and repository: SBOM, attestations, images and the source of each control. */
+function projectSupplyChainRows(p: ProjectSnapshot): CsvValue[][] {
+  const sourceOf = (repository: string, control: ControlStatus['control']): CsvValue =>
+    p.securityControls
+      .find((rc) => rc.repository.toLowerCase() === repository.toLowerCase())
+      ?.controls.find((c) => c.control === control)?.source ?? 'none';
+  return p.supplyChain.repositories.map((r) => [
+    p.project.id,
+    r.repository,
+    r.componentIds.join(';'),
+    r.sbom.state,
+    r.sbom.source ?? 'none',
+    r.sbom.packages,
+    r.sbom.withoutLicense,
+    r.sbom.flagged,
+    r.attestations.state,
+    r.attestations.checked,
+    r.attestations.withProvenance,
+    r.images.length,
+    r.images.filter((i) => i.signature === 'verified' || i.signature === 'present').length,
+    r.images.filter(
+      (i) =>
+        i.signature === 'missing' || i.signature === 'not-verified' || i.signature === 'failed',
+    ).length,
+    sourceOf(r.repository, 'containerScanning'),
+    sourceOf(r.repository, 'iacScanning'),
+    sourceOf(r.repository, 'dast'),
+    r.summary.state,
+  ]);
+}
+
+export const supplyChainRows = (data: SiteData): CsvValue[][] =>
+  data.projects.flatMap(projectSupplyChainRows);

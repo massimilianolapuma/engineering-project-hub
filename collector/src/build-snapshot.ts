@@ -53,7 +53,14 @@ import {
   type SourceReadability,
 } from './policy/exceptions';
 import { applySla } from './policy/sla';
-import { externalCountsFrom } from './normalizers/supply-chain';
+import { buildSupplyChain, externalCountsFrom } from './normalizers/supply-chain';
+import type { SupplyEvidence } from './normalizers/control-sources';
+import {
+  harborResults,
+  recordDeploymentErrors,
+  supplyChainRepoInput,
+  supplyEvidence,
+} from './normalizers/supply-chain-model';
 import {
   countAccepted,
   countOpen,
@@ -201,6 +208,18 @@ export function buildProjectSnapshot(
   const sla = applySla(applied.findings, policies, now, anyGitHubSourceReadable);
   const findings: SecurityFinding[] = sla.findings;
   const securityExceptions: SecurityException[] = applied.records;
+  // Supply chain evidence per unique repository (errors are recorded once, here).
+  const versions = new Map<string, string | null>([
+    ['coordinator', coord.version],
+    ...components.map((c) => [c.id, c.effectiveVersion] as const),
+  ]);
+  const evidences = new Map<string, SupplyEvidence>();
+  for (const r of uniqueRepos)
+    evidences.set(
+      r.componentId,
+      supplyEvidence(ctx, r, harborResults(ctx, config, raw, versions, r.repository)),
+    );
+  recordDeploymentErrors(ctx, config, raw);
   const securityControls = uniqueRepos.map((r) =>
     toRepositoryControls(
       ctx,
@@ -208,7 +227,24 @@ export function buildProjectSnapshot(
       r,
       findings.filter((f) => f.repository === r.repository),
       statusFiles.get(r.componentId)!,
+      evidences.get(r.componentId)!,
     ),
+  );
+  const supplyChain = buildSupplyChain(
+    {
+      enabled: policies.supplyChain.enabled,
+      repositories: uniqueRepos.map((r) =>
+        supplyChainRepoInput(
+          ctx,
+          raw.repos
+            .filter((x) => x.repository.toLowerCase() === r.repository.toLowerCase())
+            .map((x) => x.componentId),
+          r,
+          evidences.get(r.componentId)!,
+        ),
+      ),
+    },
+    ctx,
   );
 
   const required = requiredControls(config);
@@ -252,6 +288,7 @@ export function buildProjectSnapshot(
       remediation: sla.remediation,
       exceptions: securityExceptions,
       acceptedCount,
+      supplyChain,
     },
     openCounts,
     openSecretAlerts,
@@ -445,6 +482,15 @@ export function buildProjectSnapshot(
       }
     }
   }
+  for (const r of uniqueRepos) {
+    const summary = evidences.get(r.componentId)!.summary;
+    if (summary.state === 'stale')
+      staleSources.push({
+        repository: r.repository,
+        source: 'supply-chain-summary',
+        lastUpdatedAt: summary.generatedAt,
+      });
+  }
   for (const q of staleQuality) {
     staleSources.push({
       repository: q.repository,
@@ -507,6 +553,7 @@ export function buildProjectSnapshot(
     governanceHealth,
     qualityHealth,
     repositoryControls: repositoryControls.health,
+    supplyChain,
     overallHealth,
     score,
     dataFreshness: {
@@ -572,6 +619,12 @@ export function toProjectSummary(s: ProjectSnapshot): ProjectSummary {
       unknown: s.repositoryControls.unknown,
       notApplicable: s.repositoryControls.notApplicable,
       ratio: s.repositoryControls.ratio,
+    },
+    supplyChain: {
+      repositories: s.supplyChain.totals.repositories,
+      sbomAvailable: s.supplyChain.totals.sbomAvailable,
+      unsignedImages: s.supplyChain.totals.unsignedImages,
+      flagged: s.supplyChain.totals.flagged,
     },
     freshness: s.dataFreshness.status,
     openCounts: s.securityHealth.openCounts,

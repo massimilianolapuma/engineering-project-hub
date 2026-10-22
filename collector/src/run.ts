@@ -8,17 +8,26 @@ import {
   type CollectionError,
   type DiscoveryResult,
   type TeamsResult,
+  PROVIDER_IDS,
+  PROVIDERS_OFF,
   type Policies,
   type PortfolioIndex,
   type ProjectSnapshot,
+  type ProvidersFile,
   type RunMetadata,
+  type RunProviders,
 } from '@model/index';
 import { buildProjectSnapshot, toProjectSummary } from './build-snapshot';
 import type { LoadedExceptions } from './config/load';
 import { orphanedExceptionIds } from './policy/exceptions';
 import { discover } from './discovery/discover';
 import { discoverTeams } from './discovery/teams';
+import { collectExternal, type ExternalUsage } from './collectors/collect-external';
+import { effectiveVersions } from './normalizers/containers';
+import type { ProviderAuth } from './providers/external/auth';
+import type { ExternalProviders } from './providers/external/types';
 import {
+  collectCoordinatorTags,
   collectProject,
   collectReusableTargets,
   type CollectContext,
@@ -49,6 +58,14 @@ export interface RunOptions {
   concurrency?: number;
   /** Loaded exceptions (default: none). */
   exceptions?: LoadedExceptions;
+  /** providers.yaml (default: everything off). Only `enabled` and `maxItems` are read here. */
+  providers?: ProvidersFile;
+  /** Providers that are on (null = off). Default: none, so no external host is contacted. */
+  external?: ExternalProviders;
+  /** Credential state: an enabled provider without a credential reads as not-authorised. */
+  providerAuth?: ProviderAuth;
+  /** Waits between SBOM export polls. Default: a real timer, or none for the mock source. */
+  sleep?: (ms: number) => Promise<void>;
 }
 
 export interface RunResult {
@@ -74,6 +91,8 @@ function capabilities(raws: RawProjectData[]): Record<Capability, Availability> 
       outcomes.dependabot.push(r.dependabot);
       outcomes.secretScanning.push(r.secretScanning);
       outcomes.codeQuality.push(r.codeQualityFindings);
+      outcomes.dependencyGraph.push(...(r.sbomRequest ? [r.sbomRequest] : []));
+      if (r.attestations !== 'skipped') outcomes.attestations.push(...r.attestations.values());
       if (r.controls) {
         // Metadata: read only. Opt-in classic protection needs Administration: read, a separate
         // permission: its failures are recorded as errors, not as this capability.
@@ -108,6 +127,34 @@ function capabilities(raws: RawProjectData[]): Record<Capability, Availability> 
   return result;
 }
 
+/** Run-level state of each provider, with the usable / denied rules of the capabilities. */
+function runProviders(
+  providers: ProvidersFile,
+  usage: ExternalUsage,
+  auth: ProviderAuth | undefined,
+): RunProviders {
+  const usable = (r: ProviderResult<unknown>) =>
+    r.ok || r.error.classification === 'not-found' || r.error.classification === 'not-configured';
+  return Object.fromEntries(
+    PROVIDER_IDS.map((id) => {
+      if (!providers[id].enabled)
+        return [id, { enabled: false, state: 'off' as const, items: 0, errors: 0 }];
+      const { results, items, errors } = usage[id];
+      const state =
+        auth && auth[id].authHeader === null
+          ? ('not-authorised' as const)
+          : results.every(usable)
+            ? ('available' as const)
+            : !results.some(usable)
+              ? results.some((r) => !r.ok && r.error.classification === 'not-authorised')
+                ? ('not-authorised' as const)
+                : ('unknown' as const)
+              : ('partial' as const);
+      return [id, { enabled: true, state, items, errors }];
+    }),
+  ) as RunProviders;
+}
+
 export async function runCollection(opts: RunOptions): Promise<RunResult> {
   const { catalog, policies, provider, clock } = opts;
   const startedAt = clock();
@@ -116,6 +163,8 @@ export async function runCollection(opts: RunOptions): Promise<RunResult> {
     limit: createLimiter(opts.concurrency ?? 4),
     cache: new Map(),
     policies,
+    // The mock source answers at once: waiting for a report that will not change is pointless.
+    sleep: opts.sleep ?? (provider.dataSource === 'mock' ? async () => {} : undefined),
   };
 
   // One project failing unexpectedly must not stop the others.
@@ -127,6 +176,17 @@ export async function runCollection(opts: RunOptions): Promise<RunResult> {
     await discover(ctx, catalog, policies),
   );
   const now = clock();
+  // Optional external providers: only the ones that are on are contacted.
+  const providers = opts.providers ?? PROVIDERS_OFF;
+  const external = opts.external ?? { sonarqube: null, harbor: null, argocd: null };
+  if (external.argocd) await collectCoordinatorTags(ctx, raws);
+  const usage = await collectExternal(
+    external,
+    providers,
+    raws,
+    new Map(raws.map((raw) => [raw.config.id, effectiveVersions(raw, policies, now)])),
+    ctx.cache,
+  );
   // Reusable workflows: latest release / tag of the referenced repositories, once per run.
   const referenced = referencedRepositories(raws.flatMap((raw) => raw.repos));
   const reusable = await collectReusableTargets(ctx, referenced.targets, referenced.shaTargets);
@@ -192,6 +252,7 @@ export async function runCollection(opts: RunOptions): Promise<RunResult> {
         ),
       ).slice(0, 100),
     },
+    providers: runProviders(providers, usage, opts.providerAuth),
     policy: {
       snapshotStaleHours: policies.freshness.snapshotStaleHours,
       audience: policies.publication.audience,

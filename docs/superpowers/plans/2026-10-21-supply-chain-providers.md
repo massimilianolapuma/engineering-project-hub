@@ -744,7 +744,7 @@ The mock providers store raw API-shaped JSON for Harbor and Argo CD (so the proj
   - `collection-report.md contains "Providers: sonarqube partial (3 items, 1 error) · harbor available (3, 1 error) · argocd partial (5, 1 error)"`;
   - `canaries absent from every output file`: `canary-internal-pkg-7f3a`, `LicenseRef-canary-acme-9b2e`, `git.internal.example`, `canary-img-4d2e`, the Harbor `ghp_` value;
   - `SONARQUBE_TOKEN=sonar-canary-0123456789 set in env and enabled → value absent from output and from stdout` (spawned collector or `runCollection` + writer with captured console).
-  - CSV test: `versions.csv header ends with environment_source,declared_version,sync_status,health_status`; `supply-chain.csv has one row per project × repository (12 rows) and platform flagged 2`.
+  - CSV test: `versions.csv header ends with environment_source,environment_declared_version,sync_status,health_status` (the component `declared_version` column already exists: no duplicate header)`; `supply-chain.csv has one row per project × repository (12 rows) and platform flagged 2`.
 
 - [ ] **Step 2: Run and see them fail**
 

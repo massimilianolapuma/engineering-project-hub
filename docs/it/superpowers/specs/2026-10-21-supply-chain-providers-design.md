@@ -451,7 +451,7 @@ Altre modifiche:
 ### 5.11 Storico, "Cosa è cambiato" e CSV (D13)
 
 - Lo storico resta **1.2**. Le nuove evidenze non sono una dimensione; gli spostamenti di stato delle dimensioni compaiono già nella pagina "Cosa è cambiato".
-- `versions.csv`: colonne aggiunte in fondo: `environment_source`, `declared_version`, `sync_status`, `health_status`. `n/a` per le righe che non sono ambienti; `unknown` per null.
+- `versions.csv`: colonne aggiunte in fondo: `environment_source`, `environment_declared_version`, `sync_status`, `health_status` (il file ha già una colonna `declared_version` dei componenti: una seconda con lo stesso nome renderebbe l'intestazione ambigua). `n/a` per le righe che non sono ambienti e per gli ambienti che Argo CD non gestisce; `unknown` per null.
 - Nuovo `exports/supply-chain.csv`, collegato dalla pagina Sicurezza: una riga per progetto × repository: `project_id, repository, component_ids, sbom_state, sbom_source, packages, without_license, flagged, attestation_state, assets_checked, assets_with_provenance, images, images_signed, images_unsigned, container_scanning_source, iac_scanning_source, dast_source, summary_state`. Stesse regole di codifica di v0.7.0 (BOM, CRLF, `unknown`, protezione dalle formule). `component_ids` uniti con `;`.
 
 ### 5.12 UI (Warm Graphite, EN + IT)

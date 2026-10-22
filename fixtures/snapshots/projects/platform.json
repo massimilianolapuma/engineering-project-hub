@@ -515,13 +515,20 @@
         {
           "control": "containerScanning",
           "required": false,
-          "state": "not-configured",
-          "tool": null,
-          "lastScanAt": null,
-          "counts": null,
+          "state": "enabled",
+          "tool": "Trivy",
+          "lastScanAt": "2026-01-14T12:00:00.000Z",
+          "counts": {
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "informational": 0,
+            "unknown": 0
+          },
           "reportUrl": null,
-          "source": null,
-          "evidence": null
+          "source": "code-scanning",
+          "evidence": "reported"
         },
         {
           "control": "iacScanning",
@@ -548,13 +555,13 @@
         {
           "control": "sbom",
           "required": false,
-          "state": "not-configured",
+          "state": "enabled",
           "tool": null,
-          "lastScanAt": null,
+          "lastScanAt": "2026-01-15T11:00:00.000Z",
           "counts": null,
           "reportUrl": null,
-          "source": null,
-          "evidence": null
+          "source": "dependency-graph",
+          "evidence": "present"
         },
         {
           "control": "artifactSignature",
@@ -631,6 +638,14 @@
         "params": {
           "count": 1,
           "ids": "EXC-PLAT-001"
+        }
+      },
+      {
+        "code": "supply-chain-flagged-license",
+        "level": "info",
+        "params": {
+          "count": 2,
+          "repositories": "example-org/platform-mono"
         }
       }
     ],
@@ -735,7 +750,7 @@
       {
         "control": "containerScanning",
         "required": false,
-        "state": "not-configured"
+        "state": "enabled"
       },
       {
         "control": "iacScanning",
@@ -750,7 +765,7 @@
       {
         "control": "sbom",
         "required": false,
-        "state": "not-configured"
+        "state": "enabled"
       },
       {
         "control": "artifactSignature",
@@ -1047,6 +1062,126 @@
           "openAlerts": 0,
           "failingChecks": [],
           "otherFailing": 0
+        }
+      }
+    ]
+  },
+  "supplyChain": {
+    "enabled": true,
+    "collectedAt": "2026-01-15T12:00:00.000Z",
+    "totals": {
+      "repositories": 1,
+      "sbomAvailable": 1,
+      "signedImages": 0,
+      "unsignedImages": 0,
+      "attestedAssets": 0,
+      "flagged": 2
+    },
+    "repositories": [
+      {
+        "componentIds": [
+          "coordinator",
+          "web",
+          "api",
+          "worker"
+        ],
+        "repository": "example-org/platform-mono",
+        "sbom": {
+          "state": "available",
+          "source": "dependency-graph",
+          "format": "spdx",
+          "specVersion": "2.3",
+          "generatedAt": "2026-01-15T11:00:00.000Z",
+          "packages": 1530,
+          "withoutLicense": 3,
+          "flagged": 2,
+          "licenses": [
+            {
+              "id": "MIT",
+              "count": 1100
+            },
+            {
+              "id": "ISC",
+              "count": 200
+            },
+            {
+              "id": "Apache-2.0",
+              "count": 150
+            },
+            {
+              "id": "BSD-2-Clause",
+              "count": 40
+            },
+            {
+              "id": "BSD-3-Clause",
+              "count": 25
+            },
+            {
+              "id": "MIT OR Apache-2.0",
+              "count": 10
+            },
+            {
+              "id": "GPL-3.0-only",
+              "count": 2
+            }
+          ],
+          "otherLicenses": 0,
+          "ecosystems": [
+            {
+              "id": "npm",
+              "count": 1480
+            },
+            {
+              "id": "githubactions",
+              "count": 50
+            }
+          ]
+        },
+        "attestations": {
+          "state": "not-applicable",
+          "release": "web-v2.0.1",
+          "checked": 0,
+          "withProvenance": null,
+          "withSbom": null,
+          "withoutDigest": 0
+        },
+        "images": [],
+        "tools": [
+          {
+            "control": "containerScanning",
+            "tool": "Trivy",
+            "state": "enabled",
+            "lastAnalysisAt": "2026-01-14T12:00:00.000Z",
+            "open": {
+              "critical": 0,
+              "high": 0,
+              "medium": 0,
+              "low": 0,
+              "informational": 0,
+              "unknown": 0
+            }
+          },
+          {
+            "control": "iacScanning",
+            "tool": "Checkov",
+            "state": "not-configured",
+            "lastAnalysisAt": null,
+            "open": null
+          },
+          {
+            "control": "dast",
+            "tool": "ZAP",
+            "state": "not-configured",
+            "lastAnalysisAt": null,
+            "open": null
+          }
+        ],
+        "otherTools": [],
+        "summary": {
+          "state": "missing",
+          "generatedAt": null,
+          "commitSha": null,
+          "runUrl": null
         }
       }
     ]

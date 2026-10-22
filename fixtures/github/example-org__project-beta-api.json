@@ -20,7 +20,13 @@
     "name": "v3.2.0",
     "publishedAt": "@now-6d",
     "prerelease": false,
-    "htmlUrl": "https://github.com/example-org/project-beta-api/releases/tag/v3.2.0"
+    "htmlUrl": "https://github.com/example-org/project-beta-api/releases/tag/v3.2.0",
+    "assets": [
+      {
+        "name": "api-3.2.0.tar.gz",
+        "digest": "sha256:d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4"
+      }
+    ]
   },
   "files": {
     ".github/workflows/ci.yml": "name: CI\non: push\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-python@0123456789abcdef0123456789abcdef01234567\n      - name: Build marker-step-7f3e\n        run: echo marker-run-7f3e\n      - uses: ./.github/actions/lint\n      - uses: docker/build-push-action@v6\n      - uses: actions/upload-artifact@0123456789abcdef0123456789abcdef01234567\n",
@@ -129,6 +135,20 @@
       "createdAt": "@now-2d",
       "updatedAt": "@now-2d",
       "htmlUrl": "https://github.com/example-org/project-beta-api/security/code-scanning/902"
+    },
+    {
+      "number": 21,
+      "state": "open",
+      "dismissedReason": null,
+      "ruleId": "CKV_K8S_8",
+      "ruleSeverity": "warning",
+      "securitySeverityLevel": "low",
+      "ruleDescription": "Liveness probe should be configured",
+      "toolName": "Checkov",
+      "category": "checkov-iac",
+      "createdAt": "@now-3d",
+      "updatedAt": "@now-3d",
+      "htmlUrl": "https://github.com/example-org/project-beta-api/security/code-scanning/21"
     }
   ],
   "codeScanningAnalysis": {
@@ -162,24 +182,109 @@
       "generatedAt": "@now-2d",
       "tool": "coverlet",
       "format": "cobertura",
-      "lines": { "covered": 5998, "valid": 8400 }
+      "lines": {
+        "covered": 5998,
+        "valid": 8400
+      }
     },
     "createdAt": "@now-2d",
     "runId": 9012
   },
   "codeQualityFindings": [
-    { "category": "reliability", "severity": "error" },
-    { "category": "maintainability", "severity": "warning" },
-    { "category": "maintainability", "severity": "note" },
-    { "category": "maintainability", "severity": "warning" },
-    { "category": "maintainability", "severity": "none" },
-    { "category": "maintainability", "severity": "note" },
-    { "category": "maintainability", "severity": "warning" }
+    {
+      "category": "reliability",
+      "severity": "error"
+    },
+    {
+      "category": "maintainability",
+      "severity": "warning"
+    },
+    {
+      "category": "maintainability",
+      "severity": "note"
+    },
+    {
+      "category": "maintainability",
+      "severity": "warning"
+    },
+    {
+      "category": "maintainability",
+      "severity": "none"
+    },
+    {
+      "category": "maintainability",
+      "severity": "note"
+    },
+    {
+      "category": "maintainability",
+      "severity": "warning"
+    }
   ],
-  "directories": { ".github/workflows": [{ "name": "ci.yml", "type": "file" }] },
+  "directories": {
+    ".github/workflows": [
+      {
+        "name": "ci.yml",
+        "type": "file"
+      }
+    ]
+  },
   "branchRules": [
-    { "type": "pull_request", "requiredApprovals": 1 },
-    { "type": "required_status_checks", "requiredApprovals": null }
+    {
+      "type": "pull_request",
+      "requiredApprovals": 1
+    },
+    {
+      "type": "required_status_checks",
+      "requiredApprovals": null
+    }
   ],
-  "scorecardAnalysis": { "createdAt": "@now-2d", "toolName": "Scorecard" }
+  "scorecardAnalysis": {
+    "createdAt": "@now-2d",
+    "toolName": "Scorecard"
+  },
+  "dependencySbom": {
+    "$error": {
+      "classification": "not-authorised",
+      "httpStatus": 403
+    }
+  },
+  "attestations": {
+    "$error": {
+      "classification": "not-authorised",
+      "httpStatus": 403
+    }
+  },
+  "supplyChainSummary": {
+    "summary": {
+      "schemaVersion": "1.0",
+      "repository": "example-org/project-beta-api",
+      "ref": "refs/heads/main",
+      "commitSha": "3214cb086d9f6b265d49568ba63b3eb3afb5b505",
+      "generatedAt": "@now-1d",
+      "images": [
+        {
+          "name": "example-org/project-beta-api",
+          "tag": "3.1.0",
+          "digest": "sha256:e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5",
+          "signature": {
+            "status": "missing"
+          },
+          "provenance": {
+            "status": "missing"
+          }
+        }
+      ]
+    },
+    "createdAt": "@now-1d",
+    "runId": 9103
+  },
+  "codeScanningAnalyses": {
+    "Checkov": [
+      {
+        "createdAt": "@now-3d",
+        "toolName": "Checkov",
+        "category": "checkov-iac"
+      }
+    ]
+  }
 }

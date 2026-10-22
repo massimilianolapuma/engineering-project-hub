@@ -904,6 +904,8 @@ export const ProjectSnapshotSchema = z
     governanceHealth: HealthResultSchema,
     qualityHealth: QualityHealthSchema,
     repositoryControls: RepositoryControlsHealthSchema,
+    /** Supply chain evidence per repository (informative: not a dimension). */
+    supplyChain: SupplyChainSchema,
     overallHealth: HealthResultSchema,
     score: ProjectScoreSchema,
     dataFreshness: z
@@ -973,6 +975,15 @@ export const ProjectSummarySchema = z
         ratio: percent,
       })
       .strict(),
+    /** Supply chain evidence in numbers; null = unknown (never 0). */
+    supplyChain: z
+      .object({
+        repositories: nullableCount,
+        sbomAvailable: nullableCount,
+        unsignedImages: nullableCount,
+        flagged: nullableCount,
+      })
+      .strict(),
     freshness: HealthStatusSchema,
     openCounts: SeverityCountsSchema,
     risk: ProjectRiskSchema,
@@ -1016,6 +1027,8 @@ export const RunMetadataSchema = z
       .strict(),
     configValid: z.boolean(),
     exceptions: RunExceptionsSchema,
+    /** Optional external providers: enabled flag and state only, never base URLs or credentials. */
+    providers: RunProvidersSchema,
     policy: z
       .object({
         snapshotStaleHours: z.number().positive(),

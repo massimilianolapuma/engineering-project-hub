@@ -5,9 +5,11 @@ import { NA, csvCell, toCsv, type CsvValue } from '../../src/lib/csv';
 import {
   FINDINGS_HEADERS,
   PORTFOLIO_HEADERS,
+  SUPPLY_CHAIN_HEADERS,
   VERSIONS_HEADERS,
   findingsRows,
   portfolioRows,
+  supplyChainRows,
   unavailableCsv,
   versionsRows,
 } from '../../src/lib/exports';
@@ -139,6 +141,10 @@ describe('export rows (golden data)', () => {
       'manifest_consistency',
       'pin_status',
       'environment_status',
+      'environment_source',
+      'environment_declared_version',
+      'sync_status',
+      'health_status',
     ]);
   });
 
@@ -147,6 +153,7 @@ describe('export rows (golden data)', () => {
     for (const r of portfolioRows(d, history())) expect(r).toHaveLength(PORTFOLIO_HEADERS.length);
     for (const r of findingsRows(d)) expect(r).toHaveLength(FINDINGS_HEADERS.length);
     for (const r of versionsRows(d)) expect(r).toHaveLength(VERSIONS_HEADERS.length);
+    for (const r of supplyChainRows(d)) expect(r).toHaveLength(SUPPLY_CHAIN_HEADERS.length);
   });
 
   it('portfolio CSV carries the repository control counts before the risk columns: beta 5, 7, 8', () => {
@@ -262,6 +269,66 @@ describe('export rows (golden data)', () => {
     const fe = rows.find((r) => r.project_id === 'project-alpha' && r.item_id === 'frontend')!;
     expect(fe.version).toBe('2.1.0');
     expect(fe.drift).toBe('drift');
+  });
+});
+
+describe('versions and supply chain CSV (schema 1.7)', () => {
+  it('versions.csv ends with the Argo CD columns, n/a outside environment rows', () => {
+    expect(VERSIONS_HEADERS.slice(-4)).toEqual([
+      'environment_source',
+      'environment_declared_version',
+      'sync_status',
+      'health_status',
+    ]);
+    const rows = asObjects(VERSIONS_HEADERS, versionsRows(golden()));
+    const coordinator = rows.find((r) => r.row_type === 'coordinator')!;
+    expect([coordinator.environment_source, coordinator.sync_status]).toEqual([NA, NA]);
+    const env = (project: string, id: string) =>
+      rows.find(
+        (r) => r.row_type === 'environment' && r.project_id === project && r.item_id === id,
+      )!;
+    expect(env('project-alpha', 'uat')).toMatchObject({
+      environment_source: 'manifest',
+      environment_declared_version: '1.4.0',
+      sync_status: 'out-of-sync',
+      health_status: 'progressing',
+    });
+    expect(env('project-alpha', 'dev')).toMatchObject({
+      environment_source: 'argocd',
+      sync_status: 'synced',
+    });
+    // Not managed by Argo CD: n/a, not unknown.
+    expect(env('project-alpha', 'test')).toMatchObject({
+      sync_status: NA,
+      health_status: NA,
+    });
+    // Mapped but not readable: the cells are n/a too (no deployment was read).
+    expect(env('project-beta', 'dev').environment_source).toBe('manifest');
+  });
+
+  it('supply-chain.csv has one row per project and repository: 12 rows, platform flagged 2', () => {
+    const rows = asObjects(SUPPLY_CHAIN_HEADERS, supplyChainRows(golden()));
+    expect(rows).toHaveLength(12);
+    const platform = rows.find((r) => r.project_id === 'platform')!;
+    expect(platform).toMatchObject({ flagged: 2, packages: 1530, sbom_source: 'dependency-graph' });
+    expect(platform.container_scanning_source).toBe('code-scanning');
+    const worker = rows.find((r) => String(r.repository).endsWith('alpha-worker'))!;
+    expect(worker).toMatchObject({
+      sbom_state: 'pending',
+      packages: null,
+      attestation_state: 'unknown',
+    });
+    const frontend = rows.find((r) => String(r.repository).endsWith('alpha-frontend'))!;
+    expect(frontend.sbom_source).toBe('supply-chain-summary');
+    expect(frontend.dast_source).toBe('code-scanning');
+    expect(rows.find((r) => String(r.repository).endsWith('alpha-backend'))!).toMatchObject({
+      images: 2,
+      images_signed: 2,
+      images_unsigned: 0,
+      container_scanning_source: 'harbor',
+    });
+    const mono = rows.filter((r) => String(r.component_ids).includes(';'));
+    expect(mono.length).toBeGreaterThan(0);
   });
 });
 

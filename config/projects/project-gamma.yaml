@@ -18,6 +18,7 @@ components:
     name: Gamma service
     repository: example-org/project-gamma-service
     type: service
+    sonarProjectKey: example-org_project-gamma-service
 
 environments:
   - { id: dev, name: DEV }

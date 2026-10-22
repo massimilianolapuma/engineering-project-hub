@@ -49,9 +49,18 @@
   },
   "directories": {
     ".github/workflows": [
-      { "name": "ci.yml", "type": "file" },
-      { "name": "docs.yml", "type": "file" },
-      { "name": "release.yml", "type": "file" }
+      {
+        "name": "ci.yml",
+        "type": "file"
+      },
+      {
+        "name": "docs.yml",
+        "type": "file"
+      },
+      {
+        "name": "release.yml",
+        "type": "file"
+      }
     ],
     "": [
       {
@@ -209,15 +218,92 @@
       "generatedAt": "@now-20d",
       "tool": "vitest",
       "format": "lcov",
-      "lines": { "covered": 2900, "valid": 5000 }
+      "lines": {
+        "covered": 2900,
+        "valid": 5000
+      }
     },
     "createdAt": "@now-20d",
     "runId": 9501
   },
   "branchRules": [
-    { "type": "pull_request", "requiredApprovals": 1 },
-    { "type": "required_status_checks", "requiredApprovals": null },
-    { "type": "non_fast_forward", "requiredApprovals": null },
-    { "type": "deletion", "requiredApprovals": null }
-  ]
+    {
+      "type": "pull_request",
+      "requiredApprovals": 1
+    },
+    {
+      "type": "required_status_checks",
+      "requiredApprovals": null
+    },
+    {
+      "type": "non_fast_forward",
+      "requiredApprovals": null
+    },
+    {
+      "type": "deletion",
+      "requiredApprovals": null
+    }
+  ],
+  "dependencySbom": {
+    "expand": {
+      "name": "platform-mono",
+      "created": "@now-1h",
+      "packages": [
+        {
+          "count": 1060,
+          "license": "MIT",
+          "purl": "npm"
+        },
+        {
+          "count": 200,
+          "license": "ISC",
+          "purl": "npm"
+        },
+        {
+          "count": 150,
+          "license": "Apache-2.0",
+          "purl": "npm"
+        },
+        {
+          "count": 40,
+          "license": "BSD-2-Clause",
+          "purl": "npm"
+        },
+        {
+          "count": 25,
+          "license": "BSD-3-Clause",
+          "purl": "npm"
+        },
+        {
+          "count": 2,
+          "license": "GPL-3.0-only",
+          "purl": "npm"
+        },
+        {
+          "count": 3,
+          "license": null,
+          "purl": "npm"
+        },
+        {
+          "count": 40,
+          "license": "MIT",
+          "purl": "githubactions"
+        },
+        {
+          "count": 10,
+          "license": "MIT OR Apache-2.0",
+          "purl": "githubactions"
+        }
+      ]
+    }
+  },
+  "codeScanningAnalyses": {
+    "Trivy": [
+      {
+        "createdAt": "@now-1d",
+        "toolName": "Trivy",
+        "category": "trivy-image"
+      }
+    ]
+  }
 }

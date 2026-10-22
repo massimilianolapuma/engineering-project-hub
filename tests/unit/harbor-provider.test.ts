@@ -188,23 +188,29 @@ describe('Harbor provider', () => {
 });
 
 describe('mock Harbor provider', () => {
-  it('reads fixtures/providers/harbor.json keyed "<project>/<repository>:<reference>"', async () => {
+  it('reads fixtures/providers/harbor.json (raw API responses) keyed "<project>/<repository>:<reference>" through the same projection', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'hub-mock-harbor-'));
-    const dto = {
-      digest: null,
-      scan: null,
-      signatures: { cosign: true, notation: false },
+    const raw = {
+      digest: DIGEST,
+      scan_overview: overview('Success', { Medium: 2, Low: 6 }),
+      accessories: [{ type: 'signature.cosign' }],
     };
-    await writeFile(join(dir, 'harbor.json'), JSON.stringify({ 'alpha/team/backend:1.4.0': dto }));
+    await writeFile(join(dir, 'harbor.json'), JSON.stringify({ 'alpha/team/backend:1.4.0': raw }));
     const providers = ProvidersFileSchema.parse({
       schemaVersion: '1.0',
       harbor: { enabled: true, baseUrl: 'https://harbor.example.invalid' },
     });
     const { harbor } = createMockExternalProviders(dir, () => new Date(0), providers);
-    expect(await harbor!.getArtifact('alpha', 'team/backend', '1.4.0')).toEqual({
+    const result = await harbor!.getArtifact('alpha', 'team/backend', '1.4.0');
+    expect(result).toMatchObject({
       ok: true,
-      data: dto,
+      data: {
+        digest: DIGEST,
+        scan: { status: 'success', medium: 2, low: 6 },
+        signatures: { cosign: true },
+      },
     });
+    expect(JSON.stringify(result)).not.toContain(SCANNER_CANARY);
     expect(await harbor!.getArtifact('alpha', 'x', 'y')).toMatchObject({
       error: { classification: 'not-found' },
     });

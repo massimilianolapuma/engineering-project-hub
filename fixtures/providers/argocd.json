@@ -1,0 +1,140 @@
+{
+  "argocd/alpha-dev": {
+    "spec": {
+      "source": {
+        "repoURL": "https://git.internal.example/canary-6c1d.git",
+        "targetRevision": "v1.4.0"
+      },
+      "destination": {
+        "server": "https://kubernetes.internal.example"
+      }
+    },
+    "status": {
+      "sync": {
+        "status": "Synced",
+        "revision": "ffffffffffffffffffffffffffffffffffffffff"
+      },
+      "health": {
+        "status": "Healthy"
+      },
+      "summary": {
+        "images": [
+          "harbor.example.invalid/alpha/backend:1.4.0",
+          "harbor.example.invalid/alpha/frontend:2.1.0",
+          "registry.internal.example/canary-img-4d2e:1.0"
+        ]
+      },
+      "operationState": {
+        "finishedAt": "@now-2d"
+      },
+      "resources": [
+        {
+          "kind": "Deployment",
+          "name": "synthetic"
+        }
+      ]
+    }
+  },
+  "argocd/alpha-uat": {
+    "spec": {
+      "source": {
+        "repoURL": "https://git.internal.example/canary-6c1d.git",
+        "targetRevision": "HEAD"
+      },
+      "destination": {
+        "server": "https://kubernetes.internal.example"
+      }
+    },
+    "status": {
+      "sync": {
+        "status": "OutOfSync",
+        "revision": "0000000000000000000000000000000000000000"
+      },
+      "health": {
+        "status": "Progressing"
+      },
+      "summary": {
+        "images": []
+      },
+      "operationState": {
+        "finishedAt": "@now-5h"
+      },
+      "resources": [
+        {
+          "kind": "Deployment",
+          "name": "synthetic"
+        }
+      ]
+    }
+  },
+  "argocd/alpha-prod": {
+    "spec": {
+      "source": {
+        "repoURL": "https://git.internal.example/canary-6c1d.git",
+        "targetRevision": "v1.3.0"
+      },
+      "destination": {
+        "server": "https://kubernetes.internal.example"
+      }
+    },
+    "status": {
+      "sync": {
+        "status": "Synced",
+        "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "health": {
+        "status": "Healthy"
+      },
+      "summary": {
+        "images": []
+      },
+      "operationState": {
+        "finishedAt": "@now-9d"
+      },
+      "resources": [
+        {
+          "kind": "Deployment",
+          "name": "synthetic"
+        }
+      ]
+    }
+  },
+  "argocd/beta-prod": {
+    "spec": {
+      "source": {
+        "repoURL": "https://git.internal.example/canary-6c1d.git",
+        "targetRevision": "v3.1.0"
+      },
+      "destination": {
+        "server": "https://kubernetes.internal.example"
+      }
+    },
+    "status": {
+      "sync": {
+        "status": "Synced",
+        "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "health": {
+        "status": "Degraded"
+      },
+      "summary": {
+        "images": []
+      },
+      "operationState": {
+        "finishedAt": "@now-4d"
+      },
+      "resources": [
+        {
+          "kind": "Deployment",
+          "name": "synthetic"
+        }
+      ]
+    }
+  },
+  "argocd/beta-dev": {
+    "$error": {
+      "classification": "not-authorised",
+      "httpStatus": 403
+    }
+  }
+}

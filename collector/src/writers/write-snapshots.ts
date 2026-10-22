@@ -159,6 +159,8 @@ export interface CollectionReport {
     invalid: number;
     orphaned: number;
   };
+  /** Optional external providers: state and counts only (never base URLs or credentials). */
+  providers: PortfolioIndex['run']['providers'];
   /**
    * null when history is turned off. "not-written": the history could not be built this run
    * (see notes); the snapshots were still written.
@@ -220,6 +222,7 @@ export function buildReport(
       invalid: inState('invalid'),
       orphaned: index.run.exceptions.orphaned.length,
     },
+    providers: index.run.providers,
     history: history
       ? { state: history.restore.state, entries: history.entries.length, notes: [...notes] }
       : notes.length
@@ -234,6 +237,20 @@ function historyLine(h: CollectionReport['history']): string {
   const entries = `${h.entries} ${h.entries === 1 ? 'entry' : 'entries'}`;
   const usable = h.state === 'restored' || h.state === 'fixture';
   return `${usable ? h.state : `started fresh (${h.state})`} · ${entries}`;
+}
+
+/**
+ * "Providers: sonarqube partial (3 items, 1 error) · harbor available (3, 1 error)": only the
+ * providers that are on; the first one spells out "items".
+ */
+export function providersLine(providers: CollectionReport['providers']): string {
+  const on = Object.entries(providers).filter(([, p]) => p.enabled);
+  if (!on.length) return 'Providers: all off';
+  const parts = on.map(([id, p], i) => {
+    const errors = p.errors === 0 ? '' : `, ${p.errors} ${p.errors === 1 ? 'error' : 'errors'}`;
+    return `${id} ${p.state} (${p.items}${i === 0 ? ' items' : ''}${errors})`;
+  });
+  return `Providers: ${parts.join(' · ')}`;
 }
 
 function exceptionsLine(e: CollectionReport['exceptions']): string {
@@ -255,6 +272,8 @@ export function reportMarkdown(r: CollectionReport): string {
     `| History | ${historyLine(r.history)} |`,
     '',
     exceptionsLine(r.exceptions),
+    '',
+    providersLine(r.providers),
     '',
     '### Projects',
     '',

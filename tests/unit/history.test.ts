@@ -1068,7 +1068,13 @@ describe('computeChanges', () => {
         });
       },
     );
+    // Alpha's current snapshot also carries its own Harbor "not found", absent from the previous.
     expect(alphaOf(c).newErrors).toEqual([
+      {
+        repository: 'example-org/project-alpha-frontend',
+        source: 'harbor',
+        classification: 'not-found',
+      },
       {
         repository: 'example-org/project-alpha-web',
         source: 'secret-scanning',
@@ -1076,7 +1082,7 @@ describe('computeChanges', () => {
       },
     ]);
     expect(alphaOf(c).resolvedErrors).toBe(1);
-    expect(c.totals.newErrors).toBe(1);
+    expect(c.totals.newErrors).toBe(2);
   });
 
   it('project absent in the previous entry → added true, nothing compared', () => {

@@ -451,7 +451,7 @@ Other changes:
 ### 5.11 History, "What changed" and CSV (D13)
 
 - History stays **1.2**. The new evidence is not a dimension; dimension status moves already appear on the "What changed" page.
-- `versions.csv`: columns appended at the end: `environment_source`, `declared_version`, `sync_status`, `health_status`. `n/a` for non-environment rows; `unknown` for null.
+- `versions.csv`: columns appended at the end: `environment_source`, `environment_declared_version`, `sync_status`, `health_status` (the file already has a component `declared_version` column: a second one with the same name would make the header ambiguous). `n/a` for non-environment rows and for environments Argo CD does not manage; `unknown` for null.
 - New `exports/supply-chain.csv`, linked from the Security page: one row per project × repository: `project_id, repository, component_ids, sbom_state, sbom_source, packages, without_license, flagged, attestation_state, assets_checked, assets_with_provenance, images, images_signed, images_unsigned, container_scanning_source, iac_scanning_source, dast_source, summary_state`. Same encoding rules as v0.7.0 (BOM, CRLF, `unknown`, formula guard). `component_ids` joined with `;`.
 
 ### 5.12 UI (Warm Graphite, EN + IT)
