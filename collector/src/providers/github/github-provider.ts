@@ -12,6 +12,7 @@ import {
   type CodeQualityFindingDTO,
   type CustomPropertyDTO,
   type CodeScanningAlertDTO,
+  type AttestationPresenceDTO,
   type CodeScanningAnalysisDTO,
   type CommitRefDTO,
   type CompareDTO,
@@ -32,6 +33,7 @@ import {
   type SecretScanningAlertDTO,
   type SourceProvider,
   type SubmoduleRefDTO,
+  type SupplyChainSummaryArtifactDTO,
   type TagDTO,
   type WorkflowRunDTO,
   WORKFLOW_FILE,
@@ -54,6 +56,12 @@ const QUALITY_FILE = 'quality-summary.json';
 const ARTIFACT_PAGE_SIZE = 30;
 const MAX_ARTIFACT_PAGES = 3;
 const MAX_QUALITY_ZIP_BYTES = 65_536;
+/** Artifact name / file / size cap of the CI supply-chain summary contract. */
+const SUPPLY_CHAIN_ARTIFACT = 'hub-supply-chain-summary';
+const SUPPLY_CHAIN_FILE = 'supply-chain-summary.json';
+const MAX_SUPPLY_CHAIN_ZIP_BYTES = 65_536;
+const SHA256_DIGEST = /^sha256:[0-9a-f]{64}$/;
+const ANALYSES_PER_PAGE = 10;
 const CODE_QUALITY_API_VERSION = '2026-03-10';
 
 /** Version header of the SBOM export (and attestations) endpoints. */
@@ -417,6 +425,11 @@ export class GitHubProvider implements SourceProvider {
         publishedAt: data.published_at ?? null,
         prerelease: data.prerelease,
         htmlUrl: data.html_url,
+        // Name and digest only: GitHub reports the digest as "sha256:<hex>" or null.
+        assets: (data.assets ?? []).map((a) => ({
+          name: a.name,
+          digest: typeof a.digest === 'string' && SHA256_DIGEST.test(a.digest) ? a.digest : null,
+        })),
       };
     });
   }
@@ -583,6 +596,7 @@ export class GitHubProvider implements SourceProvider {
           ruleDescription: a.rule.description ?? null,
           toolName: a.tool.name ?? null,
           path: a.most_recent_instance?.location?.path ?? null,
+          category: a.most_recent_instance?.category ?? null,
           createdAt: a.created_at,
           updatedAt: a.updated_at ?? null,
           htmlUrl: a.html_url,
@@ -657,6 +671,33 @@ export class GitHubProvider implements SourceProvider {
     repo: string,
     branch: string,
   ): Promise<ProviderResult<QualitySummaryArtifactDTO>> {
+    return this.getSummaryArtifact(repo, branch, {
+      artifact: QUALITY_ARTIFACT,
+      file: QUALITY_FILE,
+      maxBytes: MAX_QUALITY_ZIP_BYTES,
+    });
+  }
+
+  getSupplyChainSummary(
+    repo: string,
+    branch: string,
+  ): Promise<ProviderResult<SupplyChainSummaryArtifactDTO>> {
+    return this.getSummaryArtifact(repo, branch, {
+      artifact: SUPPLY_CHAIN_ARTIFACT,
+      file: SUPPLY_CHAIN_FILE,
+      maxBytes: MAX_SUPPLY_CHAIN_ZIP_BYTES,
+    });
+  }
+
+  /**
+   * Newest non-expired artifact `artifact` of a same-repository run on `branch`, unzipped to the
+   * text of its single `file`. The size is checked before and after the download.
+   */
+  private getSummaryArtifact(
+    repo: string,
+    branch: string,
+    spec: { artifact: string; file: string; maxBytes: number },
+  ): Promise<ProviderResult<QualitySummaryArtifactDTO>> {
     const { owner, repo: name } = split(repo);
     return guard(async () => {
       type Art = Awaited<
@@ -678,7 +719,7 @@ export class GitHubProvider implements SourceProvider {
         const { data } = await this.client.rest.actions.listArtifactsForRepo({
           owner,
           repo: name,
-          name: QUALITY_ARTIFACT,
+          name: spec.artifact,
           per_page: ARTIFACT_PAGE_SIZE,
           page,
         });
@@ -697,7 +738,7 @@ export class GitHubProvider implements SourceProvider {
           runUrl: runUrlOf(newestExpired),
         };
       }
-      if (live.size_in_bytes > MAX_QUALITY_ZIP_BYTES) throw new InvalidData('artifact too large');
+      if (live.size_in_bytes > spec.maxBytes) throw new InvalidData('artifact too large');
       const res = await this.client.rest.actions.downloadArtifact({
         owner,
         repo: name,
@@ -705,10 +746,10 @@ export class GitHubProvider implements SourceProvider {
         archive_format: 'zip',
       });
       const bytes = new Uint8Array(res.data as ArrayBuffer);
-      if (bytes.byteLength > MAX_QUALITY_ZIP_BYTES) throw new InvalidData('artifact too large');
+      if (bytes.byteLength > spec.maxBytes) throw new InvalidData('artifact too large');
       try {
         return {
-          summaryText: readZipEntry(bytes, QUALITY_FILE, MAX_QUALITY_ZIP_BYTES),
+          summaryText: readZipEntry(bytes, spec.file, spec.maxBytes),
           createdAt: live.created_at ?? null,
           runUrl: runUrlOf(live),
         };
@@ -737,6 +778,61 @@ export class GitHubProvider implements SourceProvider {
         { failWhenCapped: true },
       ),
     );
+  }
+
+  listCodeScanningAnalyses(
+    repo: string,
+    tool: string,
+    ref: string,
+  ): Promise<ProviderResult<CodeScanningAnalysisDTO[]>> {
+    return guard(
+      async () => {
+        const { data } = await this.client.rest.codeScanning.listRecentAnalyses({
+          ...split(repo),
+          tool_name: tool,
+          ref: ref.startsWith('refs/') ? ref : `refs/heads/${ref}`,
+          per_page: ANALYSES_PER_PAGE,
+        });
+        return data.map((a) => ({
+          createdAt: a.created_at,
+          toolName: a.tool.name ?? null,
+          category: a.category ?? null,
+        }));
+      },
+      () => ok([]),
+    );
+  }
+
+  getAttestationPresence(
+    repo: string,
+    digest: string,
+  ): Promise<ProviderResult<AttestationPresenceDTO>> {
+    return guard(async () => {
+      // The digest is a path segment: only the exact documented shape is ever sent.
+      if (!SHA256_DIGEST.test(digest)) throw new InvalidData('invalid digest');
+      const has = async (predicate: 'provenance' | 'sbom'): Promise<boolean> => {
+        try {
+          const { data } = await this.client.request(
+            'GET /repos/{owner}/{repo}/attestations/{subject_digest}',
+            {
+              ...split(repo),
+              subject_digest: digest,
+              predicate_type: predicate,
+              per_page: 1,
+              headers: { 'X-GitHub-Api-Version': SBOM_API_VERSION },
+            },
+          );
+          // Only the count is read: the bundle is never copied anywhere.
+          const list = (data as { attestations?: unknown } | null)?.attestations;
+          return Array.isArray(list) && list.length > 0;
+        } catch (e) {
+          // The endpoint answers 404 when nothing matches.
+          if ((e as { status?: number } | null)?.status === 404) return false;
+          throw e;
+        }
+      };
+      return { provenance: await has('provenance'), sbom: await has('sbom') };
+    });
   }
 
   requestDependencySbom(repo: string): Promise<ProviderResult<SbomRequestDTO>> {

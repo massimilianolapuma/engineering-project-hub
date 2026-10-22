@@ -19,6 +19,8 @@ import {
   type ProviderError,
   type ProviderResult,
   type QualitySummaryArtifactDTO,
+  type AttestationPresenceDTO,
+  type SupplyChainSummaryArtifactDTO,
   type ReleaseDTO,
   type RepositoryDTO,
   type RunFailureDTO,
@@ -50,7 +52,8 @@ export interface RepoFixture {
   /** Absent → no Scorecard analysis (ok(null)). */
   scorecardAnalysis?: CodeScanningAnalysisDTO | null | ErrorFixture;
   customProperties?: CustomPropertyDTO[] | ErrorFixture;
-  latestRelease?: ReleaseDTO | ErrorFixture;
+  /** `assets` defaults to [] when absent. */
+  latestRelease?: (Omit<ReleaseDTO, 'assets'> & { assets?: ReleaseDTO['assets'] }) | ErrorFixture;
   latestTag?: TagDTO | ErrorFixture;
   /** Tags newest first; defaults to [latestTag] when absent. */
   tags?: TagDTO[] | ErrorFixture;
@@ -70,6 +73,13 @@ export interface RepoFixture {
   qualitySummary?:
     { summary: unknown; createdAt: string; expired?: boolean; runId: number } | ErrorFixture;
   codeQualityFindings?: CodeQualityFindingDTO[] | ErrorFixture;
+  /** Attestation presence per release-asset digest (absent digest → none), or one error for all. */
+  attestations?: Record<string, AttestationPresenceDTO | ErrorFixture> | ErrorFixture;
+  /** Analyses per code-scanning tool name (matched case-insensitively); absent tool → none. */
+  codeScanningAnalyses?: Record<string, CodeScanningAnalysisDTO[] | ErrorFixture>;
+  /** Same shape as `qualitySummary`, for the hub-supply-chain-summary artifact. */
+  supplyChainSummary?:
+    { summary: unknown; createdAt: string; expired?: boolean; runId: number } | ErrorFixture;
   /**
    * Dependency-graph SBOM export. `pending`: every fetch answers 202; `document`: a ready SPDX
    * document; `expand`: a synthetic SPDX 2.3 document built from counts (no real package names).
@@ -300,8 +310,9 @@ export class MockProvider implements SourceProvider {
     return r.ok ? ok({ ...r.data, htmlUrl: `https://github.com/${repo}/commit/${r.data.sha}` }) : r;
   }
 
-  getLatestRelease(repo: string) {
-    return this.pick(repo, (f) => f.latestRelease);
+  async getLatestRelease(repo: string): Promise<ProviderResult<ReleaseDTO>> {
+    const r = await this.pick(repo, (f) => f.latestRelease);
+    return r.ok ? ok({ ...r.data, assets: r.data.assets ?? [] }) : r;
   }
 
   getLatestTag(repo: string) {
@@ -356,6 +367,40 @@ export class MockProvider implements SourceProvider {
 
   async getQualitySummary(repo: string): Promise<ProviderResult<QualitySummaryArtifactDTO>> {
     const r = await this.pick(repo, (f) => f.qualitySummary);
+    if (!r.ok) return r;
+    return ok({
+      summaryText: r.data.expired ? null : JSON.stringify(r.data.summary),
+      createdAt: r.data.createdAt,
+      runUrl: `https://github.com/${repo}/actions/runs/${r.data.runId}`,
+    });
+  }
+
+  listCodeScanningAnalyses(repo: string, tool: string, _ref: string) {
+    const key = tool.toLowerCase();
+    return this.pick<CodeScanningAnalysisDTO[]>(
+      repo,
+      (f) =>
+        Object.entries(f.codeScanningAnalyses ?? {}).find(([k]) => k.toLowerCase() === key)?.[1],
+      ok([]),
+    );
+  }
+
+  getAttestationPresence(repo: string, digest: string) {
+    return this.pick<AttestationPresenceDTO>(
+      repo,
+      (f) =>
+        f.attestations === undefined || isError(f.attestations)
+          ? f.attestations
+          : f.attestations[digest],
+      ok({ provenance: false, sbom: false }),
+    );
+  }
+
+  async getSupplyChainSummary(
+    repo: string,
+    _branch?: string,
+  ): Promise<ProviderResult<SupplyChainSummaryArtifactDTO>> {
+    const r = await this.pick(repo, (f) => f.supplyChainSummary);
     if (!r.ok) return r;
     return ok({
       summaryText: r.data.expired ? null : JSON.stringify(r.data.summary),

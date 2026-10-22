@@ -874,6 +874,7 @@ describe('sanitisation end to end', () => {
         publishedAt: GOLDEN_NOW,
         prerelease: false,
         htmlUrl: url,
+        assets: [],
       }),
     getLatestTag: async () => fail({ classification: 'not-found' }),
     getFile: async (_r, path) =>
@@ -1004,6 +1005,9 @@ describe('sanitisation end to end', () => {
         runUrl: url,
       }),
     listCodeQualityFindings: async () => ok([{ category: poison, severity: poison }]),
+    listCodeScanningAnalyses: async () => ok([]),
+    getAttestationPresence: async () => fail({ classification: 'not-found' }),
+    getSupplyChainSummary: async () => fail({ classification: 'not-found' }),
     requestDependencySbom: async () => fail({ classification: 'not-configured' }),
     fetchDependencySbom: async () => fail({ classification: 'not-configured' }),
     listSecretScanningAlerts: async () =>

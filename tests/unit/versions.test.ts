@@ -62,6 +62,7 @@ function raw(
     publishedAt: NOW.toISOString(),
     prerelease: false,
     htmlUrl: 'https://github.com/example-org/api/releases/tag/v3.2.0',
+    assets: [],
   });
   return {
     raw: {
