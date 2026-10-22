@@ -69,8 +69,10 @@
       "id": "dev",
       "name": "DEV",
       "version": null,
+      "declaredVersion": null,
       "source": "unknown",
-      "status": "unknown"
+      "status": "unknown",
+      "deployment": null
     }
   ],
   "workflows": [
@@ -498,7 +500,10 @@
         "commitSha": null,
         "generatedAt": null,
         "tool": null,
-        "runUrl": null
+        "runUrl": null,
+        "source": "ci-summary",
+        "qualityGate": null,
+        "newCoverage": null
       },
       {
         "componentId": "service",
@@ -510,7 +515,10 @@
         "commitSha": null,
         "generatedAt": null,
         "tool": null,
-        "runUrl": null
+        "runUrl": null,
+        "source": "ci-summary",
+        "qualityGate": null,
+        "newCoverage": null
       }
     ],
     "findings": {

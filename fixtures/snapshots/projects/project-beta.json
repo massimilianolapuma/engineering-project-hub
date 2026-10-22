@@ -259,22 +259,28 @@
       "id": "dev",
       "name": "DEV",
       "version": "3.2.0",
+      "declaredVersion": "3.2.0",
       "source": "manifest",
-      "status": "aligned"
+      "status": "aligned",
+      "deployment": null
     },
     {
       "id": "uat",
       "name": "UAT",
       "version": "3.2.0",
+      "declaredVersion": "3.2.0",
       "source": "manifest",
-      "status": "aligned"
+      "status": "aligned",
+      "deployment": null
     },
     {
       "id": "prod",
       "name": "PROD",
       "version": "3.1.0",
+      "declaredVersion": "3.1.0",
       "source": "manifest",
-      "status": "behind"
+      "status": "behind",
+      "deployment": null
     }
   ],
   "workflows": [
@@ -1534,7 +1540,10 @@
         "commitSha": "971a7f034dadeeaea0d6daacfc265dd40cde39e8",
         "generatedAt": "2026-01-13T12:00:00.000Z",
         "tool": "coverlet",
-        "runUrl": "https://github.com/example-org/project-beta-coordinator/actions/runs/9011"
+        "runUrl": "https://github.com/example-org/project-beta-coordinator/actions/runs/9011",
+        "source": "ci-summary",
+        "qualityGate": null,
+        "newCoverage": null
       },
       {
         "componentId": "api",
@@ -1546,7 +1555,10 @@
         "commitSha": "3214cb086d9f6b265d49568ba63b3eb3afb5b505",
         "generatedAt": "2026-01-13T12:00:00.000Z",
         "tool": "coverlet",
-        "runUrl": "https://github.com/example-org/project-beta-api/actions/runs/9012"
+        "runUrl": "https://github.com/example-org/project-beta-api/actions/runs/9012",
+        "source": "ci-summary",
+        "qualityGate": null,
+        "newCoverage": null
       },
       {
         "componentId": "web",
@@ -1558,7 +1570,10 @@
         "commitSha": null,
         "generatedAt": null,
         "tool": null,
-        "runUrl": null
+        "runUrl": null,
+        "source": "ci-summary",
+        "qualityGate": null,
+        "newCoverage": null
       },
       {
         "componentId": "helm",
@@ -1570,7 +1585,10 @@
         "commitSha": null,
         "generatedAt": null,
         "tool": null,
-        "runUrl": null
+        "runUrl": null,
+        "source": null,
+        "qualityGate": null,
+        "newCoverage": null
       }
     ],
     "findings": {

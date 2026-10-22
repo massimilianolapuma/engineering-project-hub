@@ -13,7 +13,9 @@ import {
 import type { RawProjectData } from '../collectors/collect';
 import { associateSubmodules } from './association';
 import { scrubIdentifier } from '../sanitizers/sanitize';
-import { compareVersions, normaliseVersion } from '../util/semver';
+import { compareVersions, normaliseVersion, parseVersion } from '../util/semver';
+import type { ArgoApplicationDTO } from '../providers/external/types';
+import type { ProviderResult, TagDTO } from '../providers/types';
 import {
   pushError,
   recordError,
@@ -273,13 +275,111 @@ export function toComponents(
   });
 }
 
+/** A published image of an Argo CD application, matched to a component by its mapped path. */
+export interface ImageMapping {
+  componentId: string;
+  /** `<project>/<repository>` of the component's containerImages entry. */
+  path: string;
+}
+
+const MAX_DEPLOYMENT_IMAGES = 20;
+const FULL_SHA = /^[0-9a-f]{40}$/;
+
+/** `host:port/team/app:1.2.3@sha256:…` → path `team/app` and tag `1.2.3` (host and digest dropped). */
+function splitImage(image: string): { path: string; tag: string | null } {
+  const noDigest = image.split('@')[0]!;
+  const segments = noDigest.split('/');
+  if (
+    segments.length > 1 &&
+    (segments[0]!.includes('.') || segments[0]!.includes(':') || segments[0] === 'localhost')
+  )
+    segments.shift();
+  const last = segments.pop() ?? '';
+  const colon = last.lastIndexOf(':');
+  const name = colon === -1 ? last : last.slice(0, colon);
+  return { path: [...segments, name].join('/'), tag: colon === -1 ? null : last.slice(colon + 1) };
+}
+
+/** A version-like value (semver, with an optional leading "v"), or null. */
+function versionOf(raw: string | null | undefined): string | null {
+  const v = normaliseVersion(raw);
+  return v && parseVersion(v) ? v : null;
+}
+
+function toDeployment(
+  result: ProviderResult<ArgoApplicationDTO>,
+  coordinatorTags: TagDTO[],
+  images: ImageMapping[],
+): { deployment: NonNullable<EnvironmentSnapshot['deployment']>; version: string | null } {
+  if (!result.ok) {
+    const c = result.error.classification;
+    return {
+      version: null,
+      deployment: {
+        state:
+          c === 'not-authorised' ? 'not-authorised' : c === 'not-found' ? 'not-found' : 'unknown',
+        sync: null,
+        health: null,
+        revision: null,
+        version: null,
+        deployedAt: null,
+        images: [],
+      },
+    };
+  }
+  const dto = result.data;
+  const fromTarget = versionOf(dto.targetRevision);
+  const tagForRevision =
+    dto.revision && FULL_SHA.test(dto.revision)
+      ? coordinatorTags.find((t) => t.sha === dto.revision)
+      : undefined;
+  const version = fromTarget ?? versionOf(tagForRevision?.name);
+  const revision =
+    dto.revision && FULL_SHA.test(dto.revision)
+      ? dto.revision.slice(0, 7)
+      : fromTarget
+        ? dto.targetRevision
+        : null;
+  const matched: { componentId: string; version: string | null }[] = [];
+  for (const image of dto.images) {
+    const { path, tag } = splitImage(image);
+    const mapping = images.find((m) => m.path === path);
+    if (mapping) matched.push({ componentId: mapping.componentId, version: versionOf(tag) });
+  }
+  return {
+    version,
+    deployment: {
+      state: 'available',
+      sync: dto.sync,
+      health: dto.health,
+      revision: revision ? scrubIdentifier(revision, 100) : null,
+      version,
+      deployedAt: dto.deployedAt,
+      images: matched.slice(0, MAX_DEPLOYMENT_IMAGES),
+    },
+  };
+}
+
+/**
+ * Environments (spec 5.9). The effective version is the deployed one when Argo CD reports a
+ * version (a version-like targetRevision, else the coordinator tag at its revision), else the
+ * manifest's declared one; both are published. Argo CD off or not mapped → `deployment: null`.
+ */
 export function toEnvironments(
   config: ProjectConfig,
   manifest: ReleaseManifest | null,
   coordinator: string | null,
+  deployments: Map<string, ProviderResult<ArgoApplicationDTO> | 'off'> = new Map(),
+  coordinatorTags: TagDTO[] = [],
+  images: ImageMapping[] = [],
 ): EnvironmentSnapshot[] {
   return config.environments.map((env) => {
-    const version = normaliseVersion(scrubIdentifier(manifest?.environments[env.id]?.version));
+    const declared = normaliseVersion(scrubIdentifier(manifest?.environments[env.id]?.version));
+    const result = env.argocdApplication ? deployments.get(env.id) : undefined;
+    const mapped =
+      result && result !== 'off' ? toDeployment(result, coordinatorTags, images) : null;
+    const deployed = mapped?.version ?? null;
+    const version = deployed ?? declared;
     let status: EnvironmentSnapshot['status'] = 'unknown';
     if (version && coordinator) {
       const cmp = compareVersions(version, coordinator);
@@ -289,8 +389,10 @@ export function toEnvironments(
       id: env.id,
       name: env.name,
       version,
-      source: version ? 'manifest' : 'unknown',
+      declaredVersion: declared,
+      source: deployed ? 'argocd' : declared ? 'manifest' : 'unknown',
       status,
+      deployment: mapped?.deployment ?? null,
     };
   });
 }

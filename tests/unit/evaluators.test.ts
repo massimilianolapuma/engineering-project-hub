@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type {
   ComponentSnapshot,
   CoverageSummary,
+  EnvironmentSnapshot,
   RepositoryControls,
   SecurityException,
   SecurityFinding,
@@ -525,8 +526,10 @@ describe('version health', () => {
       id: 'prod',
       name: 'PROD',
       version: '1.3.0',
+      declaredVersion: '1.3.0',
       source: 'manifest' as const,
       status: 'behind' as const,
+      deployment: null,
     };
     expect(
       evaluateVersion({ ...base, components: [component('aligned')], environments: [env] }, P)
@@ -778,5 +781,103 @@ describe('security: supply chain reasons', () => {
       );
       expect(codes).toEqual(['no-open-alerts']);
     }
+  });
+});
+
+describe('version: Argo CD environment reasons', () => {
+  const component = {
+    drift: 'aligned',
+    manifestConsistency: 'consistent',
+    pin: null,
+    latestRelease: { tag: '1.4.0' },
+    declaredVersion: '1.4.0',
+    name: 'API',
+    effectiveVersion: '1.4.0',
+    effectiveVersionSource: 'manifest',
+  } as unknown as ComponentSnapshot;
+  const env = (
+    name: string,
+    deployment: Partial<NonNullable<EnvironmentSnapshot['deployment']>> | null,
+  ): EnvironmentSnapshot => ({
+    id: name.toLowerCase(),
+    name,
+    version: '1.4.0',
+    declaredVersion: '1.4.0',
+    source: 'argocd',
+    status: 'aligned',
+    deployment: deployment && {
+      state: 'available',
+      sync: 'synced',
+      health: 'healthy',
+      revision: null,
+      version: '1.4.0',
+      deployedAt: null,
+      images: [],
+      ...deployment,
+    },
+  });
+  const base = {
+    coordinatorVersion: '1.4.0',
+    manifestState: 'ok' as const,
+    unknownManifestComponents: [],
+    components: [component],
+    submodules: [],
+  };
+  const reasonOf = (r: { reasons: { code: string }[] }, code: string) =>
+    r.reasons.find((x) => x.code === code) as
+      { level: string; params: Record<string, string | number> } | undefined;
+
+  it('OutOfSync → environment-out-of-sync info, status unchanged', () => {
+    const r = evaluateVersion(
+      { ...base, environments: [env('UAT', { sync: 'out-of-sync' }), env('DEV', {})] },
+      P,
+    );
+    expect(r.status).toBe('green');
+    expect(reasonOf(r, 'environment-out-of-sync')).toMatchObject({
+      level: 'info',
+      params: { environments: 'UAT' },
+    });
+  });
+
+  it('environmentDegraded amber → Versions amber (degraded, missing and suspended count)', () => {
+    const strict = policies((p) => (p.version.environmentDegraded = 'amber'));
+    for (const health of ['degraded', 'missing', 'suspended'] as const) {
+      const r = evaluateVersion({ ...base, environments: [env('PROD', { health })] }, strict);
+      expect(r.status).toBe('amber');
+      expect(reasonOf(r, 'environment-degraded')!.params.environments).toBe('PROD');
+    }
+    const info = evaluateVersion(
+      { ...base, environments: [env('PROD', { health: 'degraded' })] },
+      P,
+    );
+    expect(info.status).toBe('green');
+  });
+
+  it('environmentOutOfSync amber → Versions amber', () => {
+    const strict = policies((p) => (p.version.environmentOutOfSync = 'amber'));
+    expect(
+      evaluateVersion({ ...base, environments: [env('UAT', { sync: 'out-of-sync' })] }, strict)
+        .status,
+    ).toBe('amber');
+  });
+
+  it('deployment not-authorised, not-found or unknown → environment-deployment-unknown info', () => {
+    for (const state of ['not-authorised', 'not-found', 'unknown'] as const) {
+      const r = evaluateVersion(
+        { ...base, environments: [env('DEV', { state, sync: null, health: null })] },
+        P,
+      );
+      expect(r.status).toBe('green');
+      expect(reasonOf(r, 'environment-deployment-unknown')).toMatchObject({
+        level: 'info',
+        params: { environments: 'DEV' },
+      });
+      expect(reasonOf(r, 'environment-out-of-sync')).toBeUndefined();
+    }
+  });
+
+  it('no deployment (Argo CD off or not mapped) adds nothing', () => {
+    const r = evaluateVersion({ ...base, environments: [env('DEV', null)] }, P);
+    expect(r.reasons.map((x) => x.code)).toEqual(['versions-aligned']);
   });
 });

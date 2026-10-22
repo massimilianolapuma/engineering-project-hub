@@ -119,7 +119,14 @@
                   "code-quality",
                   "workflow-files",
                   "repository-rules",
-                  "scorecard-analysis"
+                  "scorecard-analysis",
+                  "dependency-sbom",
+                  "attestations",
+                  "supply-chain-summary",
+                  "code-scanning-analyses",
+                  "sonarqube",
+                  "harbor",
+                  "argocd"
                 ]
               },
               "classification": {

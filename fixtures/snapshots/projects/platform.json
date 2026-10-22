@@ -186,15 +186,19 @@
       "id": "dev",
       "name": "DEV",
       "version": "2026.10.1",
+      "declaredVersion": "2026.10.1",
       "source": "manifest",
-      "status": "aligned"
+      "status": "aligned",
+      "deployment": null
     },
     {
       "id": "prod",
       "name": "PROD",
       "version": "2026.10.1",
+      "declaredVersion": "2026.10.1",
       "source": "manifest",
-      "status": "aligned"
+      "status": "aligned",
+      "deployment": null
     }
   ],
   "workflows": [
@@ -813,7 +817,10 @@
         "commitSha": "b85777552b25839b2cea3e76e5c15827386f60ac",
         "generatedAt": "2025-12-26T12:00:00.000Z",
         "tool": "vitest",
-        "runUrl": "https://github.com/example-org/platform-mono/actions/runs/9501"
+        "runUrl": "https://github.com/example-org/platform-mono/actions/runs/9501",
+        "source": "ci-summary",
+        "qualityGate": null,
+        "newCoverage": null
       },
       {
         "componentId": "web",
@@ -825,7 +832,10 @@
         "commitSha": "b85777552b25839b2cea3e76e5c15827386f60ac",
         "generatedAt": "2025-12-26T12:00:00.000Z",
         "tool": "vitest",
-        "runUrl": "https://github.com/example-org/platform-mono/actions/runs/9501"
+        "runUrl": "https://github.com/example-org/platform-mono/actions/runs/9501",
+        "source": "ci-summary",
+        "qualityGate": null,
+        "newCoverage": null
       },
       {
         "componentId": "api",
@@ -837,7 +847,10 @@
         "commitSha": "b85777552b25839b2cea3e76e5c15827386f60ac",
         "generatedAt": "2025-12-26T12:00:00.000Z",
         "tool": "vitest",
-        "runUrl": "https://github.com/example-org/platform-mono/actions/runs/9501"
+        "runUrl": "https://github.com/example-org/platform-mono/actions/runs/9501",
+        "source": "ci-summary",
+        "qualityGate": null,
+        "newCoverage": null
       },
       {
         "componentId": "worker",
@@ -849,7 +862,10 @@
         "commitSha": "b85777552b25839b2cea3e76e5c15827386f60ac",
         "generatedAt": "2025-12-26T12:00:00.000Z",
         "tool": "vitest",
-        "runUrl": "https://github.com/example-org/platform-mono/actions/runs/9501"
+        "runUrl": "https://github.com/example-org/platform-mono/actions/runs/9501",
+        "source": "ci-summary",
+        "qualityGate": null,
+        "newCoverage": null
       }
     ],
     "findings": {

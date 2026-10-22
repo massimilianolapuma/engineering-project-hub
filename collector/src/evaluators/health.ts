@@ -212,6 +212,24 @@ export function evaluateVersion(input: VersionInputs, policies: Policies): Healt
       reasons.push(reason('environment-mismatch', v.environmentBehind, p));
     else if (e.status === 'unknown') reasons.push(reason('environment-version-unknown', 'info', p));
   }
+  const named = (pick: (e: EnvironmentSnapshot) => boolean) =>
+    input.environments
+      .filter(pick)
+      .map((e) => e.name)
+      .join(', ');
+  const outOfSync = named((e) => e.deployment?.sync === 'out-of-sync');
+  if (outOfSync)
+    reasons.push(
+      reason('environment-out-of-sync', v.environmentOutOfSync, { environments: outOfSync }),
+    );
+  const degraded = named((e) =>
+    ['degraded', 'missing', 'suspended'].includes(e.deployment?.health ?? ''),
+  );
+  if (degraded)
+    reasons.push(reason('environment-degraded', v.environmentDegraded, { environments: degraded }));
+  const unreadable = named((e) => !!e.deployment && e.deployment.state !== 'available');
+  if (unreadable)
+    reasons.push(reason('environment-deployment-unknown', 'info', { environments: unreadable }));
   const status = statusFrom(reasons);
   if (status === 'green') reasons.push(reason('versions-aligned', 'info'));
   return { status, reasons };

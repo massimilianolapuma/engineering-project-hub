@@ -942,9 +942,21 @@
               }
             ]
           },
+          "declaredVersion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "source": {
             "type": "string",
             "enum": [
+              "argocd",
               "manifest",
               "unknown"
             ]
@@ -957,14 +969,143 @@
               "mismatch",
               "unknown"
             ]
+          },
+          "deployment": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "available",
+                      "not-authorised",
+                      "not-found",
+                      "unknown"
+                    ]
+                  },
+                  "sync": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "synced",
+                          "out-of-sync",
+                          "unknown"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "health": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "healthy",
+                          "progressing",
+                          "degraded",
+                          "suspended",
+                          "missing",
+                          "unknown"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "revision": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "version": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "deployedAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "images": {
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "componentId": {
+                          "type": "string",
+                          "maxLength": 64
+                        },
+                        "version": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 100
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "componentId",
+                        "version"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "state",
+                  "sync",
+                  "health",
+                  "revision",
+                  "version",
+                  "deployedAt",
+                  "images"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "id",
           "name",
           "version",
+          "declaredVersion",
           "source",
-          "status"
+          "status",
+          "deployment"
         ],
         "additionalProperties": false
       }
@@ -3728,6 +3869,46 @@
                     "type": "null"
                   }
                 ]
+              },
+              "source": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "ci-summary",
+                      "sonarqube"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "qualityGate": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "passed",
+                      "failed"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "newCoverage": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               }
             },
             "required": [
@@ -3740,7 +3921,10 @@
               "commitSha",
               "generatedAt",
               "tool",
-              "runUrl"
+              "runUrl",
+              "source",
+              "qualityGate",
+              "newCoverage"
             ],
             "additionalProperties": false
           }
@@ -4679,7 +4863,9 @@
                   "workflow-runs",
                   "code-scanning",
                   "security-status-file",
-                  "quality-report"
+                  "quality-report",
+                  "supply-chain-summary",
+                  "sonarqube"
                 ]
               },
               "lastUpdatedAt": {
@@ -4744,7 +4930,14 @@
               "code-quality",
               "workflow-files",
               "repository-rules",
-              "scorecard-analysis"
+              "scorecard-analysis",
+              "dependency-sbom",
+              "attestations",
+              "supply-chain-summary",
+              "code-scanning-analyses",
+              "sonarqube",
+              "harbor",
+              "argocd"
             ]
           },
           "classification": {

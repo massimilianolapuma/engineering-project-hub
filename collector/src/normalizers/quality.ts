@@ -6,6 +6,7 @@ import {
   type QualityReportState,
   type TestCoverage,
 } from '@model/index';
+import type { SonarProjectDTO } from '../providers/external/types';
 import type { ProviderResult, QualitySummaryArtifactDTO } from '../providers/types';
 import { sanitizeUrl, scrubIdentifier } from '../sanitizers/sanitize';
 import { ageMs, DAY_MS } from '../util/clock';
@@ -109,6 +110,84 @@ export function normaliseQualitySummary(
       generatedAt: summary.generatedAt,
       tool: scrubIdentifier(summary.tool, 40),
       runUrl: sanitizeUrl(runUrl, policies.publication.allowedLinkHosts),
+    },
+    error: null,
+  };
+}
+
+/** SonarQube report of one project key (the key is carried in `repository`, never published). */
+export interface SonarQuality extends RepoQuality {
+  source: 'sonarqube';
+  qualityGate: 'passed' | 'failed' | null;
+  newCoverage: number | null;
+}
+
+const SONAR = 'sonarqube' satisfies CollectionError['source'];
+
+function sonarNotVisible(key: string, state: RepoQualityState): SonarQuality {
+  return {
+    ...notVisible(key, state),
+    source: 'sonarqube',
+    qualityGate: null,
+    newCoverage: null,
+  };
+}
+
+/**
+ * Maps a SonarQube project to a quality report: linesValid = lines_to_cover, linesCovered =
+ * lines_to_cover − uncovered_lines. A missing measure is unknown, a negative or larger-than-total
+ * uncovered count is invalid. 404 → missing (the key is not visible: never counted, never 0),
+ * 401/403 → not-authorised. Older than qualityReportStaleDays → stale.
+ */
+export function normaliseSonarProject(
+  key: string,
+  result: ProviderResult<SonarProjectDTO>,
+  policies: Policies,
+  now: Date,
+): { quality: SonarQuality; error: CollectionError | null } {
+  if (!result.ok) {
+    const { classification, skipped } = result.error;
+    if (skipped) return { quality: sonarNotVisible(key, 'unknown'), error: null };
+    if (classification === 'not-found')
+      return { quality: sonarNotVisible(key, 'missing'), error: null };
+    const state: RepoQualityState =
+      classification === 'not-authorised'
+        ? 'not-authorised'
+        : classification === 'invalid-data'
+          ? 'invalid'
+          : 'unknown';
+    return {
+      quality: sonarNotVisible(key, state),
+      error: toCollectionError(key, undefined, SONAR, result.error),
+    };
+  }
+  const p = result.data;
+  if (p.linesToCover === null || p.uncoveredLines === null)
+    return { quality: sonarNotVisible(key, 'unknown'), error: null };
+  if (p.uncoveredLines > p.linesToCover) {
+    return {
+      quality: sonarNotVisible(key, 'invalid'),
+      error: toCollectionError(key, undefined, SONAR, {
+        classification: 'invalid-data',
+        message: 'SonarQube reports more uncovered lines than lines to cover',
+      }),
+    };
+  }
+  const age = ageMs(p.analysedAt, now);
+  const stale = age !== null && age > policies.freshness.qualityReportStaleDays * DAY_MS;
+  return {
+    quality: {
+      repository: key,
+      state: stale ? 'stale' : 'readable',
+      linesCovered: p.linesToCover - p.uncoveredLines,
+      linesValid: p.linesToCover,
+      commitSha: p.revision,
+      generatedAt: p.analysedAt,
+      tool: 'sonarqube',
+      runUrl: null,
+      source: 'sonarqube',
+      qualityGate: p.qualityGate === 'OK' ? 'passed' : p.qualityGate === 'ERROR' ? 'failed' : null,
+      newCoverage: p.newCoverage,
     },
     error: null,
   };

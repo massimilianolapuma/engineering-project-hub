@@ -44,6 +44,7 @@ import type { TargetVersions } from './normalizers/workflow-refs';
 import {
   isCoverageApplicable,
   normaliseQualitySummary,
+  normaliseSonarProject,
   type RepoQuality,
 } from './normalizers/quality';
 import {
@@ -130,7 +131,23 @@ export function buildProjectSnapshot(
     : null;
   const coord = coordinatorVersion(manifest, coordinatorRelease);
   const components = toComponents(ctx, raw, manifest, submodules);
-  const environments = toEnvironments(config, manifest, coord.version);
+  const imageMappings = [
+    { componentId: 'coordinator', images: config.coordinator.containerImages },
+    ...config.components.map((c) => ({ componentId: c.id, images: c.containerImages })),
+  ].flatMap((m) =>
+    (m.images ?? []).map((i) => ({
+      componentId: m.componentId,
+      path: `${i.project}/${i.repository}`,
+    })),
+  );
+  const environments = toEnvironments(
+    config,
+    manifest,
+    coord.version,
+    raw.argocd,
+    raw.coordinatorTags?.ok ? raw.coordinatorTags.data : [],
+    imageMappings,
+  );
 
   // Workflows.
   const workflows = raw.workflows.map((w) => {
@@ -326,14 +343,21 @@ export function buildProjectSnapshot(
     const c = config.components.find((x) => x.id === componentId)!;
     return isCoverageApplicable(c.type, c.testCoverage);
   };
+  const sonarKeyOf = (componentId: string) =>
+    (componentId === 'coordinator'
+      ? config.coordinator.sonarProjectKey
+      : config.components.find((c) => c.id === componentId)?.sonarProjectKey) ?? null;
   const qualityComponents = raw.repos.map((r) => ({
     componentId: r.componentId,
     repository: r.repository,
     applicable: applicable(r.componentId),
+    sonarKey: sonarKeyOf(r.componentId),
   }));
   const qualityInput: QualityInput = {
     components: qualityComponents,
-    repos: new Map(),
+    ciReports: new Map(),
+    sonarReports: new Map(),
+    sources: policies.quality.sources,
     findings: new Map(),
     collectedAt: generatedAt,
   };
@@ -349,7 +373,7 @@ export function buildProjectSnapshot(
       policies,
       now,
     );
-    qualityInput.repos.set(key, quality);
+    qualityInput.ciReports.set(key, quality);
     qualityInput.findings.set(key, r.codeQualityFindings);
     // The normaliser already built the one error for this summary: never record it twice.
     // A repository no component needs a report from is not reported.
@@ -363,6 +387,20 @@ export function buildProjectSnapshot(
         expectedNotFound: true,
       });
     }
+  }
+  // SonarQube: one report per mapped project key (only when the provider is on, i.e. loaded).
+  for (const c of qualityComponents) {
+    const result = c.sonarKey ? raw.sonar?.get(c.sonarKey) : undefined;
+    if (!c.sonarKey || !result || qualityInput.sonarReports!.has(c.sonarKey)) continue;
+    const { quality, error } = normaliseSonarProject(c.sonarKey, result, policies, now);
+    qualityInput.sonarReports!.set(c.sonarKey, quality);
+    if (error && c.applicable) {
+      // The key is a catalog value, not a repository: report the component's repository.
+      const { repository: _key, ...rest } = error;
+      ctx.errors.push({ repository: c.repository, componentId: c.componentId, ...rest });
+    }
+    if (quality.state === 'stale' && c.applicable)
+      staleQuality.push({ ...quality, repository: c.repository });
   }
   const qualityHealth = evaluateQuality(qualityInput, policies);
 

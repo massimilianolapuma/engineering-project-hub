@@ -6,18 +6,59 @@ import type {
   ReasonCode,
   ReasonLevel,
 } from '@model/index';
-import type { RepoQuality, RepoQualityState } from '../normalizers/quality';
+import type { RepoQuality, RepoQualityState, SonarQuality } from '../normalizers/quality';
 import type { CodeQualityFindingDTO, ProviderResult } from '../providers/types';
 import { reason } from './health';
 
+export type QualitySource = 'ci-summary' | 'sonarqube';
+
 export interface QualityInput {
-  /** Coordinator first. `applicable` comes from isCoverageApplicable. */
-  components: { componentId: string; repository: string; applicable: boolean }[];
-  /** Key = repository.toLowerCase(). */
-  repos: Map<string, RepoQuality>;
+  /**
+   * Coordinator first. `applicable` comes from isCoverageApplicable; `sonarKey` is the mapped
+   * SonarQube project (null or absent: none).
+   */
+  components: {
+    componentId: string;
+    repository: string;
+    applicable: boolean;
+    sonarKey?: string | null;
+  }[];
+  /** CI summaries, key = repository.toLowerCase(). */
+  ciReports: Map<string, RepoQuality>;
+  /** SonarQube reports, key = Sonar project key. Absent key = SonarQube off. */
+  sonarReports?: Map<string, SonarQuality>;
+  /** Report sources in order of precedence. */
+  sources?: readonly QualitySource[];
   /** Code Quality open findings, key = repository.toLowerCase(). */
   findings: Map<string, ProviderResult<CodeQualityFindingDTO[]>>;
   collectedAt: string;
+}
+
+export interface ReportCandidate {
+  key: string;
+  source: QualitySource;
+  report: RepoQuality;
+}
+
+/** Order in which a failure to read decides what a component shows, most informative first. */
+const FAILURE_ORDER: RepoQualityState[] = ['not-authorised', 'invalid', 'expired', 'unknown'];
+
+/**
+ * Spec 5.7: the first readable candidate in `sources` order; else the first stale; else the
+ * first candidate by failure state (not-authorised, invalid, expired, unknown); else missing.
+ * Sources not listed are ignored. null when there is no candidate.
+ */
+export function selectReport(
+  candidates: ReportCandidate[],
+  sources: readonly QualitySource[],
+): ReportCandidate | null {
+  const ordered = sources.flatMap((s) => candidates.filter((c) => c.source === s));
+  if (!ordered.length) return null;
+  for (const state of ['readable', 'stale', ...FAILURE_ORDER] as RepoQualityState[]) {
+    const hit = ordered.find((c) => c.report.state === state);
+    if (hit) return hit;
+  }
+  return ordered[0]!;
 }
 
 type ComponentRow = QualityHealth['perComponent'][number];
@@ -39,9 +80,12 @@ const percent = (covered: number, valid: number) =>
 
 function componentRow(
   c: QualityInput['components'][number],
-  repo: RepoQuality | undefined,
+  selected: ReportCandidate | null,
+  sonar: SonarQuality | undefined,
   sharedRepository: boolean,
 ): ComponentRow {
+  const repo = selected?.report;
+  const gateReadable = sonar && isMeasured(sonar.state);
   const empty = {
     componentId: c.componentId,
     sharedRepository,
@@ -52,14 +96,26 @@ function componentRow(
     generatedAt: null,
     tool: null,
     runUrl: null,
+    source: null,
+    qualityGate: null,
+    newCoverage: null,
   };
   if (!c.applicable) return { ...empty, state: 'not-applicable' };
-  if (!repo) return { ...empty, state: 'unknown' };
+  if (!repo || !selected) return { ...empty, state: 'unknown' };
+  // The gate and the new-code coverage come from Sonar whenever it is readable, whoever
+  // supplied the coverage.
+  const sonarFields = {
+    qualityGate: gateReadable ? sonar.qualityGate : null,
+    newCoverage: gateReadable ? sonar.newCoverage : null,
+  };
   // lines.valid 0 = no testable code: not applicable, not 0%.
   if (isMeasured(repo.state) && repo.linesValid === 0) return { ...empty, state: 'not-applicable' };
-  if (!isMeasured(repo.state)) return { ...empty, state: repo.state };
+  if (!isMeasured(repo.state))
+    return { ...empty, ...sonarFields, state: repo.state, source: selected.source };
   return {
     ...empty,
+    ...sonarFields,
+    source: selected.source,
     state: repo.state,
     percentage: percent(repo.linesCovered ?? 0, repo.linesValid ?? 0),
     linesCovered: repo.linesCovered,
@@ -127,31 +183,51 @@ function evaluateFindings(repositories: string[], input: QualityInput): Findings
 export function evaluateQuality(input: QualityInput, policies: Policies): QualityHealth {
   const q = policies.quality;
   const key = (repository: string) => repository.toLowerCase();
-  const usage = new Map<string, number>();
-  for (const c of input.components)
-    usage.set(key(c.repository), (usage.get(key(c.repository)) ?? 0) + 1);
+  const sources = input.sources ?? ['ci-summary', 'sonarqube'];
+  const sonarReports = input.sonarReports ?? new Map<string, SonarQuality>();
 
-  const perComponent = input.components.map((c) =>
-    componentRow(c, input.repos.get(key(c.repository)), (usage.get(key(c.repository)) ?? 0) > 1),
-  );
+  // One selected report per applicable component; its key identifies the report to count once.
+  const selections = input.components.map((c): ReportCandidate | null => {
+    if (!c.applicable) return null;
+    const candidates: ReportCandidate[] = [];
+    const ci = input.ciReports.get(key(c.repository));
+    if (ci) candidates.push({ key: `repo:${key(c.repository)}`, source: 'ci-summary', report: ci });
+    const sonar = c.sonarKey ? sonarReports.get(c.sonarKey) : undefined;
+    if (c.sonarKey && sonar)
+      candidates.push({ key: `sonar:${c.sonarKey}`, source: 'sonarqube', report: sonar });
+    return selectReport(candidates, sources);
+  });
+  const usage = new Map<string, number>();
+  for (const sel of selections) if (sel) usage.set(sel.key, (usage.get(sel.key) ?? 0) + 1);
+
+  const perComponent = input.components.map((c, i) => {
+    const sel = selections[i]!;
+    return componentRow(
+      c,
+      sel,
+      c.sonarKey ? sonarReports.get(c.sonarKey) : undefined,
+      sel !== null && (usage.get(sel.key) ?? 0) > 1,
+    );
+  });
   const applicableRows = perComponent.filter((r) => r.state !== 'not-applicable');
   const measuredRows = applicableRows.filter((r) => isMeasured(r.state));
   const staleRows = applicableRows.filter((r) => r.state === 'stale');
   const hiddenRows = applicableRows.filter((r) => !isMeasured(r.state));
 
-  // Each repository counted once (monorepos, coordinator shared with components).
+  // Each selected report counted once (monorepos, coordinator shared with components).
   const counted = new Set<string>();
   let linesCovered = 0;
   let linesValid = 0;
-  input.components.forEach((c, i) => {
-    const k = key(c.repository);
-    if (!isMeasured(perComponent[i]!.state) || counted.has(k)) return;
-    counted.add(k);
+  input.components.forEach((_, i) => {
+    const sel = selections[i];
+    if (!sel || !isMeasured(perComponent[i]!.state) || counted.has(sel.key)) return;
+    counted.add(sel.key);
     linesCovered += perComponent[i]!.linesCovered ?? 0;
     linesValid += perComponent[i]!.linesValid ?? 0;
   });
   const percentage = percent(linesCovered, linesValid);
 
+  const failedGateRows = perComponent.filter((r) => r.qualityGate === 'failed');
   const ids = (rows: ComponentRow[]) => rows.map((r) => r.componentId).join(', ');
   const reasons: Reason[] = [];
   let status: HealthStatus;
@@ -182,12 +258,18 @@ export function evaluateQuality(input: QualityInput, policies: Policies): Qualit
         }),
       );
     } else status = 'green';
-    const capped = staleRows.length > 0 || (q.missingReportIsAmber && hiddenRows.length > 0);
+    const gateCap = q.qualityGateFailed === 'amber' && failedGateRows.length > 0;
+    const capped =
+      staleRows.length > 0 || (q.missingReportIsAmber && hiddenRows.length > 0) || gateCap;
     if (capped && status === 'green') status = 'amber';
   }
 
   if (staleRows.length)
     reasons.push(reason('quality-report-stale', 'amber', { components: ids(staleRows) }));
+  if (failedGateRows.length)
+    reasons.push(
+      reason('quality-gate-failed', q.qualityGateFailed, { components: ids(failedGateRows) }),
+    );
   // A grey Quality already says "nothing visible": its reasons stay informative and never
   // add amber rows to the why box. Otherwise a not-visible component caps at amber.
   const hiddenLevel: ReasonLevel = status === 'grey' || !q.missingReportIsAmber ? 'info' : 'amber';
@@ -215,6 +297,6 @@ export function evaluateQuality(input: QualityInput, policies: Policies): Qualit
     stale: staleRows.length,
     collectedAt: input.collectedAt,
     perComponent,
-    findings: evaluateFindings([...usage.keys()], input),
+    findings: evaluateFindings([...new Set(input.components.map((c) => key(c.repository)))], input),
   };
 }

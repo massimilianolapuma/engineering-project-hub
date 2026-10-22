@@ -62,6 +62,13 @@ export const CollectionErrorSchema = z
       'workflow-files',
       'repository-rules',
       'scorecard-analysis',
+      'dependency-sbom',
+      'attestations',
+      'supply-chain-summary',
+      'code-scanning-analyses',
+      'sonarqube',
+      'harbor',
+      'argocd',
     ]),
     classification: ErrorClassificationSchema,
     httpStatus: z.number().int().min(100).max(599).optional(),
@@ -434,6 +441,12 @@ export const QualityHealthSchema = HealthResultSchema.extend({
         generatedAt: isoDate.nullable(),
         tool: z.string().max(40).nullable(),
         runUrl: httpsUrl.nullable(),
+        /** Report that supplied the numbers (null: not applicable, or no report at all). */
+        source: z.enum(['ci-summary', 'sonarqube']).nullable(),
+        /** SonarQube quality gate, whenever the component's Sonar project is readable. */
+        qualityGate: z.enum(['passed', 'failed']).nullable(),
+        /** Coverage on new code (SonarQube), percentage. */
+        newCoverage: percentage.nullable(),
       })
       .strict(),
   ),
@@ -622,17 +635,6 @@ export const ComponentSnapshotSchema = z
   .strict();
 export type ComponentSnapshot = z.infer<typeof ComponentSnapshotSchema>;
 
-export const EnvironmentSnapshotSchema = z
-  .object({
-    id: z.string().max(64),
-    name: z.string().max(50),
-    version: z.string().max(100).nullable(),
-    source: z.enum(['manifest', 'unknown']),
-    status: z.enum(['aligned', 'behind', 'mismatch', 'unknown']),
-  })
-  .strict();
-export type EnvironmentSnapshot = z.infer<typeof EnvironmentSnapshotSchema>;
-
 /*
  * Supply chain schemas (schema 1.7). Standalone for now: they are attached to the project
  * snapshot, the environments and the run metadata when the collector produces them.
@@ -660,6 +662,23 @@ export const EnvironmentDeploymentSchema = z
   })
   .strict();
 export type EnvironmentDeployment = z.infer<typeof EnvironmentDeploymentSchema>;
+
+export const EnvironmentSnapshotSchema = z
+  .object({
+    id: z.string().max(64),
+    name: z.string().max(50),
+    /** Effective version: the deployed one when Argo CD reports it, else the declared one. */
+    version: z.string().max(100).nullable(),
+    /** Version declared by the release manifest. */
+    declaredVersion: z.string().max(100).nullable(),
+    source: z.enum(['argocd', 'manifest', 'unknown']),
+    /** Effective version against the coordinator's. */
+    status: z.enum(['aligned', 'behind', 'mismatch', 'unknown']),
+    /** null when no Argo CD application is mapped or Argo CD is off. */
+    deployment: EnvironmentDeploymentSchema.nullable(),
+  })
+  .strict();
+export type EnvironmentSnapshot = z.infer<typeof EnvironmentSnapshotSchema>;
 
 const VerificationLevel = z.enum([
   'verified',
@@ -901,6 +920,8 @@ export const ProjectSnapshotSchema = z
                 'code-scanning',
                 'security-status-file',
                 'quality-report',
+                'supply-chain-summary',
+                'sonarqube',
               ]),
               lastUpdatedAt: isoDate.nullable(),
             })

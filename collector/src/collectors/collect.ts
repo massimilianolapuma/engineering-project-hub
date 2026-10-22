@@ -4,6 +4,7 @@ import {
   type ProjectConfig,
   type TrackedWorkflowConfig,
 } from '@model/index';
+import type { ArgoApplicationDTO, SonarProjectDTO } from '../providers/external/types';
 import { associateSubmodules } from '../normalizers/association';
 import { exactIdentifier } from '../sanitizers/sanitize';
 import { memoize } from '../util/concurrency';
@@ -124,6 +125,12 @@ export interface RawProjectData {
   /** Tags of repositories whose components use a releaseTagPrefix (monorepos), by component. */
   componentTags: Map<string, ProviderResult<TagDTO[]>>;
   workflows: WorkflowData[];
+  /** SonarQube projects by project key; absent or empty when SonarQube is off. */
+  sonar?: Map<string, ProviderResult<SonarProjectDTO>>;
+  /** Tags of the coordinator repository (resolve an Argo CD revision to a version); null = not read. */
+  coordinatorTags?: ProviderResult<TagDTO[]> | null;
+  /** Argo CD applications by environment id ('off' when Argo CD is off). */
+  argocd?: Map<string, ProviderResult<ArgoApplicationDTO> | 'off'>;
 }
 
 export interface CollectContext {
