@@ -9,11 +9,13 @@
 | Repositories | 12 total · 6 ok · 4 with errors · 2 unavailable |
 | History | fixture · 13 entries |
 
+Exceptions: 7 loaded (fixture) · 3 active · 1 expired · 1 stale · 1 unverifiable · 1 orphaned
+
 ### Projects
 
 | Project | Overall | Collection errors |
 |---|---|---|
-| platform | amber | 0 |
+| platform | red | 0 |
 | project-alpha | amber | 0 |
 | project-beta | red | 4 |
 | project-gamma | grey | 2 |

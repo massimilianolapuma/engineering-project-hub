@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=../schema/policy-case.schema.json
+#
+# Synthetic decision case for `npm run policy:check`. It is evaluated with the real engines
+# against the effective policies, so a policy change that alters a decision fails the case.
+# Reference: docs/configuration.md (EN) · docs/it/configuration.md (IT)
+
+name: A critical alert inside its SLA is red because critical alerts are red
+kind: security
+now: '2026-01-15T12:00:00Z'
+security:
+  findings:
+    - id: example-org/platform-mono#code-scanning#1
+      severity: critical
+      detectedAt: '@now-3d'
+expect:
+  status: red
+  reasons: [open-critical-alerts]
+  absent: [sla-overdue]

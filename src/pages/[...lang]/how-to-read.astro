@@ -31,6 +31,8 @@ const h = d.howToRead;
 const { policies, source } = loadSitePolicies();
 const { score, freshness } = policies;
 
+const EXCEPTION_STATES = ['active', 'expired', 'stale', 'unverifiable', 'invalid'] as const;
+const SLA_CLASSES = ['critical', 'high', 'medium', 'low', 'secret'] as const;
 const STATES: HealthStatus[] = ['red', 'amber', 'green', 'grey'];
 const DIMENSIONS: Dimension[] = [
   'delivery',
@@ -169,6 +171,7 @@ const SECTIONS = [
   ['thresholds', h.thresholdsTitle],
   ['repository-controls', h.repoTitle],
   ['trends', h.trendsTitle],
+  ['risk', h.riskTitle],
 ] as const;
 ---
 
@@ -469,6 +472,69 @@ const SECTIONS = [
       <li>{h.repoUnknown}</li>
       <li>{h.repoInformative}</li>
     </ul>
+  </section>
+
+  <section class="card htr-section" id="risk" aria-labelledby="risk-title">
+    <h2 id="risk-title">{h.riskTitle}</h2>
+    <p>{h.risk.acceptedVsDismissed}</p>
+    <h3>{h.risk.statesTitle}</h3>
+    <ul class="htr-points">
+      {EXCEPTION_STATES.map((k) => (
+        <li data-exception-state={k}>{h.risk.states[k]}</li>
+      ))}
+    </ul>
+    <h3>{h.risk.slaTitle}</h3>
+    {policies.remediation.enabled ? (
+      <>
+        <p class="muted">{h.risk.slaIntro}</p>
+        <div class="table-wrap">
+          <table role="table" class="table">
+            <caption class="visually-hidden">{h.risk.slaTitle}</caption>
+            <thead role="rowgroup">
+              <tr role="row">
+                <th role="columnheader" scope="col">
+                  {h.risk.slaClass}
+                </th>
+                <th role="columnheader" scope="col">
+                  {h.risk.slaDays}
+                </th>
+                <th role="columnheader" scope="col">
+                  {h.risk.slaLevel}
+                </th>
+              </tr>
+            </thead>
+            <tbody role="rowgroup">
+              {SLA_CLASSES.map((c) => {
+                const days = policies.remediation.days[c];
+                const level = policies.remediation.overdue[c];
+                return (
+                  <tr role="row" data-sla-class={c}>
+                    <th role="rowheader" scope="row">
+                      {d.slaClass[c]}
+                    </th>
+                    <td role="cell" data-label={h.risk.slaDays}>
+                      <strong class="tabular">{days ?? h.risk.slaNone}</strong>
+                    </td>
+                    <td role="cell" data-label={h.risk.slaLevel}>
+                      {days === null
+                        ? d.common.none
+                        : level === 'info'
+                          ? h.risk.levelInfo
+                          : level === 'amber'
+                            ? h.risk.levelAmber
+                            : h.risk.levelRed}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </>
+    ) : (
+      <p class="muted">{h.risk.slaOff}</p>
+    )}
+    <p class="note">{h.risk.unknownAge}</p>
   </section>
 
   <section class="card htr-section" id="trends" aria-labelledby="trends-title">

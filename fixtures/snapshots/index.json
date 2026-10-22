@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "run": {
     "dataSource": "mock",
@@ -57,6 +57,13 @@
       "unavailable": 2
     },
     "configValid": true,
+    "exceptions": {
+      "source": "fixture",
+      "total": 7,
+      "orphaned": [
+        "EXC-LEGACY-001"
+      ]
+    },
     "policy": {
       "snapshotStaleHours": 24,
       "audience": "public"
@@ -68,15 +75,15 @@
       "name": "Platform (monorepo)",
       "businessUnit": "Platform",
       "lifecycle": "production",
-      "overall": "amber",
+      "overall": "red",
       "score": {
-        "value": 82,
+        "value": 49,
         "measured": 6,
         "required": 6
       },
       "delivery": "green",
       "version": "green",
-      "security": "amber",
+      "security": "red",
       "coverage": {
         "status": "green",
         "percentage": 100,
@@ -100,11 +107,17 @@
       "freshness": "amber",
       "openCounts": {
         "critical": 0,
-        "high": 1,
+        "high": 2,
         "medium": 1,
-        "low": 1,
+        "low": 0,
         "informational": 0,
         "unknown": 0
+      },
+      "risk": {
+        "overdue": 1,
+        "overdueCriticalHigh": 1,
+        "accepted": 1,
+        "exceptionIssues": 1
       },
       "countsComplete": true,
       "openSecretAlerts": 0,
@@ -157,6 +170,12 @@
         "informational": 0,
         "unknown": 0
       },
+      "risk": {
+        "overdue": 0,
+        "overdueCriticalHigh": 0,
+        "accepted": 1,
+        "exceptionIssues": 1
+      },
       "countsComplete": true,
       "openSecretAlerts": 0,
       "secretScanning": "enabled",
@@ -208,6 +227,12 @@
         "informational": 0,
         "unknown": 0
       },
+      "risk": {
+        "overdue": 0,
+        "overdueCriticalHigh": 0,
+        "accepted": 1,
+        "exceptionIssues": 1
+      },
       "countsComplete": false,
       "openSecretAlerts": 0,
       "secretScanning": "not-authorised",
@@ -258,6 +283,12 @@
         "low": null,
         "informational": null,
         "unknown": null
+      },
+      "risk": {
+        "overdue": null,
+        "overdueCriticalHigh": null,
+        "accepted": null,
+        "exceptionIssues": 0
       },
       "countsComplete": false,
       "openSecretAlerts": null,

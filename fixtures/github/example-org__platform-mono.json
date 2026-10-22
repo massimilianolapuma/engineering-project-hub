@@ -162,6 +162,20 @@
       "updatedAt": "@now-4d",
       "htmlUrl": "https://github.com/example-org/platform-mono/security/code-scanning/5",
       "path": "services/api/src/files.ts"
+    },
+    {
+      "number": 2,
+      "state": "open",
+      "dismissedReason": null,
+      "ruleId": "js/prototype-pollution-utility",
+      "ruleSeverity": "warning",
+      "securitySeverityLevel": "high",
+      "ruleDescription": "Prototype-polluting function",
+      "toolName": "CodeQL",
+      "createdAt": "@now-738h",
+      "updatedAt": "@now-738h",
+      "htmlUrl": "https://github.com/example-org/platform-mono/security/code-scanning/2",
+      "path": "packages/utils/merge.ts"
     }
   ],
   "codeScanningAnalysis": {

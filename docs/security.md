@@ -61,6 +61,34 @@ raw reports, the raw `quality-summary.json`, Code Quality finding messages, rule
 file locations, and raw API payloads. Only counts, percentages, SHAs, ISO dates and
 allow-listed `https://github.com/...` links are published.
 
+## Security exceptions
+
+Exceptions (see [Configuration](configuration.md#security-exceptions-configexceptionsyaml)) add
+**no permission and no write**: they are a layer in the hub's own reviewed config. **The hub never
+dismisses, reopens or comments on an alert on GitHub.** The alert stays open there and the hub
+only chooses what to count.
+
+- **What is published** about an exception: its id, repository, source, selector (alert number,
+  rule id or advisory id and optional tool), owner, reason, `created`, `expires`, ticket link, state,
+  how many alerts it matches and their ids. Reason text is scrubbed and bounded; owner, rule and tool go
+  through the identifier scrubber; the ticket link goes through the host allowlist
+  (`publication.allowedLinkHosts`). The raw match keys (alert numbers beyond the ids, raw rule ids
+  of withheld findings) never leave the collector.
+- **What is withheld:** for a repository that is not public, with `publication.audience: public`,
+  the selector rule or advisory, the tool, the reason and the ticket link are published as `null`
+  (the UI says "Withheld"). The id, owner, dates, state and counts remain. An alert-number selector
+  is only a number and stays.
+- **Why this matters:** an exceptions file says what a team knowingly accepts. In a public
+  repository keep only synthetic examples and put real exceptions in a **private configuration
+  repository** (the deploy pattern in [ADR 0004](architecture/adr/0004-configuration-store-and-discovery.md)),
+  reviewed by the owner (`/config/exceptions.yaml` has an explicit CODEOWNERS entry).
+- **Remediation SLAs** use the alert's own creation time. Facts checked on 2026-10-21: the Octokit
+  OpenAPI types mark `created_at` as required on code scanning and Dependabot alerts and as
+  optional on secret scanning alerts ("the time that the alert was created, ISO 8601"). A missing
+  value gives an unknown age, never "within SLA".
+- Unreadable sources are never read as accepted: an exception on a source that could not be read
+  is `unverifiable`.
+
 ## Authorisation model
 
 - **Preferred: GitHub App**, installed only on the monitored repositories, with read-only

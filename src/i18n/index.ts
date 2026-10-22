@@ -36,6 +36,11 @@ export function useI18n(locale: Locale) {
     timeStyle: 'short',
     timeZone: 'UTC',
   });
+  /** A calendar day ("14 Jan 2026"), for dates without a time such as an exception's last day. */
+  const dayFmt = new Intl.DateTimeFormat(locale === 'it' ? 'it-IT' : 'en-GB', {
+    dateStyle: 'medium',
+    timeZone: 'UTC',
+  });
   return {
     locale,
     d,
@@ -57,6 +62,11 @@ export function useI18n(locale: Locale) {
       }
       if (typeof params.control === 'string' && params.control in d.control) {
         params.control = d.control[params.control as keyof Dict['control']];
+      }
+      if (r.code === 'sla-overdue' && typeof params.severity === 'string') {
+        const classes = params.count === 1 ? d.slaClassOne : d.slaClass;
+        if (params.severity in classes)
+          params.severity = classes[params.severity as keyof Dict['slaClass']];
       }
       if (typeof params.check === 'string' && params.check in d.repositoryCheck) {
         params.check = d.repositoryCheck[params.check as keyof Dict['repositoryCheck']];
@@ -80,6 +90,11 @@ export function useI18n(locale: Locale) {
       format(count === 1 ? d.common.errorsOne : d.common.errors, { count }),
     /** A duration in seconds with one decimal, in the locale's number format ("12,3 s"). */
     seconds: (ms: number) => `${secondsFmt.format(ms / 1000)} s`,
+    /** A YYYY-MM-DD day or an ISO instant, shown as a date only (UTC). */
+    day: (value: string | null | undefined) =>
+      value
+        ? dayFmt.format(new Date(value.length === 10 ? `${value}T00:00:00Z` : value))
+        : d.common.unknown,
     /** Absolute UTC date; the client script adds a relative "x ago" label. */
     date: (iso: string | null | undefined) =>
       iso ? `${dateFmt.format(new Date(iso))} UTC` : d.common.unknown,

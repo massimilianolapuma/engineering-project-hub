@@ -37,6 +37,8 @@ export function entryFromRun(index: PortfolioIndex): HistoryEntry {
       },
       countsComplete: s.countsComplete,
       collectionErrors: s.collectionErrorCount,
+      // Counts of the run; null stays null ("not measured" is never 0).
+      risk: { overdue: s.risk.overdue, accepted: s.risk.accepted },
       // Omitted when nothing was evaluated (checks off): 0/0/0 would read as "measured".
       ...(s.repositoryControls.passed + s.repositoryControls.failed + s.repositoryControls.unknown >
       0

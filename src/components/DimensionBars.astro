@@ -12,7 +12,11 @@
 import { DimensionSchema, type Dimension, type HealthStatus } from '@model/index';
 import { useI18n, type Locale } from '../i18n';
 interface Props {
-  dims?: { dimension: Dimension; status: HealthStatus }[];
+  dims?: {
+    dimension: Dimension;
+    status: HealthStatus;
+    /** Extra tooltip text, e.g. risk counts. */ note?: string;
+  }[];
   /** Header labels, in bar order: pass the same dimensions the rows show. */
   dimensions?: readonly Dimension[];
   locale: Locale;
@@ -49,8 +53,8 @@ const HEIGHT: Record<HealthStatus, 1 | 2 | 3> = { red: 3, amber: 2, green: 1, gr
     aria-label={decorative ? undefined : d.dimensionBars.label}
     aria-hidden={decorative ? 'true' : undefined}
   >
-    {dims.map(({ dimension, status }) => {
-      const label = `${i18n.dimension(dimension)}: ${i18n.status(status)}`;
+    {dims.map(({ dimension, status, note }) => {
+      const label = `${i18n.dimension(dimension)}: ${i18n.status(status)}${note ? ` · ${note}` : ''}`;
       return (
         <span
           class={`dimbars__bar dimbars__bar--${status} dimbars__bar--h${HEIGHT[status]}`}

@@ -1064,7 +1064,7 @@
           },
           "open": {
             "critical": 0,
-            "high": 1,
+            "high": 2,
             "medium": 1,
             "low": 1
           },
@@ -1151,6 +1151,14 @@
         "repositories": ["example-org/platform-mono"],
         "findings": [
           {
+            "id": "example-org/platform-mono#code-scanning#2",
+            "severity": "high",
+            "componentId": "coordinator",
+            "repository": "example-org/platform-mono",
+            "source": "github-code-scanning",
+            "htmlUrl": "https://github.com/example-org/platform-mono/security/code-scanning/2"
+          },
+          {
             "id": "example-org/platform-mono#code-scanning#4",
             "severity": "high",
             "componentId": "web",
@@ -1195,6 +1203,14 @@
           "example-org/project-alpha-worker"
         ],
         "findings": [
+          {
+            "id": "example-org/project-alpha-backend#code-scanning#15",
+            "severity": "high",
+            "componentId": "backend",
+            "repository": "example-org/project-alpha-backend",
+            "source": "github-code-scanning",
+            "htmlUrl": "https://github.com/example-org/project-alpha-backend/security/code-scanning/15"
+          },
           {
             "id": "example-org/project-alpha-backend#code-scanning#9",
             "severity": "high",

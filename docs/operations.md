@@ -165,6 +165,38 @@ Notes:
 - Coverage is read from the Cobertura root attributes `lines-covered` and `lines-valid`.
   For other formats, compute the two numbers and set `format` accordingly.
 
+## Managing security exceptions and SLAs
+
+An exception is a pull request on `config/exceptions.yaml` (CODEOWNERS asks the owner to review it).
+The format and the rules are in [Configuration](configuration.md#security-exceptions-configexceptionsyaml).
+
+1. **Add:** append an entry with an owner, a reason, today's date as `created` (a future date is rejected) and an `expires` date
+   within `exceptions.maxDays` (180 by default). Prefer an `alert` selector; use `rule` (with `tool`)
+   or `advisory` only for recurring findings.
+2. **Check locally:** `npm run policy:check`. It validates the file (errors fail, warnings explain),
+   prints the policy explanation and runs the decision cases.
+3. **See the effect before merging:** `npm run policy:check -- --snapshot public/data` re-evaluates the
+   last collected snapshot with the current exceptions and policies and prints `unchanged:` or
+   `would change:` per project. It is read-only and writes nothing. Exceptions on withheld findings
+   are reported as not evaluable from a published snapshot.
+4. **CI:** the `policy-check` job runs the same command on every pull request and push to `main`
+   (no path filter, so a required check always reports). `npm run validate:config` also validates the file in
+   the collect and deploy workflows, so a broken file fails before collection.
+5. **Renew:** a new `expires` (and a fresh `reason` and `created` if the review happened again), never
+   beyond `maxDays` from `created`. **Remove:** delete the entry; the alert counts again at the next
+   collection.
+6. **Acting on the Data quality card:** _expired_ entries are renewed or removed; _stale_ entries
+   (matching no open alert) are removed; _not verifiable_ entries wait for the source to be readable
+   again (fix the credentials, see "Partial errors"); _orphaned_ entries name a repository that is
+   in no catalog project (fix the catalog or delete the entry).
+
+**Opting in to SLA escalation.** By default an overdue alert is informative. To make it count, set
+`remediation.overdue.<class>` to `amber` or `red` in `config/policies.yaml` (the demo does it for
+critical and high). Run `npm run policy:check -- --snapshot public/data` first: it shows which
+projects would change. The first collection after the change may move projects at once, because the
+SLA clock started when the alert was created; those findings appear as a Security status change in
+"What changed", not as "newly overdue".
+
 ## History between runs
 
 Each collection appends one compact point per project to `history.json`, and the collector

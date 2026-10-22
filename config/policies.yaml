@@ -77,6 +77,30 @@ governance:
 #   maxWorkflowFiles: 30 # 1–100 per repository
 #   readClassicProtection: false # true needs Administration: read on the credentials
 
+# Remediation SLAs: calendar days (UTC) from the alert's creation, per class. Optional: the
+# defaults below apply when omitted. An overdue alert is informative unless you escalate it.
+remediation:
+  enabled: true # false = no SLA computed or shown ("not measured")
+  days: # 1–3650 or null (no SLA for that class)
+    critical: 7
+    high: 30
+    medium: 90
+    low: 180
+    secret: 7 # secret scanning alerts, whatever their severity
+  overdue: # info | amber | red: what an overdue alert does to Security
+    critical: red # opt-in: the schema default is info (never red overnight)
+    high: red # opt-in: the schema default is info (never red overnight)
+    medium: info
+    low: info
+    secret: info
+
+# Security exceptions (config/exceptions.yaml): an accepted finding leaves the counts until
+# its exception expires. Optional: the defaults below apply when omitted.
+# exceptions:
+#   maxDays: 180 # 1–366: longest allowed created → expires span
+#   expiringSoonDays: 14 # 0–90: active exceptions expiring within this many days are flagged
+#   expiredIsAmber: true # an expired exception adds an amber Security reason (else info)
+
 overall:
   criticalDimensions: [delivery, version, security]
   requiredDimensions: [delivery, version, security, coverage, governance]

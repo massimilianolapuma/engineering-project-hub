@@ -1,4 +1,5 @@
 import {
+  countsAsOpen,
   CONTROL_IDS,
   FindingCategorySchema,
   FindingSourceSchema,
@@ -6,10 +7,12 @@ import {
   requiredControls,
   SNAPSHOT_SCHEMA_VERSION,
   type FindingCategory,
+  type ExceptionEntry,
   type FindingSource,
   type Policies,
   type ProjectSnapshot,
   type ProjectSummary,
+  type SecurityException,
   type SecurityFinding,
   type SeverityCounts,
 } from '@model/index';
@@ -45,8 +48,16 @@ import {
   type RepoQuality,
 } from './normalizers/quality';
 import {
+  applyExceptions,
+  type MatchableFinding,
+  type SourceReadability,
+} from './policy/exceptions';
+import { applySla } from './policy/sla';
+import {
+  countAccepted,
   countOpen,
   emptyCounts,
+  isPublicDetail,
   parseStatusFile,
   recordSecurityErrors,
   toFindings,
@@ -71,6 +82,8 @@ export function buildProjectSnapshot(
   now: Date,
   /** Latest versions of the repositories referenced as reusable workflows (key owner/repo, lower-case). */
   reusable: Map<string, TargetVersions> = new Map(),
+  /** Every loaded exception: the ones for this project's repositories are applied. */
+  exceptions: ExceptionEntry[] = [],
 ): ProjectSnapshot {
   const { config } = raw;
   const generatedAt = now.toISOString();
@@ -129,19 +142,57 @@ export function buildProjectSnapshot(
     return toWorkflowStatus(ctx, w);
   });
 
-  // Security.
-  const findings: SecurityFinding[] = [];
+  // Security. Order: collect (with unpublished match keys) → exceptions → SLAs → controls →
+  // evaluation. Exceptions and SLAs never change a finding's GitHub status.
+  const matchable: MatchableFinding[] = [];
   let detailsWithheld = false;
   const statusFiles = new Map<string, ParsedStatusFile>();
-  const securityControls = uniqueRepos.map((r) => {
+  for (const r of uniqueRepos) {
     recordSecurityErrors(ctx, r);
     const f = toFindings(ctx, r, componentOf(r.repository, r.componentId));
     detailsWithheld ||= f.withheld;
-    findings.push(...f.findings);
-    const statusFile = parseStatusFile(ctx, r);
-    statusFiles.set(r.componentId, statusFile);
-    return toRepositoryControls(ctx, config, r, f.findings, statusFile);
+    matchable.push(...f.findings);
+    statusFiles.set(r.componentId, parseStatusFile(ctx, r));
+  }
+  const readable = (k: (typeof ALERT_SOURCES)[number]) => raw.repos.filter((r) => r[k].ok).length;
+  const anyGitHubSourceReadable = ALERT_SOURCES.some((k) => readable(k) > 0);
+
+  // A source reads as empty when it is "not configured"; any other failure (or a repository
+  // that was skipped) makes an exception on it unverifiable.
+  const readability: SourceReadability = new Map();
+  for (const r of uniqueRepos) {
+    const state = (res: { ok: boolean; error?: { classification: string } }) =>
+      r.repo.ok && (res.ok || res.error?.classification === 'not-configured')
+        ? 'readable'
+        : 'unreadable';
+    readability.set(`${r.repository}|code-scanning`, state(r.codeScanning));
+    readability.set(`${r.repository}|dependabot`, state(r.dependabot));
+    readability.set(`${r.repository}|secret-scanning`, state(r.secretScanning));
+  }
+  const projectRepos = new Set(uniqueRepos.map((r) => r.repository.toLowerCase()));
+  const applied = applyExceptions({
+    findings: matchable,
+    exceptions: exceptions.filter((e) => projectRepos.has(e.repository.toLowerCase())),
+    readability,
+    publicDetail: (repository) => {
+      const data = uniqueRepos.find((r) => r.repository.toLowerCase() === repository.toLowerCase());
+      return data ? isPublicDetail(ctx, data) : false;
+    },
+    policies,
+    now,
   });
+  const sla = applySla(applied.findings, policies, now, anyGitHubSourceReadable);
+  const findings: SecurityFinding[] = sla.findings;
+  const securityExceptions: SecurityException[] = applied.records;
+  const securityControls = uniqueRepos.map((r) =>
+    toRepositoryControls(
+      ctx,
+      config,
+      r,
+      findings.filter((f) => f.repository === r.repository),
+      statusFiles.get(r.componentId)!,
+    ),
+  );
 
   const required = requiredControls(config);
   const coverage = evaluateCoverage(
@@ -152,8 +203,6 @@ export function buildProjectSnapshot(
     generatedAt,
   );
 
-  const readable = (k: (typeof ALERT_SOURCES)[number]) => raw.repos.filter((r) => r[k].ok).length;
-  const anyGitHubSourceReadable = ALERT_SOURCES.some((k) => readable(k) > 0);
   const countsComplete = raw.repos.every((r) =>
     ALERT_SOURCES.every(
       (k) => r[k].ok || (!r[k].ok && r[k].error.classification === 'not-configured'),
@@ -168,8 +217,12 @@ export function buildProjectSnapshot(
   const anySourceReadable = anyGitHubSourceReadable || external.critical !== null;
   const secretSourceReadable = readable('secretScanning') > 0;
   const openSecretAlerts = secretSourceReadable
-    ? findings.filter((f) => f.source === 'github-secret-scanning' && f.status === 'open').length
+    ? findings.filter((f) => f.source === 'github-secret-scanning' && countsAsOpen(f)).length
     : null;
+  const acceptedCounts = anyGitHubSourceReadable ? countAccepted(findings) : emptyCounts(null);
+  const acceptedCount = findings.filter(
+    (f) => f.status === 'open' && f.exception?.state === 'active',
+  ).length;
 
   const securityResult = evaluateSecurity(
     {
@@ -181,12 +234,15 @@ export function buildProjectSnapshot(
       countsComplete,
       secretSourceReadable,
       detailsWithheld,
+      remediation: sla.remediation,
+      exceptions: securityExceptions,
+      acceptedCount,
     },
     openCounts,
     openSecretAlerts,
     policies,
   );
-  const open = findings.filter((f) => f.status === 'open');
+  const open = findings.filter(countsAsOpen);
   const byCategory = Object.fromEntries(FindingCategorySchema.options.map((c) => [c, 0])) as Record<
     FindingCategory,
     number
@@ -387,12 +443,23 @@ export function buildProjectSnapshot(
     environments,
     workflows,
     securityFindings: findings,
+    securityExceptions,
     securityControls,
     deliveryHealth,
     versionHealth,
     securityHealth: {
       ...securityResult,
       openCounts,
+      acceptedCounts,
+      remediation: sla.remediation,
+      exceptionStates: {
+        active: securityExceptions.filter((e) => e.state === 'active').length,
+        expired: securityExceptions.filter((e) => e.state === 'expired').length,
+        stale: securityExceptions.filter((e) => e.state === 'stale').length,
+        unverifiable: securityExceptions.filter((e) => e.state === 'unverifiable').length,
+        invalid: securityExceptions.filter((e) => e.state === 'invalid').length,
+        expiringSoon: securityExceptions.filter((e) => e.expiringSoon).length,
+      },
       countsComplete,
       openSecretAlerts,
       byCategory,
@@ -411,6 +478,24 @@ export function buildProjectSnapshot(
       staleSources,
     },
     collectionErrors: ctx.errors,
+  };
+}
+
+/** null when no value of the sum is measured, so "not measured" is never shown as 0. */
+function sumKnown(values: (number | null)[]): number | null {
+  const known = values.filter((v): v is number => v !== null);
+  return known.length ? known.reduce((a, b) => a + b, 0) : null;
+}
+
+function projectRisk(s: ProjectSnapshot): ProjectSummary['risk'] {
+  const { overdue } = s.securityHealth.remediation;
+  const accepted = s.securityHealth.acceptedCounts;
+  const states = s.securityHealth.exceptionStates;
+  return {
+    overdue: sumKnown(Object.values(overdue)),
+    overdueCriticalHigh: sumKnown([overdue.critical, overdue.high]),
+    accepted: sumKnown(Object.values(accepted)),
+    exceptionIssues: states.expired + states.stale + states.unverifiable + states.invalid,
   };
 }
 
@@ -451,6 +536,7 @@ export function toProjectSummary(s: ProjectSnapshot): ProjectSummary {
     },
     freshness: s.dataFreshness.status,
     openCounts: s.securityHealth.openCounts,
+    risk: projectRisk(s),
     countsComplete: s.securityHealth.countsComplete,
     openSecretAlerts: s.securityHealth.openSecretAlerts,
     secretScanning:

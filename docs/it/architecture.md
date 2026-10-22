@@ -92,22 +92,29 @@ flowchart TB
    release (avanti / indietro / divergente).
 5. **Normalizzazione**: i valori dei provider diventano gli enum del modello.
    `originalSeverity` e `originalStatus` vengono conservati.
-6. **Valutazione**: delivery, versioni, rischio sicurezza, copertura (controlli),
+6. **Abbinamento delle eccezioni, calcolo degli SLA, poi valutazione.** Per ogni repository le chiavi
+   di corrispondenza non pubblicate di ogni finding (numero alert, id regola grezzo, tool, id advisory)
+   restano dentro il collector. `config/exceptions.yaml` viene abbinato a esse (stati: attiva, scaduta,
+   obsoleta, non verificabile, non valida; una fonte non leggibile non è mai letta come accettata), poi gli SLA di
+   remediation sono calcolati dalla data di creazione di ogni alert, poi gira il valutatore di
+   Sicurezza. Un finding con eccezione mantiene `status: open`; un solo helper, `countsAsOpen`,
+   decide cosa viene contato.
+7. **Valutazione**: delivery, versioni, rischio sicurezza, copertura (controlli),
    governance (con i sei controlli repository, informativi se non resi vincolanti), qualità
    (copertura dei test), aggiornamento dei dati e stato complessivo.
-7. **Sanitizzazione e validazione**: il testo libero viene ripulito e i link vengono
+8. **Sanitizzazione e validazione**: il testo libero viene ripulito e i link vengono
    filtrati. Ogni documento è sottoposto a parsing con gli schemi strict (allowlist), poi il
    JSON serializzato passa per il gate delle credenziali. Qualsiasi errore interrompe
    l'esecuzione prima che venga scritto qualcosa.
-8. **Aggiunta e confronto**: si carica lo storico precedente (vedi sotto), si aggiunge
+9. **Aggiunta e confronto**: si carica lo storico precedente (vedi sotto), si aggiunge
    l'esecuzione corrente con la retention e si calcola il confronto con la base precedente.
-9. **Scrittura** di `public/data/index.json`, `projects/<id>.json`, `history.json`,
-   `changes.json`, `collection-report.json` e `collection-report.md`.
-10. **Build** del sito. Le pagine caricano e rivalidano gli snapshot in fase di build e
+10. **Scrittura** di `public/data/index.json`, `projects/<id>.json`, `history.json`,
+    `changes.json`, `collection-report.json` e `collection-report.md`.
+11. **Build** del sito. Le pagine caricano e rivalidano gli snapshot in fase di build e
     scrivono i tre export CSV. Uno `schemaVersion` non supportato produce una pagina di
     errore controllata. Un `history.json` o `changes.json` mancante o non valido non fa mai
     fallire la build.
-11. **Scansione dell'output** (`dist/`, `public/data/`) alla ricerca di pattern di
+12. **Scansione dell'output** (`dist/`, `public/data/`) alla ricerca di pattern di
     credenziali e dei valori delle credenziali presenti nell'ambiente, quindi
     pubblicazione.
 
@@ -128,6 +135,7 @@ prossimo artifact `hub-history` (90 giorni). Un'esecuzione mock non ripristina m
 | Artifact CI → collector                | Viene letto solo l'artifact `hub-quality-summary` di un'esecuzione sul branch predefinito dello stesso repository: zip ≤ 64 KB, un solo file, schema strict, `repository` deve coincidere. Un errore significa `invalid` e nulla viene pubblicato.                                                                                                                                                                                      |
 | Artifact Actions → collector (storico) | Solo l'artifact `hub-history` del proprio repository, di un'esecuzione sul branch predefinito del workflow di deploy o di raccolta, non da un fork, non l'esecuzione corrente, al massimo 5 MiB. Il collector lo legge poi in modo strict (limite 8 MiB), ripulisce di nuovo link e testo e lo riscrive. Un errore fa ripartire lo storico da zero, non fa mai fallire l'esecuzione.                                                    |
 | File dei workflow → collector          | Input non attendibile. Letti tramite l'API Contents, limitati (262 144 byte per file, 200 riferimenti per file, 1 000 per repository, 30 file per impostazione predefinita), analizzati in memoria con un limite sugli alias e ridotti a riferimenti `uses:` validati. Testo dei workflow, nomi degli step, `run:`, `with:` ed `env:` non escono mai dal parser e non vengono mai pubblicati; `target` è ricostruita da parti validate. |
+| File delle eccezioni → collector       | Configurazione rivista, non dati monitorati: schema strict, testo ripulito prima della pubblicazione, allowlist degli host dei ticket, scadenza obbligatoria e limitata. Per un repository non pubblico con audience pubblica, regola o advisory, tool, motivo e ticket sono pubblicati come `null`. Non si scrive mai nulla su GitHub.                                                                                                 |
 | Job collect → job build                | Passa solo l'artifact sanitizzato `snapshots`. Il job build non ha secret.                                                                                                                                                                                                                                                                                                                                                              |
 | Build → GitHub Pages                   | Scansione dell'output. Il deploy usa OIDC (`pages: write`, `id-token: write`) solo nel job deploy.                                                                                                                                                                                                                                                                                                                                      |
 | Pages → browser                        | Solo file statici. CSP `default-src 'self'` senza script inline. Nessuna chiamata all'API di GitHub. Nessun token nello storage.                                                                                                                                                                                                                                                                                                        |
@@ -147,7 +155,7 @@ prossimo artifact `hub-history` (90 giorni). Un'esecuzione mock non ripristina m
   conteggi degli errori, i submodule non risolti e lo `score` del progetto.
 
 `history.json` (`kind: hub-history`) e `changes.json` (`kind: hub-changes`) hanno una versione
-separata (storico `1.1`, changes `1.0`) da quella dello snapshot (`1.5`), così lo storico sopravvive a un
+separata (storico `1.2`, changes `1.0`) da quella dello snapshot (`1.6`), così lo storico sopravvive a un
 cambio di schema dello snapshot e un `public/data` esistente resta leggibile. `history.json`
 ha un punto compatto per progetto e raccolta più la base dell'ultima esecuzione;
 `changes.json` è il confronto che il sito mostra. Sconosciuto non è mai 0: un punteggio null
@@ -188,7 +196,7 @@ Enum normalizzati:
 | Classe di errore      | `not-found`, `not-authorised`, `not-configured`, `rate-limited`, `invalid-data`, `error`                                                 |
 
 Gli JSON Schema generati si trovano in `config/schema/`. Il sito supporta le versioni di
-snapshot elencate in `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS` (attualmente `1.5`).
+snapshot elencate in `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS` (attualmente `1.6`).
 
 ## Regole di salute (policy dell'MVP)
 
@@ -252,6 +260,11 @@ valutazioni del rischio universali.
     critica, una grigia viene ignorata
   - grigio negli altri casi, oppure ambra se `greyRequiredDimension: amber`
 
+`npm run policy:check` (`collector/src/policy/check.ts`) esegue gli stessi motori (eccezioni, SLA, i
+valutatori di Sicurezza e complessivo) su casi di decisione sintetici e, in sola lettura, su uno
+snapshot pubblicato. È la superficie di policy-as-code: Zod valida, lo JSON Schema è generato da esso e i
+casi bloccano le decisioni ([ADR 0008](architecture/adr/0008-risk-governance-policy-as-code.md)).
+
 ## Gestione degli errori
 
 - Ogni chiamata a un provider restituisce `ProviderResult`. Le eccezioni sono convertite in
@@ -278,6 +291,7 @@ valutazioni del rischio universali.
 - [ADR 0005: Copertura dei test da un artifact di riepilogo della CI, non da Sonar o dalla UI di GitHub](architecture/adr/0005-test-coverage-from-ci-summary-artifact.md)
 - [ADR 0006: Storico conservato tramite gli artifact Actions del repository stesso](architecture/adr/0006-history-persisted-through-own-actions-artifacts.md)
 - [ADR 0007: Controlli repository da file dei workflow e API delle regole, informativi per impostazione predefinita](architecture/adr/0007-repository-controls-informative-by-default.md)
+- [ADR 0008: Risk governance come policy-as-code tipizzata: eccezioni in configurazione rivista, mai dismiss su GitHub, niente OPA](architecture/adr/0008-risk-governance-policy-as-code.md)
 
 Altre decisioni:
 

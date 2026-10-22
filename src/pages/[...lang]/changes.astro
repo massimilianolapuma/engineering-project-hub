@@ -44,6 +44,8 @@ const changed = (p: Card) =>
     p.resolvedFindings.length +
     p.versionMoves.length +
     (p.checkChanges?.length ?? 0) +
+    (p.newlyOverdue?.length ?? 0) +
+    (p.expiredExceptions?.length ?? 0) +
     p.newErrors.length +
     p.resolvedErrors >
   0;
@@ -259,6 +261,40 @@ const date = (iso: string) => i18n.date(iso);
                           <li data-change="version">
                             {componentName(p.id, v.componentId)}: <span class="mono">{v.from}</span>{' '}
                             → <span class="mono">{v.to}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+
+                  {(p.newlyOverdue?.length ?? 0) > 0 && (
+                    <section aria-labelledby={`h-${p.id}-overdue`}>
+                      <h3 id={`h-${p.id}-overdue`}>{c.newlyOverdue}</h3>
+                      <ul class="chg-list">
+                        {p.newlyOverdue!.map((x) => (
+                          <li data-change="newly-overdue">
+                            <Pill tone={severityTone(x.severity)} label={d.severity[x.severity]} />{' '}
+                            <ExtLink href={x.htmlUrl} i18n={i18n} label={x.id} />{' '}
+                            <span class="muted">
+                              {f(c.newlyOverdueDue, { date: i18n.day(x.dueAt) })}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+
+                  {(p.expiredExceptions?.length ?? 0) > 0 && (
+                    <section aria-labelledby={`h-${p.id}-expired`}>
+                      <h3 id={`h-${p.id}-expired`}>{c.expiredExceptions}</h3>
+                      <ul class="chg-list">
+                        {p.expiredExceptions!.map((x) => (
+                          <li data-change="expired-exception">
+                            <a href={`${href(locale, `projects/${p.id}`)}#exceptions`}>{x.id}</a>{' '}
+                            <span class="mono">{x.repository}</span>{' '}
+                            <span class="muted">
+                              {f(c.expiredExceptionOn, { date: i18n.day(x.expires) })}
+                            </span>
                           </li>
                         ))}
                       </ul>

@@ -37,6 +37,7 @@
     "scan:output": "tsx scripts/scan-output.ts",
     "history:restore": "tsx scripts/restore-history.ts",
     "fixtures:update": "tsx scripts/update-golden-snapshots.ts",
+    "policy:check": "tsx scripts/policy-check.ts",
     "schema:generate": "tsx scripts/generate-json-schema.ts"
   },
   "dependencies": {

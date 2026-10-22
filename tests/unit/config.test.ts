@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { mkdtemp, mkdir, writeFile, cp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -8,6 +9,7 @@ import {
   ConfigError,
   loadCatalog,
   loadConfig,
+  loadExceptions,
   parseYamlWith,
 } from '../../collector/src/config/load';
 
@@ -373,5 +375,130 @@ describe('policies.yaml validation', () => {
         'p.yaml',
       ),
     ).toThrow(/schemaVersion/);
+  });
+});
+
+describe('policies: remediation and exceptions blocks', () => {
+  const parsePolicies = (text: string) => parseYamlWith(PoliciesSchema, text, 'policies.yaml');
+  // The shipped file opts in; the schema defaults come from the same file without the blocks.
+  const withoutBlocks = policiesText
+    .replace(/^remediation:[\s\S]*?(?=^\S)/m, '')
+    .replace(/^exceptions:[\s\S]*?(?=^\S)/m, '');
+
+  it('policies defaults: remediation days 7/30/90/180/7, overdue all info, enabled true; exceptions 180/14/true', () => {
+    const d = parsePolicies(withoutBlocks);
+    expect(d.remediation).toEqual({
+      enabled: true,
+      days: { critical: 7, high: 30, medium: 90, low: 180, secret: 7 },
+      overdue: { critical: 'info', high: 'info', medium: 'info', low: 'info', secret: 'info' },
+    });
+    expect(d.exceptions).toEqual({ maxDays: 180, expiringSoonDays: 14, expiredIsAmber: true });
+  });
+
+  it('remediation.days.high: null is accepted; 0 and 3651 are rejected', () => {
+    const withDays = (v: string) =>
+      PoliciesSchema.safeParse({
+        ...parsePolicies(withoutBlocks),
+        remediation: { days: { high: JSON.parse(v) } },
+      });
+    expect(withDays('null').success).toBe(true);
+    expect(withDays('0').success).toBe(false);
+    expect(withDays('3651').success).toBe(false);
+  });
+
+  it('exceptions.maxDays 367 is rejected', () => {
+    const p = parsePolicies(withoutBlocks);
+    expect(PoliciesSchema.safeParse({ ...p, exceptions: { maxDays: 367 } }).success).toBe(false);
+    expect(PoliciesSchema.safeParse({ ...p, exceptions: { maxDays: 366 } }).success).toBe(true);
+  });
+
+  it('config/policies.yaml sets overdue.critical and overdue.high to red, others info', () => {
+    expect(parsePolicies(policiesText).remediation.overdue).toEqual({
+      critical: 'red',
+      high: 'red',
+      medium: 'info',
+      low: 'info',
+      secret: 'info',
+    });
+  });
+});
+
+describe('exceptions loading', () => {
+  const NOW_TOKENS = new Date('2026-01-15T12:00:00.000Z');
+  const exceptionsYaml = (created: string, expires: string, extra = '') => `schemaVersion: '1.0'
+exceptions:
+  - id: EXC-0001
+    repository: example-org/project-alpha-backend
+    source: code-scanning
+    match: { alert: 15 }
+    owner: team-alpha
+    reason: Accepted for the demo only.
+    created: ${created}
+    expires: ${expires}${extra}
+`;
+  async function load(text: string | null, allowDateTokens = false) {
+    const dir = await mkdtemp(join(tmpdir(), 'hub-exc-'));
+    const file = join(dir, 'exceptions.yaml');
+    if (text !== null) await writeFile(file, text);
+    const { catalog, policies } = await loadConfig('config');
+    return loadExceptions(file, { policies, catalog, now: NOW_TOKENS, allowDateTokens });
+  }
+
+  it('loadExceptions: missing file → source none, file null', async () => {
+    expect(await load(null)).toEqual({ source: 'none', file: null, warnings: [] });
+  });
+
+  it('allowDateTokens: "@now+20d" → "2026-02-04", "@now-10d" → "2026-01-05"', async () => {
+    const r = await load(exceptionsYaml("'@now-10d'", "'@now+20d'"), true);
+    expect(r.source).toBe('fixture');
+    expect(r.file!.exceptions[0]).toMatchObject({ created: '2026-01-05', expires: '2026-02-04' });
+  });
+
+  it('without allowDateTokens "@now+20d" throws ConfigError mentioning created/expires', async () => {
+    const run = load(exceptionsYaml("'@now-10d'", "'@now+20d'"), false);
+    await expect(run).rejects.toBeInstanceOf(ConfigError);
+    await expect(run).rejects.toThrow(/created|expires/);
+  });
+
+  it('a valid file loads as source config, with warnings returned', async () => {
+    const r = await load(exceptionsYaml("'2026-01-05'", "'2026-01-14'"));
+    expect(r.source).toBe('config');
+    expect(r.warnings.map((w) => w.message).join('|')).toContain('expired');
+  });
+
+  it('an error issue throws ConfigError listing "exceptions[0] (EXC-0001): …"', async () => {
+    const run = load(exceptionsYaml("'2026-01-01'", "'2026-12-31'"));
+    await expect(run).rejects.toBeInstanceOf(ConfigError);
+    await expect(run).rejects.toThrow(/exceptions\[0\] \(EXC-0001\): .*exceptions\.maxDays/);
+  });
+
+  it('a huge date token is a ConfigError, never a RangeError', async () => {
+    const run = load(exceptionsYaml("'@now-999999999999999d'", "'@now+20d'"), true);
+    await expect(run).rejects.toBeInstanceOf(ConfigError);
+  });
+
+  it('an oversized exceptions file is a ConfigError before it is parsed', async () => {
+    const run = load(
+      `# ${'x'.repeat(1_100_000)}\n${exceptionsYaml("'2026-01-05'", "'2026-01-14'")}`,
+    );
+    await expect(run).rejects.toBeInstanceOf(ConfigError);
+    await expect(run).rejects.toThrow(/too large/);
+  });
+
+  it('validate-config prints "✔ config/exceptions.yaml: 0 exception(s)"', () => {
+    const r = spawnSync('npx', ['tsx', 'scripts/validate-config.ts', 'config'], {
+      encoding: 'utf8',
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('✔ config/exceptions.yaml: 0 exception(s)');
+  });
+
+  it('validate-config exits 1 on an invalid exceptions file', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'hub-cfg-'));
+    await cp('config', dir, { recursive: true });
+    await writeFile(join(dir, 'exceptions.yaml'), exceptionsYaml("'2026-01-01'", "'2026-12-31'"));
+    const r = spawnSync('npx', ['tsx', 'scripts/validate-config.ts', dir], { encoding: 'utf8' });
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('exceptions[0] (EXC-0001)');
   });
 });

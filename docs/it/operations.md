@@ -173,6 +173,38 @@ Note:
 - La copertura è letta dagli attributi radice Cobertura `lines-covered` e `lines-valid`. Per
   gli altri formati calcola i due numeri e imposta `format` di conseguenza.
 
+## Gestire eccezioni di sicurezza e SLA
+
+Un'eccezione è una pull request su `config/exceptions.yaml` (CODEOWNERS chiede la revisione del
+responsabile). Formato e regole sono in [Configurazione](configuration.md#eccezioni-di-sicurezza-configexceptionsyaml).
+
+1. **Aggiungere:** aggiungi una voce con responsabile, motivo, la data di oggi come `created` (una data futura viene rifiutata) e una data
+   `expires` entro `exceptions.maxDays` (180 per default). Preferisci un selettore `alert`; usa `rule`
+   (con `tool`) o `advisory` solo per finding ricorrenti.
+2. **Controllare in locale:** `npm run policy:check`. Valida il file (gli errori falliscono, gli avvisi
+   spiegano), stampa la spiegazione delle policy ed esegue i casi di decisione.
+3. **Vedere l'effetto prima del merge:** `npm run policy:check -- --snapshot public/data` rivaluta
+   l'ultimo snapshot raccolto con eccezioni e policy attuali e stampa `unchanged:` o `would change:`
+   per progetto. È in sola lettura e non scrive nulla. Le eccezioni su finding nascosti sono segnalate
+   come non valutabili da uno snapshot pubblicato.
+4. **CI:** il job `policy-check` esegue lo stesso comando a ogni pull request e push su `main` (senza
+   filtro sui percorsi, così un controllo obbligatorio riporta sempre). `npm run validate:config` valida il
+   file anche nei workflow di raccolta e deploy, quindi un file rotto fallisce prima della raccolta.
+5. **Rinnovare:** una nuova `expires` (e un nuovo `reason` e `created` se la revisione si è ripetuta), mai
+   oltre `maxDays` da `created`. **Rimuovere:** elimina la voce; l'alert torna a contare alla raccolta
+   successiva.
+6. **Agire sulla scheda Qualità dati:** le voci _scadute_ si rinnovano o si rimuovono; le _obsolete_
+   (nessun alert aperto corrisponde) si rimuovono; le _non verificabili_ aspettano che la fonte torni
+   leggibile (sistema le credenziali, vedi "Errori parziali"); le _orfane_ indicano un repository che non è
+   in nessun progetto del catalogo (correggi il catalogo o elimina la voce).
+
+**Attivare l'escalation degli SLA.** Per default un alert in ritardo è solo informativo. Perché conti,
+imposta `remediation.overdue.<class>` a `amber` o `red` in `config/policies.yaml` (la demo lo fa per
+critical e high). Esegui prima `npm run policy:check -- --snapshot public/data`: mostra quali progetti
+cambierebbero. La prima raccolta dopo la modifica può spostare subito dei progetti, perché l'orologio
+dello SLA è partito alla creazione dell'alert; quei finding compaiono come cambio di stato di Sicurezza in
+"Cosa è cambiato", non come "scaduti da poco".
+
 ## Storico tra le esecuzioni
 
 Ogni raccolta aggiunge a `history.json` un punto compatto per progetto, e il collector lo

@@ -13,6 +13,8 @@ import {
   type RunMetadata,
 } from '@model/index';
 import { buildProjectSnapshot, toProjectSummary } from './build-snapshot';
+import type { LoadedExceptions } from './config/load';
+import { orphanedExceptionIds } from './policy/exceptions';
 import { discover } from './discovery/discover';
 import {
   collectProject,
@@ -43,6 +45,8 @@ export interface RunOptions {
   provider: SourceProvider;
   clock: Clock;
   concurrency?: number;
+  /** Loaded exceptions (default: none). */
+  exceptions?: LoadedExceptions;
 }
 
 export interface RunResult {
@@ -117,7 +121,9 @@ export async function runCollection(opts: RunOptions): Promise<RunResult> {
   // Reusable workflows: latest release / tag of the referenced repositories, once per run.
   const referenced = referencedRepositories(raws.flatMap((raw) => raw.repos));
   const reusable = await collectReusableTargets(ctx, referenced.targets, referenced.shaTargets);
-  const projects = raws.map((raw) => buildProjectSnapshot(raw, policies, now, reusable));
+  const exceptions = opts.exceptions ?? { source: 'none' as const, file: null, warnings: [] };
+  const entries = exceptions.file?.exceptions ?? [];
+  const projects = raws.map((raw) => buildProjectSnapshot(raw, policies, now, reusable, entries));
   const finishedAt = clock();
 
   const allRepos = new Map<string, { metadataOk: boolean; errors: number }>();
@@ -163,6 +169,20 @@ export async function runCollection(opts: RunOptions): Promise<RunResult> {
       unavailable: repoValues.filter((r) => !r.metadataOk).length,
     },
     configValid: true,
+    exceptions: {
+      source: exceptions.source,
+      total: entries.length,
+      orphaned: orphanedExceptionIds(
+        entries,
+        new Set(
+          catalog.projects.flatMap((p) =>
+            [p.coordinator.repository, ...p.components.map((c) => c.repository)].map((r) =>
+              r.toLowerCase(),
+            ),
+          ),
+        ),
+      ).slice(0, 100),
+    },
     policy: {
       snapshotStaleHours: policies.freshness.snapshotStaleHours,
       audience: policies.publication.audience,

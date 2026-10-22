@@ -67,7 +67,12 @@ export function dimensionsOf(s: ProjectSummary): Record<Dimension, HealthStatus>
 
 type CriticalOrHigh = SecurityFinding & { severity: 'critical' | 'high' };
 
-/** Open critical/high alerts, critical first, then by id. */
+/**
+ * Open critical/high alerts, critical first, then by id.
+ *
+ * Keeps `status === 'open'` on purpose: an alert accepted by an exception is still open on
+ * GitHub, so adding, expiring or removing an exception never makes it "new" or "resolved".
+ */
 export function openCriticalHigh(p: ProjectSnapshot): CriticalOrHigh[] {
   const out: CriticalOrHigh[] = [];
   for (const f of p.securityFindings)

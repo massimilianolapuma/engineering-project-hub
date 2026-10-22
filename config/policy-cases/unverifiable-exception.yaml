@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../schema/policy-case.schema.json
+#
+# Synthetic decision case for `npm run policy:check`. It is evaluated with the real engines
+# against the effective policies, so a policy change that alters a decision fails the case.
+# Reference: docs/configuration.md (EN) · docs/it/configuration.md (IT)
+
+name: An exception on an unreadable source is unverifiable and the counts are a lower bound
+kind: security
+now: '2026-01-15T12:00:00Z'
+security:
+  findings: []
+  exceptions:
+    - id: EXC-CASE-003
+      repository: example-org/project-beta-web
+      source: secret-scanning
+      match: { alert: 2 }
+      owner: team-beta
+      reason: Synthetic acceptance used only by this decision case.
+      created: '@now-5d'
+      expires: '@now+25d'
+  unreadable: ['example-org/project-beta-web|secret-scanning']
+expect:
+  status: amber
+  reasons: [security-data-unavailable, security-exception-unverifiable]

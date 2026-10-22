@@ -345,6 +345,10 @@ The project page's "Repository controls" fold (after Controls coverage, before C
 
 The score in 700 tabular figures with the confidence as visible secondary text ("measured 4 of 5"), so it is readable without hover. With insufficient data: an em dash and "insufficient data · measured 1 of 5". Header size adds "/ 100".
 
+### Risk panel, remediation queue and risk pills
+
+The Security fold of the project page opens with one bold remediation line ("Overdue: 1 high · oldest since 14 Jan 2026", "Nothing overdue", or "not measured"). Alert rows add a meta line (age, SLA, due date) and, for an overdue alert, an **Overdue** pill (a clock icon, neutral tone, bold with a 1px outline) or, for an accepted one, an **Accepted** pill (a checked rounded square). Overdue is not a health state, so these pills never use the health tones or shapes. Alerts accepted by an exception sit under their own "Accepted by exception" sub-heading. The Exceptions table (`#exceptions`) is a real table with column headers; each state is a pill with text and a shape (informative by default; an expired exception is amber only when `exceptions.expiredIsAmber` is on, like its reason; unverifiable is the grey unknown mark), withheld values read "Withheld (non-public repository)". The Security page's **Remediation queue** is a table of every open critical and high alert (overdue first, then within SLA by due date, then accepted, then unknown age) that turns into labelled cards on phones, like the other tables.
+
 ### Status pill
 
 12px/600 text with a shape icon on a fixed tint, 999px radius, 3px 10px padding. Unknown is transparent with a dashed `--unknown` border and muted text. Before text it sits in the 112px status column.

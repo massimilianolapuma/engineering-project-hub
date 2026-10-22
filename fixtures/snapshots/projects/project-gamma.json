@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-gamma",
@@ -91,6 +91,7 @@
     }
   ],
   "securityFindings": [],
+  "securityExceptions": [],
   "securityControls": [
     {
       "componentId": "coordinator",
@@ -290,6 +291,41 @@
       "low": null,
       "informational": null,
       "unknown": null
+    },
+    "acceptedCounts": {
+      "critical": null,
+      "high": null,
+      "medium": null,
+      "low": null,
+      "informational": null,
+      "unknown": null
+    },
+    "remediation": {
+      "enabled": true,
+      "slaDays": {
+        "critical": 7,
+        "high": 30,
+        "medium": 90,
+        "low": 180,
+        "secret": 7
+      },
+      "overdue": {
+        "critical": null,
+        "high": null,
+        "medium": null,
+        "low": null,
+        "secret": null
+      },
+      "oldestOverdueSince": null,
+      "slaUnknown": 0
+    },
+    "exceptionStates": {
+      "active": 0,
+      "expired": 0,
+      "stale": 0,
+      "unverifiable": 0,
+      "invalid": 0,
+      "expiringSoon": 0
     },
     "countsComplete": false,
     "openSecretAlerts": null,

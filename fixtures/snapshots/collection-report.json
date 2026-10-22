@@ -6,7 +6,7 @@
   "projects": [
     {
       "id": "platform",
-      "overall": "amber",
+      "overall": "red",
       "errors": 0
     },
     {
@@ -84,6 +84,16 @@
       "detail": "Resource not accessible by integration"
     }
   ],
+  "exceptions": {
+    "source": "fixture",
+    "total": 7,
+    "active": 3,
+    "expired": 1,
+    "stale": 1,
+    "unverifiable": 1,
+    "invalid": 0,
+    "orphaned": 1
+  },
   "history": {
     "state": "fixture",
     "entries": 13,

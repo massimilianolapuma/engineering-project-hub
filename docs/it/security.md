@@ -64,6 +64,34 @@ copertura, report grezzi, il `quality-summary.json` grezzo, messaggi, testo dell
 posizioni nei file dei finding di Code Quality, payload API grezzi. Vengono pubblicati solo
 conteggi, percentuali, SHA, date ISO e link `https://github.com/...` in allowlist.
 
+## Eccezioni di sicurezza
+
+Le eccezioni (vedi [Configurazione](configuration.md#eccezioni-di-sicurezza-configexceptionsyaml))
+**non aggiungono permessi né scritture**: sono un livello nella configurazione rivista dell'hub.
+**L'hub non fa mai dismiss, reopen né commenti su un alert su GitHub.** L'alert resta aperto lì e
+l'hub sceglie solo cosa contare.
+
+- **Cosa viene pubblicato** di un'eccezione: id, repository, sorgente, selettore (numero alert, id
+  regola o id advisory e tool opzionale), responsabile, motivo, `created`, `expires`, link al ticket,
+  stato, quanti alert corrispondono e i loro id. Il testo del motivo è ripulito e limitato; responsabile,
+  regola e tool passano dal filtro degli identificatori; il link al ticket passa dalla allowlist degli host
+  (`publication.allowedLinkHosts`). Le chiavi di corrispondenza grezze (id regola grezzi dei finding
+  nascosti) non lasciano mai il collector.
+- **Cosa viene nascosto:** per un repository non pubblico, con `publication.audience: public`, il
+  selettore regola o advisory, il tool, il motivo e il link al ticket sono pubblicati come `null` (la UI
+  dice "Nascosto"). Restano id, responsabile, date, stato e conteggi. Un selettore per numero di alert è
+  solo un numero e resta.
+- **Perché conta:** un file di eccezioni dice cosa un team accetta consapevolmente. In un repository
+  pubblico tieni solo esempi sintetici e metti le eccezioni reali in un **repository di configurazione
+  privato** (il pattern di deploy dell'[ADR 0004](architecture/adr/0004-configuration-store-and-discovery.md)),
+  rivisto dal responsabile (`/config/exceptions.yaml` ha una voce CODEOWNERS esplicita).
+- Gli **SLA di remediation** usano la data di creazione dell'alert. Fatti verificati il 2026-10-21: i
+  tipi OpenAPI di Octokit marcano `created_at` come obbligatorio sugli alert di code scanning e Dependabot e
+  come opzionale su quelli di secret scanning ("the time that the alert was created, ISO 8601"). Un valore
+  mancante dà un'età sconosciuta, mai "nello SLA".
+- Le fonti non leggibili non sono mai lette come accettate: un'eccezione su una fonte che non si è potuta
+  leggere è `non verificabile`.
+
 ## Modello di autorizzazione
 
 - **Consigliata: GitHub App**, installata solo sui repository monitorati, con permessi di

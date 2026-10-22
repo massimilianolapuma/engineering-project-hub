@@ -147,9 +147,9 @@ describe('static site', () => {
     );
     expect(names).toEqual([
       'project beta',
+      'platform (monorepo)',
       'project gamma',
       'project alpha',
-      'platform (monorepo)',
     ]);
     const beta = html.slice(html.indexOf('data-name="project beta"'));
     expect(beta.slice(0, beta.indexOf('>'))).toContain('data-score="40"');
@@ -345,8 +345,9 @@ describe('static site', () => {
       }
       const note = between(comps, 'data-shared-alerts', '</p>');
       expect(note).toContain('Open alerts in the shared repository');
-      expect(note).toContain('1 high · 1 medium · 1 low');
-      expect(comps.match(/1 high · 1 medium · 1 low/g)).toHaveLength(1);
+      // The low alert is accepted by an exception: it no longer counts.
+      expect(note).toContain('2 high · 1 medium');
+      expect(comps.match(/2 high · 1 medium/g)).toHaveLength(1);
     });
 
     it('never shows unreadable coverage or alert counts as zero or complete', async () => {
@@ -536,8 +537,9 @@ describe('static site', () => {
     expect(html).toContain('The portal reads runs; it never triggers them.');
     // The v0.4.0 per-component matrix is gone.
     expect(html).not.toContain('table--matrix');
-    // Worst first: Beta (red), Gamma (unknown), then the healthy ones by score.
-    const order = ['project-beta', 'project-gamma', 'project-alpha', 'platform'].map((id) =>
+    // Worst first: Beta (red), Gamma (unknown), then the healthy ones by score (Platform's score
+    // fell to 49 with its overdue alert, so it sorts before Alpha).
+    const order = ['project-beta', 'project-gamma', 'platform', 'project-alpha'].map((id) =>
       html.indexOf(`data-project="${id}"`),
     );
     expect(order).toEqual([...order].sort((a, b) => a - b));
@@ -598,7 +600,7 @@ describe('static site', () => {
 
   it('shows security per project, worst first, with blind spots and no full alert table', async () => {
     const html = await page('security');
-    // Portfolio severity totals: critical 1, high 5, medium 8, low 5 (Gamma unknown, not 0).
+    // Portfolio severity totals: critical 1, high 6, medium 8, low 4 (Gamma unknown, not 0).
     const totals = /<section[^>]*data-security-totals[\s\S]*?<\/section>/.exec(html)?.[0] ?? '';
     // Counts are incomplete, so each known total is a lower bound: "≥ n", read as "at least n".
     const values = [
@@ -606,9 +608,9 @@ describe('static site', () => {
     ].map(([, k, v]) => `${k}=${textOf(v!).trim()}`);
     expect(values).toEqual([
       'critical=≥at least 1',
-      'high=≥at least 5',
+      'high=≥at least 6',
       'medium=≥at least 8',
-      'low=≥at least 5',
+      'low=≥at least 4',
     ]);
     expect(totals).toMatch(
       /<span aria-hidden="true"[^>]*>≥<\/span>\s*<span class="visually-hidden"[^>]*>at least </,
@@ -621,7 +623,7 @@ describe('static site', () => {
     expect(itHtml).toContain('almeno 1 alert critico aperto');
     // One card per project, in the portfolio order (score, insufficient data right after red).
     const order = [...html.matchAll(/<article[^>]*data-project="([\w-]+)"/g)].map((m) => m[1]);
-    expect(order).toEqual(['project-beta', 'project-gamma', 'project-alpha', 'platform']);
+    expect(order).toEqual(['project-beta', 'platform', 'project-gamma', 'project-alpha']);
     const card = (id: string) => {
       const start = html.lastIndexOf('<article', html.indexOf(`data-project="${id}"`));
       return html.slice(start, html.indexOf('</article>', start));
@@ -946,6 +948,287 @@ describe('static site', () => {
     }, 180_000);
   });
 
+  describe('risk governance (exceptions, SLAs, remediation queue)', () => {
+    const t = (html: string) => textOf(html).replace(/\s+/g, ' ');
+    /** The element that carries `data-finding-id="<id>"` (an <li> or a <tr>), as a fragment. */
+    const finding = (html: string, id: string) => {
+      const at = html.indexOf(`data-finding-id="${id}"`);
+      expect(at, id).toBeGreaterThan(-1);
+      const start = Math.max(html.lastIndexOf('<li', at), html.lastIndexOf('<tr', at));
+      const tag = html.startsWith('<li', start) ? '</li>' : '</tr>';
+      return html.slice(start, html.indexOf(tag, at));
+    };
+    const exceptionRows = (html: string) => {
+      const at = html.indexOf('id="exceptions"');
+      const table = html.slice(at, html.indexOf('</table>', at));
+      return table.match(/<tr[^>]*data-exception="[^"]+"[\s\S]*?<\/tr>/g) ?? [];
+    };
+    const filesUnder = async (dir: string): Promise<string[]> => {
+      const { readdir } = await import('node:fs/promises');
+      const entries = await readdir(dir, { recursive: true, withFileTypes: true });
+      return entries.filter((e) => e.isFile()).map((e) => join(e.parentPath, e.name));
+    };
+
+    it('platform: the overdue high alert has data-sla-state, the pill and the under-a-day text', async () => {
+      const row = finding(
+        await page('projects/platform'),
+        'example-org/platform-mono#code-scanning#2',
+      );
+      expect(row).toContain('data-sla-state="overdue"');
+      expect(t(row)).toContain('Overdue');
+      expect(t(row)).toContain('overdue for less than a day');
+    });
+
+    it('beta: the critical alert is within its SLA, due in 4 d', async () => {
+      const row = finding(
+        await page('projects/project-beta'),
+        'example-org/project-beta-api#code-scanning#3',
+      );
+      expect(row).toContain('data-sla-state="within"');
+      expect(t(row)).toContain('due in 4 d');
+    });
+
+    it('platform page: the remediation line names the overdue count and the oldest date', async () => {
+      const html = await page('projects/platform');
+      expect(t(html)).toContain('Overdue: 1 high · oldest since 14 Jan 2026');
+      expect(t(await page('projects/project-alpha'))).toContain('Nothing overdue');
+    });
+
+    it('alpha: #exceptions has 2 body rows with their states', async () => {
+      const rows = exceptionRows(await page('projects/project-alpha'));
+      expect(rows).toHaveLength(2);
+      const byId = (id: string) => rows.find((r) => r.includes(`data-exception="${id}"`))!;
+      expect(t(byId('EXC-ALPHA-001'))).toContain('Active until');
+      expect(t(byId('EXC-ALPHA-002'))).toContain('Stale: matches nothing');
+    });
+
+    it('alpha lists #15 under "Accepted by exception" with "Accepted until", apart from the counted ones', async () => {
+      const html = await page('projects/project-alpha');
+      const at = html.indexOf('Accepted by exception');
+      expect(at).toBeGreaterThan(-1);
+      const accepted = html.slice(at, html.indexOf('</ul>', at));
+      expect(accepted).toContain('example-org/project-alpha-backend#code-scanning#15');
+      expect(t(accepted)).toContain('Accepted until');
+      expect(accepted).not.toContain('dependabot#7');
+    });
+
+    it('beta: EXC-BETA-001 shows the withheld text; the rule and the reason marker appear in no built file', async () => {
+      const rows = exceptionRows(await page('projects/project-beta'));
+      const row = rows.find((r) => r.includes('data-exception="EXC-BETA-001"'))!;
+      expect(t(row)).toContain('Withheld (non-public repository)');
+      for (const file of await filesUnder(dist)) {
+        const body = await readFile(file, 'utf8').catch(() => '');
+        expect(body.includes('py/flask-debug'), file).toBe(false);
+        expect(body.includes('marker-reason-b7c1'), file).toBe(false);
+      }
+    });
+
+    it('security page: the remediation queue lists the critical and high alerts in order', async () => {
+      const html = await page('security');
+      const at = html.indexOf('class="sec-queue');
+      expect(at).toBeGreaterThan(-1);
+      const queue = html.slice(at, html.indexOf('</details>', at));
+      const ids = [...queue.matchAll(/<tr[^>]*data-finding-id="([^"]+)"/g)].map((m) => m[1]);
+      expect(ids).toEqual([
+        'example-org/platform-mono#code-scanning#2',
+        'example-org/project-beta-api#code-scanning#3',
+        'example-org/platform-mono#code-scanning#4',
+        'example-org/project-alpha-frontend#dependabot#7',
+        'example-org/project-beta-web#dependabot#11',
+        'example-org/project-beta-api#code-scanning#901',
+        'example-org/project-alpha-backend#code-scanning#15',
+      ]);
+      expect(queue).toContain('data-sla-state="paused"');
+    });
+
+    it('security page totals carry overdue 1 and accepted 3', async () => {
+      const html = await page('security');
+      expect(html).toMatch(/data-total="overdue"[^>]*data-value="1"/);
+      expect(html).toMatch(/data-total="accepted"[^>]*data-value="3"/);
+    });
+
+    it('data quality: the exceptions card lists each kind', async () => {
+      const html = await page('data-quality');
+      const at = html.indexOf('id="h-exceptions"');
+      expect(at).toBeGreaterThan(-1);
+      const card = html.slice(at, html.indexOf('</section>', at));
+      const kind = (name: string, id: string) =>
+        expect(card, id).toMatch(new RegExp(`data-exception-kind="${name}"[\\s\\S]*?${id}`));
+      kind('expired', 'EXC-PLAT-001');
+      kind('stale', 'EXC-ALPHA-002');
+      kind('unverifiable', 'EXC-BETA-002');
+      kind('orphaned', 'EXC-LEGACY-001');
+      kind('expiringSoon', 'EXC-PLAT-002');
+    });
+
+    it('how to read: #risk explains exceptions and the SLA table shows 30 days for high', async () => {
+      const en = await page('how-to-read');
+      const at = en.indexOf('id="risk"');
+      expect(at).toBeGreaterThan(-1);
+      const section = en.slice(at, en.indexOf('</section>', at));
+      expect(t(section)).toContain('Exceptions and remediation SLAs');
+      expect(t(section)).toMatch(/high[^|]*30/i);
+      expect(en).toContain('href="#risk"');
+      expect(await page('it/how-to-read')).toContain('Eccezioni e SLA di remediation');
+    });
+
+    it('Italian pages carry the risk strings', async () => {
+      expect(await page('it/projects/platform')).toContain('In ritardo');
+      expect(await page('it/projects/project-alpha')).toContain('Accettato fino al');
+    });
+
+    it('every Overdue / Accepted pill has visible text', async () => {
+      for (const v of ['projects/platform', 'projects/project-alpha', 'security']) {
+        const html = await page(v);
+        const pills = html.match(/<[^>]*data-risk-pill[^>]*>[\s\S]*?<\/span>\s*<\/span>/g) ?? [];
+        expect(pills.length, v).toBeGreaterThan(0);
+        for (const p of pills) expect(t(p).trim().length, v).toBeGreaterThan(0);
+      }
+    });
+
+    it('the Security bar tooltip on the portfolio carries the overdue and accepted counts', async () => {
+      const html = await page('');
+      expect(html).toMatch(/title="Security risk: [^"]*1 overdue · 1 accepted"/);
+    });
+
+    it('unmeasured overdue never reads as "0 overdue" (card and portfolio tooltip)', async () => {
+      const data = join(work, 'risk-unmeasured');
+      await cp('fixtures/snapshots', data, { recursive: true });
+      const file = join(data, 'projects/project-alpha.json');
+      const json = JSON.parse(await readFile(file, 'utf8'));
+      // SLAs off: nothing was measured, but one finding is still accepted.
+      for (const k of Object.keys(json.securityHealth.remediation.overdue))
+        json.securityHealth.remediation.overdue[k] = null;
+      await writeFile(file, JSON.stringify(json));
+      const indexFile = join(data, 'index.json');
+      const index = JSON.parse(await readFile(indexFile, 'utf8'));
+      const summary = index.projects.find((p: { id: string }) => p.id === 'project-alpha');
+      summary.risk.overdue = null;
+      summary.risk.overdueCriticalHigh = null;
+      await writeFile(indexFile, JSON.stringify(index));
+      const out = join(work, 'dist-risk-unmeasured');
+      await buildSite(data, out);
+      const card = await readFile(join(out, 'projects/project-alpha/index.html'), 'utf8');
+      const home = await readFile(join(out, 'index.html'), 'utf8');
+      expect(t(card)).toContain('1 accepted');
+      expect(t(card)).not.toMatch(/\b0 overdue/);
+      expect(t(card)).toContain('overdue not measured');
+      // The card of project-alpha is the only one whose overdue count is unmeasured.
+      const tips = [...home.matchAll(/title="Security risk: ([^"]*)"/g)].map((m) => m[1]!);
+      const tip = tips.find((x) => x.includes('not measured'));
+      expect(tip).toContain('1 accepted');
+      expect(tip).not.toMatch(/\b0 overdue/);
+    }, 180_000);
+
+    it('incomplete counts never claim "Nothing overdue" (lower bound)', async () => {
+      const data = join(work, 'risk-lower-bound');
+      await cp('fixtures/snapshots', data, { recursive: true });
+      const file = join(data, 'projects/project-alpha.json');
+      const json = JSON.parse(await readFile(file, 'utf8'));
+      json.securityHealth.countsComplete = false;
+      await writeFile(file, JSON.stringify(json));
+      const out = join(work, 'dist-risk-lower-bound');
+      await buildSite(data, out);
+      const html = await readFile(join(out, 'projects/project-alpha/index.html'), 'utf8');
+      const line = /data-remediation-line[^>]*>([\s\S]*?)<\/p>/.exec(html)?.[1] ?? '';
+      expect(t(line).trim()).toBe('Nothing overdue in the sources that could be read');
+    }, 180_000);
+
+    it('Italian remediation line and reason agree in number (1 alto, not 1 alti)', async () => {
+      const html = await page('it/projects/platform');
+      const line = /data-remediation-line[^>]*>([\s\S]*?)<\/p>/.exec(html)?.[1] ?? '';
+      expect(t(line)).toContain('1 alto');
+      expect(t(line)).not.toContain('1 alti');
+      expect(t(html)).toContain('1 alert aperto oltre lo SLA di 30 giorni (alto)');
+    });
+
+    it('the unlisted note follows the counted list, before the exceptions table', async () => {
+      const data = join(work, 'risk-order');
+      await cp('fixtures/snapshots', data, { recursive: true });
+      const file = join(data, 'projects/project-alpha.json');
+      const json = JSON.parse(await readFile(file, 'utf8'));
+      json.securityHealth.openCounts.high += 1;
+      await writeFile(file, JSON.stringify(json));
+      const out = join(work, 'dist-risk-order');
+      await buildSite(data, out);
+      const html = await readFile(join(out, 'projects/project-alpha/index.html'), 'utf8');
+      const at = (needle: string) => html.indexOf(needle);
+      expect(at('data-remediation-line')).toBeGreaterThan(-1);
+      expect(at('data-unlisted-crit-high')).toBeGreaterThan(at('data-remediation-line'));
+      expect(at('data-unlisted-crit-high')).toBeLessThan(at('id="exceptions"'));
+    }, 180_000);
+
+    it('the expired exception pill follows exceptions.expiredIsAmber', async () => {
+      const pill = (html: string) =>
+        /<span class="pill (pill--\w+)"[^>]*>(?:(?!<\/span>)[\s\S])*?<\/svg>\s*<span>Expired on/.exec(
+          html,
+        )?.[1];
+      expect(pill(await page('projects/platform'))).toBe('pill--amber');
+      const policies = parse(readFileSync('config/policies.yaml', 'utf8'));
+      policies.exceptions = { expiredIsAmber: false };
+      const file = join(work, 'policies-no-amber.yaml');
+      await writeFile(file, JSON.stringify(policies));
+      process.env.POLICIES_FILE = file;
+      try {
+        const out = join(work, 'dist-risk-no-amber');
+        await buildSite(join(process.cwd(), 'fixtures/snapshots'), out);
+        const html = await readFile(join(out, 'projects/platform/index.html'), 'utf8');
+        expect(pill(html)).toBe('pill--info');
+      } finally {
+        delete process.env.POLICIES_FILE;
+      }
+    }, 180_000);
+
+    it('Data quality names the unreadable source of an unverifiable exception', async () => {
+      const list = (html: string) => {
+        const at = html.indexOf('data-exception-kind="unverifiable"');
+        return t(html.slice(at, html.indexOf('</ul>', at)));
+      };
+      expect(list(await page('data-quality'))).toContain('EXC-BETA-002');
+      expect(list(await page('data-quality'))).toContain('Secret scanning not readable');
+      expect(list(await page('it/data-quality'))).toContain('Secret scanning non leggibile');
+    });
+
+    it('an invalid (future-dated) exception is listed in Data quality and in the table, never as accepted', async () => {
+      const data = join(work, 'risk-invalid');
+      await cp('fixtures/snapshots', data, { recursive: true });
+      const file = join(data, 'projects/project-alpha.json');
+      const json = JSON.parse(await readFile(file, 'utf8'));
+      const stale = json.securityExceptions.find((e: { state: string }) => e.state === 'stale');
+      stale.state = 'invalid';
+      stale.matched = null;
+      stale.created = '2026-03-01';
+      json.securityHealth.exceptionStates.stale -= 1;
+      json.securityHealth.exceptionStates.invalid += 1;
+      await writeFile(file, JSON.stringify(json));
+      const out = join(work, 'dist-risk-invalid');
+      await buildSite(data, out);
+      const dq = await readFile(join(out, 'data-quality/index.html'), 'utf8');
+      const at = dq.indexOf('data-exception-kind="invalid"');
+      expect(at).toBeGreaterThan(-1);
+      expect(t(dq.slice(at, dq.indexOf('</ul>', at)))).toContain('created');
+      const card = await readFile(join(out, 'projects/project-alpha/index.html'), 'utf8');
+      expect(t(card)).toContain('Not applied: created in the future');
+    }, 180_000);
+
+    it('an accepted high never hides an external high (listed / unlisted split)', async () => {
+      const data = join(work, 'risk-unlisted');
+      await cp('fixtures/snapshots', data, { recursive: true });
+      const file = join(data, 'projects/project-alpha.json');
+      const json = JSON.parse(await readFile(file, 'utf8'));
+      // One more counted high that has no finding record (e.g. container scanning).
+      json.securityHealth.openCounts.high += 1;
+      await writeFile(file, JSON.stringify(json));
+      const out = join(work, 'dist-risk-unlisted');
+      await buildSite(data, out);
+      const html = await readFile(join(out, 'projects/project-alpha/index.html'), 'utf8');
+      expect(html).toContain('data-unlisted-crit-high');
+      // The accepted alert is not in the counted list.
+      const counted = html.slice(html.indexOf('aria-label="Open critical and high alerts"'));
+      expect(counted.slice(0, counted.indexOf('</ul>'))).not.toContain('code-scanning#15');
+    }, 180_000);
+  });
+
   describe('what changed', () => {
     const navLinks = (html: string) => {
       const nav = /<nav class="mainnav"[\s\S]*?<\/nav>/.exec(html)?.[0] ?? '';
@@ -966,22 +1249,23 @@ describe('static site', () => {
     it('shows the five totals with their labels', async () => {
       const t = text(await page('changes'));
       expect(t).toContain(
-        '4 status changes · 1 new and 1 resolved critical/high alerts · 1 version moves · 1 new collection errors',
+        '6 status changes · 1 new and 1 resolved critical/high alerts · 1 version moves · 1 new collection errors',
       );
       expect(text(await page('it/changes'))).toContain(
-        '4 cambi di stato · 1 alert critici/alti nuovi e 1 risolti · 1 versioni cambiate · 1 nuovi errori di raccolta',
+        '6 cambi di stato · 1 alert critici/alti nuovi e 1 risolti · 1 versioni cambiate · 1 nuovi errori di raccolta',
       );
       expect(t).toContain('Compared with the collection of 14 Jan 2026');
       expect(t).toContain('Demo data: earlier collections are synthetic.');
     });
 
-    it('puts project beta first with its status changes, new alert and partial note', async () => {
+    it('puts project beta before alpha with its status changes, new alert and partial note', async () => {
       const html = await page('changes');
       expect(html.indexOf('id="p-project-beta"')).toBeLessThan(
         html.indexOf('id="p-project-alpha"'),
       );
+      // Platform moved too (amber → red through its overdue alert) and is listed with Beta.
       const articles = [...html.matchAll(/<article[^>]*id="p-([\w-]+)"/g)].map((m) => m[1]);
-      expect(articles[0]).toBe('project-beta');
+      expect(articles.slice(0, 2).sort()).toEqual(['platform', 'project-beta']);
       const beta = card(html, 'project-beta');
       for (const dim of ['Overall', 'Delivery', 'Security risk'])
         expect(text(beta)).toMatch(new RegExp(`${dim}:? .*Attention.*→.*Critical`));
@@ -1001,10 +1285,39 @@ describe('static site', () => {
       expect(text(alpha)).toContain('example-org/project-alpha-backend#code-scanning#9');
     });
 
-    it('says "No changes." for platform and gamma', async () => {
+    it('lists newly overdue alerts and expired exceptions in the platform card (EN and IT)', async () => {
+      const en = text(card(await page('changes'), 'platform'));
+      expect(en).toContain('Newly overdue');
+      expect(en).toContain('example-org/platform-mono#code-scanning#2');
+      expect(en).toContain('Exceptions expired');
+      expect(en).toContain('EXC-PLAT-001');
+      const it = text(card(await page('it/changes'), 'platform'));
+      expect(it).toContain('Scaduti da poco');
+      expect(it).toContain('Eccezioni scadute');
+      // A project with neither list shows neither heading.
+      expect(text(card(await page('changes'), 'project-gamma'))).not.toContain('Newly overdue');
+    });
+
+    it('the trend table has an Overdue column: "not tracked" before 1.2, the count after', async () => {
+      const html = await page('projects/platform');
+      const rows = html.match(/<tr data-trend-row[\s\S]*?<\/tr>/g) ?? [];
+      const cell = (row: string) => (row.match(/<td[\s\S]*?<\/td>/g) ?? []).at(-1) ?? '';
+      expect(html).toContain('>Overdue<');
+      expect(textOf(cell(rows.at(-1)!))).toContain('not tracked');
+      expect(textOf(cell(rows[0]!)).trim()).toBe('1');
+    });
+
+    it('lists the platform status change and says no changes for nobody else but gamma', async () => {
       const html = await page('changes');
-      expect(text(card(html, 'platform'))).toContain('No changes.');
+      const platform = text(card(html, 'platform'));
+      expect(platform).not.toContain('No changes.');
+      expect(platform).toMatch(/Security risk:? .*Attention.*→.*Critical/);
+      expect(platform).toContain('82 → 49');
       expect(text(card(html, 'project-alpha'))).not.toContain('No changes.');
+      // Gamma could only be partly compared, so it never claims a plain "No changes."
+      const gamma = text(card(html, 'project-gamma'));
+      expect(gamma).toContain('No changes in what could be compared.');
+      expect(gamma).not.toContain('No changes.');
     });
 
     it('does not say "No changes." when a project\'s alerts could not be compared', async () => {
@@ -1342,7 +1655,7 @@ describe('static site', () => {
     const idx = join(data, 'index.json');
     await writeFile(
       idx,
-      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.5"', '"schemaVersion": "9.0"'),
+      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.6"', '"schemaVersion": "9.0"'),
     );
     const out = join(work, 'dist-bad');
     await buildSite(data, out);

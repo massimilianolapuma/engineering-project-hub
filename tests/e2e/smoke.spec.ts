@@ -31,11 +31,13 @@ test('status counts filter the list and unknown projects show insufficient data,
   const rows = page.locator('tr[data-project]:not([hidden])');
   // Default order: score, worst first; insufficient data right after red.
   await expect(rows.first()).toHaveAttribute('data-score', '40');
-  await expect(rows.nth(1)).toHaveAttribute('data-score', '');
+  // Platform is red too since the demo policies escalate its overdue high alert.
+  await expect(rows.nth(1)).toHaveAttribute('data-score', '49');
+  await expect(rows.nth(2)).toHaveAttribute('data-score', '');
   const counts = page.getByRole('group', { name: 'Filter by overall status' });
   const critical = counts.getByRole('button', { name: /Critical/ });
   await critical.click();
-  await expect(rows).toHaveCount(1);
+  await expect(rows).toHaveCount(2);
   await expect(critical).toHaveAttribute('aria-pressed', 'true');
   // Pressing the active count again clears the filter.
   await critical.click();
@@ -88,7 +90,7 @@ test('filters live in the URL, apply on load and can be cleared from the empty s
   await page.getByLabel('Status', { exact: true }).selectOption('red');
   await expect(page).toHaveURL(/\?health=red$/);
   await page.reload();
-  await expect(rows).toHaveCount(1);
+  await expect(rows).toHaveCount(2);
 });
 
 test('sorting by critical alerts never puts an unknown count at the bottom', async ({ page }) => {
@@ -308,4 +310,33 @@ test('CSV link responds 200 and starts with the BOM', async ({ page }) => {
   expect(res.status()).toBe(200);
   const body = await res.body();
   expect([...body.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
+});
+
+test('platform project page: opening Security shows the overdue alert and the exceptions', async ({
+  page,
+}) => {
+  await page.goto('/projects/platform/');
+  await page.locator('#security > summary').click();
+  const row = page.locator('[data-finding-id="example-org/platform-mono#code-scanning#2"]');
+  await expect(row).toBeVisible();
+  await expect(row).toHaveAttribute('data-sla-state', 'overdue');
+  await expect(row.getByText('Overdue', { exact: true })).toBeVisible();
+  await expect(page.locator('#exceptions')).toBeVisible();
+  // A link to #exceptions opens the closed fold.
+  await page.goto('/projects/platform/#exceptions');
+  await expect(page.locator('#security')).toHaveJSProperty('open', true);
+});
+
+test('security page: the remediation queue causes no horizontal scroll at 412 px', async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto('/security/');
+  await expect(page.locator('.sec-queue [data-finding-id]').first()).toBeVisible();
+  if (isMobile) {
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+  }
 });

@@ -11,13 +11,16 @@ import type {
   Reason,
   ReasonCode,
   ReasonLevel,
+  RemediationSummary,
   RepositoryControls,
   RepositoryInfo,
+  SecurityException,
   SecurityFinding,
   SeverityCounts,
   Submodule,
   WorkflowStatus,
 } from '@model/index';
+import { SLA_CLASSES } from '../policy/sla';
 import { ageMs, MINUTE_MS } from '../util/clock';
 
 /*
@@ -318,6 +321,18 @@ export interface SecurityInputs {
   countsComplete: boolean;
   secretSourceReadable: boolean;
   detailsWithheld: boolean;
+  /** Remediation SLA summary (overdue counts are null when not measured). */
+  remediation: RemediationSummary;
+  /** The project's exception records. */
+  exceptions: SecurityException[];
+  /** Findings with an active exception (counted apart from the open counts). */
+  acceptedCount: number;
+}
+
+/** "A,B,C" for up to 10 ids, then " +N" for the rest. */
+function idList(ids: string[]): string {
+  const head = ids.slice(0, 10).join(',');
+  return ids.length > 10 ? `${head} +${ids.length - 10}` : head;
 }
 
 export function sumCounts(a: SeverityCounts, b: SeverityCounts): SeverityCounts {
@@ -331,6 +346,51 @@ export function sumCounts(a: SeverityCounts, b: SeverityCounts): SeverityCounts 
     informational: add(a.informational, b.informational),
     unknown: add(a.unknown, b.unknown),
   };
+}
+
+/** Overdue SLAs and security exceptions (spec 5.4): informative unless the owner opts in. */
+function riskReasons(input: SecurityInputs, policies: Policies): Reason[] {
+  const out: Reason[] = [];
+  const { remediation } = input;
+  for (const cls of SLA_CLASSES) {
+    const count = remediation.overdue[cls];
+    if (count && count > 0)
+      out.push(
+        reason('sla-overdue', policies.remediation.overdue[cls], {
+          severity: cls,
+          count,
+          days: remediation.slaDays[cls] ?? 0,
+        }),
+      );
+  }
+  if (remediation.slaUnknown > 0)
+    out.push(reason('sla-age-unknown', 'info', { count: remediation.slaUnknown }));
+  if (input.acceptedCount > 0)
+    out.push(reason('security-exception-active', 'info', { count: input.acceptedCount }));
+  const byState = (state: SecurityException['state']) =>
+    input.exceptions.filter((e) => e.state === state).map((e) => e.id);
+  const expired = byState('expired');
+  if (expired.length)
+    out.push(
+      reason('security-exception-expired', policies.exceptions.expiredIsAmber ? 'amber' : 'info', {
+        count: expired.length,
+        ids: idList(expired),
+      }),
+    );
+  const stale = byState('stale');
+  if (stale.length)
+    out.push(
+      reason('security-exception-stale', 'info', { count: stale.length, ids: idList(stale) }),
+    );
+  const unverifiable = byState('unverifiable');
+  if (unverifiable.length)
+    out.push(
+      reason('security-exception-unverifiable', 'info', {
+        count: unverifiable.length,
+        ids: idList(unverifiable),
+      }),
+    );
+  return out;
 }
 
 export function evaluateSecurity(
@@ -376,6 +436,7 @@ export function evaluateSecurity(
       reasons.push(reason('required-control-stale', 'amber', { control: c.control }));
     }
   }
+  reasons.push(...riskReasons(input, policies));
   if (s.incompleteCoverageIsAmber && input.coverage.status !== 'green') {
     reasons.push(
       reason('coverage-incomplete', 'amber', { percentage: input.coverage.percentage ?? '' }),

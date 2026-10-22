@@ -7,7 +7,9 @@
 function openSection(id: string): void {
   if (!id) return;
   const el = document.getElementById(id);
-  if (el instanceof HTMLDetailsElement) el.open = true;
+  // A target inside a collapsed section (such as #exceptions) opens that section.
+  const section = el instanceof HTMLDetailsElement ? el : (el?.closest('details') ?? null);
+  if (section) section.open = true;
 }
 
 const fromHash = () => openSection(decodeURIComponent(location.hash.slice(1)));

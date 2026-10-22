@@ -91,8 +91,8 @@ describe('workflow issues', () => {
     expect(sortProjectsForWorkflows(ALL).map((p) => p.project.id)).toEqual([
       'project-beta',
       'project-gamma',
-      'project-alpha',
       'platform',
+      'project-alpha',
     ]);
   });
 

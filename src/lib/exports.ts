@@ -1,9 +1,10 @@
-import type {
-  ControlStatus,
-  HistoryFile,
-  ProjectSnapshot,
-  ProjectSummary,
-  SeverityCounts,
+import {
+  countsAsOpen,
+  type ControlStatus,
+  type HistoryFile,
+  type ProjectSnapshot,
+  type ProjectSummary,
+  type SeverityCounts,
 } from '@model/index';
 import { NA, toCsv, type CsvValue } from './csv';
 import type { SiteData } from './data';
@@ -51,6 +52,11 @@ export const PORTFOLIO_HEADERS: readonly string[] = [
   'controls_passed',
   'controls_failed',
   'controls_unknown',
+  // Risk governance (v0.9.0), appended so existing positions stay stable.
+  'overdue',
+  'overdue_critical_high',
+  'accepted',
+  'exception_issues',
 ];
 
 export const FINDINGS_HEADERS: readonly string[] = [
@@ -64,6 +70,8 @@ export const FINDINGS_HEADERS: readonly string[] = [
   'open_informational',
   'open_unknown',
   'sources_complete',
+  'overdue',
+  'accepted',
 ];
 
 export const VERSIONS_HEADERS: readonly string[] = [
@@ -126,6 +134,10 @@ export function portfolioRows(data: SiteData, history: HistoryFile | null): CsvV
       before ? before.score : NA,
       before && previous ? previous.collectedAt : NA,
       ...controlCounts(s),
+      s.risk.overdue,
+      s.risk.overdueCriticalHigh,
+      s.risk.accepted,
+      s.risk.exceptionIssues,
     ];
   });
 }
@@ -161,6 +173,13 @@ export function findingsRows(data: SiteData): CsvValue[][] {
   return data.projects.flatMap((p) =>
     p.securityControls.map((rc) => {
       const { counts, complete } = repositoryCounts(rc.controls);
+      // Overdue needs SLAs on and a readable alert source; unknown is never 0.
+      const measured = p.securityHealth.remediation.enabled && counts.critical !== null;
+      const own = p.securityFindings.filter((f) => f.repository === rc.repository);
+      const overdue = own.filter((f) => countsAsOpen(f) && f.sla?.state === 'overdue').length;
+      const accepted = own.filter(
+        (f) => f.status === 'open' && f.exception?.state === 'active',
+      ).length;
       return [
         p.project.id,
         rc.componentId,
@@ -172,6 +191,8 @@ export function findingsRows(data: SiteData): CsvValue[][] {
         counts.informational,
         counts.unknown,
         complete,
+        measured ? overdue : null,
+        counts.critical !== null ? accepted : null,
       ];
     }),
   );

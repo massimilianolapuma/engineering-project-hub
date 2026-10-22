@@ -45,6 +45,30 @@ describe('i18n', () => {
     expect(useI18n('en').errors(1)).toBe('1 collection error');
     expect(useI18n('it').errors(3)).toBe('3 errori di raccolta');
   });
+  it('agrees in number for the risk reasons (accepted findings, SLA classes)', () => {
+    const accepted = (count: number) =>
+      ({ code: 'security-exception-active', level: 'info', params: { count } }) as const;
+    expect(useI18n('en').reason(accepted(1))).toBe('1 finding accepted by a security exception');
+    expect(useI18n('en').reason(accepted(2))).toBe('2 findings accepted by security exceptions');
+    expect(useI18n('it').reason(accepted(1))).toBe(
+      '1 problema accettato con eccezione di sicurezza',
+    );
+    expect(useI18n('it').reason(accepted(2))).toBe(
+      '2 problemi accettati con eccezioni di sicurezza',
+    );
+    const overdue = (count: number) =>
+      ({
+        code: 'sla-overdue',
+        level: 'amber',
+        params: { count, severity: 'high', days: 30 },
+      }) as const;
+    expect(useI18n('it').reason(overdue(1))).toBe(
+      '1 alert aperto oltre lo SLA di 30 giorni (alto)',
+    );
+    expect(useI18n('it').reason(overdue(2))).toBe(
+      '2 alert aperti oltre lo SLA di 30 giorni (alti)',
+    );
+  });
   it('formats percentages with the locale decimal separator', () => {
     expect(useI18n('it').percent(67.2)).toBe('67,2%');
     expect(useI18n('en').percent(67.2)).toBe('67.2%');

@@ -518,6 +518,7 @@ describe('appendHistory', () => {
       countsComplete: false,
       collectionErrors: 3,
       controls: { passed: 6, failed: 0, unknown: 0 },
+      risk: { overdue: 0, accepted: 0 },
     });
   });
 
@@ -601,6 +602,15 @@ describe('computeChanges', () => {
     source: 'github-dependabot' as const,
     htmlUrl: null,
   };
+  /** Alpha's other open high alert in the golden run (accepted by an exception, still open). */
+  const alpha15 = {
+    id: 'example-org/project-alpha-backend#code-scanning#15',
+    severity: 'high' as const,
+    componentId: 'backend',
+    repository: 'example-org/project-alpha-backend',
+    source: 'github-code-scanning' as const,
+    htmlUrl: null,
+  };
   const versionsNow = [
     { kind: 'coordinator' as const, componentId: null, version: '1.4.0' },
     { kind: 'component' as const, componentId: 'backend', version: '1.4.0' },
@@ -638,15 +648,19 @@ describe('computeChanges', () => {
   it('new high alert when its pair was readable before', () => {
     const c = changesFor(previousOf(alphaNow(), { findings: [] }));
     const p = alphaOf(c);
-    expect(p.newFindings.map((f) => f.id)).toEqual([dependabot7.id]);
-    expect(p.newFindings[0]!.title).toContain('Prototype pollution');
+    // Accepted by an exception on GitHub's side it is still open: new when not in the baseline.
+    expect(p.newFindings.map((f) => f.id)).toEqual([alpha15.id, dependabot7.id]);
+    expect(p.newFindings[1]!.title).toContain('Prototype pollution');
     expect(p.findingsPartial).toBe(false);
-    expect(c.totals.newFindings).toBe(1);
+    expect(c.totals.newFindings).toBe(2);
   });
 
   it('not new when its pair was unreadable in the previous run; findingsPartial true', () => {
     const c = changesFor(
-      previousOf(alphaNow(), { unreadable: ['example-org/project-alpha-frontend|dependabot'] }),
+      previousOf(alphaNow(), {
+        findings: [alpha15],
+        unreadable: ['example-org/project-alpha-frontend|dependabot'],
+      }),
     );
     expect(alphaOf(c).newFindings).toEqual([]);
     expect(alphaOf(c).findingsPartial).toBe(true);
@@ -654,10 +668,148 @@ describe('computeChanges', () => {
 
   it('resolved when absent now and its pair readable now', () => {
     const gone = { ...dependabot7, id: 'example-org/project-alpha-backend#code-scanning#9' };
-    const c = changesFor(previousOf(alphaNow(), { findings: [dependabot7, gone] }));
+    const c = changesFor(previousOf(alphaNow(), { findings: [alpha15, dependabot7, gone] }));
     expect(alphaOf(c).resolvedFindings.map((f) => f.id)).toEqual([gone.id]);
     expect(alphaOf(c).newFindings).toEqual([]);
     expect(c.totals.resolvedFindings).toBe(1);
+  });
+
+  describe('risk lists (newly overdue, expired exceptions)', () => {
+    const OVERDUE = (dueAt: string) => ({
+      state: 'overdue' as const,
+      days: 30,
+      dueAt,
+      ageDays: 31,
+      overdueDays: 0,
+    });
+    const alphaBaseline = { findings: [alpha15, dependabot7] };
+    const withSla =
+      (
+        id: string,
+        sla: ProjectSnapshotFinding['sla'],
+        exception: ProjectSnapshotFinding['exception'] = null,
+      ) =>
+      (r: ReturnType<typeof runOf>) => {
+        const f = r.project.securityFindings.find((x) => x.id === id)!;
+        f.sla = sla;
+        f.exception = exception;
+      };
+    type ProjectSnapshotFinding = ProjectSnapshot['securityFindings'][number];
+
+    it('a counted high with dueAt 2026-01-14T18:00:00.000Z is listed in newlyOverdue', () => {
+      const c = changesFor(
+        previousOf(alphaNow(), alphaBaseline),
+        withSla(dependabot7.id, OVERDUE('2026-01-14T18:00:00.000Z')),
+      );
+      expect(alphaOf(c).newlyOverdue).toEqual([
+        {
+          id: dependabot7.id,
+          severity: 'high',
+          componentId: 'frontend',
+          repository: 'example-org/project-alpha-frontend',
+          dueAt: '2026-01-14T18:00:00.000Z',
+          htmlUrl: expect.anything(),
+        },
+      ]);
+      expect(c.totals.newlyOverdue).toBe(1);
+    });
+
+    it('dueAt equal to the previous collection is not listed; dueAt equal to now is listed', () => {
+      const before = changesFor(
+        previousOf(alphaNow(), alphaBaseline),
+        withSla(dependabot7.id, OVERDUE('2026-01-14T12:00:00.000Z')),
+      );
+      expect(alphaOf(before).newlyOverdue).toEqual([]);
+      const at = changesFor(
+        previousOf(alphaNow(), alphaBaseline),
+        withSla(dependabot7.id, OVERDUE('2026-01-15T12:00:00.000Z')),
+      );
+      expect(alphaOf(at).newlyOverdue?.map((f) => f.id)).toEqual([dependabot7.id]);
+    });
+
+    it('a paused (accepted) finding and a medium are not listed', () => {
+      const paused = changesFor(
+        previousOf(alphaNow(), alphaBaseline),
+        withSla(
+          alpha15.id,
+          { ...OVERDUE('2026-01-14T18:00:00.000Z'), state: 'paused' },
+          { id: 'EXC-ALPHA-001', state: 'active', expires: '2026-02-04' },
+        ),
+      );
+      expect(alphaOf(paused).newlyOverdue).toEqual([]);
+      const medium = changesFor(previousOf(alphaNow(), alphaBaseline), (r) => {
+        const f = r.project.securityFindings.find((x) => x.id === dependabot7.id)!;
+        f.severity = 'medium';
+        f.sla = OVERDUE('2026-01-14T18:00:00.000Z');
+      });
+      expect(alphaOf(medium).newlyOverdue).toEqual([]);
+    });
+
+    it('sorts by dueAt, then id', () => {
+      const c = changesFor(previousOf(alphaNow(), alphaBaseline), (r) => {
+        withSla(dependabot7.id, OVERDUE('2026-01-15T00:00:00.000Z'))(r);
+        withSla(alpha15.id, OVERDUE('2026-01-14T13:00:00.000Z'))(r);
+      });
+      expect(alphaOf(c).newlyOverdue?.map((f) => f.id)).toEqual([alpha15.id, dependabot7.id]);
+    });
+
+    const exceptionExpiring = (expires: string) => (r: ReturnType<typeof runOf>) => {
+      r.project.securityExceptions[0] = {
+        ...r.project.securityExceptions[0]!,
+        id: 'EXC-ALPHA-001',
+        expires,
+      };
+    };
+
+    it('an exception with expires "2026-01-14" (instant 2026-01-15T00:00:00.000Z) is listed in expiredExceptions; "2026-01-13" is not', () => {
+      const c = changesFor(previousOf(alphaNow(), alphaBaseline), exceptionExpiring('2026-01-14'));
+      expect(alphaOf(c).expiredExceptions).toEqual([
+        { id: 'EXC-ALPHA-001', repository: expect.any(String), expires: '2026-01-14' },
+      ]);
+      expect(c.totals.expiredExceptions).toBe(1);
+      const earlier = changesFor(
+        previousOf(alphaNow(), alphaBaseline),
+        exceptionExpiring('2026-01-13'),
+      );
+      expect(alphaOf(earlier).expiredExceptions).toEqual([]);
+    });
+
+    it('restore-failed → empty lists and zero totals for every project', () => {
+      const r = runOf('project-alpha');
+      withSla(dependabot7.id, OVERDUE('2026-01-14T18:00:00.000Z'))(r);
+      exceptionExpiring('2026-01-14')(r);
+      const c = computeChanges({ state: 'restore-failed', file: null }, r.index, [r.project]);
+      expect(c.basis.state).toBe('restore-failed');
+      expect(alphaOf(c).newlyOverdue).toEqual([]);
+      expect(alphaOf(c).expiredExceptions).toEqual([]);
+      expect(c.totals.newlyOverdue).toBe(0);
+      expect(c.totals.expiredExceptions).toBe(0);
+    });
+
+    it('an alert open in the baseline that is now accepted is not in resolvedFindings', () => {
+      const c = changesFor(
+        previousOf(alphaNow(), alphaBaseline),
+        withSla(
+          alpha15.id,
+          { ...OVERDUE('2026-01-20T00:00:00.000Z'), state: 'paused' },
+          { id: 'EXC-ALPHA-001', state: 'active', expires: '2026-02-04' },
+        ),
+      );
+      expect(alphaOf(c).resolvedFindings).toEqual([]);
+      expect(alphaOf(c).newFindings).toEqual([]);
+    });
+
+    it('an alert new on GitHub and immediately accepted by a rule exception is listed in newFindings', () => {
+      const c = changesFor(
+        previousOf(alphaNow(), { findings: [dependabot7] }),
+        withSla(
+          alpha15.id,
+          { ...OVERDUE('2026-02-20T00:00:00.000Z'), state: 'paused' },
+          { id: 'EXC-ALPHA-001', state: 'active', expires: '2026-02-04' },
+        ),
+      );
+      expect(alphaOf(c).newFindings.map((f) => f.id)).toEqual([alpha15.id]);
+    });
   });
 
   it('not resolved when its pair is unreadable now; findingsPartial true', () => {
@@ -703,7 +855,7 @@ describe('computeChanges', () => {
   it('a component added to the catalog: its open alerts are not new; findingsPartial true', () => {
     const c = changesFor(
       previousOf(alphaNow(), {
-        findings: [],
+        findings: [alpha15],
         repositories: alphaRepos.filter((r) => r !== dependabot7.repository),
       }),
     );
@@ -713,9 +865,12 @@ describe('computeChanges', () => {
   });
 
   it('an alert still open at a lower severity is not resolved', () => {
-    const c = changesFor(previousOf(alphaNow(), { findings: [dependabot7] }), ({ project }) => {
-      project.securityFindings.find((f) => f.id === dependabot7.id)!.severity = 'medium';
-    });
+    const c = changesFor(
+      previousOf(alphaNow(), { findings: [alpha15, dependabot7] }),
+      ({ project }) => {
+        project.securityFindings.find((f) => f.id === dependabot7.id)!.severity = 'medium';
+      },
+    );
     expect(alphaOf(c).resolvedFindings).toEqual([]);
     expect(c.totals.resolvedFindings).toBe(0);
   });
@@ -767,14 +922,17 @@ describe('computeChanges', () => {
   });
 
   it('61 new findings → 50 listed, findingsTruncated 11, totals.newFindings 61', () => {
-    const c = changesFor(previousOf(alphaNow(), { findings: [dependabot7] }), ({ project }) => {
-      const template = project.securityFindings.find((f) => f.id === dependabot7.id)!;
-      for (let n = 100; n < 161; n++)
-        project.securityFindings.push({
-          ...template,
-          id: `example-org/project-alpha-frontend#dependabot#${n}`,
-        });
-    });
+    const c = changesFor(
+      previousOf(alphaNow(), { findings: [alpha15, dependabot7] }),
+      ({ project }) => {
+        const template = project.securityFindings.find((f) => f.id === dependabot7.id)!;
+        for (let n = 100; n < 161; n++)
+          project.securityFindings.push({
+            ...template,
+            id: `example-org/project-alpha-frontend#dependabot#${n}`,
+          });
+      },
+    );
     expect(alphaOf(c).newFindings).toHaveLength(50);
     expect(alphaOf(c).findingsTruncated).toBe(11);
     expect(c.totals.newFindings).toBe(61);
@@ -939,6 +1097,8 @@ describe('computeChanges', () => {
       versionMoves: 0,
       newErrors: 0,
       checkChanges: 0,
+      newlyOverdue: 0,
+      expiredExceptions: 0,
     });
   });
 
@@ -954,6 +1114,8 @@ describe('computeChanges', () => {
         versionMoves: 0,
         newErrors: 0,
         checkChanges: 0,
+        newlyOverdue: 0,
+        expiredExceptions: 0,
       });
       expect(alphaOf(c)).toMatchObject({ added: false, previous: null, newFindings: [] });
     },
