@@ -8,7 +8,9 @@ import {
   BranchRuleTypeSchema,
   CapabilitySchema,
   ComponentTypeSchema,
+  ControlEvidenceSchema,
   ControlIdSchema,
+  ControlSourceSchema,
   ControlStateSchema,
   DataSourceSchema,
   EcosystemSchema,
@@ -335,6 +337,10 @@ export const ControlStatusSchema = z
     lastScanAt: isoDate.nullable(),
     counts: SeverityCountsSchema.nullable(),
     reportUrl: httpsUrl.nullable(),
+    /** Winning source of the control (null: nothing answered, or not applicable). */
+    source: ControlSourceSchema.nullable(),
+    /** How strong the evidence is (null when no source gave a definitive answer). */
+    evidence: ControlEvidenceSchema.nullable(),
   })
   .strict();
 export type ControlStatus = z.infer<typeof ControlStatusSchema>;

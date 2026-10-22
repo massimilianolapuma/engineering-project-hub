@@ -105,7 +105,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": null
         },
         {
           "control": "secretScanning",
@@ -114,7 +116,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": null
         },
         {
           "control": "dependabot",
@@ -123,7 +127,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": null
         },
         {
           "control": "containerScanning",
@@ -132,7 +138,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "status-file",
+          "evidence": null
         },
         {
           "control": "iacScanning",
@@ -141,7 +149,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "status-file",
+          "evidence": null
         },
         {
           "control": "dast",
@@ -150,7 +160,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "status-file",
+          "evidence": null
         },
         {
           "control": "sbom",
@@ -159,7 +171,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "status-file",
+          "evidence": null
         },
         {
           "control": "artifactSignature",
@@ -168,7 +182,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "status-file",
+          "evidence": null
         }
       ]
     },
@@ -183,7 +199,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": null
         },
         {
           "control": "secretScanning",
@@ -192,7 +210,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": null
         },
         {
           "control": "dependabot",
@@ -201,7 +221,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": null
         },
         {
           "control": "containerScanning",
@@ -210,7 +232,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "status-file",
+          "evidence": null
         },
         {
           "control": "iacScanning",
@@ -219,7 +243,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "status-file",
+          "evidence": null
         },
         {
           "control": "dast",
@@ -228,7 +254,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "status-file",
+          "evidence": null
         },
         {
           "control": "sbom",
@@ -237,7 +265,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "status-file",
+          "evidence": null
         },
         {
           "control": "artifactSignature",
@@ -246,7 +276,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "status-file",
+          "evidence": null
         }
       ]
     }

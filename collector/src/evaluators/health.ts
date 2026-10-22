@@ -18,6 +18,7 @@ import type {
   SecurityFinding,
   SeverityCounts,
   Submodule,
+  SupplyChain,
   WorkflowStatus,
 } from '@model/index';
 import { SLA_CLASSES } from '../policy/sla';
@@ -327,6 +328,8 @@ export interface SecurityInputs {
   exceptions: SecurityException[];
   /** Findings with an active exception (counted apart from the open counts). */
   acceptedCount: number;
+  /** Supply chain section: its unsigned artifacts and flagged licenses add informative reasons. */
+  supplyChain?: SupplyChain | null;
 }
 
 /** "A,B,C" for up to 10 ids, then " +N" for the rest. */
@@ -393,6 +396,42 @@ function riskReasons(input: SecurityInputs, policies: Policies): Reason[] {
   return out;
 }
 
+/** Supply chain reasons (spec 5.8): levels come from policies.supplyChain.levels. */
+function supplyChainReasons(sc: SupplyChain | null | undefined, policies: Policies): Reason[] {
+  if (!sc?.enabled) return [];
+  const out: Reason[] = [];
+  const names = (repos: string[]) => idList([...new Set(repos)]);
+  const unsigned = sc.repositories.map((r) => {
+    const images = r.images.filter(
+      (i) =>
+        i.signature === 'missing' || i.signature === 'not-verified' || i.signature === 'failed',
+    ).length;
+    const a = r.attestations;
+    const assets =
+      (a.state === 'available' || a.state === 'none') && a.withProvenance !== null
+        ? Math.max(0, a.checked - a.withProvenance)
+        : 0;
+    return { repository: r.repository, count: images + assets };
+  });
+  const unsignedCount = unsigned.reduce((sum, u) => sum + u.count, 0);
+  if (unsignedCount > 0)
+    out.push(
+      reason('supply-chain-unsigned-artifact', policies.supplyChain.levels.unsignedArtifact, {
+        count: unsignedCount,
+        repositories: names(unsigned.filter((u) => u.count > 0).map((u) => u.repository)),
+      }),
+    );
+  const flagged = sc.repositories.filter((r) => (r.sbom.flagged ?? 0) > 0);
+  if ((sc.totals.flagged ?? 0) > 0)
+    out.push(
+      reason('supply-chain-flagged-license', policies.supplyChain.levels.flaggedLicense, {
+        count: sc.totals.flagged ?? 0,
+        repositories: names(flagged.map((r) => r.repository)),
+      }),
+    );
+  return out;
+}
+
 export function evaluateSecurity(
   input: SecurityInputs,
   openCounts: SeverityCounts,
@@ -437,6 +476,7 @@ export function evaluateSecurity(
     }
   }
   reasons.push(...riskReasons(input, policies));
+  reasons.push(...supplyChainReasons(input.supplyChain, policies));
   if (s.incompleteCoverageIsAmber && input.coverage.status !== 'green') {
     reasons.push(
       reason('coverage-incomplete', 'amber', { percentage: input.coverage.percentage ?? '' }),

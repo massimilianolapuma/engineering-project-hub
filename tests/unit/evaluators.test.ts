@@ -15,6 +15,7 @@ import {
   evaluateVersion,
   type SecurityInputs,
 } from '../../collector/src/evaluators/health';
+import type { SupplyChain } from '@model/index';
 import { emptyCounts } from '../../collector/src/normalizers/security-model';
 import { hoursAgo, NOW, policies, remediationSummary, workflow } from '../helpers/factories';
 
@@ -96,6 +97,8 @@ const controls = (states: Record<string, string>, required: string[]): Repositor
       lastScanAt: null,
       counts: null,
       reportUrl: null,
+      source: null,
+      evidence: null,
     })),
   },
 ];
@@ -644,5 +647,136 @@ describe('overall health', () => {
       'dimension-red:delivery',
       'dimension-amber:coverage',
     ]);
+  });
+});
+
+describe('security: supply chain reasons', () => {
+  const entry = (over: Partial<SupplyChain['repositories'][number]> = {}) =>
+    ({
+      componentIds: ['backend'],
+      repository: 'example-org/backend',
+      sbom: {
+        state: 'available',
+        source: 'dependency-graph',
+        format: 'spdx',
+        specVersion: '2.3',
+        generatedAt: null,
+        packages: 10,
+        withoutLicense: 0,
+        flagged: 0,
+        licenses: [],
+        otherLicenses: 0,
+        ecosystems: [],
+      },
+      attestations: {
+        state: 'none',
+        release: null,
+        checked: 0,
+        withProvenance: null,
+        withSbom: null,
+        withoutDigest: 0,
+      },
+      images: [],
+      tools: [],
+      otherTools: [],
+      summary: { state: 'off', generatedAt: null, commitSha: null, runUrl: null },
+      ...over,
+    }) as SupplyChain['repositories'][number];
+  const chain = (
+    repositories: SupplyChain['repositories'],
+    totals: Partial<SupplyChain['totals']> = {},
+  ): SupplyChain => ({
+    enabled: true,
+    collectedAt: NOW.toISOString(),
+    totals: {
+      repositories: repositories.length,
+      sbomAvailable: 1,
+      signedImages: 0,
+      unsignedImages: 0,
+      attestedAssets: 0,
+      flagged: 0,
+      ...totals,
+    },
+    repositories,
+  });
+  const unsignedImage = {
+    componentId: 'backend',
+    source: 'supply-chain-summary' as const,
+    name: null,
+    tag: null,
+    digest: null,
+    signature: 'missing' as const,
+    provenance: 'unknown' as const,
+    scan: null,
+  };
+  const unsigned = chain([entry({ images: [unsignedImage] })], { unsignedImages: 1 });
+
+  it('defaults: unsigned artifacts add supply-chain-unsigned-artifact at info and the status is unchanged', () => {
+    const r = evaluateSecurity(inputs({ supplyChain: unsigned }), counts({}), 0, P);
+    expect(r.status).toBe('green');
+    expect(r.reasons).toContainEqual({
+      code: 'supply-chain-unsigned-artifact',
+      level: 'info',
+      params: { count: 1, repositories: 'example-org/backend' },
+    });
+  });
+
+  it('release assets checked without provenance count as unsigned too', () => {
+    const assets = chain([
+      entry({
+        attestations: {
+          state: 'available',
+          release: 'v1',
+          checked: 3,
+          withProvenance: 1,
+          withSbom: 0,
+          withoutDigest: 0,
+        },
+      }),
+    ]);
+    const r = evaluateSecurity(inputs({ supplyChain: assets }), counts({}), 0, P);
+    expect(
+      r.reasons.find((x) => x.code === 'supply-chain-unsigned-artifact')?.params,
+    ).toMatchObject({ count: 2 });
+  });
+
+  it('levels.unsignedArtifact amber turns a green Security amber', () => {
+    const strict = policies((p) => (p.supplyChain.levels.unsignedArtifact = 'amber'));
+    const r = evaluateSecurity(inputs({ supplyChain: unsigned }), counts({}), 0, strict);
+    expect(r.status).toBe('amber');
+  });
+
+  it('flagged 2 → supply-chain-flagged-license info with count 2, placed before coverage-incomplete', () => {
+    const withFlag = entry({ repository: 'example-org/mono' });
+    withFlag.sbom.flagged = 2;
+    const flagged = chain([withFlag], { flagged: 2 });
+    const r = evaluateSecurity(
+      inputs({
+        supplyChain: flagged,
+        coverage: coverage({ status: 'amber', percentage: 80 }),
+      }),
+      counts({}),
+      0,
+      P,
+    );
+    const codes = r.reasons.map((x) => x.code);
+    expect(r.reasons.find((x) => x.code === 'supply-chain-flagged-license')).toEqual({
+      code: 'supply-chain-flagged-license',
+      level: 'info',
+      params: { count: 2, repositories: 'example-org/mono' },
+    });
+    expect(codes.indexOf('supply-chain-flagged-license')).toBeLessThan(
+      codes.indexOf('coverage-incomplete'),
+    );
+  });
+
+  it('nothing unsigned and nothing flagged adds no reason; a missing section adds none either', () => {
+    const clean = chain([entry()]);
+    for (const supplyChain of [clean, null, undefined]) {
+      const codes = evaluateSecurity(inputs({ supplyChain }), counts({}), 0, P).reasons.map(
+        (x) => x.code,
+      );
+      expect(codes).toEqual(['no-open-alerts']);
+    }
   });
 });

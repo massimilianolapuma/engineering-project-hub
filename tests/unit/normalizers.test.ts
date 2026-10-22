@@ -203,6 +203,52 @@ describe('security findings: match keys and exceptions', () => {
     expect(JSON.stringify(findings[0]!.finding)).not.toContain('py/flask-debug');
   });
 
+  it('a Checkov alert gets category iac, a Trivy alert container, a ZAP alert dast; a CodeQL alert keeps code', () => {
+    const named = (n: number, toolName: string, category: string | null = null) => ({
+      ...alert,
+      number: n,
+      toolName,
+      category,
+    });
+    const data = repoData('project-beta-api', {
+      codeScanning: ok([
+        named(1, 'Checkov', 'checkov-iac'),
+        named(2, 'Trivy', 'trivy-image'),
+        named(3, 'ZAP', 'zap-baseline'),
+        named(4, 'CodeQL'),
+      ]),
+    });
+    const { findings } = toFindings(ctx, data);
+    expect(findings.map((m) => [m.finding.tool, m.finding.category])).toEqual([
+      ['Checkov', 'iac'],
+      ['Trivy', 'container'],
+      ['ZAP', 'dast'],
+      ['CodeQL', 'code'],
+    ]);
+  });
+
+  it('a tool rule with a category only maps alerts of that category; supplyChain.enabled false maps nothing', () => {
+    const rules = policies((p) => {
+      p.supplyChain.toolControls.iacScanning = [{ tool: 'Trivy', category: 'trivy-config' }];
+      p.supplyChain.toolControls.containerScanning = [{ tool: 'Trivy', category: 'trivy-image' }];
+    });
+    const trivy = (n: number, category: string) => ({
+      ...alert,
+      number: n,
+      toolName: 'Trivy',
+      category,
+    });
+    const data = repoData('project-beta-api', {
+      codeScanning: ok([trivy(1, 'trivy-config-k8s'), trivy(2, 'trivy-image'), trivy(3, 'other')]),
+    });
+    const mapped = toFindings({ ...ctx, policies: rules }, data).findings;
+    expect(mapped.map((m) => m.finding.category)).toEqual(['iac', 'container', 'code']);
+    const off = policies((p) => (p.supplyChain.enabled = false));
+    expect(
+      toFindings({ ...ctx, policies: off }, data).findings.map((m) => m.finding.category),
+    ).toEqual(['code', 'code', 'code']);
+  });
+
   it('keeps the advisory ids as match keys (GHSA and CVE) for Dependabot', () => {
     const data = repoData('project-beta-api', {
       repo: ok(repoDto('project-beta-api', 'private')),

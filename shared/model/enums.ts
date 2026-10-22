@@ -8,6 +8,7 @@ import { z } from 'zod';
 // 1.5: repository controls (repositoryControls, summary.repositoryControls, repositoryRules capability), discovery hints.
 // 1.6: security exceptions, remediation SLAs (finding exception / sla, securityExceptions, summary risk, run exceptions).
 // 1.7: project teams (project.teams, summary.teams), catalog.json teams result and catalog teams settings.
+// 1.8: supply chain evidence, external providers, deployed environments.
 export const SNAPSHOT_SCHEMA_VERSION = '1.7';
 export const SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS = ['1.7'] as const;
 

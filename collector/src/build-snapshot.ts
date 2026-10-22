@@ -14,7 +14,6 @@ import {
   type ProjectSummary,
   type SecurityException,
   type SecurityFinding,
-  type SeverityCounts,
 } from '@model/index';
 import type { RawProjectData } from './collectors/collect';
 import {
@@ -53,6 +52,7 @@ import {
   type SourceReadability,
 } from './policy/exceptions';
 import { applySla } from './policy/sla';
+import { externalCountsFrom } from './normalizers/supply-chain';
 import {
   countAccepted,
   countOpen,
@@ -208,10 +208,8 @@ export function buildProjectSnapshot(
       (k) => r[k].ok || (!r[k].ok && r[k].error.classification === 'not-configured'),
     ),
   );
-  const external = securityControls
-    .flatMap((rc) => rc.controls)
-    .filter((c) => !NATIVE_CONTROLS.includes(c.control) && c.counts && c.state !== 'not-applicable')
-    .reduce<SeverityCounts>((acc, c) => sumCounts(acc, c.counts!), emptyCounts(null));
+  // Only controls owned by Harbor or the status file add counts: code-scanning alerts are findings.
+  const external = externalCountsFrom(securityControls);
   const githubCounts = anyGitHubSourceReadable ? countOpen(findings) : emptyCounts(null);
   const openCounts = sumCounts(githubCounts, external);
   const anySourceReadable = anyGitHubSourceReadable || external.critical !== null;
@@ -255,9 +253,10 @@ export function buildProjectSnapshot(
     byCategory[f.category]++;
     bySource[f.source]++;
   }
-  // External scanners report counts per control, not individual findings.
+  // External scanners (status file, Harbor) report counts per control, not individual findings.
   for (const c of securityControls.flatMap((rc) => rc.controls)) {
     if (!c.counts || NATIVE_CONTROLS.includes(c.control) || c.state === 'not-applicable') continue;
+    if (c.source !== 'harbor' && c.source !== 'status-file') continue;
     const total =
       (c.counts.critical ?? 0) +
       (c.counts.high ?? 0) +

@@ -468,7 +468,9 @@
             "informational": 0,
             "unknown": 0
           },
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": "reported"
         },
         {
           "control": "secretScanning",
@@ -484,7 +486,9 @@
             "informational": 0,
             "unknown": 0
           },
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": "reported"
         },
         {
           "control": "dependabot",
@@ -500,7 +504,9 @@
             "informational": 0,
             "unknown": 0
           },
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": "reported"
         },
         {
           "control": "containerScanning",
@@ -509,7 +515,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": null,
+          "evidence": null
         },
         {
           "control": "iacScanning",
@@ -518,7 +526,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": null,
+          "evidence": null
         },
         {
           "control": "dast",
@@ -527,7 +537,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": null,
+          "evidence": null
         },
         {
           "control": "sbom",
@@ -536,7 +548,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": null,
+          "evidence": null
         },
         {
           "control": "artifactSignature",
@@ -545,7 +559,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": null,
+          "evidence": null
         }
       ]
     }
