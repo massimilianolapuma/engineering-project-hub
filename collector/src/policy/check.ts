@@ -1,14 +1,11 @@
 import { access, readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { parse } from 'yaml';
 import {
   countsAsOpen,
   ExceptionEntrySchema,
-  ExceptionsFileSchema,
   PoliciesSchema,
   PolicyCaseSchema,
   type ExceptionEntry,
-  type ExceptionsFile,
   type HealthResult,
   type HealthStatus,
   type Policies,
@@ -21,8 +18,10 @@ import {
   ConfigError,
   formatIssues,
   loadCatalog,
+  loadExceptions,
   parseYamlWith,
   resolveDateTokens,
+  type LoadedExceptions,
 } from '../config/load';
 import {
   evaluateOverall,
@@ -81,6 +80,8 @@ class Report {
   passed = 0;
   failed = 0;
   warnings = 0;
+  /** A usage error (unreadable input the caller named): exit code 2. */
+  usageError = false;
   ok(line: string) {
     this.lines.push(`✔ ${line}`);
   }
@@ -97,7 +98,7 @@ class Report {
       `Summary: ${this.passed} passed, ${this.failed} failed, ${this.warnings} warning(s)`,
     );
     const bad = this.failed > 0 || (failOnWarnings && this.warnings > 0);
-    return { exitCode: bad ? 1 : 0, lines: this.lines };
+    return { exitCode: this.usageError ? 2 : bad ? 1 : 0, lines: this.lines };
   }
 }
 
@@ -115,47 +116,35 @@ function explainPolicies(p: Policies): string[] {
 }
 
 interface ExceptionsResult {
-  file: ExceptionsFile | null;
+  entries: ExceptionEntry[];
   fatal: boolean;
 }
 
+/** The same loader as the collector; errors fail, warnings are reported. */
 async function checkExceptions(
   report: Report,
   file: string,
-  policies: Policies,
-  repositories: ReadonlySet<string>,
-  opts: PolicyCheckOptions,
+  explicit: boolean,
+  ctx: Parameters<typeof loadExceptions>[1],
 ): Promise<ExceptionsResult> {
-  let text: string;
-  try {
-    text = await readFile(file, 'utf8');
-  } catch {
-    report.ok(`${file}: 0 exception(s) (file not present)`);
-    return { file: null, fatal: false };
+  if (explicit && !(await exists(file))) {
+    report.usageError = true;
+    report.fail(`${file}: cannot read (--exceptions names a file that does not exist)`);
+    return { entries: [], fatal: true };
   }
-  let raw: unknown;
+  let loaded: LoadedExceptions;
   try {
-    raw = parse(text, { prettyErrors: true });
+    loaded = await loadExceptions(file, ctx);
   } catch (e) {
-    report.fail(`${file}: invalid YAML: ${(e as Error).message.split('\n')[0]}`);
-    return { file: null, fatal: true };
+    if (!(e instanceof ConfigError)) throw e;
+    const issues = e.issues.length ? e.issues : [e.message.replace(/\n\s*/g, ' ')];
+    for (const issue of issues) report.fail(`${file}: ${issue}`);
+    return { entries: [], fatal: true };
   }
-  if (opts.allowDateTokens) raw = resolveDateTokens(raw, opts.now);
-  const parsed = ExceptionsFileSchema.safeParse(raw);
-  if (!parsed.success) {
-    for (const issue of formatIssues(parsed.error)) report.fail(`${file}: ${issue}`);
-    return { file: null, fatal: true };
-  }
-  const issues = validateExceptions(parsed.data, policies, repositories, opts.now);
-  let errors = 0;
-  for (const i of issues) {
-    if (i.level === 'error') {
-      errors++;
-      report.fail(`${file}: ${i.path}: ${i.message}`);
-    } else report.warn(`${file}: ${i.path}: ${i.message}`);
-  }
-  if (!errors) report.ok(`${file}: ${parsed.data.exceptions.length} exception(s)`);
-  return { file: parsed.data, fatal: errors > 0 };
+  for (const w of loaded.warnings) report.warn(`${file}: ${w.path}: ${w.message}`);
+  if (!loaded.file) report.ok(`${file}: 0 exception(s) (file not present)`);
+  else report.ok(`${file}: ${loaded.file.exceptions.length} exception(s)`);
+  return { entries: loaded.file?.exceptions ?? [], fatal: false };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -205,9 +194,24 @@ function securityDecision(c: PolicyCase, policies: Policies, now: Date): HealthR
   const resolved = resolveDateTokens({ exceptions: input.exceptions }, now) as {
     exceptions: unknown[];
   };
-  const exceptions: ExceptionEntry[] = resolved.exceptions.map((e) =>
-    ExceptionEntrySchema.parse(e),
-  );
+  const exceptions: ExceptionEntry[] = [];
+  const problems: string[] = [];
+  resolved.exceptions.forEach((e, i) => {
+    const parsed = ExceptionEntrySchema.safeParse(e);
+    if (parsed.success) exceptions.push(parsed.data);
+    else for (const issue of formatIssues(parsed.error)) problems.push(`exceptions[${i}].${issue}`);
+  });
+  // The same checks as the real loader (horizon, ticket host, created in the future), so a
+  // case never "proves" a decision for an exception the loader would reject.
+  const caseRepositories = new Set(exceptions.map((e) => e.repository.toLowerCase()));
+  for (const issue of validateExceptions(
+    { schemaVersion: '1.0', exceptions },
+    policies,
+    caseRepositories,
+    now,
+  ))
+    if (issue.level === 'error') problems.push(`${issue.path}: ${issue.message}`);
+  if (problems.length) throw new Error(problems.join('; '));
   // A complete map (every repository x source in play), because a missing pair would read as
   // readable inside the engine.
   const unreadable = new Set(input.unreadable.map((k) => k.toLowerCase()));
@@ -354,7 +358,9 @@ async function runCases(
       if (c.kind === 'security') result = securityDecision(c, policies, now);
       else ({ result, score } = overallDecision(c, policies));
     } catch (e) {
-      report.fail(`${c.name} — invalid case: ${(e as Error).message.split('\n')[0]}`);
+      report.fail(
+        `${file}: ${c.name} — invalid case: ${(e as Error).message.replace(/\n\s*/g, ' ')}`,
+      );
       continue;
     }
     const label = `${c.name} — ${c.kind === 'security' ? 'Security' : 'Overall'}`;
@@ -512,7 +518,8 @@ async function runSnapshot(
   try {
     indexText = await readFile(join(dir, 'index.json'), 'utf8');
   } catch {
-    report.fail(`${join(dir, 'index.json')}: cannot read`);
+    report.usageError = true;
+    report.fail(`${join(dir, 'index.json')}: cannot read (is --snapshot a snapshot directory?)`);
     return;
   }
   const index = validatePortfolio(indexText);
@@ -567,16 +574,9 @@ export async function runPolicyCheck(
   }
   report.ok(`${policiesFile}: schema ${policies.schemaVersion}`);
 
-  let catalogRepositories: Set<string>;
+  let catalog: Awaited<ReturnType<typeof loadCatalog>>;
   try {
-    const catalog = await loadCatalog(opts.configDir);
-    catalogRepositories = new Set(
-      catalog.projects.flatMap((p) =>
-        [p.coordinator.repository, ...p.components.map((c) => c.repository)].map((r) =>
-          r.toLowerCase(),
-        ),
-      ),
-    );
+    catalog = await loadCatalog(opts.configDir);
   } catch (e) {
     return fail(e);
   }
@@ -585,9 +585,13 @@ export async function runPolicyCheck(
   const exceptions = await checkExceptions(
     report,
     exceptionsFile,
-    policies,
-    catalogRepositories,
-    opts,
+    opts.exceptionsFile !== undefined,
+    {
+      policies,
+      catalog,
+      now: opts.now,
+      allowDateTokens: opts.allowDateTokens ?? false,
+    },
   );
 
   report.lines.push(...explainPolicies(policies));
@@ -597,14 +601,7 @@ export async function runPolicyCheck(
 
   if (opts.snapshotDir) {
     if (exceptions.fatal) report.lines.push('Snapshot skipped: fix the exceptions file first.');
-    else
-      await runSnapshot(
-        report,
-        opts.snapshotDir,
-        exceptions.file?.exceptions ?? [],
-        policies,
-        opts.now,
-      );
+    else await runSnapshot(report, opts.snapshotDir, exceptions.entries, policies, opts.now);
   }
   return report.finish(opts.failOnWarnings ?? false);
 }

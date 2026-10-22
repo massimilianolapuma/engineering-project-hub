@@ -365,7 +365,7 @@ Opzioni:
 | Opzione               | Default                    | Significato                                                               |
 | --------------------- | -------------------------- | ------------------------------------------------------------------------- |
 | `--config <dir>`      | `config`                   | policy, catalogo ed eccezioni da controllare                              |
-| `--exceptions <file>` | `<config>/exceptions.yaml` | un altro file di eccezioni                                                |
+| `--exceptions <file>` | `<config>/exceptions.yaml` | un altro file di eccezioni (un percorso esplicito inesistente = exit 2)   |
 | `--cases <dir>`       | `<config>/policy-cases`    | casi di decisione; directory mancante = avviso "no decision cases"        |
 | `--snapshot <dir>`    | nessuno                    | rivaluta una directory di snapshot esistente, in sola lettura             |
 | `--now <iso>`         | orologio di sistema        | l'istante per gli stati delle eccezioni e la rivalutazione dello snapshot |

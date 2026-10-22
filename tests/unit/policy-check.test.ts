@@ -1,5 +1,13 @@
 import { spawnSync } from 'node:child_process';
-import { cpSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import {
+  cpSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -224,5 +232,66 @@ describe('scripts/policy-check.ts', () => {
       encoding: 'utf8',
     });
     expect(r.status).toBe(2);
+  });
+});
+
+describe('policy:check usage errors and case validation', () => {
+  const caseFile = (created: string, expires: string) => `name: Probe case
+kind: security
+now: '2026-01-15T12:00:00Z'
+security:
+  findings: []
+  exceptions:
+    - id: EXC-CASE-9
+      repository: example-org/platform-mono
+      source: code-scanning
+      match: { alert: 2 }
+      owner: team-platform
+      reason: Synthetic acceptance used only by this probe.
+      created: '${created}'
+      expires: '${expires}'
+expect:
+  status: green
+`;
+  const withCase = (text: string) => {
+    const dir = join(tempDir(), 'cases');
+    cpSync('config/policy-cases', dir, { recursive: true });
+    writeFileSync(join(dir, 'probe.yaml'), text);
+    return dir;
+  };
+
+  it('a case exception beyond exceptions.maxDays fails like the real loader would', async () => {
+    const dir = withCase(caseFile('2020-01-01', '2030-01-01'));
+    const r = await run({ casesDir: dir });
+    expect(r.exitCode).toBe(1);
+    const line = r.lines.find((l) => l.startsWith('✖ ') && l.includes('probe.yaml'));
+    expect(line).toContain('exceptions.maxDays');
+  });
+
+  it('a case with expires before created names the file and the issue, not "["', async () => {
+    const dir = withCase(caseFile('2026-01-10', '2026-01-05'));
+    const r = await run({ casesDir: dir });
+    expect(r.exitCode).toBe(1);
+    const line = r.lines.find((l) => l.startsWith('✖ ') && l.includes('probe.yaml'))!;
+    expect(line).toContain('expires must not be before created');
+    expect(line).not.toMatch(/invalid case: \[$/);
+  });
+
+  it('--snapshot with an unreadable directory is a usage error (exit 2)', async () => {
+    const r = await run({ snapshotDir: join(tempDir(), 'missing') });
+    expect(r.exitCode).toBe(2);
+  });
+
+  it('an explicit --exceptions path that does not exist is a usage error (exit 2)', async () => {
+    const r = await run({ exceptionsFile: join(tempDir(), 'excepctions.yaml') });
+    expect(r.exitCode).toBe(2);
+    expect(r.lines.join('\n')).toContain('excepctions.yaml');
+  });
+
+  it('the default exceptions file may be absent (0 exceptions, exit 0)', async () => {
+    const config = configCopy();
+    rmSync(join(config, 'exceptions.yaml'));
+    const r = await run({ configDir: config });
+    expect(r.exitCode).toBe(0);
   });
 });

@@ -29,7 +29,11 @@ export interface MatchableFinding {
   finding: BaseFinding;
   keys: FindingKeys;
 }
-/** Key "owner/repo|code-scanning" (repository lower-cased on lookup). */
+/**
+ * Key "owner/repo|code-scanning" (the repository is matched case-insensitively). The map must
+ * list every (repository, source) pair in play: a missing pair is read as unreadable, so the
+ * exception on it is "unverifiable" and never silently accepted or stale.
+ */
 export type SourceReadability = Map<string, 'readable' | 'unreadable'>;
 export interface ExceptionIssue {
   level: 'error' | 'warning';
@@ -125,13 +129,10 @@ export function applyExceptions(input: {
 }): { findings: FindingWithException[]; records: SecurityException[] } {
   const { policies, now } = input;
   const today = now.toISOString().slice(0, 10);
-  const readable = (e: ExceptionEntry) => {
-    const wanted = `${e.repository.toLowerCase()}|${e.source}`;
-    for (const [key, state] of input.readability) {
-      if (key.toLowerCase() === wanted) return state === 'readable';
-    }
-    return true;
-  };
+  const states = new Map<string, 'readable' | 'unreadable'>();
+  for (const [key, state] of input.readability) states.set(key.toLowerCase(), state);
+  const readable = (e: ExceptionEntry) =>
+    states.get(`${e.repository.toLowerCase()}|${e.source}`) === 'readable';
 
   /** Candidate exceptions per finding id, with the state they were evaluated to. */
   const carried = new Map<string, { entry: ExceptionEntry; state: 'active' | 'expired' }[]>();

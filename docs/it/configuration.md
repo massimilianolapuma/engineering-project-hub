@@ -594,15 +594,15 @@ npm run policy:check -- --fail-on-warnings             # falliscono anche gli av
 npm run policy:check -- --snapshot public/data         # what-if in sola lettura su uno snapshot
 ```
 
-| Flag                  | Default                    | Significato                                                             |
-| --------------------- | -------------------------- | ----------------------------------------------------------------------- |
-| `--config <dir>`      | `config`                   | policy, catalogo ed eccezioni da controllare                            |
-| `--exceptions <file>` | `<config>/exceptions.yaml` | un altro file di eccezioni                                              |
-| `--cases <dir>`       | `<config>/policy-cases`    | casi di decisione; una cartella mancante è l'avviso "no decision cases" |
-| `--snapshot <dir>`    | nessuno                    | rivaluta una cartella di snapshot esistente, in sola lettura            |
-| `--now <iso>`         | orologio di sistema        | l'istante per gli stati delle eccezioni e la rivalutazione              |
-| `--fail-on-warnings`  | spento                     | gli avvisi fanno uscire con codice 1                                    |
-| `--allow-date-tokens` | spento                     | accetta token `@now±N` nel file delle eccezioni (solo fixture mock)     |
+| Flag                  | Default                    | Significato                                                                    |
+| --------------------- | -------------------------- | ------------------------------------------------------------------------------ |
+| `--config <dir>`      | `config`                   | policy, catalogo ed eccezioni da controllare                                   |
+| `--exceptions <file>` | `<config>/exceptions.yaml` | un altro file di eccezioni (un percorso inesistente è un errore d'uso, exit 2) |
+| `--cases <dir>`       | `<config>/policy-cases`    | casi di decisione; una cartella mancante è l'avviso "no decision cases"        |
+| `--snapshot <dir>`    | nessuno                    | rivaluta una cartella di snapshot esistente, in sola lettura                   |
+| `--now <iso>`         | orologio di sistema        | l'istante per gli stati delle eccezioni e la rivalutazione                     |
+| `--fail-on-warnings`  | spento                     | gli avvisi fanno uscire con codice 1                                           |
+| `--allow-date-tokens` | spento                     | accetta token `@now±N` nel file delle eccezioni (solo fixture mock)            |
 
 Codici di uscita: 0 valido e ogni caso superato, 1 un errore di validazione, un caso fallito o
 (con `--fail-on-warnings`) un avviso, 2 un errore d'uso. L'output è solo in inglese, come i log

@@ -362,14 +362,14 @@ RunMetadataSchema gains:
 
 Flags:
 
-| Flag                  | Default                    | Meaning                                                         |
-| --------------------- | -------------------------- | --------------------------------------------------------------- |
-| `--config <dir>`      | `config`                   | policies, catalog and exceptions to check                       |
-| `--exceptions <file>` | `<config>/exceptions.yaml` | another exceptions file                                         |
-| `--cases <dir>`       | `<config>/policy-cases`    | decision cases; missing directory = warning "no decision cases" |
-| `--snapshot <dir>`    | none                       | re-evaluate an existing snapshot directory, read-only           |
-| `--now <iso>`         | system clock               | the time for exception states and the snapshot re-evaluation    |
-| `--fail-on-warnings`  | off                        | warnings make the exit code 1                                   |
+| Flag                  | Default                    | Meaning                                                                 |
+| --------------------- | -------------------------- | ----------------------------------------------------------------------- |
+| `--config <dir>`      | `config`                   | policies, catalog and exceptions to check                               |
+| `--exceptions <file>` | `<config>/exceptions.yaml` | another exceptions file (an explicit path that does not exist = exit 2) |
+| `--cases <dir>`       | `<config>/policy-cases`    | decision cases; missing directory = warning "no decision cases"         |
+| `--snapshot <dir>`    | none                       | re-evaluate an existing snapshot directory, read-only                   |
+| `--now <iso>`         | system clock               | the time for exception states and the snapshot re-evaluation            |
+| `--fail-on-warnings`  | off                        | warnings make the exit code 1                                           |
 
 Steps:
 

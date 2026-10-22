@@ -71,9 +71,26 @@ function finding(
   };
 }
 
-const READABLE: SourceReadability = new Map();
 const unreadable = (...keys: string[]): SourceReadability =>
   new Map(keys.map((k) => [k, 'unreadable' as const]));
+
+/** Every repository x source in play is listed; the engine reads a missing pair as unreadable. */
+function completeReadability(
+  exceptions: ExceptionEntry[],
+  findings: MatchableFinding[],
+  overrides: SourceReadability = new Map(),
+): SourceReadability {
+  const repos = new Set([
+    ...exceptions.map((e) => e.repository),
+    ...findings.map((f) => f.finding.repository),
+  ]);
+  const map: SourceReadability = new Map();
+  for (const r of repos)
+    for (const src of ['code-scanning', 'dependabot', 'secret-scanning'])
+      map.set(`${r}|${src}`, 'readable');
+  for (const [k, v] of overrides) map.set(k, v);
+  return map;
+}
 
 function run(
   exceptions: ExceptionEntry[],
@@ -89,7 +106,7 @@ function run(
   return applyExceptions({
     findings,
     exceptions,
-    readability: opts.readability ?? READABLE,
+    readability: completeReadability(exceptions, findings, opts.readability),
     publicDetail: () => opts.publicDetail ?? true,
     policies: policies((p) => {
       if (opts.audience) p.publication.audience = opts.audience;
@@ -171,6 +188,29 @@ describe('an exception created in the future is never active', () => {
   it('becomes active on its created date', () => {
     const e = entry({ created: '2026-01-16', expires: '2026-06-30' });
     const r = run([e], [finding('code-scanning', 5)], { now: new Date('2026-01-16T00:00:00Z') });
+    expect(r.records[0]!.state).toBe('active');
+  });
+});
+
+describe('a missing readability entry', () => {
+  it('reads as unreadable: the exception is unverifiable, never active or stale', () => {
+    const r = applyExceptions({
+      findings: [finding('code-scanning', 5)],
+      exceptions: [entry()],
+      readability: new Map(),
+      publicDetail: () => true,
+      policies: policies(() => {}),
+      now: NOW,
+    });
+    expect(r.records[0]).toMatchObject({ state: 'unverifiable', matched: null });
+    expect(r.findings[0]!.exception).toBeNull();
+  });
+
+  it('looks keys up case-insensitively', () => {
+    const readability: SourceReadability = new Map([
+      [`${REPO.toUpperCase()}|code-scanning`, 'readable'],
+    ]);
+    const r = run([entry()], [finding('code-scanning', 5)], { readability });
     expect(r.records[0]!.state).toBe('active');
   });
 });

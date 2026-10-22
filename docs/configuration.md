@@ -588,15 +588,15 @@ npm run policy:check -- --fail-on-warnings             # warnings fail too (exit
 npm run policy:check -- --snapshot public/data         # read-only what-if on a snapshot
 ```
 
-| Flag                  | Default                    | Meaning                                                                |
-| --------------------- | -------------------------- | ---------------------------------------------------------------------- |
-| `--config <dir>`      | `config`                   | policies, catalog and exceptions to check                              |
-| `--exceptions <file>` | `<config>/exceptions.yaml` | another exceptions file                                                |
-| `--cases <dir>`       | `<config>/policy-cases`    | decision cases; a missing directory is the warning "no decision cases" |
-| `--snapshot <dir>`    | none                       | re-evaluate an existing snapshot directory, read-only                  |
-| `--now <iso>`         | system clock               | the time for exception states and the re-evaluation                    |
-| `--fail-on-warnings`  | off                        | warnings make the exit code 1                                          |
-| `--allow-date-tokens` | off                        | accept `@now±N` tokens in the exceptions file (mock fixture only)      |
+| Flag                  | Default                    | Meaning                                                                       |
+| --------------------- | -------------------------- | ----------------------------------------------------------------------------- |
+| `--config <dir>`      | `config`                   | policies, catalog and exceptions to check                                     |
+| `--exceptions <file>` | `<config>/exceptions.yaml` | another exceptions file (a path that does not exist is a usage error, exit 2) |
+| `--cases <dir>`       | `<config>/policy-cases`    | decision cases; a missing directory is the warning "no decision cases"        |
+| `--snapshot <dir>`    | none                       | re-evaluate an existing snapshot directory, read-only                         |
+| `--now <iso>`         | system clock               | the time for exception states and the re-evaluation                           |
+| `--fail-on-warnings`  | off                        | warnings make the exit code 1                                                 |
+| `--allow-date-tokens` | off                        | accept `@now±N` tokens in the exceptions file (mock fixture only)             |
 
 Exit codes: 0 valid and every case passed, 1 a validation error, a failed case or (with
 `--fail-on-warnings`) a warning, 2 a usage error. The output is English only, like the collector
