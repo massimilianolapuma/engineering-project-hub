@@ -1,6 +1,6 @@
 {
   "name": "engineering-project-hub",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
   "description": "Static, GitHub-native portal giving a project-level view of multi-repository software projects.",
   "repository": {
