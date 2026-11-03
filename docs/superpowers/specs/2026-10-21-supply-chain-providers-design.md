@@ -1,6 +1,6 @@
 # Supply chain providers: SBOM, signatures and attestations, Trivy / Checkov / ZAP, SonarQube, Harbor, Argo CD — design
 
-> **Update 2026-11-03 (rebased on `main` after v0.10.0 and team dashboards):** this release now takes snapshot schema **1.8**, ADRs **0011** and **0012**, and ships as **v0.11.0**. Read 1.7 / ADR 0009 / ADR 0010 / v0.10.0 below accordingly. The site design system is now GitHub Primer (ADR 0009), not Warm Graphite.
+> **Update 2026-11-03 (rebased on `main` after v0.10.0 and team dashboards):** this release now takes snapshot schema **1.8**, ADRs **0011** and **0012**, and ships as **v0.12.0** (team dashboards shipped alone as v0.11.0). Read 1.7 / ADR 0009 / ADR 0010 / v0.10.0 below accordingly. The site design system is now GitHub Primer (ADR 0009), not Warm Graphite.
 
 Italiano: [../../it/superpowers/specs/2026-10-21-supply-chain-providers-design.md](../../it/superpowers/specs/2026-10-21-supply-chain-providers-design.md)
 
