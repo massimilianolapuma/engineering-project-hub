@@ -2,18 +2,38 @@
 
 English: [../../../superpowers/specs/2026-10-21-outputs-design.md](../../../superpowers/specs/2026-10-21-outputs-design.md)
 
-Stato: design del builder sotto lo spec di programma (il proprietario rivede dopo la consegna) · Data: 2026-10-21 · Release di destinazione: v0.11.0
+Stato: design del builder sotto lo spec di programma, aggiornato; **decisioni del proprietario prese il 2026-11-03 (§10)** · Data: 2026-10-21, aggiornato il 2026-11-03 · Release di destinazione: **v0.14.0**
 
-Spec di programma: [2026-10-21-roadmap-program-design.md](2026-10-21-roadmap-program-design.md) (§2 vincoli, §4 "v0.11.0 Outputs" e §5 anti-obiettivi sono vincolanti). Ogni decisione non fissata lì è marcata **(BC)** (scelta del builder).
+> **Aggiornamento 2026-11-03: rivisto per la v0.14.0 dopo v0.9.0–v0.13.0.** La roadmap è andata avanti mentre questo design aspettava: governance del rischio (v0.9.0, ADR 0008), restyling Primer (v0.10.0, ADR 0009), dashboard per team (v0.11.0, ADR 0010, snapshot 1.7), provider della supply chain (v0.12.0, ADR 0011–0012, snapshot 1.8) e icone di stato (v0.13.0) sono usciti prima. Cosa cambia qui:
+>
+> - destinazione **v0.14.0**, ADR **0013** (0011 e 0012 sono occupati), lo schema dello snapshot resta **1.8** (nessun aumento, salvo che il proprietario scelga le notifiche sulla supply chain al §10, decisione 2);
+> - Warm Graphite → **Primer** (ADR 0009); pallini di stato → **icone di stato** con la parola;
+> - la vista direzionale si disegna in Claude Design (Primer) ed è **approvata dal proprietario prima di qualsiasi codice dell'interfaccia** (non vale più "non blocca");
+> - il client verso l'esterno del notificatore poggia sullo **stesso nucleo HTTP verificato** dei provider esterni dell'ADR 0012 (host fissato, modelli codificati, nessun redirect, letture limitate, errori fissi), con un'interfaccia solo POST; resta non importabile da `collector/**`;
+> - nuovi contenuti dai dati già pubblicati: metriche e blocchi direzionali per supply chain e governance del rischio, un trigger sulle eccezioni scadute (§5.3.2, §5.5.1, §5.6); stato dei provider come metriche; i team (ADR 0010) trattati come dato di visualizzazione, mai come controllo di accesso;
+> - ogni percorso, nome di campo e numero dei golden ricontrollato su `main` alla v0.13.0 (`risk` ora è sempre presente con conteggi nullable; `sensitiveEnvValues` sta in `shared/security/patterns.ts`; l'ordine del menu è in `src/lib/routes.ts`);
+> - i fatti esterni del §1 e §9 sono stati verificati il 2026-10-21 e **non ricontrollati** il 2026-11-03: il piano li ricontrolla (in particolare la fine dei PAT globali di Azure DevOps il 1 dic 2026, ormai a un mese);
+> - una sezione finale §10 elenca le decisioni di prodotto che spettano solo al proprietario.
 
-Dipende dalle quattro release che vengono unite prima:
+> **Divisione delle release (decisioni del proprietario 2026-11-03, §10).**
+>
+> - **v0.14.0 — output in sola lettura:** metriche Prometheus (§5.3), dashboard Grafana (§5.4), vista direzionale (§5.6) con `?team=` come filtro di visualizzazione (nessun testo del team stampato, nessuna label di team nelle metriche), blocco `outputs` delle policy (`metrics`, `executive`), documentazione EN/IT. Nessun ADR: nulla attraversa un nuovo confine di fiducia. La pagina direzionale è disponibile in entrambi i pubblici quando `outputs.executive.enabled`.
+> - **v0.15.0 — notifiche (§5.5), prima solo Microsoft Teams:** D7, D8, D10, D11, D13 (lo spostamento in `shared/http/`), D15 (`notifications.yaml`), D16 (ADR 0013), un riepilogo per destinazione per tutto il portfolio, nessun trigger sulla supply chain. Jira e Azure DevOps (renderer del §5.5.4, D12) restano progettati qui ed escono in una release successiva quando servono. Il §5.5 resta il design di riferimento per la v0.15.0 e si ricontrolla prima del suo piano.
+> - Conseguenza: la v0.14.0 non aumenta alcuno schema (snapshot 1.8, storico 1.2, `changes.json` 1.0 invariati) e non aggiunge segreti.
+
+Spec di programma: [2026-10-21-roadmap-program-design.md](2026-10-21-roadmap-program-design.md) (§2 vincoli, §4 "v0.11.0 Outputs" — ora v0.14.0 — e §5 anti-obiettivi sono vincolanti). Ogni decisione non fissata lì è marcata **(BC)** (scelta del builder).
+
+Si basa su ciò che c'è su `main` alla v0.13.0:
 
 - v0.7.0 ([2026-10-21-history-trends-design.md](2026-10-21-history-trends-design.md)): `history.json`, `changes.json` (la fonte delle notifiche), `src/lib/trend.ts`, gli helper CSV, il ripristino dell'artifact `hub-history` (`collector/src/history/select-artifact.ts`);
 - v0.8.0 ([2026-10-21-repository-controls-design.md](2026-10-21-repository-controls-design.md)): snapshot 1.5, storico 1.1, ADR 0007;
 - v0.9.0 ([2026-10-21-risk-governance-design.md](2026-10-21-risk-governance-design.md)): snapshot 1.6, storico 1.2, `ProjectSummary.risk`, `changes.projects[].newlyOverdue`, ADR 0008;
-- v0.10.0 ([2026-10-21-supply-chain-providers-design.md](2026-10-21-supply-chain-providers-design.md)): snapshot 1.7, ADR 0009 e 0010, il client HTTP esterno solo GET.
+- v0.10.0 ([2026-11-02-primer-restyle-design.md](2026-11-02-primer-restyle-design.md)): token Primer e Octicons, ADR 0009;
+- v0.11.0 ([2026-11-03-team-dashboards-design.md](2026-11-03-team-dashboards-design.md)): snapshot 1.7, `teams` (`org/slug`) su progetti e voci dell'indice, la vista Portfolio `?team=`, ADR 0010 (i team non sono controllo di accesso);
+- v0.12.0 ([2026-10-21-supply-chain-providers-design.md](2026-10-21-supply-chain-providers-design.md)): snapshot 1.8, `ProjectSummary.supplyChain`, `run.providers`, il client HTTP esterno verificato solo GET `collector/src/providers/external/http.ts`, ADR 0011 e 0012;
+- v0.13.0: icone di stato al posto dei pallini.
 
-Questa release prende l'**ADR 0011**. **Non** cambia lo schema dello snapshot (resta 1.7), dello storico (resta 1.2) né `changes.json` (resta 1.0) (D1).
+Questa release prende l'**ADR 0013**. **Non** cambia lo schema dello snapshot (resta 1.8), dello storico (resta 1.2) né `changes.json` (resta 1.0) (D1), salvo che il proprietario scelga le notifiche sulla supply chain (§10, decisione 2), che richiedono `changes.json` 1.1.
 
 ## 1. Intento e motivazione
 
@@ -23,9 +43,9 @@ Oggi tutto ciò che l'hub sa vive nelle sue pagine. Tre tipi di lettore lì non 
 - i **team che lavorano in una chat o in un tracker**, che vogliono sapere di un cambiamento quando avviene, non quando si ricordano di aprire l'hub (Microsoft Teams, Jira, Azure DevOps);
 - i **dirigenti**, che vogliono una pagina leggibile in un minuto, da stampare e inoltrare, senza nomi di repository né link a sistemi che non possono aprire.
 
-La v0.11.0 aggiunge questi tre output. Leggono solo ciò che il collector ha già validato e pubblicato. Le notifiche sono le **uniche scritture verso l'esterno** dell'intero programma, quindi arrivano per ultime e sono la parte più vincolata di questo design.
+La v0.14.0 aggiunge questi tre output. Leggono solo ciò che il collector ha già validato e pubblicato. Le notifiche sono le **uniche scritture verso l'esterno** dell'intero programma, quindi arrivano per ultime e sono la parte più vincolata di questo design.
 
-Fatti verificati prima di decidere (2026-10-21; fonti al §9):
+Fatti verificati prima di decidere (2026-10-21, non ricontrollati il 2026-11-03; il piano li ricontrolla; fonti al §9):
 
 - **Microsoft Teams.** I connettori Office 365 in Teams, compreso il classico "Incoming Webhook", sono stati ritirati: il rilascio finale si è svolto dal 18 al 22 maggio 2026, dopo di che i connettori smettono di funzionare. Il sostituto indicato da Microsoft è un flusso **Workflows** (Power Automate) con il trigger "When a Teams webhook request is received". Accetta una POST il cui corpo è un `message` con un array `attachments` di Adaptive Card (`contentType: application/vnd.microsoft.card.adaptive`). Il proprietario del flusso sceglie chi può chiamare il trigger: "Anyone" (l'URL con la sua firma è la credenziale, e non va inviato alcun header di autenticazione) oppure gli utenti del tenant (serve un token OAuth). Gli URL dei trigger sono passati da `*.logic.azure.com` a `*.environment.api.powerplatform.com`; i vecchi URL hanno smesso di funzionare il 30 nov 2025. Dal 2 giu 2026 il percorso può contenere un segmento di scale unit (`/direct/cu/20/workflows/…`). I messaggi sono limitati a circa 28 KB. Teams visualizza Adaptive Card fino alla versione 1.5. La pubblicazione nei canali privati non è supportata.
 - **Jira Cloud.** `POST /rest/api/3/issue` crea una issue; `description` accetta Atlassian Document Format (ADF). Risposta `201 { id, key, self }`; errori 400, 401, 403, 422. Scope OAuth classico `write:jira-work` (granulari, beta: `write:issue:jira`, `write:comment:jira`, `write:comment.property:jira`, `write:attachment:jira`, `read:issue:jira`). Permessi: _Browse projects_ e _Create issues_ nel progetto di destinazione. Autenticazione: HTTP Basic con l'e-mail dell'account Atlassian e un API token. Un token **con scope** va usato tramite `https://api.atlassian.com/ex/jira/{cloudId}`; un token senza scope funziona su `https://<site>.atlassian.net`. Durata del token 1–365 giorni.
@@ -34,7 +54,7 @@ Fatti verificati prima di decidere (2026-10-21; fonti al §9):
 - **Textfile collector di node_exporter.** `--collector.textfile.directory`; legge `*.prom`; aggiornamento atomico scrivendo un file temporaneo e rinominandolo; "Timestamps are not supported".
 - **Service token di Cloudflare Access.** Il client invia `CF-Access-Client-Id` e `CF-Access-Client-Secret`; l'azione della policy di Access deve essere **Service Auth**.
 - **actions/upload-artifact.** `overwrite: true` elimina un artifact con lo stesso nome nella run prima di caricarlo; senza, un secondo caricamento con lo stesso nome fallisce. `retention-days` 1–90.
-- **In questo codice.** `publication.audience` vale `public | restricted`. `public` omette titoli e rule id dei finding nei repository non pubblici; `restricted` significa "il sito è dietro un controllo di accesso" e mostra tutto il dettaglio. Il job collect contiene le uniche credenziali delle sorgenti (ADR 0003). `scan-output.ts` analizza un elenco fisso di estensioni. Lo script di ripristino della v0.7.0 sceglie gli artifact dell'hub stesso per nome, branch, repository e percorso del workflow fidato.
+- **In questo codice (verificato su `main` alla v0.13.0).** `publication.audience` vale `public | restricted`. `public` omette titoli e rule id dei finding nei repository non pubblici; `restricted` significa "il sito è dietro un controllo di accesso" e mostra tutto il dettaglio. Il job collect contiene le uniche credenziali delle sorgenti (ADR 0003): la GitHub App o il token e, dalla v0.12.0, i facoltativi `SONARQUBE_TOKEN`, `HARBOR_ROBOT_NAME`, `HARBOR_ROBOT_SECRET` e `ARGOCD_TOKEN`. `scripts/scan-output.ts` analizza un elenco fisso di estensioni (`TEXT_EXT`). Lo script di ripristino della v0.7.0 (`scripts/restore-history.ts`, `collector/src/history/select-artifact.ts`) sceglie gli artifact dell'hub stesso per nome, branch, repository e percorso del workflow fidato. `index.json` porta per progetto `teams` (`org/slug`, ADR 0010: dato di visualizzazione, non controllo di accesso), `supplyChain` (`repositories`, `sbomAvailable`, `unsignedImages`, `flagged`, ognuno nullable), `risk` (`overdue`, `overdueCriticalHigh`, `accepted` nullable, `exceptionIssues`), `repositoryControls` e `openSecretAlerts`; `run.providers` contiene lo stato di SonarQube, Harbor e Argo CD (attivo, stato, conteggi di elementi ed errori, mai URL). `changes.json` 1.0 porta per progetto `statusChanges`, `newFindings`, `newlyOverdue` e `expiredExceptions`, ma nessuna variazione della supply chain. Le build dietro Cloudflare Access possono mostrare le iniziali "connesso come" (`PUBLIC_IDENTITY_SOURCE`); nulla nell'hub autorizza per singolo utente.
 
 ## 2. Obiettivi, non-obiettivi, anti-obiettivi
 
@@ -42,7 +62,7 @@ Obiettivi
 
 - Un file statico di metriche Prometheus, pubblicato con gli snapshot, che Prometheus può raccogliere dall'host statico o che node_exporter può esporre; e un JSON di dashboard Grafana che si importa in qualunque Grafana con una data source Prometheus.
 - Un job di notifica opt-in che pubblica un riepilogo sanificato dei cambiamenti significativi (da `changes.json`) su Microsoft Teams, Jira e/o Azure DevOps. Dry-run per impostazione predefinita, solo in caso di cambiamento, mai due volte per lo stesso insieme di cambiamenti.
-- Una pagina direzionale (EN/IT): conteggi di stato del portfolio, andamento, rischi principali in parole semplici, conteggi degli scaduti quando misurati; stampabile; senza nomi di repository né link ai sistemi sorgente.
+- Una pagina direzionale (EN/IT): conteggi di stato del portfolio, andamento, rischi principali in parole semplici, scadenze di rimedio ed eccezioni quando misurate, una riga sulla supply chain (copertura SBOM, immagini non firmate, licenze segnalate) quando misurata; stampabile; senza nomi di repository né link ai sistemi sorgente.
 - Documentazione per ogni output, compresa la configurazione per destinazione e ogni nuovo secret.
 
 Non-obiettivi
@@ -53,41 +73,44 @@ Non-obiettivi
 - Nessuna destinazione Slack, e-mail o webhook generico in questa release.
 - Nessuna autenticazione Microsoft Entra / service principal per Azure DevOps e nessun OAuth per Jira in questa release (solo PAT e API token; rischi al §8).
 - Nessun Azure DevOps Server (on-premises) e nessun URL `*.visualstudio.com`.
-- Nessun nuovo campo nello snapshot, nessuna modifica allo storico.
+- Nessun nuovo campo nello snapshot, nessuna modifica allo storico (salvo che la decisione 2 del §10 aggiunga notifiche sulla supply chain).
+- Nessun controllo di accesso per utente o per team: una vista per team o una notifica instradata a un team filtra solo ciò che si mostra o si invia (ADR 0010).
 
 Anti-obiettivi (fallimento anche se "funziona")
 
 - Un valore sconosciuto esportato come `0`, oppure un progetto con conteggi sconosciuti mostrato come "0 alert" nella pagina direzionale o in una notifica.
 - Una notifica inviata da dati mock, da un dry-run, senza una base di confronto, o due volte per lo stesso insieme di cambiamenti.
-- Una notifica o la pagina direzionale che contiene un nome di repository, un id di componente, un id o titolo di alert, un link GitHub, un dettaglio di errore, un secret o un payload grezzo.
-- Una credenziale di destinazione visibile al job collect, build o deploy, stampata in un log o scritta in un artifact.
+- Una notifica o la pagina direzionale che contiene un nome di repository, un id di componente, un id o titolo di alert, un id di eccezione, un nome o digest di immagine, un nome di pacchetto o di licenza, un riferimento a un team (`org/slug`), un link GitHub, un dettaglio di errore, un secret o un payload grezzo.
+- Una credenziale di destinazione visibile al job collect, build o deploy, stampata in un log o scritta in un artifact; oppure una credenziale di sorgente o di provider (GitHub, SonarQube, Harbor, Argo CD) visibile al job notify.
 - Qualsiasi richiesta a un host fuori dalla allowlist della destinazione, qualsiasi richiesta che non sia l'unica POST documentata, o qualsiasi scrittura su un repository monitorato.
 - Un fallimento delle notifiche che blocca il deploy del sito.
 
 ## 3. Vincoli (spec di programma §2, invariati)
 
-Sola lettura verso repository monitorati e sorgenti; static-first; nessuna dipendenza commerciale; allowlist Zod rigorosa su ogni campo pubblicato o inviato; testo e link sanificati con allowlist degli host; sconosciuto ≠ zero; 403 ≠ nessun dato; 404 ambiguo = sconosciuto; EN + IT; solo dati mock nella demo pubblica; Warm Graphite, stato mai solo con il colore, WCAG 2.2 AA; mai `npm run ci:build` / `collect:mock`; mai la porta 4321 (e2e sulla 4377); solo podman. Nessuna nuova dipendenza di runtime o di sviluppo.
+Sola lettura verso repository monitorati e sorgenti; static-first; nessuna dipendenza commerciale; allowlist Zod rigorosa su ogni campo pubblicato o inviato; testo e link sanificati con allowlist degli host; sconosciuto ≠ zero; 403 ≠ nessun dato; 404 ambiguo = sconosciuto; EN + IT; solo dati mock nella demo pubblica; token Primer e Octicons (ADR 0009), stato sempre come icona + parola (mai solo con il colore), WCAG 2.2 AA; interfaccia disegnata in Claude Design e approvata dal proprietario prima del codice dell'interfaccia; mai `npm run ci:build` / `collect:mock`; mai la porta 4321 (e2e sulla 4377); solo podman. Nessuna nuova dipendenza di runtime o di sviluppo.
 
 ## 4. Decisioni in breve
 
-| #   | Decisione                                                                                                                                                                                                                                                                                                                                                                   | Perché                                                                                                                         |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| D1  | Nessun aumento di schema. I tre output derivano da `index.json`, `history.json` e `changes.json` (snapshot 1.7, storico 1.2, changes 1.0) **(BC)**                                                                                                                                                                                                                          | Ogni valore che serve è già pubblicato e validato; un aumento forzerebbe una nuova raccolta per nulla                          |
-| D2  | Il collector scrive `<out>/metrics/hub.prom` (servito su `<base>/data/metrics/hub.prom`), formato testuale 0.0.4, **solo gauge, senza timestamp dei campioni, senza label di repository o componente in nessun pubblico** **(BC)**                                                                                                                                          | "Pubblicato con gli snapshot" (programma §4); il textfile collector vieta i timestamp; bassa cardinalità e nulla da oscurare   |
-| D3  | Sconosciuto non è mai 0: una serie numerica è **omessa** quando il valore è sconosciuto, e `hub_project_measure_known{project,measure}` dice 0 o 1. Gli stati sono one-hot su `green\|amber\|red\|grey` (grey è uno stato, non uno zero) **(BC)**                                                                                                                           | `absent()` da solo è scomodo per gli allarmi; un gauge esplicito 0/1 no                                                        |
-| D4  | Limite di dimensione `outputs.metrics.maxBytes` (predefinito 2 MiB). Oltre il limite: si elimina la famiglia per dimensione; se ancora oltre, restano solo le famiglie di portfolio. `hub_metrics_truncated 1` in entrambi i casi, più una nota nel report di raccolta **(BC)**                                                                                             | File limitato, degrado deterministico, mai una raccolta fallita                                                                |
-| D5  | Due percorsi di scrape documentati: Prometheus raccoglie dall'host statico (con `fallback_scrape_protocol: PrometheusText0.0.4` e, su Cloudflare, un header `Content-Type` più un service token di Access); oppure un job cron scarica il file nella directory del textfile collector di node_exporter **(BC)**                                                             | GitHub Pages non può impostare `Content-Type` per `.prom`; Prometheus 3 lo rifiuta senza il fallback                           |
-| D6  | Dashboard Grafana `examples/grafana/engineering-project-hub.json`: data source scelta tramite una variabile di template `datasource` chiamata `DS_PROMETHEUS`; i pannelli usano `${DS_PROMETHEUS}`; nessun UID scritto nel file, nessun `__inputs` **(BC)**                                                                                                                 | Funziona sia con l'importazione da interfaccia sia con il provisioning da file (il provisioning non risolve `__inputs`)        |
-| D7  | Il notificatore è un **programma separato** (`notifier/`, `npm run notify`) eseguito da un **job separato** in un workflow riutilizzabile separato `notify.yml`. I secret delle destinazioni esistono solo nel suo step "Notify". ESLint vieta a `collector/**` e `src/**` di importare `notifier/**` **(BC, ADR 0011)**                                                    | Credenziali delle sorgenti e delle destinazioni non condividono mai un job né un percorso di codice                            |
-| D8  | La modalità effettiva è **dry-run** a meno che valgano tutte: `notifications.yaml` `mode: send`, variabile di repository `HUB_NOTIFICATIONS=send`, fonte dati `github`, `changes.basis.state = compared`, `basis.synthetic = false`. Il dry-run scrive i payload esatti su file e li carica come artifact **(BC)**                                                          | Due opt-in indipendenti; dati mock o non confrontati non possono mai raggiungere un canale reale                               |
-| D9  | Il riepilogo contiene solo id e nomi di progetto, stati, punteggi, conteggi e link **all'hub stesso**. Mai nomi di repository, id di componente, id o titoli di alert, link GitHub o dettagli di errore, in nessun pubblico **(BC)**                                                                                                                                        | Un canale di chat o un tracker è fuori dal perimetro dell'hub; chi legge segue il link all'hub (protetto) per i dettagli       |
-| D10 | Soglie di significatività in configurazione; predefinite: stato complessivo peggiorato o diventato sconosciuto, Sicurezza o Delivery peggiorate, ≥ 1 nuovo alert critico, ≥ 1 critico/alto scaduto da poco. I miglioramenti non sono un trigger **(BC)**                                                                                                                    | "Solo in caso di cambiamento" (programma §4) significa cambiamento significativo, non ogni differenza                          |
-| D11 | Chiave di de-duplicazione `changeSetKey` = primi 16 caratteri esadecimali dello SHA-256 su `basis.previousCollectedAt` e sull'elenco canonico degli elementi significativi. Un artifact registro `hub-notify-ledger` (90 giorni) registra `(destinazione, chiave)` dopo ogni invio riuscito. Ripristino del registro fallito in modalità send → non si invia nulla **(BC)** | Rieseguire l'intero workflow ricalcola la stessa differenza con un nuovo `generatedAt`; una chiave sul contenuto lo intercetta |
-| D12 | Destinazioni: **Teams** = webhook di Workflows, Adaptive Card 1.5 in un involucro `message`; **Jira** = crea una issue per insieme di cambiamenti (REST v3, ADF); **Azure DevOps** = crea un work item per insieme di cambiamenti (7.1, JSON Patch). La modalità commento non è offerta **(BC)**                                                                            | Un elemento da smistare per insieme di cambiamenti, simmetrico tra i tracker; le soglie tengono basso il volume                |
-| D13 | Un solo client HTTP verso l'esterno: solo POST, solo `https:`, host verificato contro la allowlist della destinazione prima di qualsiasi richiesta, `redirect: 'error'`, timeout 20 s, risposta letta con limite di 64 KiB e scartata tranne `id`/`key`, **nessun nuovo tentativo automatico**, messaggi di errore fissi, non registra mai URL, header o corpo **(BC)**     | La POST non è idempotente; un nuovo tentativo potrebbe duplicare. Un solo punto da verificare                                  |
-| D14 | Pagina direzionale `executive/`: mai nomi di repository, id di componente, titoli di alert o link ai sistemi sorgente, **in entrambi i pubblici**. CSS di stampa. Tabella dell'andamento dallo storico. Rischi principali da modelli di frase fissi. Conteggi degli scaduti quando `risk` è presente, altrimenti "non misurato" **(BC)**                                    | Più rigoroso del programma §4 (vedi §5.1); una sola regola da verificare, qualunque pubblico scelga il proprietario            |
-| D15 | Configurazione: nuovo `<configDir>/notifications.yaml` (mai pubblicato; proprio schema Zod e JSON Schema); le policy ottengono un blocco facoltativo `outputs` (`metrics`, `executive`), lo `schemaVersion` delle policy resta `1.0` **(BC)**                                                                                                                               | I dettagli delle destinazioni sono infrastruttura; gli interruttori degli output sono policy                                   |
-| D16 | ADR 0011: "Notifiche verso l'esterno da un job separato, dry-run per impostazione predefinita, riepilogo senza dettagli di repository"                                                                                                                                                                                                                                      | Prima scrittura verso un sistema esterno: un cambiamento documentato del confine di fiducia                                    |
+| #   | Decisione                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Perché                                                                                                                         |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| D1  | Nessun aumento di schema. I tre output derivano da `index.json`, `history.json` e `changes.json` (snapshot 1.8, storico 1.2, changes 1.0) **(BC)**                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Ogni valore che serve è già pubblicato e validato; un aumento forzerebbe una nuova raccolta per nulla                          |
+| D2  | Il collector scrive `<out>/metrics/hub.prom` (servito su `<base>/data/metrics/hub.prom`), formato testuale 0.0.4, **solo gauge, senza timestamp dei campioni, senza label di repository o componente in nessun pubblico** **(BC)**                                                                                                                                                                                                                                                                                                                                                                      | "Pubblicato con gli snapshot" (programma §4); il textfile collector vieta i timestamp; bassa cardinalità e nulla da oscurare   |
+| D3  | Sconosciuto non è mai 0: una serie numerica è **omessa** quando il valore è sconosciuto, e `hub_project_measure_known{project,measure}` dice 0 o 1. Gli stati sono one-hot su `green\|amber\|red\|grey` (grey è uno stato, non uno zero) **(BC)**                                                                                                                                                                                                                                                                                                                                                       | `absent()` da solo è scomodo per gli allarmi; un gauge esplicito 0/1 no                                                        |
+| D4  | Limite di dimensione `outputs.metrics.maxBytes` (predefinito 4 MiB). Oltre il limite: si elimina la famiglia per dimensione; se ancora oltre, restano solo le famiglie di portfolio. `hub_metrics_truncated 1` in entrambi i casi, più una nota nel report di raccolta **(BC)**                                                                                                                                                                                                                                                                                                                         | File limitato, degrado deterministico, mai una raccolta fallita                                                                |
+| D5  | Due percorsi di scrape documentati: Prometheus raccoglie dall'host statico (con `fallback_scrape_protocol: PrometheusText0.0.4` e, su Cloudflare, un header `Content-Type` più un service token di Access); oppure un job cron scarica il file nella directory del textfile collector di node_exporter **(BC)**                                                                                                                                                                                                                                                                                         | GitHub Pages non può impostare `Content-Type` per `.prom`; Prometheus 3 lo rifiuta senza il fallback                           |
+| D6  | Dashboard Grafana `examples/grafana/engineering-project-hub.json`: data source scelta tramite una variabile di template `datasource` chiamata `DS_PROMETHEUS`; i pannelli usano `${DS_PROMETHEUS}`; nessun UID scritto nel file, nessun `__inputs` **(BC)**                                                                                                                                                                                                                                                                                                                                             | Funziona sia con l'importazione da interfaccia sia con il provisioning da file (il provisioning non risolve `__inputs`)        |
+| D7  | Il notificatore è un **programma separato** (`notifier/`, `npm run notify`) eseguito da un **job separato** in un workflow riutilizzabile separato `notify.yml`. I secret delle destinazioni esistono solo nel suo step "Notify". ESLint vieta a `collector/**` e `src/**` di importare `notifier/**`, e a `notifier/**` di importare `collector/**` **(BC, ADR 0013)**                                                                                                                                                                                                                                 | Credenziali delle sorgenti e delle destinazioni non condividono mai un job né un percorso di codice                            |
+| D8  | La modalità effettiva è **dry-run** a meno che valgano tutte: `notifications.yaml` `mode: send`, variabile di repository `HUB_NOTIFICATIONS=send`, fonte dati `github`, `changes.basis.state = compared`, `basis.synthetic = false`. Il dry-run scrive i payload esatti su file e li carica come artifact **(BC)**                                                                                                                                                                                                                                                                                      | Due opt-in indipendenti; dati mock o non confrontati non possono mai raggiungere un canale reale                               |
+| D9  | Il riepilogo contiene solo id e nomi di progetto, stati, punteggi, conteggi e link **all'hub stesso**. Mai nomi di repository, id di componente, id o titoli di alert, link GitHub o dettagli di errore, in nessun pubblico **(BC)**                                                                                                                                                                                                                                                                                                                                                                    | Un canale di chat o un tracker è fuori dal perimetro dell'hub; chi legge segue il link all'hub (protetto) per i dettagli       |
+| D10 | Soglie di significatività in configurazione; predefinite: stato complessivo peggiorato o diventato sconosciuto, Sicurezza o Delivery peggiorate, ≥ 1 nuovo alert critico, ≥ 1 critico/alto scaduto da poco. I miglioramenti non sono un trigger **(BC)**                                                                                                                                                                                                                                                                                                                                                | "Solo in caso di cambiamento" (programma §4) significa cambiamento significativo, non ogni differenza                          |
+| D11 | Chiave di de-duplicazione `changeSetKey` = primi 16 caratteri esadecimali dello SHA-256 su `basis.previousCollectedAt` e sull'elenco canonico degli elementi significativi. Un artifact registro `hub-notify-ledger` (90 giorni) registra `(destinazione, chiave)` dopo ogni invio riuscito. Ripristino del registro fallito in modalità send → non si invia nulla **(BC)**                                                                                                                                                                                                                             | Rieseguire l'intero workflow ricalcola la stessa differenza con un nuovo `generatedAt`; una chiave sul contenuto lo intercetta |
+| D12 | Destinazioni: **Teams** = webhook di Workflows, Adaptive Card 1.5 in un involucro `message`; **Jira** = crea una issue per insieme di cambiamenti (REST v3, ADF); **Azure DevOps** = crea un work item per insieme di cambiamenti (7.1, JSON Patch). La modalità commento non è offerta **(BC)**                                                                                                                                                                                                                                                                                                        | Un elemento da smistare per insieme di cambiamenti, simmetrico tra i tracker; le soglie tengono basso il volume                |
+| D13 | Il client verso l'esterno riusa il **nucleo HTTP verificato** dell'ADR 0012, spostato da `collector/src/providers/external/http.ts` a `shared/http/` (host fissato, modelli di percorso codificati, `redirect: 'error'`, lettura in streaming limitata, errori fissi classificati). Due interfacce: `getJson` (collector, comportamento invariato) e `postOnce` (notificatore: solo POST, solo `https:`, allowlist degli host per destinazione, timeout 20 s, limite 64 KiB, risposta scartata tranne `id`/`key`, **nessun nuovo tentativo automatico**, non registra mai URL, header o corpo) **(BC)** | Un solo nucleo verificato invece di due; la POST non è idempotente, quindi nessun nuovo tentativo                              |
+| D14 | Pagina direzionale `executive/`: mai nomi di repository, id di componente, titoli di alert o link ai sistemi sorgente, **in entrambi i pubblici**. CSS di stampa. Tabella dell'andamento dallo storico. Rischi principali da modelli di frase fissi. Conteggi degli scaduti quando `risk` è presente, altrimenti "non misurato" **(BC)**                                                                                                                                                                                                                                                                | Più rigoroso del programma §4 (vedi §5.1); una sola regola da verificare, qualunque pubblico scelga il proprietario            |
+| D15 | Configurazione: nuovo `<configDir>/notifications.yaml` (mai pubblicato; proprio schema Zod e JSON Schema); le policy ottengono un blocco facoltativo `outputs` (`metrics`, `executive`), lo `schemaVersion` delle policy resta `1.0` **(BC)**                                                                                                                                                                                                                                                                                                                                                           | I dettagli delle destinazioni sono infrastruttura; gli interruttori degli output sono policy                                   |
+| D16 | ADR 0013: "Notifiche verso l'esterno da un job separato, dry-run per impostazione predefinita, riepilogo senza dettagli di repository"                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Prima scrittura verso un sistema esterno: un cambiamento documentato del confine di fiducia                                    |
+| D17 | Supply chain, governance del rischio e provider diventano metriche e contenuto direzionale solo da `index.json`: conteggi della supply chain per progetto, conteggi di scaduti/accettati/problemi delle eccezioni, rapporto dei controlli di repository, stati dei provider one-hot. Lo sconosciuto resta sconosciuto (serie omessa, `measure_known` 0, "non misurato" nella pagina) **(BC)**                                                                                                                                                                                                           | Il dato è già pubblicato e validato; nessun aumento di schema                                                                  |
+| D18 | I team (ADR 0010) non sono mai una label di metrica, un campo del riepilogo o un testo della pagina direzionale per impostazione predefinita: un riferimento a un team porta il nome dell'organizzazione GitHub. Viste o instradamento per team sono decisioni del proprietario (§10, decisioni 3 e 4) **(BC)**                                                                                                                                                                                                                                                                                         | I team sono dato di visualizzazione, non controllo di accesso; il nome dell'organizzazione può essere interno                  |
 
 ## 5. Design
 
@@ -103,6 +126,8 @@ La pagina direzionale e le notifiche sono gli output che più probabilmente **es
 
 Conseguenze: la regola del programma §4 vale qualunque cosa imposti il proprietario; i test verificano un solo invariante (nessun `github.com`, nessuna stringa `owner/repo` del catalogo) invece di una matrice. La pagina direzionale lo dichiara nella sua introduzione: "Pronta da condividere: nessun nome di repository, titolo di alert o link ai sistemi sorgente."
 
+I team (ADR 0010) non sono controllo di accesso. Una pagina direzionale per team o una notifica instradata al canale di un team (se il proprietario le sceglie, §10) seleziona solo **quali progetti** si mostrano o si inviano; la regola sul contenuto sopra non cambia, e il riferimento al team (`org/slug`) non viene mai stampato.
+
 I **nomi** dei progetti restano: un dirigente deve sapere di quale progetto si parla. Se anche i nomi dei progetti sono riservati, il proprietario non deve inoltrare la pagina né attivare notifiche verso un pubblico più ampio; la documentazione lo dice.
 
 ### 5.2 Blocco `outputs` delle policy (D15)
@@ -111,7 +136,7 @@ I **nomi** dei progetti restano: un dirigente deve sapere di quale progetto si p
 outputs:
   metrics:
     enabled: true # false = nessun metrics/hub.prom
-    maxBytes: 2097152 # 65 536–16 777 216; oltre il limite il file degrada (§5.3.4)
+    maxBytes: 4194304 # 65 536–16 777 216; oltre il limite il file degrada (§5.3.4)
   executive:
     enabled: true # false = nessuna pagina direzionale e nessuna voce di menu
     topRisks: 5 # 1–10 progetti in "Rischi principali"
@@ -135,29 +160,39 @@ Tutte le chiavi sono facoltative; quando il blocco manca valgono i valori predef
 
 Sono tutte `gauge`. I valori delle label vengono da enum, dall'id del progetto (slug del catalogo `^[a-z0-9][a-z0-9-]{0,62}$`) o dalla versione del collector verificata come semver. Passano comunque per l'escaping del formato (`\\`, `\"`, `\n`) come difesa in profondità.
 
-| Metrica                               | Label                                                | Valore                                                                                      | Gestione dello sconosciuto               |
-| ------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| `hub_info`                            | `collector_version`, `data_source`, `schema_version` | 1                                                                                           | n/d                                      |
-| `hub_collection_timestamp_seconds`    |                                                      | `index.generatedAt` in secondi Unix                                                         | n/d                                      |
-| `hub_collection_duration_seconds`     |                                                      | `run.durationMs / 1000`                                                                     | n/d                                      |
-| `hub_projects`                        |                                                      | numero di progetti                                                                          | n/d                                      |
-| `hub_portfolio_projects`              | `status`                                             | progetti per stato complessivo (4 serie, zeri ammessi: un conteggio è noto)                 | n/d                                      |
-| `hub_project_status`                  | `project`, `status`                                  | one-hot su green, amber, red, grey (4 serie per progetto)                                   | grey = 1                                 |
-| `hub_project_dimension_status`        | `project`, `dimension`, `status`                     | one-hot per dimensione (6 × 4 per progetto)                                                 | grey = 1                                 |
-| `hub_project_score`                   | `project`                                            | 0–100                                                                                       | omessa quando `score.value` è null       |
-| `hub_project_open_alerts`             | `project`, `severity`                                | conteggio aperti, severità critical, high, medium, low                                      | omessa quando il conteggio è null        |
-| `hub_project_open_alerts_complete`    | `project`                                            | 1 quando `countsComplete`, altrimenti 0                                                     | n/d                                      |
-| `hub_project_overdue_alerts`          | `project`, `class`                                   | `risk.overdue` (`class="all"`) e `risk.overdueCriticalHigh` (`class="critical_high"`)       | omessa quando null o quando `risk` manca |
-| `hub_project_controls_coverage_ratio` | `project`                                            | `coverage.percentage / 100`                                                                 | omessa quando null                       |
-| `hub_project_quality_coverage_ratio`  | `project`                                            | `quality.percentage / 100`                                                                  | omessa quando null                       |
-| `hub_project_collection_errors`       | `project`                                            | `collectionErrorCount`                                                                      | n/d                                      |
-| `hub_project_measure_known`           | `project`, `measure`                                 | 1 o 0 per `score`, `open_alerts`, `overdue_alerts`, `controls_coverage`, `quality_coverage` | sempre presente (è il suo scopo)         |
-| `hub_metrics_truncated`               |                                                      | 0, oppure 1 quando si applica il §5.3.4                                                     | n/d                                      |
+| Metrica                                 | Label                                                | Valore                                                                                                                                     | Gestione dello sconosciuto         |
+| --------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------- |
+| `hub_info`                              | `collector_version`, `data_source`, `schema_version` | 1                                                                                                                                          | n/d                                |
+| `hub_collection_timestamp_seconds`      |                                                      | `index.generatedAt` in secondi Unix                                                                                                        | n/d                                |
+| `hub_collection_duration_seconds`       |                                                      | `run.durationMs / 1000`                                                                                                                    | n/d                                |
+| `hub_projects`                          |                                                      | numero di progetti                                                                                                                         | n/d                                |
+| `hub_portfolio_projects`                | `status`                                             | progetti per stato complessivo (4 serie, zeri ammessi: un conteggio è noto)                                                                | n/d                                |
+| `hub_project_status`                    | `project`, `status`                                  | one-hot su green, amber, red, grey (4 serie per progetto)                                                                                  | grey = 1                           |
+| `hub_project_dimension_status`          | `project`, `dimension`, `status`                     | one-hot per dimensione (6 × 4 per progetto)                                                                                                | grey = 1                           |
+| `hub_project_score`                     | `project`                                            | 0–100                                                                                                                                      | omessa quando `score.value` è null |
+| `hub_project_open_alerts`               | `project`, `severity`                                | conteggio aperti, severità critical, high, medium, low                                                                                     | omessa quando il conteggio è null  |
+| `hub_project_open_alerts_complete`      | `project`                                            | 1 quando `countsComplete`, altrimenti 0                                                                                                    | n/d                                |
+| `hub_project_overdue_alerts`            | `project`, `class`                                   | `risk.overdue` (`class="all"`) e `risk.overdueCriticalHigh` (`class="critical_high"`)                                                      | omessa quando null                 |
+| `hub_project_accepted_alerts`           | `project`                                            | `risk.accepted` (alert aperti sotto un'eccezione valida)                                                                                   | omessa quando null                 |
+| `hub_project_exception_issues`          | `project`                                            | `risk.exceptionIssues` (eccezioni scadute, obsolete, non verificabili o non valide)                                                        | n/a                                |
+| `hub_project_repository_controls_ratio` | `project`                                            | `repositoryControls.ratio / 100`                                                                                                           | omessa quando null                 |
+| `hub_project_supply_chain_repositories` | `project`                                            | `supplyChain.repositories`                                                                                                                 | omessa quando null                 |
+| `hub_project_sbom_available`            | `project`                                            | `supplyChain.sbomAvailable` (repository con uno SBOM leggibile)                                                                            | omessa quando null                 |
+| `hub_project_unsigned_images`           | `project`                                            | `supplyChain.unsignedImages` (immagini distinte, per digest)                                                                               | omessa quando null                 |
+| `hub_project_flagged_licenses`          | `project`                                            | `supplyChain.flagged`                                                                                                                      | omessa quando null                 |
+| `hub_provider_enabled`                  | `provider`                                           | 1 quando il provider è attivo in `providers.yaml` (`sonarqube`, `harbor`, `argocd`)                                                        | n/a                                |
+| `hub_provider_state`                    | `provider`, `state`                                  | one-hot sull'enum `ProviderState` (`run.providers`)                                                                                        | `unknown` = 1                      |
+| `hub_project_controls_coverage_ratio`   | `project`                                            | `coverage.percentage / 100`                                                                                                                | omessa quando null                 |
+| `hub_project_quality_coverage_ratio`    | `project`                                            | `quality.percentage / 100`                                                                                                                 | omessa quando null                 |
+| `hub_project_collection_errors`         | `project`                                            | `collectionErrorCount`                                                                                                                     | n/d                                |
+| `hub_project_measure_known`             | `project`, `measure`                                 | 1 o 0 per `score`, `open_alerts`, `overdue_alerts`, `controls_coverage`, `quality_coverage`, `sbom`, `unsigned_images`, `flagged_licenses` | sempre presente (è il suo scopo)   |
+| `hub_metrics_truncated`                 |                                                      | 0, oppure 1 quando si applica il §5.3.4                                                                                                    | n/d                                |
 
 - `open_alerts` è noto quando **tutti e quattro** i conteggi di severità sono non null. Un insieme noto solo in parte pubblica le severità note e `measure_known` 0, e `open_alerts_complete` dice se i conteggi sono un limite inferiore.
 - I valori di `dimension` sono quelli di `DimensionSchema` (`delivery`, `version`, `security`, `coverage`, `governance`, `quality`). Il testo HELP di `hub_project_dimension_status` dice che `coverage` significa copertura dei **controlli**.
 - Ogni famiglia ha una `# HELP` di una riga in inglese (i metadati delle metriche non sono localizzati) e la sua `# TYPE gauge`.
-- Cardinalità per progetto: 4 + 24 + 1 + 4 + 1 + 2 + 1 + 1 + 1 + 5 = 44 serie al massimo. 500 progetti ≈ 22 000 serie ≈ 1,9 MB, sotto il limite predefinito.
+- Cardinalità per progetto: 4 + 24 + 1 + 4 + 1 + 2 + 1 + 1 + 1 + 1 + 1 + 4 + 1 + 8 = 54 serie al massimo, più al massimo 3 + 3 × (numero di stati dei provider) serie di portfolio. 500 progetti ≈ 27 000 serie ≈ 2,4 MB: il `maxBytes` predefinito sale a 4 MiB (`outputs.metrics.maxBytes`, §5.2), così il troncamento del §5.3.4 resta eccezionale.
+- Nessuna label `team` (D18). Una famiglia di metriche per team è una decisione del proprietario (§10, decisione 4).
 
 Esempio (golden, abbreviato):
 
@@ -173,11 +208,11 @@ hub_project_measure_known{measure="score",project="project-gamma"} 0
 
 #### 5.3.3 Cosa le metriche non contengono mai
 
-Label di repository, componente, ambiente, workflow, alert o utente; titoli; URL; dettagli di errore; business unit (testo libero). Nulla che non sia nella tabella sopra.
+Label di repository, componente, ambiente, workflow, alert, eccezione, immagine, pacchetto, licenza, team o utente; titoli; URL; dettagli di errore; business unit (testo libero); URL base dei provider. Nulla che non sia nella tabella sopra.
 
 #### 5.3.4 Limite di dimensione
 
-Si producono tutte le famiglie. Se la lunghezza in byte supera `maxBytes`, si riproduce senza `hub_project_dimension_status`. Se la supera ancora, si producono solo `hub_info`, `hub_collection_*`, `hub_projects`, `hub_portfolio_projects` e `hub_metrics_truncated`. La raccolta non fallisce mai.
+Si producono tutte le famiglie. Se la lunghezza in byte supera `maxBytes`, si riproduce senza `hub_project_dimension_status`. Se la supera ancora, si producono solo `hub_info`, `hub_collection_*`, `hub_projects`, `hub_portfolio_projects`, `hub_provider_*` e `hub_metrics_truncated`. La raccolta non fallisce mai.
 
 #### 5.3.5 Come lo legge Prometheus (documentazione, `examples/prometheus/`)
 
@@ -232,6 +267,9 @@ Allarmi di esempio nella documentazione (non distribuiti come regole):
   5. Tabella: non visibili — `hub_project_measure_known{project=~"$project"} == 0`.
   6. Stat: critici/alti scaduti — `sum(hub_project_overdue_alerts{class="critical_high"})`, testo "No data" = "Non misurato".
   7. Stat: età dei dati — `time() - hub_collection_timestamp_seconds`, unità secondi, soglie a 8 h.
+  8. Bar gauge: immagini non firmate — `hub_project_unsigned_images{project=~"$project"}`, testo "No data" = "Non misurato".
+  9. Tabella: copertura SBOM — `hub_project_sbom_available / hub_project_supply_chain_repositories` per progetto.
+  10. State timeline: stato dei provider — `hub_provider_state == 1` per `provider`.
 - Titolo "Engineering Project Hub", tag `engineering-hub`, `uid` `engineering-project-hub` (UID della dashboard, non di una data source), `id: null`, nessuna `version`.
 - Importazione: Dashboards → New → Import → caricare il file → scegliere la data source Prometheus nel menu `DS_PROMETHEUS` dopo l'importazione (o impostarne il valore predefinito nel provisioning).
 
@@ -253,6 +291,7 @@ trigger:
   newFindings: { severities: [critical], min: 1 } # severities: critical | high
   newlyOverdue: { severities: [critical, high], min: 1 } # campo della v0.9.0; ignorato se assente
   newErrors: { min: 0 } # 0 = i nuovi errori di raccolta non sono mai un trigger
+  expiredExceptions: { min: 1 } # changes.projects[].expiredExceptions (v0.9.0); 0 = mai
 digest:
   maxProjects: 10 # 1–50; gli altri sono contati come "altri N progetti"
 targets:
@@ -277,6 +316,7 @@ targets:
 - `jira.baseUrl` deve essere `https://<name>.atlassian.net` (senza percorso) oppure `https://api.atlassian.com/ex/jira/<cloudId>` (UUID); qualsiasi altra forma è un errore di configurazione.
 - Il `config/notifications.yaml` della demo ha ogni destinazione `enabled: false` e `mode: dry-run`.
 - `validate:config` valida il file quando è presente.
+- L'instradamento per team (un canale o un progetto del tracker per team) **non** è in questo schema: è la decisione 3 del §10. Se il proprietario lo sceglie, `targets.*` ottiene un elenco facoltativo `routes: [{ teams: [org/slug, …], … }]`, sempre con ogni credenziale in un secret.
 
 #### 5.5.2 Secret (solo nello step "Notify")
 
@@ -287,8 +327,9 @@ targets:
 | `JIRA_API_TOKEN`    | Jira         | API token, preferibilmente **con scope** (`write:jira-work`, o l'insieme granulare del §1), scadenza ≤ 365 giorni      | _Browse projects_ + _Create issues_ solo in `projectKey`                                                                                        |
 | `AZDO_PAT`          | Azure DevOps | PAT **con ambito organizzazione**, scope **Work Items: Read & write** (`vso.work_write`), scadenza più breve possibile | Membro solo di `project`, con permesso di creare work item di tipo `workItemType`                                                               |
 
-- Tutti e quattro sono aggiunti a `sensitiveEnvValues()`, così il controllo di pubblicazione, il controllo dei payload del notificatore e `scan-output` intercettano un valore trapelato.
-- I trigger Teams per "utenti del tenant" richiedono un token OAuth; il notificatore non lo supporta nella v0.11.0 (non invia alcun header di autenticazione a Teams). La documentazione lo dice e raccomanda "Anyone" con l'URL custodito come secret.
+- Tutti e quattro sono aggiunti a `sensitiveEnvValues()` (`shared/security/patterns.ts`), così il controllo di pubblicazione, il controllo dei payload del notificatore e `scan-output` intercettano un valore trapelato.
+- Conservati come secret del repository (o di un environment `notifications`); mappati **solo** nell'`env` dello step Notify, mai nel testo di `run:`, mai nei job collect, build, attest o deploy. Viceversa, il job notify non riceve mai la chiave della GitHub App, `GH_READ_TOKEN` né i secret dei provider.
+- I trigger Teams per "utenti del tenant" richiedono un token OAuth; il notificatore non lo supporta nella v0.14.0 (non invia alcun header di autenticazione a Teams). La documentazione lo dice e raccomanda "Anyone" con l'URL custodito come secret.
 
 #### 5.5.3 Significatività e riepilogo (D9, D10)
 
@@ -300,7 +341,8 @@ Funzione pura `buildDigest(changes, index, config): Digest | null` in `notifier/
   - `dimension:<d>`: stessa regola per ogni `d` in `trigger.dimensionsWorsened` (nessun "diventato sconosciuto" per le dimensioni);
   - `newFindings:<sev>`: conteggio dei `newFindings` con quella severità, quando la somma su `trigger.newFindings.severities` è ≥ `min`;
   - `newlyOverdue:<sev>`: lo stesso per `newlyOverdue` (campo assente → nessuno);
-  - `newErrors`: conteggio, quando `newErrors.min > 0` e il conteggio è ≥ min.
+  - `newErrors`: conteggio, quando `newErrors.min > 0` e il conteggio è ≥ min;
+  - `expiredExceptions`: conteggio di `expiredExceptions`, quando `expiredExceptions.min > 0` e il conteggio è ≥ min (campo assente → nessuno). Id delle eccezioni e repository non vengono mai letti.
 - Un progetto senza elementi significativi non è nel riepilogo. I miglioramenti non sono mai elementi.
 - `Digest` (Zod rigoroso, `notifier/src/model.ts`):
 
@@ -311,7 +353,7 @@ Funzione pura `buildDigest(changes, index, config): Digest | null` in `notifier/
     previousCollectedAt: utcDate,
     locale: 'en' | 'it',
     siteUrl: httpsUrl | null,
-    totals: { projects, overallWorsened, becameUnknown, newCritical, newHigh, newlyOverdue, newErrors }, // interi
+    totals: { projects, overallWorsened, becameUnknown, newCritical, newHigh, newlyOverdue, newErrors, expiredExceptions }, // interi
     projects: Array<{               // max digest.maxProjects; prima lo stato attuale peggiore, poi id
       id: projectId,
       name: string ≤ 100,           // dall'index (nome visualizzato del catalogo)
@@ -321,6 +363,7 @@ Funzione pura `buildDigest(changes, index, config): Digest | null` in `notifier/
       newFindings: { critical: int, high: int },
       newlyOverdue: { critical: int, high: int },
       newErrors: int,
+      expiredExceptions: int,
     }>,
     omittedProjects: int,
   }
@@ -489,7 +532,9 @@ Tutte le stringhe visibili vengono dal catalogo i18n (chiavi `notify.*` in `src/
 - `/fields/System.AreaPath` si aggiunge quando `areaPath` è impostato. `System.Title` ≤ 255 caratteri.
 - Successo = `200` con un `id` intero; l'id finisce nel riepilogo del job.
 
-#### 5.5.5 Client HTTP verso l'esterno (D13, `notifier/src/http.ts`)
+#### 5.5.5 Client HTTP verso l'esterno (D13, nucleo `shared/http/` + `notifier/src/http.ts`)
+
+Il client dell'ADR 0012 (`collector/src/providers/external/http.ts`, `getJson`) fa già ciò che un client verso l'esterno deve fare: modelli di percorso fissi con ogni parametro codificato, host uguale a quello configurato, `redirect: 'error'`, lettura in streaming con un limite di byte, messaggi fissi con una classificazione e mai l'URL, un header o il corpo. Il suo nucleo (costruzione e controlli dell'URL, la lettura limitata di `collector/src/util/bounded-fetch.ts`, la classificazione degli errori) passa in `shared/http/` senza cambi di comportamento, dimostrato dai test esistenti del client esterno che passano invariati. Il collector mantiene `getJson` sopra di esso; il notificatore aggiunge `postOnce` sopra di esso. `notifier/**` importa `shared/http/**`, mai `collector/**`.
 
 `postOnce({ target, url, body, contentType, headers, allowed, timeoutSeconds = 20, fetch })`:
 
@@ -498,7 +543,7 @@ Tutte le stringhe visibili vengono dal catalogo i18n (chiavi `notify.*` in `src/
 - Legge al massimo 64 KiB della risposta, interpreta il JSON solo per estrarre `key` (Jira) o `id` (Azure DevOps), poi lo scarta.
 - Classificazione: 2xx atteso → `sent`; 400 / 422 → `rejected`; 401 / 403 → `not-authorised`; 404 → `not-found`; 413 → `too-large`; 429 → `rate-limited`; altri ≥ 400, rete, timeout, redirect → `error`. Messaggi fissi per classe. URL, header, corpi di richiesta e risposta non sono mai registrati né restituiti.
 - **Nessun nuovo tentativo.** Una destinazione fallita si ritenta solo rieseguendo il job; il registro salta le destinazioni già servite.
-- Non usa mai il client GET della v0.10.0 e non è importabile da `collector/**`.
+- `postOnce` non è esportato verso `collector/**` (confine ESLint), e `getJson` non è esportato verso `notifier/**`: ogni programma può fare solo il proprio tipo di richiesta.
 
 #### 5.5.6 Modalità, de-duplicazione ed esecuzione del notificatore (D8, D11)
 
@@ -557,13 +602,13 @@ notify:
 ```
 
 - Dopo `deploy`, così il link "Cosa è cambiato" nel riepilogo punta ai dati che descrive. Nulla dipende da `notify`: un fallimento delle notifiche non blocca mai un deploy.
-- I job collect, build, attest e deploy non ricevono mai i quattro secret.
-- **`rw-hub-cloudflare-deploy.yml`** (il percorso protetto, con dati reali) ottiene lo stesso job, opt-in tramite un nuovo input `notifications` (`''` predefinito, `dry-run` o `send`) e i quattro secret facoltativi. Fa il checkout dell'hub al `hub-ref` verificato e della configurazione del chiamante esattamente come il suo job `collect`. Il chiamante di esempio in `examples/protected-deploy/` mostra la variabile e i secret commentati.
+- I job collect, build, attest e deploy non ricevono mai i quattro secret, e il job notify non riceve mai i secret di collect (GitHub App, `GH_READ_TOKEN`, `SONARQUBE_TOKEN`, `HARBOR_ROBOT_*`, `ARGOCD_TOKEN`).
+- **`rw-hub-cloudflare-deploy.yml`** (il percorso protetto, con dati reali; job `verify`, `collect`, `build`, `deploy`) ottiene lo stesso job dopo `deploy`, opt-in tramite un nuovo input `notifications` (`''` predefinito, `dry-run` o `send`) e i quattro secret facoltativi. Fa il checkout dell'hub al tag di release verificato da `verify` e della configurazione del chiamante esattamente come il suo job `collect`. Il chiamante di esempio in `examples/protected-deploy/` mostra la variabile e i secret commentati.
 - `.gitignore`: `notify-out/`, `.notify-in/`, `.notify-ledger/`.
 
 ### 5.6 Vista direzionale (D14)
 
-Percorso `executive/` (`src/pages/[...lang]/executive.astro`, `PageKey 'executive'`). Voce di menu "Executive summary" / "Sintesi direzionale", posta dopo "Cosa è cambiato". Titolo della pagina "Executive summary" / "Sintesi per la direzione". Nascosta (nessuna pagina, nessuna voce di menu) quando `outputs.executive.enabled: false`.
+Percorso `executive/` (`src/pages/[...lang]/executive.astro`, `PageKey 'executive'` in `src/lib/routes.ts`, con una voce in `NAV` dopo `changes` e un'Octicon in `NAV_ICON`, per esempio `briefcase`). Voce di menu "Executive summary" / "Sintesi direzionale", posta dopo "Cosa è cambiato". Titolo della pagina "Executive summary" / "Sintesi per la direzione". Nascosta (nessuna pagina, nessuna voce di menu) quando `outputs.executive.enabled: false`.
 
 Modello puro `buildExecutiveView(index, history | null, changes | null, outputs, now)` in `src/lib/executive.ts`:
 
@@ -576,7 +621,7 @@ Modello puro `buildExecutiveView(index, history | null, changes | null, outputs,
    - Una frase sotto, per esempio "Progetti rossi: 0 → 2 dall'8 gen 2026." (`Progetti` cambia quando dei progetti sono stati aggiunti dopo; la frase non tratta mai un progetto mancante come verde).
    - Storico mancante o non valido → "Ancora nessuno storico." Storico disattivato → "Lo storico è disattivato."
 4. **Rischi principali** (al massimo `topRisks`): progetti con stato complessivo rosso, poi grigio, poi ambra; dentro un gruppo, prima più critici aperti, poi più alti aperti, poi punteggio più basso (null in fondo), poi id. Ogni voce:
-   - nome del progetto (link alla sua pagina dell'hub a schermo), parola e icona di stato;
+   - nome del progetto (link alla sua pagina dell'hub a schermo), icona e parola di stato;
    - direzione: "Peggiorato dall'ultima raccolta" quando `changes` riporta un peggioramento complessivo per il progetto, "Migliorato dall'ultima raccolta" quando è migliorato, altrimenti nulla;
    - fino a tre frasi da modelli fissi, i primi tipi che corrispondono in questo ordine:
 
@@ -591,22 +636,24 @@ Modello puro `buildExecutiveView(index, history | null, changes | null, outputs,
      | `controls-missing`     | coverage rossa                                                | "Mancano controlli di sicurezza obbligatori."                                        |
      | `versions-out-of-line` | version rossa                                                 | "Le versioni rilasciate non sono allineate."                                         |
      | `quality-low`          | quality rossa                                                 | "La copertura dei test è sotto la soglia."                                           |
+     | `unsigned-images`      | `supplyChain.unsignedImages > 0`                              | "{n} immagine/i container senza firma."                                              |
      | `partly-visible`       | non grigio e (`collectionErrorCount > 0` o `!countsComplete`) | "Una parte dello stato non è visibile: {n} fonti dati non erano leggibili."          |
 
    - Nessun repository, componente, alert o link. Forme plurali tramite il modello esistente `{ one, other }`.
    - Nessun progetto rosso, grigio o ambra → "Nessun progetto richiede attenzione."
-5. **Scadenze di rimedio** (v0.9.0): "Alert scaduti: {n}, di cui critici o alti: {m}, in {k} progetti." Somme sui progetti dove il valore è noto; "≥" quando alcuni sono sconosciuti; "Non misurato (le scadenze di rimedio sono disattivate o non sono state raccolte)." quando ogni valore è null o `risk` manca.
-6. **Piè di pagina**: data di raccolta, fonte dati, link "Come leggere questa pagina" (`how-to-read/#executive`).
+5. **Scadenze di rimedio ed eccezioni** (v0.9.0): "Alert scaduti: {n}, di cui critici o alti: {m}, in {k} progetti." e "Accettati sotto un'eccezione: {a}; eccezioni da rivedere: {e}." Somme sui progetti dove il valore è noto; "≥" quando alcuni sono sconosciuti; "Non misurato (le scadenze di rimedio sono disattivate o non sono state raccolte)." quando ogni valore è null.
+6. **Supply chain** (v0.12.0): "SBOM su {s} di {r} repository · {u} immagini non firmate · {f} licenze segnalate", con le forme singolari come nella pagina Sicurezza; ogni parte "non misurata" quando ogni valore è null, "≥" quando alcuni sono sconosciuti. Nessun nome di immagine, pacchetto o licenza.
+7. **Piè di pagina**: data di raccolta, fonte dati, link "Come leggere questa pagina" (`how-to-read/#executive`).
 
 Stampa (`@media print` in `src/styles/global.css`): nasconde navigazione dell'intestazione, selettore del tema, skip link e link del piè di pagina; forza i token chiari; testo nero su bianco; `@page { size: A4; margin: 15mm }`; riquadri e voci di rischio `break-inside: avoid`; link stampati come testo semplice (nessuna espansione dell'URL); la tabella dell'andamento mantiene i bordi. Nessun pulsante di stampa (nessuno script nuovo) **(BC)**.
 
-Regole comuni: token Warm Graphite, stato con icona + parola + colore, tabelle con `<caption>` e `<th scope>`, contrasto WCAG 2.2 AA (test esistente sul contrasto dei token).
+Regole comuni: token Primer (ADR 0009), stato con Octicon + parola + colore (le icone di stato della v0.13.0), tabelle con `<caption>` e `<th scope>`, contrasto WCAG 2.2 AA (test esistente sul contrasto dei token).
 
 **Come leggere** ottiene `#executive` "Executive summary" / "Sintesi direzionale": cosa significa ogni blocco, la regola della colonna dell'andamento, l'ordine dei rischi, che i conteggi sconosciuti non sono mai 0 e la regola di oscuramento.
 
 **Qualità dei dati** ottiene una riga nella scheda della run: "Metriche per Prometheus: `data/metrics/hub.prom`" (link), oppure "disattivate".
 
-**Design-first** (regola permanente del proprietario): la pagina direzionale (schermo e stampa) viene disegnata come artboard nel canvas di Claude Design con Warm Graphite prima di scrivere codice. Il proprietario rivede dopo la consegna; questo non blocca. Dopo la costruzione si aggiornano il canvas e il README del DS. Nessun link agli artifact entra nel repository.
+**Design-first** (regola permanente del proprietario): la pagina direzionale (schermo chiaro e scuro, telefono e stampa) viene disegnata come artboard nel canvas di Claude Design con il design system Primer Hub, e **il proprietario approva i mockup prima che si scriva qualsiasi codice dell'interfaccia**. Dopo la costruzione si aggiornano il canvas e il README del design system. Nessun link agli artifact entra nel repository.
 
 ### 5.7 Stringhe EN/IT (principali; elenco completo nel piano)
 
@@ -619,6 +666,8 @@ Regole comuni: token Warm Graphite, stato con icona + parola + colore, tabelle c
 | `executive.trend.notEnough`     | Not enough history                                                                  | Storico insufficiente                                                                         |
 | `executive.risks.none`          | No project needs attention.                                                         | Nessun progetto richiede attenzione.                                                          |
 | `executive.overdue.notMeasured` | Not measured (remediation deadlines are off or were not collected).                 | Non misurato (le scadenze di rimedio sono disattivate o non sono state raccolte).             |
+| `executive.supplyChain.title`   | Supply chain                                                                        | Catena di fornitura                                                                           |
+| `executive.risk.unsignedImages` | {n} container image(s) without a signature.                                         | {n} immagine/i container senza firma.                                                         |
 | `notify.title`                  | Engineering hub: {n} project(s) need attention                                      | Engineering hub: {n} progetto/i richiedono attenzione                                         |
 | `notify.compared`               | Compared with the collection of {date}                                              | Confronto con la raccolta del {date}                                                          |
 | `notify.statusWas`              | {to} (was {from})                                                                   | {to} (prima {from})                                                                           |
@@ -629,23 +678,27 @@ Regole comuni: token Warm Graphite, stato con icona + parola + colore, tabelle c
 
 Nessun nuovo input di fixture: gli output derivano dai golden esistenti (`GOLDEN_NOW = 2026-01-15T12:00:00.000Z`).
 
-- `fixtures/snapshots/metrics/hub.prom` diventa un golden scritto da `npm run fixtures:update`. Valori attesi (dopo v0.9.0 e v0.10.0; il builder rilegge il golden `index.json` dopo il rebase e adatta i numeri, mai le regole):
+- `fixtures/snapshots/metrics/hub.prom` diventa un golden scritto da `npm run fixtures:update`. Valori attesi (riletti su `main` alla v0.13.0; il builder rilegge il golden `index.json` al momento del piano e adatta i numeri, mai le regole):
   - `hub_collection_timestamp_seconds 1768478400`;
   - `hub_portfolio_projects{status="red"} 2`, `amber 1`, `green 0`, `grey 1` (Beta e Platform rossi, Alpha ambra, Gamma grigio);
   - `hub_project_score{project="project-beta"} 40`; nessun `hub_project_score{project="project-gamma"}`; `hub_project_measure_known{measure="score",project="project-gamma"} 0`;
   - `hub_project_open_alerts{project="project-beta",severity="critical"} 1`; `hub_project_open_alerts_complete{project="project-beta"} 0`;
   - `hub_project_overdue_alerts{class="critical_high",project="platform"} 1`;
+  - `hub_project_unsigned_images{project="project-beta"} 1`; `hub_project_flagged_licenses{project="platform"} 2`; nessuna `hub_project_unsigned_images{project="project-gamma"}` (i suoi riepiloghi CI non sono leggibili, quindi il conteggio è null);
+  - una serie `hub_provider_state` a 1 per provider (`sonarqube` partial, `harbor` available, `argocd` partial nella fixture mock);
   - nessuna riga contiene `example-org/`.
-- Riepilogo golden dal golden `changes.json` con i trigger predefiniti: Beta (complessivo ambra → rosso, Delivery e Sicurezza ambra → rosso, 1 nuovo critico) e Platform (complessivo e Sicurezza ambra → rosso, 1 alto scaduto da poco). Il miglioramento di Alpha non è un elemento. `totals = { projects: 2, overallWorsened: 2, becameUnknown: 0, newCritical: 1, newHigh: 0, newlyOverdue: 1, newErrors: 0 }`. Modalità effettiva `dry-run (mock-data)`.
+- Riepilogo golden dal golden `changes.json` con i trigger predefiniti: Beta (complessivo ambra → rosso, Delivery e Sicurezza ambra → rosso, 1 nuovo critico) e Platform (complessivo e Sicurezza ambra → rosso, 1 alto scaduto da poco, 1 eccezione scaduta). Il miglioramento di Alpha non è un elemento. `totals = { projects: 2, overallWorsened: 2, becameUnknown: 0, newCritical: 1, newHigh: 0, newlyOverdue: 1, newErrors: 0, expiredExceptions: 1 }`. Modalità effettiva `dry-run (mock-data)`.
 - Golden della pagina direzionale: riquadri Rosso 2, Ambra 1, Verde 0, Non visibile 1; rischi principali nell'ordine Beta, Platform, Gamma, Alpha.
 
 ## 6. Test (sintesi; casi esatti nel piano)
 
 - **Unit, metriche:** regole del formato (HELP/TYPE una volta e prima dei campioni, newline finale, escaping di `\`, `"`, newline), stati one-hot, serie sconosciute omesse e `measure_known` 0, conteggi parziali, nessuna label di repository, determinismo, i due passi di troncamento con un `maxBytes` minimo, un canary nel nome di un progetto non raggiunge mai il file (rifiutato dal controllo).
 - **Unit, Grafana:** il JSON si interpreta; ogni data source di pannello e di target è `{ type: 'prometheus', uid: '${DS_PROMETHEUS}' }`; esiste una variabile `datasource` `DS_PROMETHEUS`; nessun'altra stringa UID; ogni `expr` usa solo metriche `hub_*` che il renderer emette.
+- **Unit, nucleo HTTP condiviso:** i test esistenti del client esterno passano invariati dopo lo spostamento in `shared/http/`; `postOnce` rifiuta per tipo ogni metodo diverso da POST, non-https, userinfo, un host fuori dalla allowlist della destinazione e un `..` codificato in un parametro di percorso, tutto prima di qualsiasi richiesta.
+- **Unit, metriche di supply chain e rischio:** i conteggi null omettono la serie e mettono `measure_known` a 0; `hub_provider_state` è one-hot; nessuna stringa di immagine, pacchetto, licenza, team o eccezione raggiunge il file.
 - **Unit, notifiche:** schema della configurazione e valori predefiniti; regole di significatività (peggioramento, grigio, miglioramenti ignorati, soglie, `newlyOverdue` assente); stabilità e sensibilità della chiave (stessi elementi → stessa chiave; `previousCollectedAt` diverso → chiave diversa; `generatedAt` ignorato); il riepilogo non contiene repository né URL diversi da `siteUrl`; forma esatta di ogni renderer, escaping, limiti; tabella della risoluzione della modalità; salto e aggiunta nel registro; rifiuti della allowlist degli host (http, altro host, userinfo con `@`, Teams `logic.azure.com`), `redirect: 'error'`, nessun nuovo tentativo, classificazione degli errori, nulla registrato (spia su console) — tutto con una **`fetch` iniettata**, mai un endpoint reale.
 - **Unit, workflow:** `notify.yml` e `deploy-pages.yml` interpretati come YAML: i secret compaiono solo nell'env dello step Notify; `collect` non li riceve mai; permessi del job esattamente `contents: read, actions: read`; `deploy` non dipende da `notify`.
-- **Unit, pagina direzionale:** conteggi, colonne dell'andamento (con e senza un punto a `trendDays`), ordine e frasi dei rischi, "≥" per conteggi incompleti, scaduti "non misurato".
+- **Unit, pagina direzionale:** conteggi, colonne dell'andamento (con e senza un punto a `trendDays`), ordine e frasi dei rischi, "≥" per conteggi incompleti, scaduti "non misurato", la riga della supply chain con conteggi null e singolari, nessun riferimento a team nell'output.
 - **Integrazione, collector:** golden `metrics/hub.prom`; `outputs.metrics.enabled: false` → nessun file; riga del report.
 - **Integrazione, notificatore:** sui golden, `npm run notify` scrive i quattro file di payload e `summary.md`, modalità `dry-run (mock-data)`, nessuna richiesta (spia su fetch), nessun `example-org/` in alcun payload.
 - **Integrazione, sito:** `/executive/` e `/it/executive/` si generano; nessun `github.com` né nome di repository del catalogo nel loro HTML; foglio di stile di stampa presente; ancora in Come leggere; link alle metriche in Qualità dei dati; `dist/data/metrics/hub.prom` esiste.
@@ -663,10 +716,12 @@ Nessun nuovo input di fixture: gli output derivano dai golden esistenti (`GOLDEN
 
 - **Il webhook di Workflows appartiene a una persona.** Il flusso gira con l'account di chi l'ha creato; se quell'account se ne va, la pubblicazione si ferma. La documentazione raccomanda un account di servizio come proprietario del flusso.
 - **Trigger "Anyone".** Chi ha l'URL può pubblicare nel canale. È un secret come una password: si ruota eliminando e ricreando il trigger del flusso.
+- **I PAT globali di Azure DevOps finiscono il 1 dic 2026** (verificato il 2026-10-21): la documentazione chiede fin da subito un PAT con ambito di organizzazione; il piano ricontrolla la data.
 - **PAT e API token sono credenziali di lunga durata.** Microsoft e Atlassian raccomandano Entra / OAuth. Si consiglia una scadenza ≤ 90 giorni; l'identità di workload Entra per Azure DevOps è un'idea successiva.
 - **Notifiche perse.** Un invio fallito non viene ritentato automaticamente (nessun duplicato per costruzione); la raccolta successiva notifica solo il proprio insieme di cambiamenti. Il riepilogo e lo stato del job rendono visibile il fallimento.
 - **Applicazione Access limitata a un percorso.** La precedenza di un'applicazione di percorso su quella del sito va verificata sulla documentazione di Cloudflare al momento della costruzione; fino ad allora la documentazione dice "verifica con `curl` che il service token apra solo il percorso delle metriche".
-- **Deriva rispetto a v0.7.0–v0.10.0.** Nomi di file (`select-artifact.ts`, `trend.ts`, `sensitiveEnvValues`), nomi dei campi di `risk`, ordine del menu e numeri dei golden possono cambiare. Il piano dice: adattarsi a ciò che c'è su `main`, mantenere le regole.
+- **Deriva.** Questo aggiornamento è stato verificato su `main` alla v0.13.0. Ciò che verrà unito prima del piano (nomi di file e di campi, ordine del menu, numeri dei golden) si rilegge al momento del piano: adattarsi a ciò che c'è su `main`, mantenere le regole.
+- **Spostamento del client verificato.** Spostare il nucleo dell'ADR 0012 in `shared/http/` tocca codice sensibile per la sicurezza; lo spostamento è un task a sé, con i test esistenti invariati e verdi prima che il codice del notificatore lo usi.
 
 ## 9. Fonti (verificate il 2026-10-21)
 
@@ -688,3 +743,14 @@ Nessun nuovo input di fixture: gli output derivano dai golden esistenti (`GOLDEN
 - Service token di Cloudflare Access: <https://developers.cloudflare.com/cloudflare-one/identity/service-tokens/>
 - Importazione in Grafana: <https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/import-dashboards/>
 - actions/upload-artifact (`overwrite`, conservazione 1–90): <https://github.com/actions/upload-artifact>
+
+## 10. Decisioni del proprietario (2026-11-03)
+
+Il proprietario ha accettato tutte le raccomandazioni:
+
+1. **Ambito della v0.14.0: (b).** Metriche, Grafana e vista direzionale nella v0.14.0 (nessuna scrittura verso l'esterno); notifiche nella v0.15.0 con una revisione propria.
+2. **Notifiche sulla supply chain: (a) nessuna.** La supply chain compare solo nelle metriche e nella pagina direzionale; da rivedere quando i dati reali mostreranno quanto sono rumorosi i conteggi. `changes.json` resta 1.0.
+3. **Instradamento delle notifiche per team: (a).** Un riepilogo per destinazione per tutto il portfolio; rotte per team quando i team saranno curati nel catalogo.
+4. **Vista direzionale per team: (b), solo la pagina.** La pagina direzionale rispetta `?team=` come il Portfolio (filtro di visualizzazione, ADR 0010) e non stampa mai il riferimento al team; nessuna label di team nelle metriche (D18 invariata).
+5. **Pubblico della pagina direzionale: (a).** Disponibile in entrambi i pubblici quando `outputs.executive.enabled`; la pagina è oscurata in entrambi (D14).
+6. **Destinazioni delle notifiche: (b) prima solo Microsoft Teams** (v0.15.0); Jira e Azure DevOps più avanti.
