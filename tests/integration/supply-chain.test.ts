@@ -442,7 +442,7 @@ describe('supply chain providers: collection report and canaries', () => {
       'git.internal.example',
       'kubernetes.internal.example',
       'canary-img-4d2e',
-      'ghp_AbCdEfGhIjKlMnOpQrStUvWxYz0123456789',
+      'ghp_canary_harbor_scanner_7c1e',
     ];
     for (const dir of [out, 'fixtures/snapshots']) {
       for (const file of await walk(dir)) {

@@ -6,7 +6,7 @@
         "scan_status": "Success",
         "end_time": "@now-1d",
         "scanner": {
-          "name": "ghp_AbCdEfGhIjKlMnOpQrStUvWxYz0123456789",
+          "name": "ghp_canary_harbor_scanner_7c1e",
           "vendor": "Synthetic",
           "version": "1.0"
         },
