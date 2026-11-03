@@ -432,6 +432,30 @@ export function teamSuggestions(
   );
 }
 
+/** One line of the Teams field explaining the team discovery result for a project. */
+export type TeamStatusLine =
+  { kind: 'off' | 'notAuthorised' | 'limit' | 'partial' } | { kind: 'notFound'; team: string };
+
+/**
+ * Why suggestions may be missing or incomplete: discovery off (null), not authorised, the
+ * maxTeams limit, a failed call, and each listed team GitHub did not return.
+ */
+export function teamStatus(
+  result: TeamsResult | null,
+  projectId: string,
+  teams: string[],
+): TeamStatusLine[] {
+  if (!result) return [{ kind: 'off' }];
+  if (result.status === 'not-authorised') return [{ kind: 'notAuthorised' }];
+  const lines: TeamStatusLine[] = [];
+  if (result.limitReached) lines.push({ kind: 'limit' });
+  if (result.errors.length > 0) lines.push({ kind: 'partial' });
+  for (const n of result.notFound)
+    if (n.projectId === projectId && teams.includes(n.team))
+      lines.push({ kind: 'notFound', team: n.team });
+  return lines;
+}
+
 /** True when a component of the project already points at this submodule path. */
 export const isSubmoduleMapped = (project: DraftProject, path: string) =>
   project.components.some((c) => c.submodulePath.trim() === path);

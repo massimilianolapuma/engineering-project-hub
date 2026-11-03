@@ -859,13 +859,15 @@ export const en = {
       read: 'read {n} teams in {orgs}',
       secretSkipped: { one: '{n} secret team skipped', other: '{n} secret teams skipped' },
       evidenceAccess: 'Write access to {n} of {total} repositories of this project',
-      evidenceName: 'The team name points to this project; no write access found',
+      evidenceName: 'The team name points to this project',
       addSuggestion: 'Add',
       addSuggestionLabel: 'Add team {name}',
       off: 'No suggestions: team discovery is off in config/catalog.yaml, or the site is published to a public audience.',
       notAuthorised:
         'No suggestions: the GitHub App cannot read teams. Grant the organisation permission Members: read.',
       partial: 'Some teams could not be read: suggestions may be incomplete.',
+      limit:
+        'Team discovery stopped at maxTeams: suggestions are partial and missing teams are not checked. Raise teams.maxTeams in config/catalog.yaml.',
       notFound: '{team} is not among the teams GitHub returned. Check the slug or remove it.',
     },
     editing: 'Editing {name}',

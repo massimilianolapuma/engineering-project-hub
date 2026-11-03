@@ -97,3 +97,12 @@ describe('i18n', () => {
     expect(useI18n('en').seconds(12_340)).toBe('12.3 s');
   });
 });
+
+describe('team suggestion evidence copy', () => {
+  it('a name match does not claim anything about access (it may not have been read)', async () => {
+    const { en } = await import('../../src/i18n/en');
+    const { it: itDict } = await import('../../src/i18n/it');
+    expect(en.catalogEditor.teams.evidenceName).toBe('The team name points to this project');
+    expect(itDict.catalogEditor.teams.evidenceName).toBe('Il nome del team indica questo progetto');
+  });
+});

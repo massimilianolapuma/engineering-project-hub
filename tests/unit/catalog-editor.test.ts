@@ -7,6 +7,7 @@ import {
   addSuggestedComponent,
   addTeam,
   removeTeam,
+  teamStatus,
   teamSuggestions,
   catalogRepository,
   catalogToYaml,
@@ -591,5 +592,48 @@ describe('catalog editor: teams', () => {
     addTeam(project('project-gamma', d), 'example-org/pay-project-gamma-dev');
     const changes = pendingChanges(toDraft(snapshot.catalog), d);
     expect(changes.map((c) => [c.id, c.kind])).toEqual([['project-gamma', 'modified']]);
+  });
+});
+
+describe('catalog editor: team discovery status lines', () => {
+  const base = {
+    status: 'ok' as const,
+    orgs: ['example-org'],
+    teamsRead: 2,
+    secretSkipped: 0,
+    limitReached: false,
+    suggestions: [],
+    notFound: [],
+    errors: [],
+  };
+  it('off, not authorised, limit, partial and not found, in that order', () => {
+    expect(teamStatus(null, 'p', [])).toEqual([{ kind: 'off' }]);
+    expect(teamStatus({ ...base, status: 'not-authorised' }, 'p', [])).toEqual([
+      { kind: 'notAuthorised' },
+    ]);
+    expect(teamStatus({ ...base, status: 'partial', limitReached: true }, 'p', [])).toEqual([
+      { kind: 'limit' },
+    ]);
+    expect(
+      teamStatus(
+        {
+          ...base,
+          status: 'partial',
+          limitReached: true,
+          errors: [{ target: 'example-org/x', classification: 'error' }],
+        },
+        'p',
+        [],
+      ),
+    ).toEqual([{ kind: 'limit' }, { kind: 'partial' }]);
+    expect(
+      teamStatus({ ...base, notFound: [{ projectId: 'p', team: 'example-org/gone' }] }, 'p', [
+        'example-org/gone',
+      ]),
+    ).toEqual([{ kind: 'notFound', team: 'example-org/gone' }]);
+    // A team already removed from the draft is no longer reported.
+    expect(
+      teamStatus({ ...base, notFound: [{ projectId: 'p', team: 'example-org/gone' }] }, 'p', []),
+    ).toEqual([]);
   });
 });

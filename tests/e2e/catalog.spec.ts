@@ -255,6 +255,10 @@ test('adds a team to a project: pending change and YAML; the suggestions say dis
   await input.fill('pay-team');
   await teams.getByRole('button', { name: 'Add team' }).click();
   await expect(teams.getByText('Must be "org/team-slug"', { exact: false })).toBeVisible();
+  // It stays after the form's validation pass (150 ms later), and the input is marked invalid.
+  await page.waitForTimeout(400);
+  await expect(teams.getByText('Must be "org/team-slug"', { exact: false })).toBeVisible();
+  await expect(input).toHaveAttribute('aria-invalid', 'true');
   await input.fill('example-org/pay-project-gamma-dev');
   await input.press('Enter');
   await expect(

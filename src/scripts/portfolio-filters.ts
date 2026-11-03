@@ -87,7 +87,7 @@ if (form && tbody) {
       note.hidden = !unknown;
       note.textContent = unknown ? `· ${chipBox.dataset.unknown ?? ''}` : '';
       chip.classList.toggle('teamchip--unknown', unknown);
-      const label = (chipBox.dataset.remove ?? '{name}').replace('{name}', slug);
+      const label = (chipBox.dataset.remove ?? '{name}').replace('{name}', () => slug);
       chip.setAttribute(
         'aria-label',
         unknown ? `${label} (${chipBox.dataset.unknown ?? ''})` : label,

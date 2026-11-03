@@ -867,13 +867,15 @@ export const it: Dict = {
       read: 'letti {n} team in {orgs}',
       secretSkipped: { one: '{n} team segreto ignorato', other: '{n} team segreti ignorati' },
       evidenceAccess: 'Accesso in scrittura a {n} di {total} repository del progetto',
-      evidenceName: 'Il nome del team indica questo progetto; nessun accesso in scrittura trovato',
+      evidenceName: 'Il nome del team indica questo progetto',
       addSuggestion: 'Aggiungi',
       addSuggestionLabel: 'Aggiungi il team {name}',
       off: 'Nessun suggerimento: la discovery dei team è disattivata in config/catalog.yaml, oppure il sito è pubblicato per un pubblico esterno.',
       notAuthorised:
         "Nessun suggerimento: la GitHub App non può leggere i team. Concedi il permesso dell'organizzazione Members: read.",
       partial: 'Alcuni team non sono stati letti: i suggerimenti possono essere incompleti.',
+      limit:
+        'La discovery dei team si è fermata a maxTeams: i suggerimenti sono parziali e i team mancanti non vengono controllati. Alza teams.maxTeams in config/catalog.yaml.',
       notFound: '{team} non è tra i team restituiti da GitHub. Controlla lo slug o rimuovilo.',
     },
     editing: 'Modifica di {name}',

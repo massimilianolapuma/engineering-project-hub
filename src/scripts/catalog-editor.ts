@@ -37,6 +37,7 @@ import {
   removeTeam,
   renameComponentId,
   safeGithubUrl,
+  teamStatus,
   teamSuggestions,
   toDraft,
   validateDraft,
@@ -635,7 +636,9 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
         autocapitalize: 'off',
         placeholder: 'example-org/team-slug',
         'data-path': key([...base, 'teams']),
-        'aria-describedby': `${id}-hint${error ? ` ${id}-err` : ''}`,
+        // The add error has its own paragraph: the form's validation pass (markIssues) only
+        // manages `${id}-err`, and a rejected value never reaches the draft.
+        'aria-describedby': `${id}-hint${error ? ` ${id}-adderr` : ''} ${id}-err`,
         'aria-invalid': error ? 'true' : undefined,
       });
       const add = (ref: string) => {
@@ -643,7 +646,11 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
         error = issue ? t.invalid : '';
         if (!issue) announce(fill(t.added, { name: ref.trim() }));
         paint('input');
-        if (issue) (wrap.querySelector(`#${CSS.escape(id)}`) as HTMLInputElement).value = ref;
+        if (issue) {
+          // Nothing changed in the draft: keep the value and the error, skip the validation pass.
+          (wrap.querySelector(`#${CSS.escape(id)}`) as HTMLInputElement).value = ref;
+          return;
+        }
         schedule();
       };
       input.addEventListener('keydown', (e) => {
@@ -660,13 +667,12 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
           icon(tone === 'attention' ? 'alert' : 'info'),
           h('span', {}, text),
         );
-      if (!result) lines.push(line(t.off, 'muted'));
-      else if (result.status === 'not-authorised') lines.push(line(t.notAuthorised, 'attention'));
-      else if (result.status === 'partial') lines.push(line(t.partial, 'attention'));
-      if (result)
-        for (const n of result.notFound)
-          if (n.projectId === p.id.trim() && p.teams.includes(n.team))
-            lines.push(line(fill(t.notFound, { team: n.team }), 'attention'));
+      for (const s of teamStatus(result, p.id.trim(), p.teams)) {
+        if (s.kind === 'off') lines.push(line(t.off, 'muted'));
+        else if (s.kind === 'notFound')
+          lines.push(line(fill(t.notFound, { team: s.team }), 'attention'));
+        else lines.push(line(t[s.kind], 'attention'));
+      }
 
       const suggestions = teamSuggestions(result, p.id.trim(), p);
       const secret = result?.secretSkipped ?? 0;
@@ -757,7 +763,8 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
           button(t.add, () => add(input.value)),
         ),
         h('p', { class: 'ce-hint', id: `${id}-hint` }, t.hint),
-        h('p', { class: 'ce-error', id: `${id}-err`, hidden: !error }, error),
+        h('p', { class: 'ce-error', id: `${id}-adderr`, hidden: !error }, error),
+        h('p', { class: 'ce-error', id: `${id}-err`, hidden: true }),
         ...lines,
         box,
       ];

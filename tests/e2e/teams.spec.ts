@@ -37,6 +37,13 @@ test('team filter: unknown and hostile values render as text', async ({ page }) 
   ).toBeVisible();
 });
 
+test('team filter: a "$&" in a link value is named literally', async ({ page }) => {
+  await page.goto('/?team=a%24%26b');
+  await expect(
+    page.getByRole('button', { name: 'Remove team a$&b (not in the catalog)' }),
+  ).toBeVisible();
+});
+
 test('team filter: repeated and upper-case values count once', async ({ page }) => {
   await page.goto('/?team=Platform&team=platform&team=%20platform%20');
   await expect(page.locator('[data-team-chips] .teamchip')).toHaveCount(1);
