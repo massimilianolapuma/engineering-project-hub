@@ -219,7 +219,17 @@ test('project page has no horizontal scroll at phone width', async ({ page, isMo
   }
 });
 
-for (const path of ['/', '/projects/project-beta/', '/security/', '/versions/']) {
+for (const path of [
+  '/',
+  '/projects/project-beta/',
+  '/security/',
+  '/versions/',
+  '/workflows/',
+  '/changes/',
+  '/data-quality/',
+  '/catalog/',
+  '/how-to-read/',
+]) {
   test(`${path} does not scroll sideways at 390px`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(path);

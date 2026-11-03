@@ -457,7 +457,7 @@ const editorStrings = jsonForScript({
     color: var(--fgColor-muted);
   }
 
-  /* Actions: secondary by default, ≥40px; the accent primary (Propose on GitHub) is ≥44px. */
+  /* Actions: Primer buttons, ≥40px; the green primary (Propose on GitHub) is ≥44px. */
   .ce :global(.btn) {
     display: inline-flex;
     align-items: center;
@@ -466,29 +466,14 @@ const editorStrings = jsonForScript({
     min-height: 40px;
     padding: 6px var(--base-size-16);
     font-size: var(--text-body-size-medium);
-    color: var(--fgColor-default);
-    background: var(--bgColor-default);
-    border-color: var(--borderColor-emphasis);
     border-radius: var(--borderRadius-medium);
   }
-  .ce :global(.btn:hover) {
-    background: var(--bgColor-muted);
-    border-color: var(--fgColor-default);
-  }
-  .ce :global(.btn--primary),
-  .ce :global(.btn--primary:hover) {
+  .ce :global(.btn--primary) {
     min-height: 44px;
     padding: 6px 18px;
-    background: var(--button-primary-bgColor-rest);
-    border-color: var(--button-primary-borderColor-rest);
-    color: var(--button-primary-fgColor-rest);
   }
   .ce :global(.btn--ghost) {
     background: transparent;
-  }
-  .ce :global(.btn--danger) {
-    color: var(--fgColor-danger);
-    border-color: var(--fgColor-danger);
   }
   .ce :global(.btn--sm) {
     min-height: 40px;
