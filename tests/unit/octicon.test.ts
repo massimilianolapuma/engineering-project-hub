@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { octiconSvg, type OcticonName } from '../../src/lib/octicon';
+import { NAV_ICON } from '../../src/lib/routes';
 import { SYMBOL_ICON } from '../../src/lib/symbols';
 
 describe('octiconSvg', () => {
@@ -34,6 +35,11 @@ describe('octiconSvg', () => {
 
   it('knows every symbol icon', () => {
     for (const name of Object.values(SYMBOL_ICON)) expect(() => octiconSvg(name)).not.toThrow();
+  });
+
+  it('knows every navigation icon', () => {
+    expect(Object.keys(NAV_ICON).length).toBeGreaterThan(0);
+    for (const name of Object.values(NAV_ICON)) expect(() => octiconSvg(name)).not.toThrow();
   });
 
   it('throws on an unknown name', () => {

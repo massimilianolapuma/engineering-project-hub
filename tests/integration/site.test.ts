@@ -176,6 +176,36 @@ describe('static site', () => {
     }
   });
 
+  it('renders the GitHub-style shell: icon nav without counters, run bar, flash, footer', async () => {
+    for (const [p, dict] of [
+      ['', en],
+      ['it', itDict],
+    ] as const) {
+      const html = await page(p);
+      const nav = /<nav class="mainnav"[\s\S]*?<\/nav>/.exec(html)?.[0] ?? '';
+      const links = nav.match(/<a [\s\S]*?<\/a>/g) ?? [];
+      expect(links.length, p).toBe(7);
+      for (const a of links) expect(a, p).toMatch(/<svg[^>]*class="octicon octicon-/);
+      expect(nav, p).not.toContain('class="Counter"');
+      const footer = /<footer class="footer"[\s\S]*?<\/footer>/.exec(html)?.[0] ?? '';
+      expect(textOf(footer), p).toContain(dict.footer.notAffiliated);
+      // Identity is opt-in (Cloudflare Access): the default build has no slot and no endpoint.
+      expect(html, p).not.toContain('data-identity');
+      expect(html, p).not.toContain('/cdn-cgi/');
+      expect(html, p).toMatch(/class="runbar"/);
+      expect(html, p).toMatch(
+        /data-stale-banner[^>]*role="status"|role="status"[^>]*data-stale-banner/,
+      );
+    }
+  });
+
+  it('never uses a GitHub logo icon', async () => {
+    for (const v of VIEWS) {
+      const html = await page(v);
+      expect(html, v).not.toMatch(/octocat|mark-github|logo-github/);
+    }
+  });
+
   it('links to the original GitHub resources', async () => {
     const html = await page('projects/project-alpha');
     expect(html).toContain('href="https://github.com/example-org/project-alpha-coordinator"');

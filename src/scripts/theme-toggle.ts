@@ -13,7 +13,7 @@ function current(): Mode {
 function render(mode: Mode) {
   if (!btn) return;
   const label = btn.dataset[`label${mode[0]!.toUpperCase()}${mode.slice(1)}`] ?? mode;
-  btn.textContent = label;
+  (btn.querySelector<HTMLElement>('[data-theme-label]') ?? btn).textContent = label;
   btn.setAttribute('aria-label', `${btn.dataset.labelTheme ?? 'Theme'}: ${label}`);
 }
 btn?.addEventListener('click', () => {

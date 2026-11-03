@@ -153,20 +153,26 @@ code.sub {
   white-space: nowrap;
 }
 
-/* Header */
+/* Header: one muted band (brand row + UnderlineNav), as on a github.com repository page. */
 .topbar {
-  background: var(--bgColor-default);
+  background: var(--bgColor-muted);
   border-bottom: 1px solid var(--borderColor-default);
 }
 .topbar__inner,
-.runbar__inner {
+.runbar__inner,
+.mainnav ul {
   max-width: 1200px;
   margin: 0 auto;
-  padding: var(--base-size-12) var(--base-size-24);
+  padding-left: var(--base-size-24);
+  padding-right: var(--base-size-24);
+}
+.topbar__inner {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--base-size-8) var(--base-size-16);
+  padding-top: var(--base-size-12);
+  padding-bottom: var(--base-size-4);
 }
 .brand {
   display: inline-flex;
@@ -175,103 +181,245 @@ code.sub {
   min-height: 40px;
   color: var(--fgColor-default);
   font-size: var(--text-body-size-large);
-  font-weight: 700;
+  font-weight: 600;
   text-decoration: none;
 }
-.mainnav ul {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.mainnav a {
-  display: flex;
-  align-items: center;
-  min-height: 40px;
-  padding: var(--base-size-8) 10px;
-  border-radius: var(--borderRadius-medium);
-  color: var(--fgColor-muted);
+.brand:hover {
   text-decoration: none;
-  font-weight: 500;
-}
-.mainnav a:hover {
-  color: var(--fgColor-default);
-  background: var(--bgColor-muted);
-}
-.mainnav a[aria-current='page'] {
-  color: var(--fgColor-default);
-  background: var(--bgColor-muted);
 }
 .topbar__tools {
   margin-left: auto;
   display: flex;
-  gap: var(--base-size-12);
+  gap: var(--base-size-8);
   align-items: center;
   font-size: var(--text-body-size-small);
 }
+/* Primer UnderlineNav: icon + label; the current page is semibold with a 2px underline. */
+.mainnav {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.mainnav ul {
+  display: flex;
+  gap: var(--base-size-8);
+  list-style: none;
+  padding-top: var(--base-size-4);
+  padding-bottom: 0;
+}
+.mainnav li {
+  flex: none;
+}
+.mainnav a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--base-size-8);
+  min-height: 48px;
+  padding: 0 var(--base-size-8);
+  color: var(--fgColor-default);
+  font-size: var(--text-body-size-medium);
+  white-space: nowrap;
+  text-decoration: none;
+}
+.mainnav a .octicon {
+  color: var(--fgColor-muted);
+}
+.mainnav a::before {
+  content: '';
+  position: absolute;
+  inset: 8px 0;
+  z-index: -1;
+  border-radius: var(--borderRadius-medium);
+}
+.mainnav a:hover::before {
+  background: var(--bgColor-neutral-muted);
+}
+.mainnav a {
+  isolation: isolate;
+}
+.mainnav a[aria-current='page'] {
+  font-weight: 600;
+}
+.mainnav a[aria-current='page']::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: var(--borderRadius-medium);
+  background: var(--underlineNav-borderColor-active);
+}
+@media (forced-colors: active) {
+  .mainnav a[aria-current='page']::after {
+    background: CanvasText;
+  }
+}
+.utility-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--base-size-8);
+  min-height: 40px;
+  padding: 0 var(--base-size-8);
+  border-radius: var(--borderRadius-medium);
+  color: var(--fgColor-accent);
+  font-weight: 500;
+  text-decoration: none;
+}
+.utility-link:hover {
+  background: var(--bgColor-neutral-muted);
+  text-decoration: none;
+}
+.utility-link[aria-current='page'] {
+  color: var(--fgColor-default);
+  background: var(--bgColor-neutral-muted);
+}
+/* Primer default button. The icon of the current colour mode is shown (CSS only). */
 .theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--base-size-8);
+  min-height: 40px;
+  padding: 0 var(--base-size-12);
   font: inherit;
   font-size: var(--text-body-size-small);
-  color: var(--fgColor-default);
-  background: transparent;
-  border: 1px solid var(--borderColor-default);
+  font-weight: 500;
+  color: var(--button-default-fgColor-rest);
+  background: var(--button-default-bgColor-rest);
+  border: 1px solid var(--button-default-borderColor-rest);
   border-radius: var(--borderRadius-medium);
-  padding: 0 var(--base-size-12);
-  min-height: 40px;
   cursor: pointer;
 }
 .theme-toggle:hover {
-  background: var(--bgColor-muted);
+  background: var(--button-default-bgColor-hover);
+  border-color: var(--button-default-borderColor-hover);
 }
+.theme-toggle .octicon {
+  color: var(--fgColor-muted);
+}
+.theme-toggle__icon {
+  display: none;
+}
+[data-color-mode='auto'] .theme-toggle__icon--auto,
+[data-color-mode='light'] .theme-toggle__icon--light,
+[data-color-mode='dark'] .theme-toggle__icon--dark {
+  display: inline-block;
+}
+/* Language: a two-button segmented control. */
 .langswitch {
   display: flex;
-  border: 1px solid var(--borderColor-default);
+  gap: 2px;
+  padding: 2px;
   border-radius: var(--borderRadius-medium);
-}
-/* No overflow clipping on the group (it would cut the focus ring): round the ends instead. */
-.langswitch a:first-child {
-  border-radius: calc(var(--borderRadius-medium) - 1px) 0 0 calc(var(--borderRadius-medium) - 1px);
-}
-.langswitch a:last-child {
-  border-radius: 0 calc(var(--borderRadius-medium) - 1px) calc(var(--borderRadius-medium) - 1px) 0;
+  background: var(--bgColor-neutral-muted);
 }
 .langswitch a {
   display: flex;
   align-items: center;
-  min-height: 38px;
+  min-height: 36px;
   padding: 0 var(--base-size-12);
+  border: 1px solid transparent;
+  border-radius: var(--borderRadius-medium);
   font-size: var(--text-body-size-small);
-  color: var(--fgColor-muted);
+  color: var(--fgColor-default);
+  text-decoration: none;
+}
+.langswitch a:hover {
   text-decoration: none;
 }
 .langswitch a[aria-current='true'] {
-  background: var(--bgColor-muted);
-  color: var(--fgColor-default);
+  background: var(--bgColor-default);
+  border-color: var(--borderColor-default);
   font-weight: 600;
 }
+/* Optional "signed in as" (Cloudflare Access). Fixed size: revealing it shifts nothing. */
+.identity {
+  display: inline-flex;
+  flex: none;
+  width: 32px;
+  height: 32px;
+}
+.identity[hidden] {
+  visibility: hidden;
+}
+.identity__initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--borderRadius-full);
+  background: var(--bgColor-neutral-muted);
+  color: var(--fgColor-default);
+  font-size: var(--text-body-size-small);
+  font-weight: 600;
+}
+/* Run bar: a subhead line under the nav. */
 .runbar {
-  border-top: 1px solid var(--borderColor-default);
   font-size: var(--text-body-size-small);
   color: var(--fgColor-muted);
   background: var(--bgColor-default);
+  border-top: 1px solid var(--borderColor-default);
 }
+.runbar__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--base-size-4) var(--base-size-16);
+  padding-top: var(--base-size-8);
+  padding-bottom: var(--base-size-8);
+}
+/* Data source as a Primer Label: synthetic data is the attention tone. */
 .source {
-  font-weight: 600;
-  padding: 0 var(--base-size-8);
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  font-weight: 500;
+  line-height: 18px;
+  border: 1px solid var(--borderColor-default);
   border-radius: var(--borderRadius-full);
-  border: 1px solid currentColor;
+  color: var(--fgColor-muted);
 }
 .source--mock {
-  color: var(--fgColor-accent);
-}
-.stale-banner {
-  background: var(--bgColor-attention-muted);
   color: var(--fgColor-attention);
-  padding: var(--base-size-8) var(--base-size-16);
-  text-align: center;
-  font-weight: 600;
+  background: var(--bgColor-attention-muted);
+  border-color: var(--borderColor-attention-muted);
+}
+/* Stale data: a Primer Flash (warning), full width under the run bar. */
+.stale-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--base-size-8);
+  padding: var(--base-size-12) var(--base-size-16);
+  background: var(--bgColor-attention-muted);
+  border-top: 1px solid var(--borderColor-attention-muted);
+  color: var(--fgColor-default);
+  font-size: var(--text-body-size-medium);
+}
+.stale-banner[hidden] {
+  display: none;
+}
+.stale-banner .octicon {
+  color: var(--fgColor-attention);
+}
+/* Phones: brand and tools on one row, the nav row scrolls sideways inside itself. */
+@media (max-width: 720px) {
+  .topbar__inner,
+  .runbar__inner,
+  .mainnav ul {
+    padding-left: var(--base-size-16);
+    padding-right: var(--base-size-16);
+  }
+  .utility-link__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
 }
 
 /* Layout */
@@ -289,11 +437,20 @@ main section {
   margin-bottom: var(--base-size-32);
 }
 .footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--base-size-8) var(--base-size-24);
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--base-size-24);
   border-top: 1px solid var(--borderColor-default);
-  padding: var(--base-size-16);
-  text-align: center;
   font-size: var(--text-body-size-small);
   color: var(--fgColor-muted);
+}
+.footer p {
+  margin: 0;
 }
 .page-head {
   margin-bottom: var(--base-size-24);
