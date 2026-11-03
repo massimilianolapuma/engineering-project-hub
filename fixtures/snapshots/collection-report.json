@@ -154,5 +154,11 @@
     "state": "fixture",
     "entries": 13,
     "notes": []
+  },
+  "metrics": {
+    "state": "written",
+    "series": 228,
+    "bytes": 20348,
+    "truncated": "none"
   }
 }

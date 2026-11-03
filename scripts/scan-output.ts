@@ -21,6 +21,7 @@ const TEXT_EXT = new Set([
   '.svg',
   '.map',
   '.webmanifest',
+  '.prom',
 ]);
 export const MAX_SCAN_BYTES = 20 * 1024 * 1024;
 const FORBIDDEN_FILES = [/\.env(\..*)?$/, /\.pem$/, /\.key$/, /id_rsa/, /\.npmrc$/];

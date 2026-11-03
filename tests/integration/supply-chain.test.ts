@@ -423,6 +423,7 @@ describe('supply chain providers: collection report and canaries', () => {
       exceptions: { source: 'none' },
       repositories: { total: 0, ok: 0, withErrors: 0, unavailable: 0 },
       history: null,
+      metrics: { state: 'off', series: 0, bytes: 0, truncated: 'none' },
     } as never);
     expect(md).toContain('Providers: all off');
   });

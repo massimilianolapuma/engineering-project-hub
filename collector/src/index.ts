@@ -24,6 +24,7 @@ import { ProviderAuthError, resolveProviderAuth } from './providers/external/aut
 import { createExternalProviders } from './providers/external/create';
 import { createGitHubClient, GitHubProvider } from './providers/github/github-provider';
 import { buildHistoryExtras } from './history/extras';
+import { renderMetrics } from './outputs/prometheus';
 import { historyDir, loadPreviousHistory } from './history/load';
 import { MockProvider } from './providers/mock/mock-provider';
 import type { SourceProvider } from './providers/types';
@@ -32,6 +33,7 @@ import { SanitizationError } from './sanitizers/sanitize';
 import { fixedClock, systemClock } from './util/clock';
 import {
   SnapshotValidationError,
+  metricsLine,
   writeSnapshots,
   type HistoryExtras,
 } from './writers/write-snapshots';
@@ -147,6 +149,7 @@ async function main(): Promise<number> {
     result.discovery,
     extras,
     result.teams,
+    policies.outputs.metrics.enabled ? renderMetrics(result.index, policies.outputs.metrics) : null,
   );
   if (result.teams)
     console.log(
@@ -163,6 +166,7 @@ async function main(): Promise<number> {
   );
   if (report.history)
     console.log(`History: ${report.history.state} · ${report.history.entries} entries`);
+  console.log(`Metrics: ${metricsLine(report.metrics)}`);
   console.log(`Snapshots written to ${values.out}`);
   return 0;
 }

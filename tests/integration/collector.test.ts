@@ -18,6 +18,7 @@ import {
 } from '@model/index';
 import { loadConfig, resolveExceptionsPath } from '../../collector/src/config/load';
 import { buildHistoryExtras } from '../../collector/src/history/extras';
+import { renderMetrics } from '../../collector/src/outputs/prometheus';
 import { loadPreviousHistory } from '../../collector/src/history/load';
 import { createMockExternalProviders } from '../../collector/src/providers/external/mock';
 import { MockProvider } from '../../collector/src/providers/mock/mock-provider';
@@ -113,10 +114,20 @@ describe('mock collection', () => {
     const result = await mockRun();
     const { catalog, policies } = await loadConfig('config');
     const extras = await historyExtras(result, { catalog, policies });
-    await writeSnapshots(out, result.index, result.projects, catalog, result.discovery, extras);
+    await writeSnapshots(
+      out,
+      result.index,
+      result.projects,
+      catalog,
+      result.discovery,
+      extras,
+      null,
+      renderMetrics(result.index, policies.outputs.metrics),
+    );
     const golden = 'fixtures/snapshots';
     const files = [
       'index.json',
+      'metrics/hub.prom',
       'collection-report.json',
       'collection-report.md',
       'catalog.json',
@@ -129,6 +140,38 @@ describe('mock collection', () => {
         await readFile(join(out, f), 'utf8'),
         `${f} differs from golden — run "npm run fixtures:update" if intended`,
       ).toBe(await readFile(join(golden, f), 'utf8'));
+    }
+  });
+
+  it('golden metrics/hub.prom is the rendered index and the report says so', async () => {
+    const { policies } = await loadConfig('config');
+    const index = PortfolioIndexSchema.parse(
+      JSON.parse(await readFile('fixtures/snapshots/index.json', 'utf8')),
+    );
+    expect(await readFile('fixtures/snapshots/metrics/hub.prom', 'utf8')).toBe(
+      renderMetrics(index, policies.outputs.metrics).text,
+    );
+    expect(await readFile('fixtures/snapshots/collection-report.md', 'utf8')).toMatch(
+      /\| Metrics \| written \d+ series \(\d+\.\d KB\) \|/,
+    );
+  });
+
+  it('refuses to write a metrics file that fails the publication gate', async () => {
+    const result = await mockRun();
+    const dir = await mkdtemp(join(tmpdir(), 'eph-metrics-'));
+    try {
+      const text = `# HELP hub_info x\n# TYPE hub_info gauge\nhub_info{data_source="${CANARIES[0]}"} 1\n`;
+      await expect(
+        writeSnapshots(dir, result.index, result.projects, undefined, null, undefined, null, {
+          text,
+          series: 1,
+          bytes: text.length,
+          truncated: 'none',
+        }),
+      ).rejects.toBeInstanceOf(SanitizationError);
+      expect(await readdir(dir)).toEqual([]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
     }
   });
 
@@ -565,6 +608,41 @@ describe('history and changes (mock run)', () => {
         expect(files).toContain('index.json');
         const history = await readFile(join(out2, 'history.json'), 'utf8');
         expect(history).not.toContain('ghp_exampleSecretValue');
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    });
+
+    it('outputs.metrics.enabled false → no metrics directory and the report says off', async () => {
+      const dir = await mkdtemp(join(tmpdir(), 'eph-cli-'));
+      try {
+        const config = join(dir, 'config');
+        await cp('config', config, { recursive: true });
+        const policiesFile = join(config, 'policies.yaml');
+        const original = await readFile(policiesFile, 'utf8');
+        const edited = original.replace(
+          'outputs:\n  metrics:\n    enabled: true',
+          'outputs:\n  metrics:\n    enabled: false',
+        );
+        expect(edited).not.toBe(original);
+        await writeFile(policiesFile, edited);
+        const out2 = join(dir, 'out');
+        const log = runCli(['--out', out2, '--config', config]);
+        expect(await readdir(out2)).not.toContain('metrics');
+        expect(await readFile(join(out2, 'collection-report.md'), 'utf8')).toContain(
+          '| Metrics | off |',
+        );
+        expect(log).toContain('Metrics: off');
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    });
+
+    it('writes metrics/hub.prom by default', async () => {
+      const dir = await mkdtemp(join(tmpdir(), 'eph-cli-'));
+      try {
+        runCli(['--out', dir]);
+        expect(await readdir(join(dir, 'metrics'))).toEqual(['hub.prom']);
       } finally {
         await rm(dir, { recursive: true, force: true });
       }
