@@ -78,6 +78,24 @@ describe('Primer tokens only', () => {
     expect(block).toMatch(/\.sym--unknown \{[^}]*border-style: dashed/);
   });
 
+  it('charts take colours from Primer colour tokens only', () => {
+    const charts = ['DimensionBars', 'Sparkline', 'StatusStrip', 'TrendSection', 'CoverageMeter'];
+    const COLOUR_PROP =
+      /(?:^|[\s;{"])(?:fill|stroke|background(?:-color)?|color|border(?:-[a-z]+)*|box-shadow|outline(?:-color)?)\s*[:=]\s*"?[^;"\n]*/g;
+    const bad = charts.flatMap((name) => {
+      const src = readFileSync(`src/components/${name}.astro`, 'utf8');
+      return [...src.matchAll(COLOUR_PROP)].flatMap((m) =>
+        [...m[0].matchAll(/var\(--([\w-]+)\)/g)]
+          .map((v) => v[1]!)
+          .filter(
+            (t) => !/^(fgColor|bgColor|borderColor|data)-/.test(t) && !/^borderRadius-/.test(t),
+          )
+          .map((t) => `${name}: --${t}`),
+      );
+    });
+    expect(bad).toEqual([]);
+  });
+
   it('IBM Plex is gone', () => {
     expect(readFileSync('package.json', 'utf8')).not.toMatch(/ibm-plex/);
     const found = files.flatMap((f) => hits(f, readFileSync(f, 'utf8'), /ibm-plex|IBM Plex/));

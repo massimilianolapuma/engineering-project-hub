@@ -79,21 +79,21 @@ const HEIGHT: Record<HealthStatus, 1 | 2 | 3> = { red: 3, amber: 2, green: 1, gr
   }
   /* Fixed-height box, bars sit on its bottom edge so their heights compare at a glance. */
   .dimbars--bars {
-    height: 12px;
+    height: 20px;
     align-items: flex-end;
   }
   .dimbars__bar {
     display: block;
     flex: none;
     width: 32px;
-    height: 12px;
-    border-radius: var(--borderRadius-small);
+    height: 20px;
+    border-radius: 2px;
   }
   .dimbars__bar--h2 {
-    height: 8px;
+    height: 13px;
   }
   .dimbars__bar--h1 {
-    height: 4px;
+    height: 7px;
   }
   .dimbars__bar--red {
     background: var(--fgColor-danger);
