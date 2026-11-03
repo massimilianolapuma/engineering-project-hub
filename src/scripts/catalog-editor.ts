@@ -8,12 +8,13 @@
 import type { Catalog } from '@model/catalog';
 import { VersionSourceSchema } from '@model/catalog';
 import { ComponentTypeSchema, LifecycleSchema, type ControlId } from '@model/enums';
-import type { DiscoveryProposal, DiscoveryResult } from '@model/snapshot';
+import type { DiscoveryProposal, DiscoveryResult, TeamsResult } from '@model/snapshot';
 import type { Dict } from '../i18n/en';
 import {
   DEFAULT_MANIFEST_PATH,
   DEFAULT_SECURITY_STATUS_PATH,
   addSuggestedComponent,
+  addTeam,
   catalogToYaml,
   emptyComponent,
   emptyEnvironment,
@@ -33,8 +34,10 @@ import {
   projectFilePath,
   projectKind,
   projectToYaml,
+  removeTeam,
   renameComponentId,
   safeGithubUrl,
+  teamSuggestions,
   toDraft,
   validateDraft,
   type DraftCatalog,
@@ -56,6 +59,8 @@ interface EditorData {
   catalog: Catalog;
   suggestions: { projectId: string; unmappedSubmodules: UnmappedSubmodule[] }[];
   discovery: DiscoveryResult | null;
+  /** Team suggestions; null when team discovery is off or the audience is public. */
+  teams: TeamsResult | null;
   /** "owner/repo" of the portal's repository; null hides the GitHub actions. */
   githubRepo: string | null;
 }
@@ -177,7 +182,9 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
   }
 
   /** Decorative Octicon, cloned from the build-time <template data-icon> in the page. */
-  function icon(name: 'check' | 'x' | 'link-external' | 'git-pull-request'): HTMLElement {
+  function icon(
+    name: 'check' | 'x' | 'link-external' | 'git-pull-request' | 'people' | 'alert' | 'info',
+  ): HTMLElement {
     const t = root.querySelector<HTMLTemplateElement>(`template[data-icon="${name}"]`);
     const span = h('span', { class: `ce-icon ce-icon--${name}`, 'aria-hidden': 'true' });
     if (t) span.append(t.content.cloneNode(true));
@@ -580,6 +587,7 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
           p.description,
           (v) => (p.description = v),
         ),
+        teamsField(p, base),
         textField(
           [...base, 'securityStatusPath'],
           S.field.securityStatusPath,
@@ -599,6 +607,167 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
         button(S.removeProject, () => removeProject(p), { variant: 'danger' }),
       ),
     );
+  }
+
+  /**
+   * Teams: current teams as removable Labels, an input to add "org/team-slug", the team
+   * discovery status in one line and the suggestions with their evidence. Repaints itself in
+   * place so focus stays in the field.
+   */
+  function teamsField(p: DraftProject, base: Path) {
+    const id = fid([...base, 'teams']);
+    const t = S.teams;
+    const wrap = h('div', {
+      class: 'ce-field ce-field--wide ce-teams',
+      role: 'group',
+      'aria-labelledby': `${id}-label`,
+    });
+    let error = '';
+    const result = data.teams;
+
+    const paint = (focus: 'input' | 'none' = 'none') => {
+      const input = h('input', {
+        type: 'text',
+        id,
+        class: 'ce-input ce-input--mono',
+        autocomplete: 'off',
+        spellcheck: 'false',
+        autocapitalize: 'off',
+        placeholder: 'example-org/team-slug',
+        'data-path': key([...base, 'teams']),
+        'aria-describedby': `${id}-hint${error ? ` ${id}-err` : ''}`,
+        'aria-invalid': error ? 'true' : undefined,
+      });
+      const add = (ref: string) => {
+        const issue = addTeam(p, ref);
+        error = issue ? t.invalid : '';
+        if (!issue) announce(fill(t.added, { name: ref.trim() }));
+        paint('input');
+        if (issue) (wrap.querySelector(`#${CSS.escape(id)}`) as HTMLInputElement).value = ref;
+        schedule();
+      };
+      input.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        add(input.value);
+      });
+
+      const lines: Child[] = [];
+      const line = (text: string, tone: 'muted' | 'attention') =>
+        h(
+          'p',
+          { class: `ce-teamsline${tone === 'attention' ? ' ce-teamsline--attention' : ''}` },
+          icon(tone === 'attention' ? 'alert' : 'info'),
+          h('span', {}, text),
+        );
+      if (!result) lines.push(line(t.off, 'muted'));
+      else if (result.status === 'not-authorised') lines.push(line(t.notAuthorised, 'attention'));
+      else if (result.status === 'partial') lines.push(line(t.partial, 'attention'));
+      if (result)
+        for (const n of result.notFound)
+          if (n.projectId === p.id.trim() && p.teams.includes(n.team))
+            lines.push(line(fill(t.notFound, { team: n.team }), 'attention'));
+
+      const suggestions = teamSuggestions(result, p.id.trim(), p);
+      const secret = result?.secretSkipped ?? 0;
+      const box =
+        result &&
+        suggestions.length > 0 &&
+        h(
+          'div',
+          { class: 'ce-sugg' },
+          h(
+            'p',
+            { class: 'ce-sugg__head' },
+            icon('people'),
+            h('span', {}, t.suggested),
+            h(
+              'span',
+              { class: 'ce-sugg__meta' },
+              [
+                fill(t.read, { n: String(result.teamsRead), orgs: result.orgs.join(', ') }),
+                secret > 0
+                  ? fill(secret === 1 ? t.secretSkipped.one : t.secretSkipped.other, {
+                      n: String(secret),
+                    })
+                  : '',
+              ]
+                .filter(Boolean)
+                .join(' · '),
+            ),
+          ),
+          h(
+            'ul',
+            { class: 'ce-sugg__list' },
+            ...suggestions.map((s) => {
+              const b = button(t.addSuggestion, () => add(s.team), { small: true });
+              b.setAttribute('aria-label', fill(t.addSuggestionLabel, { name: s.team }));
+              return h(
+                'li',
+                { class: 'ce-sugg__item' },
+                h('span', { class: 'ce-sugg__ref' }, s.team),
+                h(
+                  'span',
+                  { class: 'ce-sugg__why' },
+                  s.reason === 'access'
+                    ? fill(t.evidenceAccess, {
+                        n: String(s.writeRepositories),
+                        total: String(s.totalRepositories),
+                      })
+                    : t.evidenceName,
+                ),
+                b,
+              );
+            }),
+          ),
+        );
+
+      const parts: Child[] = [
+        h(
+          'span',
+          { class: 'ce-teams__label', id: `${id}-label` },
+          S.field.teams,
+          h('span', { class: 'ce-optional' }, ` (${S.optional})`),
+        ),
+        p.teams.length > 0 &&
+          h(
+            'ul',
+            { class: 'ce-teams__list', 'aria-label': t.current },
+            ...p.teams.map((ref) => {
+              const rm = h(
+                'button',
+                { type: 'button', 'aria-label': fill(t.remove, { name: ref }) },
+                icon('x'),
+              );
+              rm.addEventListener('click', () => {
+                removeTeam(p, ref);
+                error = '';
+                announce(fill(t.removed, { name: ref }));
+                paint('input');
+                schedule();
+              });
+              return h('li', { class: 'pill ce-teams__chip' }, h('span', {}, ref), rm);
+            }),
+          ),
+        h(
+          'div',
+          { class: 'ce-teams__add' },
+          h('label', { for: id, class: 'visually-hidden' }, t.inputLabel),
+          input,
+          button(t.add, () => add(input.value)),
+        ),
+        h('p', { class: 'ce-hint', id: `${id}-hint` }, t.hint),
+        h('p', { class: 'ce-error', id: `${id}-err`, hidden: !error }, error),
+        ...lines,
+        box,
+      ];
+      wrap.replaceChildren(
+        ...parts.filter((c): c is Node | string => c !== null && c !== undefined && c !== false),
+      );
+      if (focus === 'input') (wrap.querySelector(`#${CSS.escape(id)}`) as HTMLElement).focus();
+    };
+    paint();
+    return wrap;
   }
 
   function coordinatorSection(p: DraftProject, base: Path) {

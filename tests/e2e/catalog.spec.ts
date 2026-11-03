@@ -242,3 +242,40 @@ test('renders in Italian at /it/catalog/', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Modifiche in sospeso' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Aggiungi come progetto' }).first()).toBeVisible();
 });
+
+test('adds a team to a project: pending change and YAML; the suggestions say discovery is off', async ({
+  page,
+}) => {
+  await page.goto('/catalog/');
+  await selectProject(page, /Project Gamma/);
+  const teams = page.getByRole('group', { name: 'Teams' });
+  // The golden catalog.json has teams: null (public audience): one line says why.
+  await expect(teams.getByText(/team discovery is off/)).toBeVisible();
+  const input = teams.getByRole('textbox', { name: 'Add a team' });
+  await input.fill('pay-team');
+  await teams.getByRole('button', { name: 'Add team' }).click();
+  await expect(teams.getByText('Must be "org/team-slug"', { exact: false })).toBeVisible();
+  await input.fill('example-org/pay-project-gamma-dev');
+  await input.press('Enter');
+  await expect(
+    teams.getByRole('button', { name: 'Remove team example-org/pay-project-gamma-dev' }),
+  ).toBeVisible();
+  await expect(yaml(page)).toHaveValue(/\nteams: \[example-org\/pay-project-gamma-dev\]\n/);
+  await expect(
+    pending(page).getByRole('listitem').filter({ hasText: 'Project Gamma' }),
+  ).toBeVisible();
+  await teams
+    .getByRole('button', { name: 'Remove team example-org/pay-project-gamma-dev' })
+    .click();
+  await expect(yaml(page)).not.toHaveValue(/teams:/);
+});
+
+test('alpha lists its teams in the editor', async ({ page }) => {
+  await page.goto('/catalog/');
+  await selectProject(page, /Project Alpha/);
+  const teams = page.getByRole('group', { name: 'Teams' });
+  await expect(teams.getByRole('listitem')).toHaveText([
+    'example-org/pay-project-alpha-dev',
+    'example-org/platform',
+  ]);
+});

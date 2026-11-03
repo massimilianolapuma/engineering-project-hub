@@ -10,6 +10,8 @@ import {
   type VersionSource,
 } from '@model/catalog';
 import { CONTROL_IDS, type ControlId, type RepositoryCheckId } from '@model/enums';
+import type { TeamsResult } from '@model/snapshot';
+import { TEAM_REF } from '@model/teams';
 
 /*
  * Pure logic of the catalog editor (no DOM): editable draft model, conversion to the compact
@@ -391,6 +393,43 @@ export function emptyProject(taken: Iterable<string> = []): DraftProject {
     ) as Record<ControlId, boolean>,
     securityStatusPath: '',
   };
+}
+
+const TEAM_REF_MESSAGE = 'must be "org/team-slug" (the slug in lowercase)';
+
+/**
+ * Adds a GitHub team ("org/team-slug") to the project. Returns an issue on `teams` for a value
+ * that is not a team reference; a team already listed (any case) is ignored.
+ */
+export function addTeam(project: DraftProject, ref: string): EditorIssue | null {
+  const value = ref.trim();
+  if (!TEAM_REF.test(value)) {
+    return {
+      path: ['teams'],
+      key: 'teams',
+      message: TEAM_REF_MESSAGE,
+      text: `teams: ${TEAM_REF_MESSAGE}`,
+    };
+  }
+  if (!project.teams.some((t) => t.toLowerCase() === value.toLowerCase()))
+    project.teams.push(value);
+  return null;
+}
+
+export function removeTeam(project: DraftProject, ref: string): void {
+  project.teams = project.teams.filter((t) => t !== ref);
+}
+
+/** Team discovery suggestions for one project, without the teams the draft already lists. */
+export function teamSuggestions(
+  result: TeamsResult | null,
+  projectId: string,
+  project: DraftProject,
+): TeamsResult['suggestions'] {
+  const present = new Set(project.teams.map((t) => t.toLowerCase()));
+  return (result?.suggestions ?? []).filter(
+    (s) => s.projectId === projectId && !present.has(s.team.toLowerCase()),
+  );
 }
 
 /** True when a component of the project already points at this submodule path. */
