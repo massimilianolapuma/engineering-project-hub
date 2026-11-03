@@ -1077,6 +1077,11 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
   .envpath__card--unknown {
     border: 1.5px dashed var(--borderColor-emphasis);
   }
+  .envpath__card--behind,
+  .envpath__card--mismatch {
+    background: var(--bgColor-attention-muted);
+    border-color: var(--borderColor-attention-muted);
+  }
   .envpath__expected {
     font-size: var(--text-body-size-small);
     color: var(--fgColor-muted);

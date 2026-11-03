@@ -517,13 +517,18 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
     gap: var(--base-size-4);
     min-width: 130px;
     padding: 10px 14px;
-    background: var(--bgColor-muted);
+    background: var(--bgColor-default);
     border: 1px solid var(--borderColor-default);
     border-radius: var(--borderRadius-medium);
   }
   .vpath__env--unknown {
     border-style: dashed;
     border-color: var(--borderColor-emphasis);
+  }
+  .vpath__env--behind,
+  .vpath__env--mismatch {
+    background: var(--bgColor-attention-muted);
+    border-color: var(--borderColor-attention-muted);
   }
   .vcheck {
     display: flex;

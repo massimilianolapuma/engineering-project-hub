@@ -219,6 +219,17 @@ test('project page has no horizontal scroll at phone width', async ({ page, isMo
   }
 });
 
+for (const path of ['/', '/projects/project-beta/', '/security/', '/versions/']) {
+  test(`${path} does not scroll sideways at 390px`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(path);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+}
+
 test('versions page does not scroll sideways at phone width', async ({ page }) => {
   for (const path of ['/versions/', '/it/versions/']) {
     await page.setViewportSize({ width: 375, height: 800 });
