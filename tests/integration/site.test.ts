@@ -1876,6 +1876,19 @@ describe('static site', () => {
       expect(portfolio).not.toContain('unsigned images');
     });
 
+    it('supply chain lines say "1 of 1 repository" for a one-repository project (EN + IT)', async () => {
+      // Platform (monorepo) has one repository: its fold hint and its Security card line.
+      const fold = (html: string) => {
+        const i = html.indexOf('class="fold__hint"', html.indexOf('id="supply-chain"'));
+        return textOf(html.slice(i, html.indexOf('</span>', i)));
+      };
+      expect(fold(await page('projects/platform'))).toContain('SBOM on 1 of 1 repository ·');
+      expect(fold(await page('it/projects/platform'))).toContain('SBOM su 1 di 1 repository ·');
+      const sec = textOf(await page('security'));
+      expect(sec).toContain('SBOM on 1 of 1 repository');
+      expect(sec).not.toContain('of 1 repositories');
+    });
+
     it('data quality has a Providers card with each provider state', async () => {
       const html = await page('data-quality');
       const i = html.indexOf('id="h-providers"');
