@@ -7,7 +7,8 @@ import {
   createGitHubClient,
   GitHubProvider,
 } from '../../collector/src/providers/github/github-provider';
-import { makeZip } from '../helpers/factories';
+import { makeZip, NOW, policies } from '../helpers/factories';
+import { toolCandidate } from '../../collector/src/normalizers/control-sources';
 import { AuthConfigError, resolveAuth } from '../../collector/src/providers/auth';
 import { MockProvider } from '../../collector/src/providers/mock/mock-provider';
 
@@ -1387,6 +1388,20 @@ describe('GitHubProvider: release assets, attestations, analyses by tool, supply
       ok: false,
       error: { classification: 'not-authorised' },
     });
+  });
+
+  it('I-2: no analysis (404) or no Advanced Security (403) reads as not-configured, never unknown', async () => {
+    const ctx = { projectId: 'p', policies: policies(), now: NOW, errors: [] };
+    const rules = [{ tool: 'Trivy' }];
+    for (const [status, message] of [
+      [404, 'no analysis found'],
+      [403, 'Advanced Security must be enabled for this repository to use code scanning.'],
+    ] as const) {
+      const p = provider({ '/repos/o/a/code-scanning/analyses': { status, body: { message } } });
+      const r = await p.listCodeScanningAnalyses('o/a', 'Trivy', 'main');
+      expect(r).toMatchObject({ ok: false, error: { classification: 'not-configured' } });
+      expect(toolCandidate(ctx, rules, new Map([['trivy', r]]), []).state).toBe('not-configured');
+    }
   });
 
   it('alerts map most_recent_instance.category', async () => {

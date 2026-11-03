@@ -252,6 +252,8 @@ export function toolCandidate(
     if (!result) continue;
     asked = true;
     if (!result.ok) {
+      // "no analysis found" / code scanning not enabled: the tool is not set up, not unknown.
+      if (result.error.classification === 'not-configured') continue;
       if (result.error.classification === 'not-authorised') denied = true;
       else failed = true;
       continue;
