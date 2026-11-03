@@ -99,6 +99,14 @@ describe('catalog editor: per-project YAML', () => {
     }
   });
 
+  it('writes a teams list after lifecycle, and omits the key when empty', () => {
+    const yaml = projectToYaml(project('project-alpha'));
+    expect(yaml).toContain(
+      'lifecycle: production\nteams: [example-org/pay-project-alpha-dev, example-org/platform]\n',
+    );
+    expect(projectToYaml(project('project-gamma'))).not.toContain('teams:');
+  });
+
   it('starts with a header comment like the files in config/projects/', () => {
     const yaml = projectToYaml(project('project-alpha'));
     expect(yaml.startsWith('# yaml-language-server: $schema=../schema/project.schema.json\n')).toBe(

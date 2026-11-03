@@ -56,6 +56,8 @@ export interface DraftProject {
   description: string;
   businessUnit: string;
   lifecycle: string;
+  /** GitHub teams as "<org>/<team-slug>" refs. */
+  teams: string[];
   coordinator: {
     repository: string;
     defaultBranch: string;
@@ -92,6 +94,7 @@ export function projectToDraft(p: ProjectConfig): DraftProject {
     description: p.description,
     businessUnit: p.businessUnit,
     lifecycle: p.lifecycle,
+    teams: [...p.teams],
     coordinator: {
       repository: p.coordinator.repository,
       defaultBranch: orEmpty(p.coordinator.defaultBranch),
@@ -169,6 +172,7 @@ export function toProjectInput(p: DraftProject): Record<string, unknown> {
     description: opt(p.description),
     businessUnit: t(p.businessUnit),
     lifecycle: p.lifecycle,
+    teams: optList(p.teams.map(t)),
     coordinator: compact({
       repository: t(p.coordinator.repository),
       defaultBranch: opt(p.coordinator.defaultBranch),
@@ -370,6 +374,7 @@ export function emptyProject(taken: Iterable<string> = []): DraftProject {
     description: '',
     businessUnit: '',
     lifecycle: 'development',
+    teams: [],
     coordinator: {
       repository: '',
       defaultBranch: '',
