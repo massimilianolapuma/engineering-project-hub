@@ -7,8 +7,9 @@ import { z } from 'zod';
 // 1.4: quality dimension (qualityHealth, summary.quality, codeQuality capability).
 // 1.5: repository controls (repositoryControls, summary.repositoryControls, repositoryRules capability), discovery hints.
 // 1.6: security exceptions, remediation SLAs (finding exception / sla, securityExceptions, summary risk, run exceptions).
-export const SNAPSHOT_SCHEMA_VERSION = '1.6';
-export const SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS = ['1.6'] as const;
+// 1.7: project teams (project.teams, summary.teams), catalog.json teams result and catalog teams settings.
+export const SNAPSHOT_SCHEMA_VERSION = '1.7';
+export const SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS = ['1.7'] as const;
 
 export const HealthStatusSchema = z.enum(['green', 'amber', 'red', 'grey']);
 export type HealthStatus = z.infer<typeof HealthStatusSchema>;

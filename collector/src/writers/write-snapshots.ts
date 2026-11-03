@@ -9,6 +9,7 @@ import {
   type Catalog,
   type CatalogSnapshot,
   type DiscoveryResult,
+  type TeamsResult,
   type ChangesFile,
   type CollectionError,
   type HistoryFile,
@@ -39,6 +40,7 @@ export function buildCatalogSnapshot(
   index: PortfolioIndex,
   projects: ProjectSnapshot[],
   discovery: DiscoveryResult | null = null,
+  teams: TeamsResult | null = null,
 ): CatalogSnapshot {
   return {
     schemaVersion: index.schemaVersion,
@@ -51,6 +53,7 @@ export function buildCatalogSnapshot(
         .map((s) => ({ path: s.path, repository: s.repository })),
     })),
     discovery,
+    teams,
   };
 }
 

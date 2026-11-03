@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.6",
+  "schemaVersion": "1.7",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "run": {
     "dataSource": "mock",
@@ -75,6 +75,10 @@
       "name": "Platform (monorepo)",
       "businessUnit": "Platform",
       "lifecycle": "production",
+      "teams": [
+        "example-org/platform",
+        "example-org/security"
+      ],
       "overall": "red",
       "score": {
         "value": 49,
@@ -132,6 +136,10 @@
       "name": "Project Alpha",
       "businessUnit": "Payments",
       "lifecycle": "production",
+      "teams": [
+        "example-org/pay-project-alpha-dev",
+        "example-org/platform"
+      ],
       "overall": "amber",
       "score": {
         "value": 78,
@@ -189,6 +197,9 @@
       "name": "Project Beta",
       "businessUnit": "Logistics",
       "lifecycle": "production",
+      "teams": [
+        "example-org/pay-project-beta-dev"
+      ],
       "overall": "red",
       "score": {
         "value": 40,
@@ -246,6 +257,7 @@
       "name": "Project Gamma",
       "businessUnit": "Internal tools",
       "lifecycle": "development",
+      "teams": [],
       "overall": "grey",
       "score": {
         "value": null,

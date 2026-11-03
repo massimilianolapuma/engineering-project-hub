@@ -146,6 +146,7 @@ export function projectSummary(partial: Partial<ProjectSummary> = {}): ProjectSu
     name: 'Project Alpha',
     businessUnit: 'Example Unit',
     lifecycle: 'production',
+    teams: [],
     overall: 'green',
     score: { value: 100, measured: 6, required: 6 },
     delivery: 'green',

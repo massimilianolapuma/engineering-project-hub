@@ -57,6 +57,8 @@ export const PORTFOLIO_HEADERS: readonly string[] = [
   'overdue_critical_high',
   'accepted',
   'exception_issues',
+  // Team dashboards (v0.11.0 / schema 1.7): GitHub teams joined with ";".
+  'teams',
 ];
 
 export const FINDINGS_HEADERS: readonly string[] = [
@@ -138,6 +140,7 @@ export function portfolioRows(data: SiteData, history: HistoryFile | null): CsvV
       s.risk.overdueCriticalHigh,
       s.risk.accepted,
       s.risk.exceptionIssues,
+      s.teams.join(';'),
     ];
   });
 }

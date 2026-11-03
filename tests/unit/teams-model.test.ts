@@ -10,6 +10,7 @@ import {
   ProjectConfigSchema,
   TEAM_REF,
   TeamNamingSchema,
+  TeamsResultSchema,
   parseTeamName,
   teamSlug,
   type TeamNaming,
@@ -160,5 +161,36 @@ describe('catalog teams settings', () => {
     expect(byId['platform']).toEqual(['example-org/platform', 'example-org/security']);
     expect(byId['project-gamma']).toEqual([]);
     expect(c.teams.discovery).toBe(true);
+  });
+});
+
+describe('teams result in catalog.json', () => {
+  const ok = {
+    status: 'ok',
+    orgs: ['example-org'],
+    teamsRead: 7,
+    secretSkipped: 1,
+    limitReached: false,
+    suggestions: [
+      {
+        projectId: 'project-alpha',
+        team: 'example-org/pay-project-alpha-ops',
+        reason: 'access',
+        writeRepositories: 1,
+        totalRepositories: 5,
+      },
+    ],
+    notFound: [],
+    errors: [],
+  };
+  it('accepts a result and rejects unknown keys such as description', () => {
+    expect(TeamsResultSchema.safeParse(ok).success).toBe(true);
+    expect(TeamsResultSchema.safeParse({ ...ok, description: 'x' }).success).toBe(false);
+    expect(
+      TeamsResultSchema.safeParse({
+        ...ok,
+        suggestions: [{ ...ok.suggestions[0], description: 'x' }],
+      }).success,
+    ).toBe(false);
   });
 });

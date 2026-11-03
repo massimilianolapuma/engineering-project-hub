@@ -1,12 +1,13 @@
 {
-  "schemaVersion": "1.6",
+  "schemaVersion": "1.7",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-gamma",
     "name": "Project Gamma",
     "description": "Synthetic internal tool whose repositories are not accessible to the collector.",
     "businessUnit": "Internal tools",
-    "lifecycle": "development"
+    "lifecycle": "development",
+    "teams": []
   },
   "coordinator": {
     "repository": {

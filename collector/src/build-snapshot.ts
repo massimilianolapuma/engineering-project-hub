@@ -430,6 +430,7 @@ export function buildProjectSnapshot(
       description: config.description,
       businessUnit: config.businessUnit,
       lifecycle: config.lifecycle,
+      teams: [...config.teams],
     },
     coordinator: {
       repository: coordinatorInfo,
@@ -509,6 +510,7 @@ export function toProjectSummary(s: ProjectSnapshot): ProjectSummary {
     name: s.project.name,
     businessUnit: s.project.businessUnit,
     lifecycle: s.project.lifecycle,
+    teams: [...s.project.teams],
     overall: s.overallHealth.status,
     score: s.score,
     delivery: s.deliveryHealth.status,

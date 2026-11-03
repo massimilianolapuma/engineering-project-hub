@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ExceptionSourceSchema, ExceptionStateSchema } from './exceptions';
 import { CatalogSchema, ProjectConfigSchema, VersionSourceSchema } from './catalog';
+import { TeamRefSchema } from './teams';
 import {
   AuthenticationModeSchema,
   AvailabilitySchema,
@@ -649,6 +650,8 @@ export const ProjectSnapshotSchema = z
         description: z.string().max(500),
         businessUnit: z.string().max(100),
         lifecycle: LifecycleSchema,
+        /** GitHub teams from the catalog ("<org>/<team-slug>"): a view filter, not access control. */
+        teams: z.array(TeamRefSchema).max(50),
       })
       .strict(),
     coordinator: z
@@ -714,6 +717,7 @@ export const ProjectSummarySchema = z
     name: z.string().max(100),
     businessUnit: z.string().max(100),
     lifecycle: LifecycleSchema,
+    teams: z.array(TeamRefSchema).max(50),
     overall: HealthStatusSchema,
     score: ProjectScoreSchema,
     delivery: HealthStatusSchema,
@@ -855,6 +859,40 @@ export const DiscoveryResultSchema = z
 export type DiscoveryResult = z.infer<typeof DiscoveryResultSchema>;
 
 /**
+ * Team discovery (Members: read): suggestions for the catalog editor. Only slugs, repository
+ * counts and the team's access level are kept; names, descriptions and members never are.
+ */
+export const TeamsResultSchema = z
+  .object({
+    /** not-authorised: no organisation listing could be read (permission missing). */
+    status: z.enum(['ok', 'partial', 'not-authorised']),
+    orgs: z.array(z.string().max(100)).max(100),
+    teamsRead: z.number().int().min(0),
+    /** Secret teams are skipped before storage and only counted. */
+    secretSkipped: z.number().int().min(0),
+    limitReached: z.boolean(),
+    suggestions: z.array(
+      z
+        .object({
+          projectId: z.string().max(64),
+          team: TeamRefSchema,
+          reason: z.enum(['access', 'name']),
+          /** Project repositories the team can write to (write, maintain or admin). */
+          writeRepositories: z.number().int().min(0),
+          totalRepositories: z.number().int().min(0),
+        })
+        .strict(),
+    ),
+    /** Catalog teams not among the listed teams of a fully read organisation. */
+    notFound: z.array(z.object({ projectId: z.string().max(64), team: TeamRefSchema }).strict()),
+    errors: z.array(
+      z.object({ target: z.string().max(200), classification: ErrorClassificationSchema }).strict(),
+    ),
+  })
+  .strict();
+export type TeamsResult = z.infer<typeof TeamsResultSchema>;
+
+/**
  * catalog.json: the validated catalog as published by the collector, so the site (catalog
  * editor) never reads the YAML directly, plus link suggestions derived from collected data.
  */
@@ -878,6 +916,8 @@ export const CatalogSnapshotSchema = z
     ),
     /** Discovery proposals; null when discovery is disabled. */
     discovery: DiscoveryResultSchema.nullable(),
+    /** Team suggestions; null when team discovery is off or the audience is public. */
+    teams: TeamsResultSchema.nullable(),
   })
   .strict();
 export type CatalogSnapshot = z.infer<typeof CatalogSnapshotSchema>;

@@ -218,7 +218,7 @@ describe('policy:check --snapshot (read-only what-if)', () => {
     const index = join(snap, 'index.json');
     writeFileSync(
       index,
-      readFileSync(index, 'utf8').replace(/"schemaVersion": "1\.6"/, '"schemaVersion": "1.4"'),
+      readFileSync(index, 'utf8').replace(/"schemaVersion": "1\.7"/, '"schemaVersion": "1.4"'),
     );
     const r = await run({ ...base, snapshotDir: snap });
     expect(r.exitCode).toBe(1);
