@@ -282,6 +282,38 @@ describe('buildSupplyChain', () => {
     });
   });
 
+  it('I-5: a Harbor scan that succeeded without severities publishes null counts, never zeros', () => {
+    const blank = {
+      status: 'success' as const,
+      endTime: daysAgo(1),
+      critical: null,
+      high: null,
+      medium: null,
+      low: null,
+      unknown: null,
+      fixable: null,
+      total: null,
+    };
+    const sc = build([
+      repoInput({
+        harbor: [
+          {
+            componentId: 'a',
+            project: 'p',
+            repository: 'a',
+            reference: '1.0.0',
+            result: ok({
+              digest: DIGEST,
+              scan: blank,
+              signatures: { cosign: true, notation: false },
+            }),
+          },
+        ],
+      }),
+    ]);
+    expect(sc.repositories[0]!.images[0]!.scan).toMatchObject({ state: 'scanned', counts: null });
+  });
+
   it('beta-like: not configured everywhere → sbomAvailable 0; two unsigned image rows; attestedAssets and flagged null', () => {
     const sc = build([
       repoInput({ sbomDependencyGraph: { state: 'not-configured' } }),

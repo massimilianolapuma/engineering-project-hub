@@ -8,6 +8,7 @@
  * license names never reach the snapshot. A pending or unreadable SBOM says why and never shows
  * 0 packages. Evidence always carries its word (EvidenceLabel); unknown is never "unsigned".
  */
+import { scanLine } from '../lib/supply-chain-view';
 import type { ProjectSnapshot, SeverityCounts } from '@model/index';
 import type { I18n } from '../i18n';
 import EvidenceLabel, { type EvidenceLevel } from './EvidenceLabel.astro';
@@ -61,11 +62,17 @@ const hasLicenseRef = sc.repositories.some((r) =>
 const attLevel = (n: number | null, checked: number): EvidenceLevel =>
   n === null ? 'unknown' : n > 0 ? 'present' : checked > 0 ? 'missing' : 'na';
 
-const SEV: (keyof SeverityCounts)[] = ['critical', 'high', 'medium', 'low'];
-const scanCounts = (c: SeverityCounts) =>
-  SEV.filter((k) => (c[k] ?? 0) > 0)
-    .map((k) => `${c[k]} ${c[k] === 1 ? d.project.sevOne[k] : d.project.sevMany[k]}`)
-    .join(' · ');
+const scanText = (c: SeverityCounts | null) => {
+  const line = scanLine(
+    c,
+    (k, n) => `${n} ${n === 1 ? d.project.sevOne[k] : d.project.sevMany[k]}`,
+  );
+  return line.kind === 'counts'
+    ? line.text
+    : line.kind === 'clean'
+      ? t.scanClean
+      : t.scanCountsUnknown;
+};
 const imgSource = (i: Image) => (i.source === 'harbor' ? t.source.harbor : t.source.summary);
 ---
 
@@ -239,9 +246,9 @@ const imgSource = (i: Image) => (i.source === 'harbor' ? t.source.harbor : t.sou
                             />
                           </div>
                           {img.scan &&
-                            (img.scan.state === 'scanned' && img.scan.counts ? (
+                            (img.scan.state === 'scanned' ? (
                               <span class="via">
-                                {scanCounts(img.scan.counts) || t.scanClean}
+                                {scanText(img.scan.counts)}
                                 {(img.scan.fixable ?? 0) > 0 &&
                                   ` · ${f(t.scanFixable, { n: img.scan.fixable ?? 0 })}`}
                                 {img.scan.scannedAt && (
@@ -251,9 +258,9 @@ const imgSource = (i: Image) => (i.source === 'harbor' ? t.source.harbor : t.sou
                                   </>
                                 )}
                               </span>
-                            ) : img.scan.state !== 'scanned' ? (
+                            ) : (
                               <span class="via">{t.scanState[img.scan.state]}</span>
-                            ) : null)}
+                            ))}
                         </div>
                       ))}
                     </div>

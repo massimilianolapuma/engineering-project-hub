@@ -399,6 +399,7 @@ export const it: Dict = {
     scan: '{counts} · {when}',
     scanFixable: '{n} correggibili',
     scanClean: 'Nessuna vulnerabilità',
+    scanCountsUnknown: 'Scansionata · conteggi delle vulnerabilità non leggibili',
     scanState: {
       'scan-failed': 'Scansione fallita',
       'scan-pending': 'Scansione in attesa',

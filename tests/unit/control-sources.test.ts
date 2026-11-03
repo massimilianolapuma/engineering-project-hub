@@ -317,6 +317,15 @@ describe('harborContainerCandidate', () => {
     });
   });
 
+  it('I-5: a successful scan without a severity breakdown gives unknown counts, never zero', () => {
+    const blank = { critical: null, high: null, medium: null, low: null, unknown: null };
+    const c = harborContainerCandidate(ctx, [
+      img(ok(dto('success', daysAgo(1)))),
+      img(ok(dto('success', daysAgo(1), blank)), 'web'),
+    ]);
+    expect(c).toMatchObject({ state: 'enabled', source: 'harbor', counts: null });
+  });
+
   it('one Error → failed; Running → configured-not-run; scannedAt older than 7 days → stale', () => {
     expect(
       harborContainerCandidate(ctx, [

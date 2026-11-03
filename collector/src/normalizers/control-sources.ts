@@ -353,20 +353,23 @@ export function harborContainerCandidate(
   }
   if (failed) return candidate(source, 'failed', 'reported', { tool: 'Harbor' });
   if (open.length) return candidate(source, worstNonAnswer(open), null, { tool: 'Harbor' });
-  const counts = zeroCounts();
+  const sum = zeroCounts();
+  let known = true;
   let oldest: string | null = null;
   for (const s of scans) {
-    counts.critical += s.critical ?? 0;
-    counts.high += s.high ?? 0;
-    counts.medium += s.medium ?? 0;
-    counts.low += s.low ?? 0;
-    counts.unknown += s.unknown ?? 0;
+    // A scan without a severity breakdown: the counts are unknown, never zero.
+    if ([s.critical, s.high, s.medium, s.low, s.unknown].some((n) => n === null)) known = false;
+    sum.critical += s.critical ?? 0;
+    sum.high += s.high ?? 0;
+    sum.medium += s.medium ?? 0;
+    sum.low += s.low ?? 0;
+    sum.unknown += s.unknown ?? 0;
     if (s.endTime && (!oldest || Date.parse(s.endTime) < Date.parse(oldest))) oldest = s.endTime;
   }
   return candidate(source, isStale(ctx, oldest) ? 'stale' : 'enabled', 'reported', {
     tool: 'Harbor',
     lastScanAt: oldest,
-    counts,
+    counts: known ? sum : null,
   });
 }
 

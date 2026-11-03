@@ -246,7 +246,8 @@ function harborImage(img: HarborImageResult, withhold: boolean): ImageEntry {
         ? 'scan-failed'
         : 'scan-pending';
   const counts: SeverityCounts | null =
-    scan.status === 'success'
+    scan.status === 'success' &&
+    [scan.critical, scan.high, scan.medium, scan.low, scan.unknown].every((n) => n !== null)
       ? {
           critical: scan.critical,
           high: scan.high,

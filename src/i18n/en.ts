@@ -396,6 +396,7 @@ export const en = {
     scan: '{counts} · {when}',
     scanFixable: '{n} fixable',
     scanClean: 'No vulnerabilities',
+    scanCountsUnknown: 'Scanned · vulnerability counts not readable',
     scanState: {
       'scan-failed': 'Scan failed',
       'scan-pending': 'Scan pending',
