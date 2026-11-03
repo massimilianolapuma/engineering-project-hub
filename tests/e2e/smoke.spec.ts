@@ -174,10 +174,13 @@ test('project page: Quality card links to #quality', async ({ page }) => {
   await expect(page).toHaveURL(/#quality$/);
   const section = page.locator('section#quality');
   await expect(section.getByRole('heading', { level: 2, name: 'Code quality' })).toBeInViewport();
-  await expect(section.getByText('Does not mean 0%.')).toBeVisible();
+  // SonarQube measures Web too, so nothing is a blind spot and the "not 0%" caveat is gone.
+  await expect(section.getByText('Does not mean 0%.')).toHaveCount(0);
+  await expect(section).toContainText('66.7%');
   // The meter is decorative: the number next to it carries the value.
   await expect(section.locator('.meter').first()).toHaveAttribute('aria-hidden', 'true');
-  await expect(section.getByRole('img', { name: /not visible/i }).first()).toBeVisible();
+  // No component is "not visible" any more (Web is read from SonarQube).
+  await expect(section.getByRole('img', { name: /not visible/i })).toHaveCount(0);
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
