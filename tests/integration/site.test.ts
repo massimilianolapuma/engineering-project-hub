@@ -83,6 +83,8 @@ describe('static site', () => {
     // Empty score (no number): Astro serialises data-score="" as a bare attribute.
     expect(row).toMatch(/\sdata-score(="")?[\s>]/);
     expect(row).toContain('insufficient data');
+    // Approved mockup: no score is an unknown Label (dashed), never a number.
+    expect(row).toMatch(/class="pill pill--unknown score__label"[^>]*>[^<]*insufficient data/);
     expect(row).toMatch(/dimbars__bar--grey/);
     expect(row).toMatch(/href="[^"]*data-quality\/#project-gamma"/);
     expect(row).toContain('2 collection errors');
@@ -199,6 +201,27 @@ describe('static site', () => {
     }
   });
 
+  it('draws the environments path with Octicon arrows, not text arrows', async () => {
+    for (const [p, start] of [
+      ['projects/project-beta', '<ol class="envpath"'],
+      ['versions', '<ol class="vpath"'],
+    ] as const) {
+      const html = await page(p);
+      const from = html.indexOf(start);
+      const path = html.slice(from, html.indexOf('</ol>', from));
+      expect(from, p).toBeGreaterThan(-1);
+      expect(path, p).toMatch(/<svg[^>]*octicon-arrow-right/);
+      expect(path, p).not.toContain('→');
+    }
+  });
+
+  it('gives the catalog editor a pull-request icon for the primary action', async () => {
+    const html = await page('catalog');
+    expect(html).toMatch(
+      /<template data-icon="git-pull-request"[^>]*>\s*<svg[^>]*octicon-git-pull-request/,
+    );
+  });
+
   it('never uses a GitHub logo icon', async () => {
     for (const v of VIEWS) {
       const html = await page(v);
@@ -309,6 +332,7 @@ describe('static site', () => {
       const head = between(html, '<main', 'id="h-why"');
       expect(head).toContain('insufficient data');
       expect(head).toContain('score__value--none');
+      expect(head).toMatch(/class="pill pill--unknown score__label"[^>]*>[^<]*insufficient data/);
       expect(head).not.toMatch(/class="score__value"[^>]*>\s*0\s*</);
       const why = between(html, 'id="h-why"', '</section>');
       expect(why).toContain('2 collection errors');

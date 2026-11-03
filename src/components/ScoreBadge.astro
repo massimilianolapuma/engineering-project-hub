@@ -34,7 +34,7 @@ const hasValue = score.value !== null;
     <div class="score__conf">{measured}</div>
   ) : (
     <div class="score__conf">
-      <span class="score__conf-line">{d.score.insufficient}</span>
+      <span class="pill pill--unknown score__label">{d.score.insufficient}</span>
       <span class="visually-hidden"> · </span>
       <span class="score__conf-line">{measured}</span>
     </div>
@@ -66,6 +66,9 @@ const hasValue = score.value !== null;
   .score--row .score__conf {
     font-size: var(--text-body-size-small);
     line-height: 16px;
+  }
+  .score__label {
+    margin: 2px 0;
   }
   .score__conf-line {
     display: block;

@@ -12,6 +12,7 @@ import Legend from '../../components/Legend.astro';
 import Pill from '../../components/Pill.astro';
 import StatusDot from '../../components/StatusDot.astro';
 import UnknownValue from '../../components/UnknownValue.astro';
+import Octicon from '../../components/Octicon.astro';
 import Base from '../../layouts/Base.astro';
 import { displayVersion, shortSha } from '../../lib/format';
 import { pageContext } from '../../lib/page';
@@ -233,7 +234,7 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
                         <li class="vpath__step" data-env={e.name} data-env-status={e.status}>
                           {i > 0 && (
                             <span class="vpath__arrow" aria-hidden="true">
-                              →
+                              <Octicon name="arrow-right" />
                             </span>
                           )}
                           <span class:list={['vpath__env', `vpath__env--${e.status}`]}>

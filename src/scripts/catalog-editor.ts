@@ -177,7 +177,7 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
   }
 
   /** Decorative Octicon, cloned from the build-time <template data-icon> in the page. */
-  function icon(name: 'check' | 'x' | 'link-external'): HTMLElement {
+  function icon(name: 'check' | 'x' | 'link-external' | 'git-pull-request'): HTMLElement {
     const t = root.querySelector<HTMLTemplateElement>(`template[data-icon="${name}"]`);
     const span = h('span', { class: `ce-icon ce-icon--${name}`, 'aria-hidden': 'true' });
     if (t) span.append(t.content.cloneNode(true));
@@ -360,6 +360,7 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
         rel: 'noopener noreferrer external',
         'aria-describedby': opts.describedBy,
       },
+      opts.primary ? icon('git-pull-request') : null,
       label,
       icon('link-external'),
       h('span', { class: 'visually-hidden' }, ` ${S.opensNewTab}`),
