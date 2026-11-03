@@ -2,7 +2,11 @@ import type { SupplyChain } from './snapshot';
 
 type ImageRow = SupplyChain['repositories'][number]['images'][number];
 
-/** Strongest signature answer first: an explicit verification failure beats mere presence. */
+/**
+ * Strongest signature answer first: an explicit verification failure beats mere presence.
+ * Positive evidence (verified, present) outranks 'missing' on the same digest by design: a
+ * signature is a property of the digest, so one source that finds it settles it.
+ */
 const RANK: ImageRow['signature'][] = [
   'failed',
   'not-verified',

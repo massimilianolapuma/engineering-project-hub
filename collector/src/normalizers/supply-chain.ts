@@ -390,16 +390,18 @@ const CONTROL_CATEGORY: Partial<Record<ControlId, SecurityFinding['category']>> 
  * Counts reported by the external controls that actually own them: a control won by `harbor` or
  * `status-file`. A control won by `code-scanning` adds nothing (its alerts are already findings),
  * a losing source never adds, and nothing measured stays null (never 0). Whatever the precedence,
- * a control whose mapped tool already has code-scanning findings in the same repository adds
+ * a control whose mapped tool already has open code-scanning findings in the same repository adds
  * nothing either: the same vulnerabilities are never counted twice.
  */
 export function externalCountsFrom(
   controls: RepositoryControls[],
-  findings: readonly Pick<SecurityFinding, 'repository' | 'source' | 'category'>[] = [],
+  findings: readonly Pick<SecurityFinding, 'repository' | 'source' | 'category' | 'status'>[] = [],
 ): SeverityCounts {
+  // Only alerts open in GitHub overlap Harbor's open counts: a dismissed or fixed alert must not
+  // hide them. An open alert under an accepted exception still overlaps (status, not countsAsOpen).
   const covered = new Set(
     findings
-      .filter((f) => f.source === 'github-code-scanning')
+      .filter((f) => f.source === 'github-code-scanning' && f.status === 'open')
       .map((f) => `${f.repository.toLowerCase()}#${f.category}`),
   );
   const total: SeverityCounts = {

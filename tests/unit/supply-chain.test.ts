@@ -80,7 +80,7 @@ describe('externalCountsFrom', () => {
 
   it('I-1: a control won by Harbor or the status file adds nothing when its mapped tool already has findings in that repository', () => {
     const trivy = (repository: string, category: 'container' | 'iac' | 'code' = 'container') =>
-      ({ repository, source: 'github-code-scanning', category }) as SecurityFinding;
+      ({ repository, source: 'github-code-scanning', category, status: 'open' }) as SecurityFinding;
     const controls = [
       repo(
         control('containerScanning', 'harbor', c({ medium: 2, low: 6 })),
@@ -98,6 +98,20 @@ describe('externalCountsFrom', () => {
       medium: 2,
       low: 6,
       high: 1,
+    });
+  });
+
+  it('I-1 follow-up: a dismissed or fixed Trivy alert does not drop Harbor open counts', () => {
+    const closed = (status: 'dismissed' | 'fixed') =>
+      ({
+        repository: 'o/a',
+        source: 'github-code-scanning',
+        category: 'container',
+        status,
+      }) as SecurityFinding;
+    const controls = [repo(control('containerScanning', 'harbor', c({ medium: 2 })))];
+    expect(externalCountsFrom(controls, [closed('dismissed'), closed('fixed')])).toMatchObject({
+      medium: 2,
     });
   });
 
