@@ -300,7 +300,8 @@ test('phone: filters fold into one disclosure and the nav scrolls inside itself'
   // On a page further along, the current link is scrolled into view inside the nav.
   await page.goto('/catalog/');
   const current = (await page.locator('.mainnav a[aria-current="page"]').boundingBox())!;
-  expect(current.x + current.width).toBeLessThanOrEqual(375);
+  // Sub-pixel tolerance: the scrolled nav may end a fraction of a pixel past the edge.
+  expect(current.x + current.width).toBeLessThanOrEqual(376);
   // A filter in the URL opens the box, so the active filter is visible.
   await page.goto('/?bu=Payments');
   await expect(box).toHaveJSProperty('open', true);
