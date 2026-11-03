@@ -14,6 +14,7 @@ import Pill from '../../components/Pill.astro';
 import Base from '../../layouts/Base.astro';
 import { loadHistory } from '../../lib/data';
 import { healthRank } from '../../lib/format';
+import { providerCounts } from '../../lib/supply-chain-view';
 import { pageContext } from '../../lib/page';
 import { href, localeParams } from '../../lib/routes';
 import type { Tone } from '../../lib/tones';
@@ -594,15 +595,7 @@ const lead = [
                   </span>
                   <span class="dq-prov__meta">
                     {pv.purpose[id]}
-                    {p?.enabled &&
-                      ` · ${
-                        p.errors > 0
-                          ? f(pv.counts, {
-                              items: i18n.number(p.items),
-                              errors: i18n.number(p.errors),
-                            })
-                          : f(pv.countsClean, { items: i18n.number(p.items) })
-                      }`}
+                    {p?.enabled && ` · ${providerCounts(p, pv, (n) => i18n.number(n))}`}
                   </span>
                 </li>
               );

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { scanLine } from '../../src/lib/supply-chain-view';
+import { providerCounts, scanLine } from '../../src/lib/supply-chain-view';
 
 const names = (k: string, n: number) => `${n} ${k}`;
 
@@ -22,5 +22,21 @@ describe('scanLine (image scan text)', () => {
         names,
       ),
     ).toEqual({ kind: 'unknown', text: '' });
+  });
+});
+
+describe('providerCounts (Providers card)', () => {
+  const t = {
+    counts: '{items} read · {errors} not readable',
+    countsClean: '{items} read',
+    nothingMapped: 'nothing mapped',
+  };
+  const num = (n: number) => String(n);
+  it('M-8: an enabled provider with 0 items reads "nothing mapped", never a bare "0 read"', () => {
+    expect(providerCounts({ items: 0, errors: 0 }, t, num)).toBe('nothing mapped');
+  });
+  it('items with and without errors keep their counts', () => {
+    expect(providerCounts({ items: 3, errors: 0 }, t, num)).toBe('3 read');
+    expect(providerCounts({ items: 3, errors: 1 }, t, num)).toBe('3 read · 1 not readable');
   });
 });

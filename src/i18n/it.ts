@@ -492,6 +492,7 @@ export const it: Dict = {
     },
     counts: '{items} letti · {errors} non leggibili',
     countsClean: '{items} letti',
+    nothingMapped: 'nessun elemento mappato nel catalogo',
     none: 'Nessun provider configurato.',
     sbomTitle: 'SBOM non leggibili',
     sbomRepository: 'Repository',

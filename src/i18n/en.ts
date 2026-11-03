@@ -484,6 +484,7 @@ export const en = {
     },
     counts: '{items} read · {errors} not readable',
     countsClean: '{items} read',
+    nothingMapped: 'nothing mapped in the catalog',
     none: 'No provider is configured.',
     sbomTitle: 'SBOM not readable',
     sbomRepository: 'Repository',
