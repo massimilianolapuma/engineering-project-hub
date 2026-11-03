@@ -128,6 +128,38 @@ describe('mock collection', () => {
     }
   });
 
+  it('restricted audience: team suggestions reach catalog.json; public gives teams null', async () => {
+    const { catalog, policies, exceptions } = await loadMockConfig();
+    const clock = fixedClock(GOLDEN_NOW);
+    const restricted = structuredClone(policies);
+    restricted.publication.audience = 'restricted';
+    const result = await runCollection({
+      catalog,
+      policies: restricted,
+      provider: new MockProvider('fixtures/github', clock),
+      clock,
+      exceptions,
+    });
+    expect(result.teams?.status).toBe('ok');
+    const files = serialise(
+      result.index,
+      result.projects,
+      catalog,
+      result.discovery,
+      undefined,
+      result.teams,
+    );
+    const written = JSON.parse(files.get('catalog.json')!);
+    expect(written.teams.suggestions).toContainEqual(
+      expect.objectContaining({
+        projectId: 'project-alpha',
+        team: 'example-org/pay-project-alpha-ops',
+      }),
+    );
+    expect(files.get('catalog.json')).not.toContain('never kept');
+    expect((await mockRun()).teams).toBeNull();
+  });
+
   it('carries project teams into project snapshots and the index; gamma has none', async () => {
     const { index, projects } = await mockRun();
     const alpha = projects.find((p) => p.project.id === 'project-alpha')!;

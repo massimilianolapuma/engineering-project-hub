@@ -102,6 +102,7 @@ export function serialise(
   catalog?: Catalog,
   discovery: DiscoveryResult | null = null,
   extras?: HistoryExtras,
+  teams: TeamsResult | null = null,
 ): Map<string, string> {
   const files = new Map<string, string>();
   const idx = PortfolioIndexSchema.safeParse(index);
@@ -123,7 +124,7 @@ export function serialise(
   }
   if (catalog) {
     const parsed = CatalogSnapshotSchema.safeParse(
-      buildCatalogSnapshot(catalog, index, projects, discovery),
+      buildCatalogSnapshot(catalog, index, projects, discovery, teams),
     );
     if (!parsed.success) {
       throw new SnapshotValidationError(
@@ -285,8 +286,9 @@ export async function writeSnapshots(
   catalog?: Catalog,
   discovery: DiscoveryResult | null = null,
   extras?: HistoryExtras,
+  teams: TeamsResult | null = null,
 ): Promise<CollectionReport> {
-  const files = serialise(index, projects, catalog, discovery, extras);
+  const files = serialise(index, projects, catalog, discovery, extras, teams);
   const report = buildReport(index, projects, extras?.history ?? null, extras?.notes ?? []);
   const reportJson = `${JSON.stringify(report, null, 2)}\n`;
   const reportMd = reportMarkdown(report);

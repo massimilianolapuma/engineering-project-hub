@@ -105,7 +105,12 @@ async function main(): Promise<number> {
     catalog,
     result.discovery,
     extras,
+    result.teams,
   );
+  if (result.teams)
+    console.log(
+      `Teams: ${result.teams.status}, ${result.teams.teamsRead} read, ${result.teams.suggestions.length} suggestion(s), ${result.teams.notFound.length} not found`,
+    );
 
   for (const p of result.index.projects)
     console.log(
