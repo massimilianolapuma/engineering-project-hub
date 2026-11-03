@@ -47,6 +47,16 @@ describe('Grafana dashboard', () => {
     expect(new Set(uids)).toEqual(new Set(['engineering-project-hub', '${DS_PROMETHEUS}']));
   });
 
+  it('the overdue total says how many projects are not measured', () => {
+    const panel = dash.panels.find((p) => /overdue/i.test(String(p.title)))!;
+    const exprs = panel.targets.map((t) => t.expr);
+    expect(
+      exprs.some((e) =>
+        /hub_project_measure_known\{[^}]*measure="overdue_alerts"[^}]*\} == 0/.test(e),
+      ),
+    ).toBe(true);
+  });
+
   it('queries only metrics the collector emits', () => {
     const used = dash.panels.flatMap((p) =>
       p.targets.flatMap((t) => [...t.expr.matchAll(/\bhub_[a-z_]+/g)].map((m) => m[0])),

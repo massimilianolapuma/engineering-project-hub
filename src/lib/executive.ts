@@ -181,11 +181,19 @@ export function filterInput(input: ExecInput, teams: string[]): ExecInput {
   return { ...input, projects: input.projects.filter((p) => teamMatch(teams, p.teamSlugs)) };
 }
 
-/** Sum of the known values; null when none is known. */
-function sum(values: (number | null)[]): Bound {
+/**
+ * Sum of the known values; null when none is known. A lower bound ("≥") when some value is
+ * unknown, or, for counts of alerts, when a project's alert counts are incomplete.
+ */
+function sum(ps: ExecProject[], get: (p: ExecProject) => number | null, alerts = false): Bound {
+  const values = ps.map(get);
   const known = values.filter((v): v is number => v !== null);
   if (known.length === 0) return null;
-  return { n: known.reduce((a, b) => a + b, 0), lower: known.length < values.length };
+  const incomplete = alerts && ps.some((p) => !p.countsComplete && get(p) !== null);
+  return {
+    n: known.reduce((a, b) => a + b, 0),
+    lower: known.length < values.length || incomplete,
+  };
 }
 
 const positive = (v: number | null): v is number => v !== null && v > 0;
@@ -202,7 +210,11 @@ function riskKinds(p: ExecProject): {
       positive(p.open.critical),
       { n: p.open.critical ?? 0, lower: !p.countsComplete },
     ],
-    ['overdue', positive(p.overdueCriticalHigh), { n: p.overdueCriticalHigh ?? 0, lower: false }],
+    [
+      'overdue',
+      positive(p.overdueCriticalHigh),
+      { n: p.overdueCriticalHigh ?? 0, lower: !p.countsComplete },
+    ],
     ['high-open', positive(p.open.high), { n: p.open.high ?? 0, lower: !p.countsComplete }],
     ['secrets', positive(p.secrets), { n: p.secrets ?? 0, lower: false }],
     ['delivery-failing', p.dims.delivery === 'red'],
@@ -281,17 +293,17 @@ export function buildExecutiveView(input: ExecInput): ExecView {
     })),
     riskCandidates: candidates.map((p) => p.id),
     remediation: {
-      overdue: sum(ps.map((p) => p.overdue)),
-      overdueCriticalHigh: sum(ps.map((p) => p.overdueCriticalHigh)),
+      overdue: sum(ps, (p) => p.overdue, true),
+      overdueCriticalHigh: sum(ps, (p) => p.overdueCriticalHigh, true),
       projectsWithOverdue: ps.filter((p) => positive(p.overdue)).length,
-      accepted: sum(ps.map((p) => p.accepted)),
+      accepted: sum(ps, (p) => p.accepted, true),
       exceptionIssues: ps.reduce((n, p) => n + p.exceptionIssues, 0),
     },
     supplyChain: {
-      sbom: sum(ps.map((p) => p.supplyChain.sbomAvailable)),
-      repositories: sum(ps.map((p) => p.supplyChain.repositories)),
-      unsigned: sum(ps.map((p) => p.supplyChain.unsignedImages)),
-      flagged: sum(ps.map((p) => p.supplyChain.flagged)),
+      sbom: sum(ps, (p) => p.supplyChain.sbomAvailable),
+      repositories: sum(ps, (p) => p.supplyChain.repositories),
+      unsigned: sum(ps, (p) => p.supplyChain.unsignedImages),
+      flagged: sum(ps, (p) => p.supplyChain.flagged),
     },
   };
 }

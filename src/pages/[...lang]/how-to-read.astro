@@ -588,7 +588,11 @@ const SECTIONS = [
       <h2 id="executive-title">{h.execTitle}</h2>
       <ul class="htr-points">
         <li>{h.execPoint}</li>
-        <li>{f(h.execTrend, { days: policies.outputs.executive.trendDays })}</li>
+        <li>
+          {f(policies.outputs.executive.trendDays === 1 ? h.execTrendOne : h.execTrend, {
+            days: policies.outputs.executive.trendDays,
+          })}
+        </li>
         <li>{h.execRisks}</li>
         <li>{h.execUnknown}</li>
         <li>{h.execRedaction}</li>

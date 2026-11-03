@@ -120,7 +120,7 @@ The hub ships no alert rules. Three expressions to start from:
 [`examples/grafana/engineering-project-hub.json`](../examples/grafana/engineering-project-hub.json)
 has ten panels: projects per status, data age, overdue critical or high alerts, projects per
 status over time, score, open critical and high alerts, measures not visible, unsigned images,
-SBOM coverage and provider states. A missing value shows "Not measured", never 0.
+SBOM coverage and provider states. A missing value shows "Not measured", never 0; the overdue total covers the measured projects and shows next to it how many were not measured.
 
 Import: **Dashboards → New → Import**, upload the file, then choose your Prometheus data source
 in the **Data source** drop-down at the top of the dashboard. The file contains no data source

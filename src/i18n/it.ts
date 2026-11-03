@@ -1438,6 +1438,8 @@ export const it: Dict = {
       "Una vista di una pagina da condividere: progetti per stato, l'andamento, i rischi principali in parole semplici, le scadenze di rimedio e la catena di fornitura.",
     execTrend:
       "La tabella dell'andamento confronta il momento attuale con la raccolta più recente di almeno {days} giorni fa e con la più vecchia conservata. Un progetto aggiunto dopo non è contato nelle colonne più vecchie.",
+    execTrendOne:
+      "La tabella dell'andamento confronta il momento attuale con la raccolta più recente di almeno 1 giorno fa e con la più vecchia conservata. Un progetto aggiunto dopo non è contato nelle colonne più vecchie.",
     execRisks:
       'I rischi principali elencano prima i progetti critici, poi quelli non visibili, poi quelli che richiedono attenzione; dentro ogni gruppo vengono prima quelli con più alert critici e alti aperti.',
     execUnknown:
@@ -1488,6 +1490,7 @@ export const it: Dict = {
     trend: {
       title: 'Andamento',
       caption: "Progetti per stato: ora, {n} giorni fa e all'inizio dello storico",
+      captionOne: "Progetti per stato: ora, 1 giorno fa e all'inizio dello storico",
       status: 'Stato',
       projects: 'Progetti',
       now: 'Ora ({date})',

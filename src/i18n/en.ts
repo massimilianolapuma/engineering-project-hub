@@ -1422,6 +1422,8 @@ export const en = {
       'A one-page view to share: project counts per status, the trend, the top risks in plain words, remediation deadlines and the supply chain.',
     execTrend:
       'The trend table compares now with the newest collection at least {days} days old and with the oldest one kept. A project added later is not counted in older columns.',
+    execTrendOne:
+      'The trend table compares now with the newest collection at least 1 day old and with the oldest one kept. A project added later is not counted in older columns.',
     execRisks:
       'Top risks lists critical projects first, then those not visible, then those needing attention; inside each group, more open critical and high alerts come first.',
     execUnknown:
@@ -1472,6 +1474,7 @@ export const en = {
     trend: {
       title: 'Trend',
       caption: 'Projects per status: now, {n} days ago and at the start of the history',
+      captionOne: 'Projects per status: now, 1 day ago and at the start of the history',
       status: 'Status',
       projects: 'Projects',
       now: 'Now ({date})',

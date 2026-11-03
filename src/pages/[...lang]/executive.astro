@@ -113,7 +113,7 @@ const source = index?.run.dataSource === 'mock' ? d.common.sourceMock : d.common
         {view.trend.state === 'ok' && (
           <div class="table-wrap">
             <table class="table exec-trend">
-              <caption>{f(x.trend.caption, { n: view.trend.trendDays })}</caption>
+              <caption>{text.trendCaption}</caption>
               <thead>
                 <tr>
                   <th scope="col">{x.trend.status}</th>

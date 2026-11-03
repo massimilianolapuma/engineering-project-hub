@@ -101,6 +101,31 @@ describe('executive view on the golden data', () => {
 });
 
 describe('executive view edge cases', () => {
+  it('marks overdue and accepted totals as lower bounds when alert counts are incomplete', () => {
+    const i = input();
+    // Without gamma every overdue value is known, but Beta's alert counts are incomplete.
+    i.projects = i.projects.filter((p) => p.id !== 'project-gamma');
+    const view = buildExecutiveView(i);
+    expect(view.remediation.overdue).toEqual({ n: 1, lower: true });
+    expect(view.remediation.overdueCriticalHigh).toEqual({ n: 1, lower: true });
+    expect(view.remediation.accepted).toEqual({ n: 3, lower: true });
+    const platform = i.projects.find((p) => p.id === 'platform')!;
+    platform.countsComplete = false;
+    const t = executiveText(buildExecutiveView(i), en.executive, fmt);
+    expect(t.risks.find((r) => r.id === 'platform')!.sentences[0]).toBe(
+      '≥ 1 critical or high alert past the remediation deadline.',
+    );
+  });
+
+  it('says "1 day ago" in the trend caption when trendDays is 1', () => {
+    expect(textOf(input({ trendDays: 1 })).trendCaption).toBe(
+      'Projects per status: now, 1 day ago and at the start of the history',
+    );
+    expect(textOf(input()).trendCaption).toBe(
+      'Projects per status: now, 7 days ago and at the start of the history',
+    );
+  });
+
   it('says "not measured" when no project has remediation data', () => {
     const i = input();
     i.projects = i.projects.map((p) => ({ ...p, overdue: null, overdueCriticalHigh: null }));

@@ -121,7 +121,7 @@ L'hub non fornisce regole di alert. Tre espressioni da cui partire:
 [`examples/grafana/engineering-project-hub.json`](../../examples/grafana/engineering-project-hub.json)
 ha dieci pannelli: progetti per stato, età dei dati, alert critici o alti scaduti, progetti per
 stato nel tempo, punteggio, alert critici e alti aperti, misure non visibili, immagini non firmate,
-copertura SBOM e stati dei provider. Un valore mancante mostra "Not measured", mai 0.
+copertura SBOM e stati dei provider. Un valore mancante mostra "Not measured", mai 0; il totale degli alert scaduti copre i progetti misurati e accanto mostra quanti non lo sono stati.
 
 Importazione: **Dashboards → New → Import**, carica il file, poi scegli la sorgente dati
 Prometheus nel menu **Data source** in alto nella dashboard. Il file non contiene UID di sorgenti

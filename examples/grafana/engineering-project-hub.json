@@ -219,7 +219,17 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "expr": "sum(hub_project_overdue_alerts{class=\"critical_high\",project=~\"$project\"})",
-          "legendFormat": "Overdue critical or high",
+          "legendFormat": "Overdue critical or high (measured projects)",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "count(hub_project_measure_known{measure=\"overdue_alerts\",project=~\"$project\"} == 0) or vector(0)",
+          "legendFormat": "Projects not measured",
           "instant": true
         }
       ],

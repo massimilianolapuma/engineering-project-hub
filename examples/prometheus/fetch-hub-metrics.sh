@@ -7,8 +7,9 @@
 #   CF_ACCESS_CLIENT_ID           Cloudflare Access service token id             (optional)
 #   CF_ACCESS_CLIENT_SECRET_FILE  file holding the service token secret          (optional)
 #
-# On failure the previous file stays in place and the script exits non-zero. The secret is
-# never printed.
+# The previous file is replaced only by an HTTP 200 response that looks like a metrics file
+# (it starts with "# HELP"). A redirect to a login page, an HTML page or any error keeps the
+# previous file and exits non-zero. The secret is never printed.
 set -eu
 
 : "${HUB_METRICS_URL:?set HUB_METRICS_URL}"
@@ -20,13 +21,25 @@ trap 'rm -f "$tmp"' EXIT HUP INT TERM
 if [ -n "${CF_ACCESS_CLIENT_ID:-}" ]; then
   : "${CF_ACCESS_CLIENT_SECRET_FILE:?set CF_ACCESS_CLIENT_SECRET_FILE with CF_ACCESS_CLIENT_ID}"
   # The secret goes through a curl config file on stdin, never on the command line.
-  {
-    printf 'header = "CF-Access-Client-Id: %s"\n' "$CF_ACCESS_CLIENT_ID"
-    printf 'header = "CF-Access-Client-Secret: %s"\n' "$(cat "$CF_ACCESS_CLIENT_SECRET_FILE")"
-  } | curl --fail --silent --show-error --max-time 30 --config - \
-    --output "$tmp" "$HUB_METRICS_URL"
+  status=$(
+    {
+      printf 'header = "CF-Access-Client-Id: %s"\n' "$CF_ACCESS_CLIENT_ID"
+      printf 'header = "CF-Access-Client-Secret: %s"\n' "$(cat "$CF_ACCESS_CLIENT_SECRET_FILE")"
+    } | curl --fail --silent --show-error --max-time 30 --config - \
+      --output "$tmp" --write-out '%{http_code}' "$HUB_METRICS_URL"
+  )
 else
-  curl --fail --silent --show-error --max-time 30 --output "$tmp" "$HUB_METRICS_URL"
+  status=$(curl --fail --silent --show-error --max-time 30 \
+    --output "$tmp" --write-out '%{http_code}' "$HUB_METRICS_URL")
+fi
+
+if [ "$status" != "200" ]; then
+  echo "fetch-hub-metrics: HTTP $status, keeping the previous file" >&2
+  exit 1
+fi
+if [ "$(head -c 6 "$tmp")" != "# HELP" ]; then
+  echo "fetch-hub-metrics: not a metrics file, keeping the previous file" >&2
+  exit 1
 fi
 
 mv "$tmp" "$TEXTFILE_DIR/hub.prom"

@@ -12,6 +12,7 @@ export type ExecStrings = Dict['executive'];
 export interface ExecText {
   lede: string;
   trendSentence: string;
+  trendCaption: string;
   risks: { id: string; sentences: string[] }[];
   remediation: string;
   exceptions: string;
@@ -115,6 +116,9 @@ export function executiveText(
       date: date(view.trend.now ?? ''),
     }),
     trendSentence: trendSentence(view, s, date),
+    trendCaption: fill(pick(view.trend.trendDays, s.trend.captionOne, s.trend.caption), {
+      n: view.trend.trendDays,
+    }),
     risks: view.risks.map((risk) => ({
       id: risk.id,
       sentences: risk.kinds.map((k) => riskSentence(s, k, risk.counts[k])),
