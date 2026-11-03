@@ -83,6 +83,8 @@ describe('static site', () => {
     // Empty score (no number): Astro serialises data-score="" as a bare attribute.
     expect(row).toMatch(/\sdata-score(="")?[\s>]/);
     expect(row).toContain('insufficient data');
+    // Approved mockup: no score is an unknown Label (dashed), never a number.
+    expect(row).toMatch(/class="pill pill--unknown score__label"[^>]*>[^<]*insufficient data/);
     expect(row).toMatch(/dimbars__bar--grey/);
     expect(row).toMatch(/href="[^"]*data-quality\/#project-gamma"/);
     expect(row).toContain('2 collection errors');
@@ -166,6 +168,65 @@ describe('static site', () => {
     expect(html).toContain('<html lang="it"');
     expect(html).toContain('Rischio sicurezza');
     expect(html).toContain('Legenda');
+  });
+
+  it('server-renders the Primer colour mode attributes on <html>', async () => {
+    for (const p of ['', 'it']) {
+      expect(await page(p)).toMatch(
+        /<html[^>]*data-color-mode="auto"[^>]*data-light-theme="light"[^>]*data-dark-theme="dark"/,
+      );
+    }
+  });
+
+  it('renders the GitHub-style shell: icon nav without counters, run bar, flash, footer', async () => {
+    for (const [p, dict] of [
+      ['', en],
+      ['it', itDict],
+    ] as const) {
+      const html = await page(p);
+      const nav = /<nav class="mainnav"[\s\S]*?<\/nav>/.exec(html)?.[0] ?? '';
+      const links = nav.match(/<a [\s\S]*?<\/a>/g) ?? [];
+      expect(links.length, p).toBe(7);
+      for (const a of links) expect(a, p).toMatch(/<svg[^>]*class="octicon octicon-/);
+      expect(nav, p).not.toContain('class="Counter"');
+      const footer = /<footer class="footer"[\s\S]*?<\/footer>/.exec(html)?.[0] ?? '';
+      expect(textOf(footer), p).toContain(dict.footer.notAffiliated);
+      // Identity is opt-in (Cloudflare Access): the default build has no slot and no endpoint.
+      expect(html, p).not.toContain('data-identity');
+      expect(html, p).not.toContain('/cdn-cgi/');
+      expect(html, p).toMatch(/class="runbar"/);
+      expect(html, p).toMatch(
+        /data-stale-banner[^>]*role="status"|role="status"[^>]*data-stale-banner/,
+      );
+    }
+  });
+
+  it('draws the environments path with Octicon arrows, not text arrows', async () => {
+    for (const [p, start] of [
+      ['projects/project-beta', '<ol class="envpath"'],
+      ['versions', '<ol class="vpath"'],
+    ] as const) {
+      const html = await page(p);
+      const from = html.indexOf(start);
+      const path = html.slice(from, html.indexOf('</ol>', from));
+      expect(from, p).toBeGreaterThan(-1);
+      expect(path, p).toMatch(/<svg[^>]*octicon-arrow-right/);
+      expect(path, p).not.toContain('→');
+    }
+  });
+
+  it('gives the catalog editor a pull-request icon for the primary action', async () => {
+    const html = await page('catalog');
+    expect(html).toMatch(
+      /<template data-icon="git-pull-request"[^>]*>\s*<svg[^>]*octicon-git-pull-request/,
+    );
+  });
+
+  it('never uses a GitHub logo icon', async () => {
+    for (const v of VIEWS) {
+      const html = await page(v);
+      expect(html, v).not.toMatch(/octocat|mark-github|logo-github/);
+    }
   });
 
   it('links to the original GitHub resources', async () => {
@@ -271,6 +332,7 @@ describe('static site', () => {
       const head = between(html, '<main', 'id="h-why"');
       expect(head).toContain('insufficient data');
       expect(head).toContain('score__value--none');
+      expect(head).toMatch(/class="pill pill--unknown score__label"[^>]*>[^<]*insufficient data/);
       expect(head).not.toMatch(/class="score__value"[^>]*>\s*0\s*</);
       const why = between(html, 'id="h-why"', '</section>');
       expect(why).toContain('2 collection errors');
@@ -424,9 +486,11 @@ describe('static site', () => {
       expect(q).toMatch(/<h2[^>]*>Code quality</);
       expect(textOf(q)).toMatch(/67(\.2)?%/);
       expect(textOf(q)).toContain('Does not mean 0%.');
-      // The blind spot is named; the not-applicable chart reads "–", never 0%.
+      // The blind spot is named; the not-applicable chart shows the "na" symbol, never 0%.
       expect(between(q, 'data-quality-component="web"', '</tr>')).toContain('Not visible');
-      expect(between(q, 'data-quality-component="helm"', '</tr>')).toContain('–');
+      expect(between(q, 'data-quality-component="helm"', '</tr>')).toMatch(
+        /data-symbol="na"[\s\S]*?<svg[^>]*octicon-dash/,
+      );
       expect(between(q, 'data-quality-component="helm"', '</tr>')).not.toMatch(/\b0%/);
       // Findings are informative counts from GitHub Code Quality, with no link to a page there.
       expect(textOf(q)).toContain('1 reliability');
@@ -449,7 +513,7 @@ describe('static site', () => {
       expect(text).not.toMatch(/(^|[^\d,.])0(\.0)?%/);
       expect(text).not.toMatch(/\b0 of 0\b/);
       expect(q).toMatch(
-        /class="[^"]*\bqsym\b[^"]*"[^>]*role="img"[^>]*aria-label="[^"]+"[^>]*>\s*\?/,
+        /class="[^"]*\bqsym\b[^"]*"[^>]*role="img"[^>]*aria-label="[^"]+"[^>]*data-symbol="blind"[^>]*>\s*<svg[^>]*octicon-question/,
       );
       expect(q).toMatch(/class="meter meter--unknown"/);
     });
@@ -457,7 +521,7 @@ describe('static site', () => {
     it('marks a stale shared report with its age and the shared-report note', async () => {
       const q = section(await page('projects/platform'));
       expect(textOf(q)).toContain('Shared repository report');
-      expect(q).toContain('⧖');
+      expect(q).toMatch(/data-symbol="stale"[^>]*>\s*<svg[^>]*octicon-clock/);
       expect(q).toContain('href="https://github.com/example-org/platform-mono/actions/runs/9501"');
     });
 
@@ -515,9 +579,9 @@ describe('static site', () => {
         const parts = html.split(/<span class="meter[ "]/);
         expect(parts.length, v).toBeGreaterThan(1);
         for (const before of parts.slice(0, -1)) {
-          // The value (a percentage, or the "?" symbol) sits right before the meter.
-          expect(before.slice(-400), v).toMatch(
-            /class="qcov__value[^"]*"[^>]*>(?:\s*<[^>]+>)*\s*(\d+(?:[.,]\d)?%|\?)/,
+          // The value (a percentage, or the "not visible" symbol) sits right before the meter.
+          expect(before.slice(-1200), v).toMatch(
+            /class="qcov__value[^"]*"[^>]*>(?:(?:\s*<[^>]+>)*\s*\d+(?:[.,]\d)?%|\s*<span[^>]*data-symbol="blind")/,
           );
         }
         expect(html, v).toMatch(/<span class="meter[^"]*"[^>]*aria-hidden="true"/);
@@ -630,17 +694,19 @@ describe('static site', () => {
     };
     expect(card('project-beta')).toContain('Controls coverage: 2 of 4 required');
     expect(card('project-beta')).toContain('Not authorised (403)');
-    expect(card('project-beta')).toMatch(/data-state="stale"[\s\S]*?⧖[\s\S]*?Container scanning/);
+    expect(card('project-beta')).toMatch(
+      /data-state="stale"[\s\S]*?data-symbol="stale"[\s\S]*?Container scanning/,
+    );
     // Health is the shared status badge (health shape), alert severity the severity pill
     // (rising bars) and a blind spot the dashed unknown pill: three looks, never confused.
     expect(card('project-beta')).toMatch(
-      /class="badge badge--red badge--sm"[^>]*>\s*<svg class="icon icon--red"/,
+      /class="badge badge--red badge--sm"[^>]*>\s*<svg[^>]*class="octicon octicon-x-circle-fill icon icon--red"/,
     );
     expect(card('project-beta')).toMatch(
       /class="pill pill--sev-critical"[^>]*>\s*<svg class="icon icon--sev-critical"/,
     );
     expect(card('project-beta')).toMatch(
-      /class="pill pill--grey"[^>]*>\s*<svg class="icon icon--grey"[\s\S]*?Secret scanning alerts not visible/,
+      /class="pill pill--grey"[^>]*>\s*<svg[^>]*class="octicon octicon-question icon icon--grey"[\s\S]*?Secret scanning alerts not visible/,
     );
     expect(html).not.toMatch(/class="pill pill--(unknown|red|amber|green)"/);
     expect(card('project-gamma')).toContain('does not mean zero alerts');
@@ -701,7 +767,9 @@ describe('static site', () => {
     expect(sub).toContain('tools/legacy-scripts');
     expect(sub).toMatch(/href="[^"]*\/catalog\/"/);
     // Capabilities as pills (shape + text), run details collapsed last.
-    expect(html).toMatch(/pill pill--amber[\s\S]{0,400}Partial[\s\S]{0,200}Metadata/);
+    expect(html).toMatch(
+      /pill pill--amber"[^>]*>\s*<svg[^>]*>[\s\S]*?<\/svg>\s*<span[^>]*>Partial[\s\S]{0,200}Metadata/,
+    );
     expect(html).toMatch(/<details class="dq-run disclosure"(?![^>]*\bopen\b)[^>]*>\s*<summary/);
     expect(html.lastIndexOf('<section')).toBeLessThan(
       html.indexOf('<details class="dq-run disclosure"'),

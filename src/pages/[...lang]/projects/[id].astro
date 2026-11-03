@@ -27,6 +27,7 @@ import SlaMeta from '../../../components/SlaMeta.astro';
 import StatusBadge from '../../../components/StatusBadge.astro';
 import TrendSection from '../../../components/TrendSection.astro';
 import UnknownValue from '../../../components/UnknownValue.astro';
+import Octicon from '../../../components/Octicon.astro';
 import Base from '../../../layouts/Base.astro';
 import { loadHistory, loadSiteData } from '../../../lib/data';
 import { displayVersion } from '../../../lib/format';
@@ -472,7 +473,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
               <li class="envpath__step" data-env={e.name} data-env-status={e.status}>
                 {i > 0 && (
                   <span class="envpath__arrow" aria-hidden="true">
-                    →
+                    <Octicon name="arrow-right" />
                   </span>
                 )}
                 <span class={`envpath__card envpath__card--${e.status}`}>
@@ -887,16 +888,16 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
   .crumbs {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2);
-    color: var(--text-muted);
+    gap: var(--base-size-8);
+    color: var(--fgColor-muted);
   }
   .phead {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: flex-end;
-    gap: var(--space-4);
-    margin-bottom: var(--space-5);
+    gap: var(--base-size-16);
+    margin-bottom: var(--base-size-24);
   }
   .phead__main {
     display: flex;
@@ -909,11 +910,11 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--base-size-12);
   }
   .phead__title h1 {
     margin: 0;
-    font-size: var(--fs-xl);
+    font-size: var(--text-title-size-medium);
     line-height: 28px;
     font-weight: 600;
   }
@@ -921,7 +922,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
   .phead__desc,
   .phead__collected {
     margin: 0;
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
     overflow-wrap: anywhere;
   }
   .phead__score {
@@ -931,16 +932,16 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
     text-align: right;
   }
   .phead__collected {
-    font-size: var(--fs-sm);
+    font-size: var(--text-body-size-small);
   }
 
   .why h2 {
-    margin: 0 0 var(--space-2);
+    margin: 0 0 var(--base-size-8);
   }
   .why__list {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--base-size-8);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -948,7 +949,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
   .why__item {
     display: flex;
     align-items: baseline;
-    gap: var(--space-3);
+    gap: var(--base-size-12);
   }
   .why__text {
     min-width: 0;
@@ -956,57 +957,57 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
   }
   .why__more,
   .why__cause {
-    margin: var(--space-3) 0 0;
+    margin: var(--base-size-12) 0 0;
   }
   /* Cause first (nothing measured): it leads the box, the rows follow. */
   .why h2 + .why__cause {
-    margin: 0 0 var(--space-3);
+    margin: 0 0 var(--base-size-12);
   }
   .why__more > summary {
     display: inline-flex;
     align-items: center;
     min-height: 40px;
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
     font-weight: 500;
     cursor: pointer;
   }
   .why__more > .why__list {
-    margin-top: var(--space-2);
+    margin-top: var(--base-size-8);
   }
 
   .dimcards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
-    gap: var(--space-3);
-    margin-bottom: var(--space-6);
+    gap: var(--base-size-12);
+    margin-bottom: var(--base-size-32);
   }
   .dimcard {
     display: flex;
     flex-direction: column;
     gap: 6px;
     margin: 0;
-    padding: var(--space-4);
-    color: var(--text);
+    padding: var(--base-size-16);
+    color: var(--fgColor-default);
     font-weight: 400;
     text-decoration: none;
   }
   .dimcard:hover {
-    border-color: var(--border-strong);
+    border-color: var(--borderColor-emphasis);
   }
   /* Unknown is a dashed outline, as on the environment and unknown cards. */
   .dimcard[data-status='grey'] {
-    border: 1.5px dashed var(--unknown);
+    border: 1.5px dashed var(--borderColor-emphasis);
   }
   .dimcard__dot--grey {
     border-width: 2px;
   }
   .plegend {
-    margin-top: var(--space-5);
+    margin-top: var(--base-size-24);
   }
   .dimcard__head {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--base-size-8);
   }
   .dimcard__pill {
     display: flex;
@@ -1015,7 +1016,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
     font-weight: 600;
   }
   .dimcard__summary {
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
     overflow-wrap: anywhere;
   }
   .dimcard__dot {
@@ -1025,61 +1026,66 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
     border-radius: 50%;
   }
   .dimcard__dot--red {
-    background: var(--red);
+    background: var(--fgColor-danger);
   }
   .dimcard__dot--amber {
-    background: var(--amber);
+    background: var(--fgColor-attention);
   }
   .dimcard__dot--green {
-    background: var(--green);
+    background: var(--fgColor-success);
   }
   .dimcard__dot--grey {
-    border: 1.5px dashed var(--unknown);
+    border: 1.5px dashed var(--borderColor-emphasis);
   }
 
   .block h2 {
-    margin: 0 0 var(--space-3);
+    margin: 0 0 var(--base-size-12);
   }
   .coordline {
-    margin: 0 0 var(--space-3);
-    color: var(--text-muted);
+    margin: 0 0 var(--base-size-12);
+    color: var(--fgColor-muted);
     overflow-wrap: anywhere;
   }
   .envpath {
     display: flex;
     flex-wrap: wrap;
     align-items: stretch;
-    gap: var(--space-3);
-    margin: 0 0 var(--space-3);
+    gap: var(--base-size-12);
+    margin: 0 0 var(--base-size-12);
     padding: 0;
     list-style: none;
   }
   .envpath__step {
     display: flex;
     align-items: stretch;
-    gap: var(--space-3);
+    gap: var(--base-size-12);
   }
   .envpath__arrow {
     align-self: center;
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
   }
   .envpath__card {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--space-1);
+    gap: var(--base-size-4);
     min-width: 140px;
-    padding: var(--space-3) var(--space-4);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    padding: var(--base-size-12) var(--base-size-16);
+    background: var(--bgColor-default);
+    border: 1px solid var(--borderColor-default);
+    border-radius: var(--borderRadius-medium);
   }
   .envpath__card--unknown {
-    border: 1.5px dashed var(--unknown);
+    border: 1.5px dashed var(--borderColor-emphasis);
+  }
+  .envpath__card--behind,
+  .envpath__card--mismatch {
+    background: var(--bgColor-attention-muted);
+    border-color: var(--borderColor-attention-muted);
   }
   .envpath__expected {
-    font-size: var(--fs-xs);
-    color: var(--text-muted);
+    font-size: var(--text-body-size-small);
+    color: var(--fgColor-muted);
   }
 
   /* Wide screens: one row per component (scrolls inside its box if needed). Phones: the
@@ -1103,37 +1109,37 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
   }
   .comps__flag {
     display: block;
-    margin-top: var(--space-1);
+    margin-top: var(--base-size-4);
   }
   .comps__flag .sub {
-    margin-left: var(--space-1);
+    margin-left: var(--base-size-4);
   }
   .comps__gaps {
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
+    gap: var(--base-size-4);
   }
 
   .sections {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--base-size-12);
   }
   .fold {
     min-width: 0;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    scroll-margin-top: var(--space-4);
+    background: var(--bgColor-default);
+    border: 1px solid var(--borderColor-default);
+    border-radius: var(--borderRadius-medium);
+    scroll-margin-top: var(--base-size-16);
   }
   /* Flex row; the chevron comes from the shared .disclosure style. */
   .fold > summary {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: var(--space-1) var(--space-3);
+    gap: var(--base-size-4) var(--base-size-12);
     min-height: 44px;
-    padding: var(--space-3) var(--space-4);
+    padding: var(--base-size-12) var(--base-size-16);
   }
   .fold > summary::before {
     margin-right: 0;
@@ -1143,14 +1149,14 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
     font-weight: 600;
   }
   .fold__hint {
-    color: var(--text-muted);
-    font-size: var(--fs-sm);
+    color: var(--fgColor-muted);
+    font-size: var(--text-body-size-small);
   }
   .fold__body {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
-    padding: 0 var(--space-4) var(--space-4);
+    gap: var(--base-size-12);
+    padding: 0 var(--base-size-16) var(--base-size-16);
     min-width: 0;
   }
   .fold__body p,
@@ -1164,7 +1170,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
   .stale {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--base-size-8);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -1173,13 +1179,13 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: var(--space-1) var(--space-3);
+    gap: var(--base-size-4) var(--base-size-12);
   }
   .alerts__risk {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-1) var(--space-2);
+    gap: var(--base-size-4) var(--base-size-8);
   }
   .alerts__unlisted {
     font-weight: 600;
@@ -1194,13 +1200,13 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
   .ghlinks {
     flex-direction: row;
     flex-wrap: wrap;
-    gap: var(--space-2) var(--space-4);
+    gap: var(--base-size-8) var(--base-size-16);
   }
   .ctrls__item {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-1) var(--space-3);
+    gap: var(--base-size-4) var(--base-size-12);
   }
   .stale li {
     overflow-wrap: anywhere;
@@ -1210,7 +1216,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
   @media (max-width: 480px) {
     .why__item {
       flex-direction: column;
-      gap: var(--space-1);
+      gap: var(--base-size-4);
     }
   }
   @media (max-width: 640px) {
@@ -1232,12 +1238,12 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
     .envpath__step {
       flex-direction: column;
       align-items: stretch;
-      gap: var(--space-2);
+      gap: var(--base-size-8);
     }
     .envpath__arrow {
       transform: rotate(90deg);
       align-self: flex-start;
-      margin-left: var(--space-4);
+      margin-left: var(--base-size-16);
     }
   }
 </style>

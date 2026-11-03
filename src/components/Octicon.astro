@@ -1,0 +1,13 @@
+---
+/** An Octicon rendered at build time. Decorative unless `label` is given. */
+import { octiconSvg, type OcticonName } from '../lib/octicon';
+interface Props {
+  name: OcticonName;
+  size?: 12 | 16 | 24;
+  label?: string;
+  class?: string;
+}
+const { name, size, label, class: className } = Astro.props;
+---
+
+<Fragment set:html={octiconSvg(name, { size, label, className })} />

@@ -359,14 +359,14 @@ const date = (iso: string) => i18n.date(iso);
   .chg {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: var(--base-size-16);
   }
   .chg :global(.page-head) {
     margin-bottom: 0;
   }
   .chg__lede {
-    margin: var(--space-2) 0 0;
-    font-size: var(--fs-lead);
+    margin: var(--base-size-8) 0 0;
+    font-size: var(--text-body-size-large);
     font-weight: 600;
   }
   .chg__summary {
@@ -380,7 +380,7 @@ const date = (iso: string) => i18n.date(iso);
   .chg-card {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--base-size-12);
     margin: 0;
   }
   .chg-card__head {
@@ -388,16 +388,16 @@ const date = (iso: string) => i18n.date(iso);
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-2) var(--space-3);
+    gap: var(--base-size-8) var(--base-size-12);
   }
   .chg-card h2 {
     margin: 0;
-    font-size: var(--fs-lg);
+    font-size: var(--text-title-size-small);
     overflow-wrap: anywhere;
   }
   .chg-card h3 {
-    margin: 0 0 var(--space-2);
-    font-size: var(--fs-md);
+    margin: 0 0 var(--base-size-8);
+    font-size: var(--text-body-size-medium);
   }
   .chg-card p {
     margin: 0;
@@ -405,7 +405,7 @@ const date = (iso: string) => i18n.date(iso);
   .chg-list {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--base-size-8);
     margin: 0;
     padding: 0;
     list-style: none;

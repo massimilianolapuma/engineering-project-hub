@@ -20,6 +20,10 @@ export const en = {
     themeLight: 'Light',
     themeDark: 'Dark',
     skip: 'Skip to content',
+    signedInAs: 'Signed in as {name}',
+  },
+  footer: {
+    notAffiliated: 'Not affiliated with GitHub · built with Primer',
   },
   common: {
     lastRun: 'Last collector run',

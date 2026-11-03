@@ -5,6 +5,7 @@ import { useI18n } from '../../src/i18n';
 import {
   STRIP_HEIGHT,
   seriesFor,
+  sparklineEnd,
   sparklineSegments,
   summarise,
   trendText,
@@ -15,6 +16,19 @@ const golden: HistoryFile = HistoryFileSchema.parse(
   JSON.parse(readFileSync('fixtures/snapshots/history.json', 'utf8')),
 );
 const summary = (id: string) => summarise(seriesFor(golden, id, 30));
+
+describe('sparklineEnd', () => {
+  it('is the last collection, on the same scale as the line', () => {
+    expect(sparklineEnd([10, null, 30, 20], 90, 20)).toEqual({ x: 90, y: 16 });
+  });
+  it('is null when the last collection was not measured (never drawn at 0)', () => {
+    expect(sparklineEnd([10, 30, null], 90, 20)).toBeNull();
+    expect(sparklineEnd([], 90, 20)).toBeNull();
+  });
+  it('centres a single point', () => {
+    expect(sparklineEnd([50], 90, 20)).toEqual({ x: 45, y: 10 });
+  });
+});
 
 describe('sparklineSegments', () => {
   it('splits at gaps and keeps a single point as a dot', () => {

@@ -176,6 +176,14 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
     return el;
   }
 
+  /** Decorative Octicon, cloned from the build-time <template data-icon> in the page. */
+  function icon(name: 'check' | 'x' | 'link-external' | 'git-pull-request'): HTMLElement {
+    const t = root.querySelector<HTMLTemplateElement>(`template[data-icon="${name}"]`);
+    const span = h('span', { class: `ce-icon ce-icon--${name}`, 'aria-hidden': 'true' });
+    if (t) span.append(t.content.cloneNode(true));
+    return span;
+  }
+
   const fid = (path: Path) => `ce-${path.join('-')}`;
   const key = (path: Path) => path.join('.');
 
@@ -352,8 +360,9 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
         rel: 'noopener noreferrer external',
         'aria-describedby': opts.describedBy,
       },
+      opts.primary ? icon('git-pull-request') : null,
       label,
-      h('span', { 'aria-hidden': 'true', class: 'extlink__arrow' }, ' ↗'),
+      icon('link-external'),
       h('span', { class: 'visually-hidden' }, ` ${S.opensNewTab}`),
     );
     if (opts.onClick) a.addEventListener('click', opts.onClick);
@@ -439,12 +448,7 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
           const mapped = isSubmoduleMapped(p, s.path);
           let action: HTMLElement;
           if (mapped) {
-            action = h(
-              'span',
-              { class: 'pill' },
-              h('span', { 'aria-hidden': 'true' }, '✓'),
-              S.linked,
-            );
+            action = h('span', { class: 'pill' }, icon('check'), S.linked);
           } else {
             action = button(S.addAsComponent, () => addSuggestion(p, s));
             action.setAttribute('aria-describedby', pathId);
@@ -952,24 +956,19 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
     lastSignature = signature;
     if (!issues.length) {
       dockValidEl.className = 'pill pill--green';
-      dockValidEl.textContent = `✓ ${S.dockValid}`;
+      dockValidEl.replaceChildren(icon('check'), S.dockValid);
       validationEl.replaceChildren(
-        h(
-          'p',
-          { class: 'ce-summary ce-summary--ok' },
-          h('span', { 'aria-hidden': 'true' }, '✓ '),
-          S.valid,
-        ),
+        h('p', { class: 'ce-summary ce-summary--ok' }, icon('check'), S.valid),
       );
       return;
     }
     dockValidEl.className = 'pill pill--red';
-    dockValidEl.textContent = `✕ ${fill(S.dockInvalid, { count: issues.length })}`;
+    dockValidEl.replaceChildren(icon('x'), fill(S.dockInvalid, { count: issues.length }));
     validationEl.replaceChildren(
       h(
         'p',
         { class: 'ce-summary ce-summary--bad' },
-        h('span', { 'aria-hidden': 'true' }, '✕ '),
+        icon('x'),
         fill(issues.length === 1 ? S.invalidOne : S.invalid, { count: issues.length }),
       ),
       h(
@@ -1261,7 +1260,7 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
         h(
           'p',
           { class: 'ce-proposal__status' },
-          h('span', { 'aria-hidden': 'true' }, '✓ '),
+          icon('check'),
           fill(publishedIds.has(match.id.trim()) ? S.alreadyInCatalog : S.inEditor, { name }),
         ),
         button(S.compareMerge, () => openMerge(match, pr), { describedBy: repoId, small: true }),
@@ -1301,7 +1300,7 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
               rel: 'noopener noreferrer external',
             },
             pr.repository,
-            h('span', { 'aria-hidden': 'true', class: 'extlink__arrow' }, ' ↗'),
+            icon('link-external'),
             h('span', { class: 'visually-hidden' }, ` ${S.opensNewTab}`),
           )
         : h('code', { class: 'ce-proposal__repo', id: repoId }, pr.repository),

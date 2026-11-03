@@ -215,51 +215,51 @@ const detailKind = (issue: WorkflowIssue, w: WorkflowStatus) =>
 
 <style>
   .wf-head h1 {
-    margin-bottom: var(--space-1);
+    margin-bottom: var(--base-size-4);
   }
   .wf-lead {
     margin: 0;
-    font-size: var(--fs-lead);
+    font-size: var(--text-body-size-large);
     line-height: 1.45;
     font-weight: 600;
-    color: var(--text);
+    color: var(--fgColor-default);
   }
   .wf-intro {
-    margin: var(--space-1) 0 0;
+    margin: var(--base-size-4) 0 0;
     max-width: 70ch;
   }
   .wf-list {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: var(--base-size-16);
   }
   .wf-card {
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
+    gap: var(--base-size-4);
     margin-bottom: 0;
   }
   .wf-card--unknown {
     border-style: dashed;
-    border-color: var(--unknown);
+    border-color: var(--borderColor-emphasis);
   }
   .wf-card__head {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2) 10px;
+    gap: var(--base-size-8) 10px;
   }
   .wf-card:not(.wf-card--line) .wf-card__head {
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--base-size-8);
   }
   .wf-card__head h2 {
     margin: 0;
-    font-size: var(--fs-card);
+    font-size: var(--text-body-size-large);
     line-height: 22px;
     font-weight: 600;
   }
   .wf-card__head h2 a {
-    color: var(--text);
+    color: var(--fgColor-default);
   }
   .wf-card__meta {
     margin-left: auto;
@@ -274,42 +274,42 @@ const detailKind = (issue: WorkflowIssue, w: WorkflowStatus) =>
     grid-template-columns:
       var(--status-col) minmax(0, 1.4fr) minmax(0, 1fr)
       minmax(0, 1.2fr);
-    gap: var(--space-3);
+    gap: var(--base-size-12);
     align-items: center;
-    padding: var(--space-3) 0;
-    border-top: 1px solid var(--border);
+    padding: var(--base-size-12) 0;
+    border-top: 1px solid var(--borderColor-default);
   }
   .wf-row:first-child {
     border-top: 0;
   }
   .wf-row__repo {
-    font-size: var(--fs-sm);
+    font-size: var(--text-body-size-small);
   }
   .wf-row__name code.sub {
-    font-size: var(--fs-xs);
+    font-size: var(--text-body-size-small);
   }
   .wf-ok {
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--borderColor-default);
     padding-top: 10px;
   }
   .wf-ok summary {
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
     min-height: 40px;
     padding: 10px 0;
   }
   .wf-ok__list {
-    margin: var(--space-2) 0 0;
-    padding-left: var(--space-5);
-    color: var(--text-muted);
+    margin: var(--base-size-8) 0 0;
+    padding-left: var(--base-size-24);
+    color: var(--fgColor-muted);
   }
   .wf-ok__list li + li {
-    margin-top: var(--space-1);
+    margin-top: var(--base-size-4);
   }
   /* Phone and narrow tablet: pill + name on line one, repository and what happened below. */
   @media (max-width: 760px) {
     .wf-row {
       grid-template-columns: var(--status-col) minmax(0, 1fr);
-      gap: var(--space-1) var(--space-3);
+      gap: var(--base-size-4) var(--base-size-12);
     }
     .wf-row__repo,
     .wf-row__what {

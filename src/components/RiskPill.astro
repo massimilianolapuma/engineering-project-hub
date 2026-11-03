@@ -1,6 +1,7 @@
 ---
 /** "Overdue" (clock) and "Accepted" (checked square) pills: icon + text, never colour alone. */
 import type { I18n } from '../i18n';
+import Octicon from './Octicon.astro';
 import StatusIcon from './StatusIcon.astro';
 interface Props {
   kind: 'overdue' | 'accepted';
@@ -16,33 +17,7 @@ const { kind, i18n } = Astro.props;
   </span>
 ) : (
   <span class="pill pill--info" data-risk-pill="accepted">
-    <svg
-      class="icon"
-      viewBox="0 0 16 16"
-      width="14"
-      height="14"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <rect
-        x="1.8"
-        y="1.8"
-        width="12.4"
-        height="12.4"
-        rx="3"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.6"
-      />
-      <path
-        d="M5 8.2l2 2 4-4.2"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.7"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-    </svg>
+    <Octicon name="shield-check" class="icon icon--muted" />
     <span>{i18n.d.risk.acceptedPill}</span>
   </span>
 )}

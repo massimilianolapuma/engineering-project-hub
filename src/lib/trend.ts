@@ -59,6 +59,18 @@ export function sparklineSegments(scores: (number | null)[], w: number, h: numbe
   return runs.map((r) => (r.length === 1 ? `M${r[0]}h0` : `M${r.join('L')}`));
 }
 
+/** Position of the last collection on the sparkline scale; null when it was not measured. */
+export function sparklineEnd(
+  scores: (number | null)[],
+  w: number,
+  h: number,
+): { x: number; y: number } | null {
+  const n = scores.length;
+  const last = scores.at(-1);
+  if (last === null || last === undefined) return null;
+  return { x: round1(n === 1 ? w / 2 : w), y: round1(h - (last / 100) * h) };
+}
+
 export interface TrendSummary {
   first: number;
   last: number;

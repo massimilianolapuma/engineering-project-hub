@@ -1,493 +1,1146 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-20T00:00:00Z",
+  "generatedAt": "2026-11-03T00:00:00Z",
   "title": "Design System: Engineering Project Hub",
   "extensions": {
     "colorMeta": {
-      "teal-accent": {
+      "fgColor-default": {
+        "role": "neutral",
+        "displayName": "Ink (body text)",
+        "canonical": "var(--fgColor-default)",
+        "oklch": "oklch(25.4% 0.011 254)",
+        "tonalRamp": [
+          "#080b10",
+          "#21252a",
+          "#3e4248",
+          "#5d6268",
+          "#7e8389",
+          "#a0a6ac",
+          "#c4cad0",
+          "#e9eff6"
+        ],
+        "darkCounterpart": "dark-fgColor-default"
+      },
+      "fgColor-muted": {
+        "role": "neutral",
+        "displayName": "Muted Ink (secondary text, nav icons, sparkline)",
+        "canonical": "var(--fgColor-muted)",
+        "oklch": "oklch(49.5% 0.022 251)",
+        "tonalRamp": [
+          "#050c14",
+          "#1d262f",
+          "#3a434d",
+          "#58626d",
+          "#79848f",
+          "#9ba6b2",
+          "#bfcbd7",
+          "#e4f0fd"
+        ],
+        "darkCounterpart": "dark-fgColor-muted"
+      },
+      "fgColor-accent": {
         "role": "primary",
-        "displayName": "Teal Accent (links, focus, primary action; never status)",
-        "canonical": "#047879",
-        "oklch": "oklch(52.0% 0.090 195)",
+        "displayName": "Accent Blue (links, focus, invisible buttons; never status)",
+        "canonical": "var(--fgColor-accent)",
+        "oklch": "oklch(54.0% 0.191 257)",
         "tonalRamp": [
-          "#000e0f",
-          "#012828",
-          "#044444",
-          "#036262",
-          "#138282",
-          "#3fa0a0",
-          "#6bcac9",
-          "#99f8f7"
+          "#000a21",
+          "#03234f",
+          "#003e88",
+          "#055cc2",
+          "#287ef1",
+          "#6ca6f9",
+          "#aacbfb",
+          "#e5efff"
         ],
-        "darkCounterpart": "night-teal-accent"
+        "darkCounterpart": "dark-fgColor-accent"
       },
-      "vermilion": {
-        "role": "tertiary",
-        "displayName": "Vermilion (Critical fill)",
-        "canonical": "#da4620",
-        "oklch": "oklch(60.0% 0.190 35)",
+      "fgColor-onEmphasis": {
+        "role": "neutral",
+        "displayName": "On Emphasis (skip link text)",
+        "canonical": "var(--fgColor-onEmphasis)",
+        "oklch": "oklch(100.0% 0.000 90)",
         "tonalRamp": [
-          "#1d0200",
-          "#420a00",
-          "#6c1701",
-          "#992400",
-          "#c83406",
-          "#eb5833",
-          "#ff987e",
-          "#fedcd3"
-        ],
-        "darkCounterpart": "night-vermilion"
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
       },
-      "vermilion-text": {
-        "role": "tertiary",
-        "displayName": "Vermilion Text (Critical text on tint or surface)",
-        "canonical": "#a42e0c",
-        "oklch": "oklch(48.0% 0.160 35)",
+      "bgColor-default": {
+        "role": "neutral",
+        "displayName": "Page",
+        "canonical": "var(--bgColor-default)",
+        "oklch": "oklch(100.0% 0.000 90)",
         "tonalRamp": [
-          "#1d0200",
-          "#420a00",
-          "#6c1701",
-          "#992400",
-          "#bc4527",
-          "#df6446",
-          "#ff987e",
-          "#fedcd3"
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
         ],
-        "darkCounterpart": "night-vermilion-text"
+        "darkCounterpart": "dark-bgColor-default"
       },
-      "ochre": {
+      "bgColor-muted": {
+        "role": "neutral",
+        "displayName": "Muted Surface (header band, Box headers, hover)",
+        "canonical": "var(--bgColor-muted)",
+        "oklch": "oklch(97.8% 0.003 248)",
+        "tonalRamp": [
+          "#0a0b0d",
+          "#242527",
+          "#414244",
+          "#606163",
+          "#818284",
+          "#a3a5a7",
+          "#c7c9cb",
+          "#edeff1"
+        ],
+        "darkCounterpart": "dark-bgColor-muted"
+      },
+      "bgColor-neutral-muted": {
+        "role": "neutral",
+        "displayName": "Neutral Wash (hover plates, meter track, initials)",
+        "canonical": "var(--bgColor-neutral-muted)",
+        "oklch": "oklch(95.7% 0.002 255)",
+        "tonalRamp": [
+          "#0a0b0c",
+          "#242526",
+          "#414243",
+          "#606163",
+          "#818284",
+          "#a4a5a6",
+          "#c8c9cb",
+          "#edeef0"
+        ],
+        "darkCounterpart": "dark-bgColor-neutral-muted"
+      },
+      "bgColor-accent-muted": {
+        "role": "primary",
+        "displayName": "Accent Tint (selection, current catalog item)",
+        "canonical": "var(--bgColor-accent-muted)",
+        "oklch": "oklch(95.4% 0.028 228)",
+        "tonalRamp": [
+          "#000d14",
+          "#162830",
+          "#32454e",
+          "#51656e",
+          "#718690",
+          "#93a9b3",
+          "#b7cdd8",
+          "#dcf3fe"
+        ],
+        "darkCounterpart": "dark-bgColor-accent-muted"
+      },
+      "bgColor-accent-emphasis": {
+        "role": "primary",
+        "displayName": "Accent Emphasis (skip link)",
+        "canonical": "var(--bgColor-accent-emphasis)",
+        "oklch": "oklch(54.0% 0.191 257)",
+        "tonalRamp": [
+          "#000a21",
+          "#03234f",
+          "#003e88",
+          "#055cc2",
+          "#287ef1",
+          "#6ca6f9",
+          "#aacbfb",
+          "#e5efff"
+        ],
+        "darkCounterpart": "dark-bgColor-accent-emphasis"
+      },
+      "borderColor-default": {
+        "role": "neutral",
+        "displayName": "Default Border",
+        "canonical": "var(--borderColor-default)",
+        "oklch": "oklch(88.1% 0.013 244)",
+        "tonalRamp": [
+          "#070c10",
+          "#20262b",
+          "#3c4349",
+          "#5b6268",
+          "#7c838a",
+          "#9ea6ad",
+          "#c2cad1",
+          "#e7f0f7"
+        ],
+        "darkCounterpart": "dark-borderColor-default"
+      },
+      "borderColor-muted": {
+        "role": "neutral",
+        "displayName": "Muted Border (table rows, guides)",
+        "canonical": "var(--borderColor-muted)",
+        "oklch": "oklch(91.7% 0.009 244)",
+        "tonalRamp": [
+          "#080c0f",
+          "#212629",
+          "#3e4347",
+          "#5d6266",
+          "#7e8387",
+          "#a0a6aa",
+          "#c4cacf",
+          "#eaeff4"
+        ],
+        "darkCounterpart": "dark-borderColor-muted"
+      },
+      "borderColor-emphasis": {
+        "role": "neutral",
+        "displayName": "Emphasis Border (dashed unknown outline, 3:1)",
+        "canonical": "var(--borderColor-emphasis)",
+        "oklch": "oklch(63.3% 0.023 255)",
+        "tonalRamp": [
+          "#050c15",
+          "#1e2630",
+          "#3a434e",
+          "#59626e",
+          "#798390",
+          "#9ca6b3",
+          "#c0cad8",
+          "#e5f0fe"
+        ],
+        "darkCounterpart": "dark-borderColor-emphasis"
+      },
+      "fgColor-success": {
         "role": "tertiary",
-        "displayName": "Ochre (Attention fill)",
-        "canonical": "#c68206",
-        "oklch": "oklch(66.0% 0.150 72)",
+        "displayName": "Success (healthy text and marks)",
+        "canonical": "var(--fgColor-success)",
+        "oklch": "oklch(52.4% 0.140 148)",
+        "tonalRamp": [
+          "#001002",
+          "#032e0f",
+          "#01511c",
+          "#06752e",
+          "#3a984f",
+          "#60bd71",
+          "#85e294",
+          "#c8ffcf"
+        ],
+        "darkCounterpart": "dark-fgColor-success"
+      },
+      "bgColor-success-muted": {
+        "role": "tertiary",
+        "displayName": "Success Tint",
+        "canonical": "var(--bgColor-success-muted)",
+        "oklch": "oklch(95.7% 0.049 152)",
+        "tonalRamp": [
+          "#000f04",
+          "#112c19",
+          "#2e4a35",
+          "#4d6953",
+          "#6d8b74",
+          "#8fae96",
+          "#b3d3ba",
+          "#d8f9df"
+        ],
+        "darkCounterpart": "dark-bgColor-success-muted"
+      },
+      "borderColor-success-muted": {
+        "role": "tertiary",
+        "displayName": "Success Border",
+        "canonical": "var(--borderColor-success-muted)",
+        "oklch": "oklch(88.4% 0.069 153)",
+        "tonalRamp": [
+          "#001004",
+          "#042e16",
+          "#214c30",
+          "#416d4f",
+          "#628f6f",
+          "#84b291",
+          "#a7d7b5",
+          "#ccfdd9"
+        ]
+      },
+      "fgColor-attention": {
+        "role": "tertiary",
+        "displayName": "Attention (attention text and marks)",
+        "canonical": "var(--fgColor-attention)",
+        "oklch": "oklch(55.4% 0.117 75)",
         "tonalRamp": [
           "#130900",
-          "#311d00",
-          "#523301",
-          "#754b01",
-          "#9b6406",
-          "#c27f05",
-          "#f2a635",
-          "#ffdfb8"
+          "#342000",
+          "#5a3b04",
+          "#82580d",
+          "#ab7720",
+          "#d09a49",
+          "#f6be6e",
+          "#ffebd2"
         ],
-        "darkCounterpart": "night-ochre"
+        "darkCounterpart": "dark-fgColor-attention"
       },
-      "ochre-text": {
+      "bgColor-attention-muted": {
         "role": "tertiary",
-        "displayName": "Ochre Text (Attention text on tint or surface)",
-        "canonical": "#804d0c",
-        "oklch": "oklch(47.0% 0.100 65)",
+        "displayName": "Attention Tint (also Flash warning)",
+        "canonical": "var(--bgColor-attention-muted)",
+        "oklch": "oklch(97.2% 0.066 101)",
         "tonalRamp": [
-          "#150800",
-          "#341b00",
-          "#563001",
-          "#7a4702",
-          "#99642a",
-          "#b98249",
-          "#e4aa71",
-          "#ffdec0"
+          "#0e0b00",
+          "#2b2503",
+          "#4a4314",
+          "#696234",
+          "#8b8455",
+          "#aea777",
+          "#d2cb9a",
+          "#f8f1be"
         ],
-        "darkCounterpart": "night-ochre-text"
+        "darkCounterpart": "dark-bgColor-attention-muted"
       },
-      "emerald": {
+      "borderColor-attention-muted": {
         "role": "tertiary",
-        "displayName": "Emerald (Healthy fill)",
-        "canonical": "#19966e",
-        "oklch": "oklch(60.0% 0.120 165)",
+        "displayName": "Attention Border",
+        "canonical": "var(--borderColor-attention-muted)",
+        "oklch": "oklch(89.7% 0.067 90)",
+        "tonalRamp": [
+          "#100a00",
+          "#2f2402",
+          "#504011",
+          "#706032",
+          "#928153",
+          "#b5a474",
+          "#dac897",
+          "#feeec0"
+        ]
+      },
+      "fgColor-severe": {
+        "role": "tertiary",
+        "displayName": "Severe (high severity only)",
+        "canonical": "var(--fgColor-severe)",
+        "oklch": "oklch(55.7% 0.160 45)",
+        "tonalRamp": [
+          "#190500",
+          "#411600",
+          "#6d2b04",
+          "#9d410c",
+          "#cd5c1e",
+          "#f58047",
+          "#fbb799",
+          "#feeae1"
+        ],
+        "darkCounterpart": "dark-fgColor-severe"
+      },
+      "bgColor-severe-muted": {
+        "role": "tertiary",
+        "displayName": "Severe Tint",
+        "canonical": "var(--bgColor-severe-muted)",
+        "oklch": "oklch(96.6% 0.022 63)",
+        "tonalRamp": [
+          "#120903",
+          "#2d231a",
+          "#4b4036",
+          "#6b5f55",
+          "#8c8075",
+          "#afa297",
+          "#d4c6bb",
+          "#faece0"
+        ],
+        "darkCounterpart": "dark-bgColor-severe-muted"
+      },
+      "borderColor-severe-muted": {
+        "role": "tertiary",
+        "displayName": "Severe Border",
+        "canonical": "var(--borderColor-severe-muted)",
+        "oklch": "oklch(89.4% 0.063 57)",
+        "tonalRamp": [
+          "#160700",
+          "#3b1b01",
+          "#5b391e",
+          "#7d583d",
+          "#a0795d",
+          "#c49b7f",
+          "#eabfa2",
+          "#ffeadc"
+        ]
+      },
+      "fgColor-danger": {
+        "role": "tertiary",
+        "displayName": "Danger (critical text and marks)",
+        "canonical": "var(--fgColor-danger)",
+        "oklch": "oklch(55.7% 0.206 25)",
+        "tonalRamp": [
+          "#1e0001",
+          "#4c0107",
+          "#7e0814",
+          "#b41523",
+          "#e33a3e",
+          "#f97771",
+          "#feb3ac",
+          "#fee9e7"
+        ],
+        "darkCounterpart": "dark-fgColor-danger"
+      },
+      "bgColor-danger-muted": {
+        "role": "tertiary",
+        "displayName": "Danger Tint",
+        "canonical": "var(--bgColor-danger-muted)",
+        "oklch": "oklch(95.5% 0.022 24)",
+        "tonalRamp": [
+          "#130807",
+          "#2f2120",
+          "#4d3e3c",
+          "#6d5d5b",
+          "#8f7e7c",
+          "#b3a09e",
+          "#d7c4c2",
+          "#fde9e7"
+        ],
+        "darkCounterpart": "dark-bgColor-danger-muted"
+      },
+      "borderColor-danger-muted": {
+        "role": "tertiary",
+        "displayName": "Danger Border",
+        "canonical": "var(--borderColor-danger-muted)",
+        "oklch": "oklch(89.1% 0.057 18)",
+        "tonalRamp": [
+          "#1e0103",
+          "#3c181a",
+          "#5d3536",
+          "#7f5455",
+          "#a27575",
+          "#c79798",
+          "#ecbbbb",
+          "#ffe8e8"
+        ]
+      },
+      "button-primary-bgColor-rest": {
+        "role": "primary",
+        "displayName": "Primary Button Green (one GitHub action)",
+        "canonical": "var(--button-primary-bgColor-rest)",
+        "oklch": "oklch(55.2% 0.145 148)",
+        "tonalRamp": [
+          "#001003",
+          "#012e0e",
+          "#08501f",
+          "#137531",
+          "#35994d",
+          "#5cbd6f",
+          "#82e393",
+          "#cafed1"
+        ],
+        "darkCounterpart": "dark-button-primary-bgColor-rest"
+      },
+      "button-primary-bgColor-hover": {
+        "role": "primary",
+        "displayName": "Primary Button Green, hover",
+        "canonical": "var(--button-primary-bgColor-hover)",
+        "oklch": "oklch(53.1% 0.140 148)",
+        "tonalRamp": [
+          "#001002",
+          "#032e0f",
+          "#00511c",
+          "#04762e",
+          "#3a984f",
+          "#60bd71",
+          "#85e294",
+          "#ccfed1"
+        ],
+        "darkCounterpart": "dark-button-primary-bgColor-hover"
+      },
+      "button-primary-fgColor-rest": {
+        "role": "primary",
+        "displayName": "Primary Button Text",
+        "canonical": "var(--button-primary-fgColor-rest)",
+        "oklch": "oklch(100.0% 0.000 90)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "button-default-bgColor-rest": {
+        "role": "neutral",
+        "displayName": "Default Button / Control Surface",
+        "canonical": "var(--button-default-bgColor-rest)",
+        "oklch": "oklch(97.8% 0.003 248)",
+        "tonalRamp": [
+          "#0a0b0d",
+          "#242527",
+          "#414244",
+          "#606163",
+          "#818284",
+          "#a3a5a7",
+          "#c7c9cb",
+          "#edeff1"
+        ],
+        "darkCounterpart": "dark-button-default-bgColor-rest"
+      },
+      "button-default-bgColor-hover": {
+        "role": "neutral",
+        "displayName": "Default Button, hover",
+        "canonical": "var(--button-default-bgColor-hover)",
+        "oklch": "oklch(96.0% 0.005 248)",
+        "tonalRamp": [
+          "#090b0d",
+          "#232527",
+          "#404245",
+          "#5f6164",
+          "#808385",
+          "#a2a5a8",
+          "#c6c9cc",
+          "#eceff2"
+        ]
+      },
+      "button-default-fgColor-rest": {
+        "role": "neutral",
+        "displayName": "Default Button Text",
+        "canonical": "var(--button-default-fgColor-rest)",
+        "oklch": "oklch(27.9% 0.011 254)",
+        "tonalRamp": [
+          "#080b10",
+          "#21252a",
+          "#3e4248",
+          "#5d6267",
+          "#7e8389",
+          "#a0a6ac",
+          "#c4cad0",
+          "#eaeff6"
+        ],
+        "darkCounterpart": "dark-button-default-fgColor-rest"
+      },
+      "underlineNav-borderColor-active": {
+        "role": "primary",
+        "displayName": "UnderlineNav Coral (current tab underline only)",
+        "canonical": "var(--underlineNav-borderColor-active)",
+        "oklch": "oklch(75.7% 0.142 34)",
+        "tonalRamp": [
+          "#1e0100",
+          "#480b01",
+          "#781b06",
+          "#a23a24",
+          "#c95d46",
+          "#f08168",
+          "#fcb5a5",
+          "#ffe9e4"
+        ],
+        "darkCounterpart": "dark-underlineNav-borderColor-active"
+      },
+      "dark-fgColor-default": {
+        "role": "neutral",
+        "displayName": "Ink (body text) (dark)",
+        "canonical": "var(--fgColor-default)",
+        "oklch": "oklch(97.0% 0.010 248)",
+        "tonalRamp": [
+          "#080c0f",
+          "#21262a",
+          "#3e4347",
+          "#5d6267",
+          "#7e8388",
+          "#a0a6ab",
+          "#c4cad0",
+          "#e9eff5"
+        ]
+      },
+      "dark-fgColor-muted": {
+        "role": "neutral",
+        "displayName": "Muted Ink (secondary text, nav icons, sparkline) (dark)",
+        "canonical": "var(--fgColor-muted)",
+        "oklch": "oklch(67.7% 0.016 255)",
+        "tonalRamp": [
+          "#070b12",
+          "#20262d",
+          "#3c434a",
+          "#5b626a",
+          "#7c838c",
+          "#9fa6af",
+          "#c2cad3",
+          "#e8eff9"
+        ]
+      },
+      "dark-fgColor-accent": {
+        "role": "primary",
+        "displayName": "Accent Blue (links, focus, invisible buttons; never status) (dark)",
+        "canonical": "var(--fgColor-accent)",
+        "oklch": "oklch(66.3% 0.169 256)",
+        "tonalRamp": [
+          "#000a21",
+          "#02244e",
+          "#084080",
+          "#135fb7",
+          "#3181e5",
+          "#65a7fd",
+          "#a7ccfd",
+          "#e5f0fe"
+        ]
+      },
+      "dark-bgColor-default": {
+        "role": "neutral",
+        "displayName": "Page (dark)",
+        "canonical": "var(--bgColor-default)",
+        "oklch": "oklch(17.6% 0.014 258)",
+        "tonalRamp": [
+          "#080b11",
+          "#21252c",
+          "#3d424a",
+          "#5c6269",
+          "#7d838b",
+          "#a0a5ae",
+          "#c4cad2",
+          "#e9eff8"
+        ]
+      },
+      "dark-bgColor-muted": {
+        "role": "neutral",
+        "displayName": "Muted Surface (header band, Box headers, hover) (dark)",
+        "canonical": "var(--bgColor-muted)",
+        "oklch": "oklch(22.0% 0.018 256)",
+        "tonalRamp": [
+          "#060b13",
+          "#1f262e",
+          "#3c434c",
+          "#5b626c",
+          "#7b838d",
+          "#9ea6b1",
+          "#c2cad5",
+          "#e7effb"
+        ]
+      },
+      "dark-bgColor-neutral-muted": {
+        "role": "neutral",
+        "displayName": "Neutral Wash (hover plates, meter track, initials) (dark)",
+        "canonical": "var(--bgColor-neutral-muted)",
+        "oklch": "oklch(25.5% 0.015 258)",
+        "tonalRamp": [
+          "#080b11",
+          "#21252c",
+          "#3d424a",
+          "#5c626a",
+          "#7d838b",
+          "#9fa5ae",
+          "#c3cad3",
+          "#e9eff8"
+        ]
+      },
+      "dark-bgColor-accent-muted": {
+        "role": "primary",
+        "displayName": "Accent Tint (selection, current catalog item) (dark)",
+        "canonical": "var(--bgColor-accent-muted)",
+        "oklch": "oklch(23.1% 0.037 257)",
+        "tonalRamp": [
+          "#030b1b",
+          "#192637",
+          "#354356",
+          "#546277",
+          "#748499",
+          "#96a6bd",
+          "#bacbe2",
+          "#e5effe"
+        ]
+      },
+      "dark-bgColor-accent-emphasis": {
+        "role": "primary",
+        "displayName": "Accent Emphasis (skip link) (dark)",
+        "canonical": "var(--bgColor-accent-emphasis)",
+        "oklch": "oklch(56.9% 0.202 260)",
+        "tonalRamp": [
+          "#000925",
+          "#012156",
+          "#053c8d",
+          "#0e59c8",
+          "#2d7bf8",
+          "#6da5ff",
+          "#aacbfe",
+          "#e6efff"
+        ]
+      },
+      "dark-borderColor-default": {
+        "role": "neutral",
+        "displayName": "Default Border (dark)",
+        "canonical": "var(--borderColor-default)",
+        "oklch": "oklch(38.4% 0.018 255)",
+        "tonalRamp": [
+          "#060c13",
+          "#1f262e",
+          "#3c434c",
+          "#5a626c",
+          "#7b838d",
+          "#9ea6b0",
+          "#c1cad5",
+          "#e7effb"
+        ]
+      },
+      "dark-borderColor-muted": {
+        "role": "neutral",
+        "displayName": "Muted Border (table rows, guides) (dark)",
+        "canonical": "var(--borderColor-muted)",
+        "oklch": "oklch(32.6% 0.017 256)",
+        "tonalRamp": [
+          "#070b12",
+          "#20262d",
+          "#3c434b",
+          "#5b626b",
+          "#7c838c",
+          "#9ea6b0",
+          "#c2cad4",
+          "#e7effa"
+        ]
+      },
+      "dark-borderColor-emphasis": {
+        "role": "neutral",
+        "displayName": "Emphasis Border (dashed unknown outline, 3:1) (dark)",
+        "canonical": "var(--borderColor-emphasis)",
+        "oklch": "oklch(52.9% 0.018 257)",
+        "tonalRamp": [
+          "#070b13",
+          "#20252e",
+          "#3c424c",
+          "#5b626c",
+          "#7c838d",
+          "#9ea6b0",
+          "#c2cad5",
+          "#e7effb"
+        ]
+      },
+      "dark-fgColor-success": {
+        "role": "tertiary",
+        "displayName": "Success (healthy text and marks) (dark)",
+        "canonical": "var(--fgColor-success)",
+        "oklch": "oklch(69.5% 0.181 146)",
+        "tonalRamp": [
+          "#001001",
+          "#022e09",
+          "#0a5018",
+          "#177528",
+          "#159d33",
+          "#49c258",
+          "#71e77c",
+          "#cbffcc"
+        ]
+      },
+      "dark-bgColor-success-muted": {
+        "role": "tertiary",
+        "displayName": "Success Tint (dark)",
+        "canonical": "var(--bgColor-success-muted)",
+        "oklch": "oklch(24.9% 0.032 165)",
         "tonalRamp": [
           "#000f08",
-          "#01291b",
-          "#034631",
-          "#026548",
-          "#078661",
-          "#32a67d",
-          "#62d0a4",
-          "#92fed1"
-        ],
-        "darkCounterpart": "night-emerald"
+          "#162a21",
+          "#32473e",
+          "#51675d",
+          "#71897d",
+          "#94aca0",
+          "#b7d0c4",
+          "#dcf6e9"
+        ]
       },
-      "emerald-text": {
+      "dark-fgColor-attention": {
         "role": "tertiary",
-        "displayName": "Emerald Text (Healthy text on tint or surface)",
-        "canonical": "#026548",
-        "oklch": "oklch(45.0% 0.100 165)",
+        "displayName": "Attention (attention text and marks) (dark)",
+        "canonical": "var(--fgColor-attention)",
+        "oklch": "oklch(72.0% 0.140 80)",
         "tonalRamp": [
-          "#000f08",
-          "#01291b",
-          "#034631",
-          "#026548",
-          "#288463",
-          "#4ba280",
-          "#75cca7",
-          "#a3fad4"
-        ],
-        "darkCounterpart": "night-emerald-text"
+          "#120900",
+          "#322203",
+          "#583c00",
+          "#7f5a05",
+          "#a77918",
+          "#d39a23",
+          "#f9be52",
+          "#feecce"
+        ]
       },
-      "unknown-stroke": {
-        "role": "neutral",
-        "displayName": "Unknown Stroke (dashed outline, 3:1)",
-        "canonical": "#8f8a83",
-        "oklch": "oklch(63.6% 0.012 77)",
+      "dark-bgColor-attention-muted": {
+        "role": "tertiary",
+        "displayName": "Attention Tint (also Flash warning) (dark)",
+        "canonical": "var(--bgColor-attention-muted)",
+        "oklch": "oklch(25.2% 0.024 87)",
         "tonalRamp": [
-          "#0e0b06",
-          "#25211b",
-          "#3e3a34",
-          "#59554e",
-          "#76716a",
-          "#938e87",
-          "#bcb6af",
-          "#e9e4dc"
-        ],
-        "darkCounterpart": "night-unknown-stroke"
+          "#0f0a02",
+          "#2a2418",
+          "#474134",
+          "#676152",
+          "#888273",
+          "#aba495",
+          "#d0c9b8",
+          "#f5eedd"
+        ]
       },
-      "ground": {
-        "role": "neutral",
-        "displayName": "Ground (page)",
-        "canonical": "#f6f5f3",
-        "oklch": "oklch(97.0% 0.003 85)",
+      "dark-fgColor-severe": {
+        "role": "tertiary",
+        "displayName": "Severe (high severity only) (dark)",
+        "canonical": "var(--fgColor-severe)",
+        "oklch": "oklch(65.4% 0.158 48)",
         "tonalRamp": [
-          "#0c0b0a",
-          "#222120",
-          "#3b3a39",
-          "#565553",
-          "#727170",
-          "#908f8d",
-          "#b8b7b5",
-          "#e5e4e2"
-        ],
-        "darkCounterpart": "night-ground"
+          "#180500",
+          "#3f1802",
+          "#692f08",
+          "#974713",
+          "#cb5e12",
+          "#f28241",
+          "#fdb792",
+          "#ffeadf"
+        ]
       },
-      "surface": {
-        "role": "neutral",
-        "displayName": "Surface (cards, lists, controls)",
-        "canonical": "#fffefc",
-        "oklch": "oklch(99.7% 0.003 85)",
+      "dark-bgColor-severe-muted": {
+        "role": "tertiary",
+        "displayName": "Severe Tint (dark)",
+        "canonical": "var(--bgColor-severe-muted)",
+        "oklch": "oklch(22.8% 0.013 32)",
         "tonalRamp": [
-          "#0c0b0a",
-          "#222120",
-          "#3b3a39",
-          "#565553",
-          "#727170",
-          "#908f8d",
-          "#b8b7b5",
-          "#e5e4e2"
-        ],
-        "darkCounterpart": "night-surface"
+          "#100908",
+          "#2b2321",
+          "#48403e",
+          "#685f5d",
+          "#8a807e",
+          "#ada2a0",
+          "#d1c6c4",
+          "#f7ece9"
+        ]
       },
-      "hairline": {
-        "role": "neutral",
-        "displayName": "Hairline (borders)",
-        "canonical": "#e7e5e1",
-        "oklch": "oklch(92.2% 0.006 85)",
+      "dark-fgColor-danger": {
+        "role": "tertiary",
+        "displayName": "Danger (critical text and marks) (dark)",
+        "canonical": "var(--fgColor-danger)",
+        "oklch": "oklch(66.5% 0.205 27)",
         "tonalRamp": [
-          "#0c0b08",
-          "#23211f",
-          "#3c3a37",
-          "#575552",
-          "#73716e",
-          "#918f8b",
-          "#b9b7b3",
-          "#e6e4e0"
-        ],
-        "darkCounterpart": "night-hairline"
+          "#1e0101",
+          "#4c0204",
+          "#7e0a0e",
+          "#b4171b",
+          "#e33c37",
+          "#ff7367",
+          "#feb3aa",
+          "#fee9e6"
+        ]
       },
-      "control-stroke": {
-        "role": "neutral",
-        "displayName": "Control Stroke (input and button borders, 3:1)",
-        "canonical": "#928d86",
-        "oklch": "oklch(64.6% 0.012 77)",
+      "dark-bgColor-danger-muted": {
+        "role": "tertiary",
+        "displayName": "Danger Tint (dark)",
+        "canonical": "var(--bgColor-danger-muted)",
+        "oklch": "oklch(22.6% 0.023 357)",
         "tonalRamp": [
-          "#0e0b06",
-          "#25211b",
-          "#3e3a34",
-          "#59554e",
-          "#76716a",
-          "#938e87",
-          "#bcb6af",
-          "#e9e4dc"
-        ],
-        "darkCounterpart": "night-control-stroke"
+          "#13070b",
+          "#2e2025",
+          "#4d3d42",
+          "#6d5c61",
+          "#8f7d82",
+          "#b29fa5",
+          "#d7c3c9",
+          "#fce8ef"
+        ]
       },
-      "graphite-ink": {
-        "role": "neutral",
-        "displayName": "Graphite Ink (text)",
-        "canonical": "#1c1917",
-        "oklch": "oklch(21.6% 0.006 56)",
+      "dark-button-primary-bgColor-rest": {
+        "role": "primary",
+        "displayName": "Primary Button Green (one GitHub action) (dark)",
+        "canonical": "var(--button-primary-bgColor-rest)",
+        "oklch": "oklch(54.6% 0.147 146)",
         "tonalRamp": [
-          "#0d0b09",
-          "#24211f",
-          "#3d3a37",
-          "#585452",
-          "#74716e",
-          "#928e8c",
-          "#bbb6b4",
-          "#e8e4e1"
-        ],
-        "darkCounterpart": "night-graphite-ink"
+          "#001002",
+          "#032e0b",
+          "#005116",
+          "#057626",
+          "#3a9948",
+          "#60bd6b",
+          "#85e38e",
+          "#cbfece"
+        ]
       },
-      "graphite-muted": {
-        "role": "neutral",
-        "displayName": "Graphite Muted (secondary text)",
-        "canonical": "#57534e",
-        "oklch": "oklch(44.4% 0.010 74)",
+      "dark-button-primary-bgColor-hover": {
+        "role": "primary",
+        "displayName": "Primary Button Green, hover (dark)",
+        "canonical": "var(--button-primary-bgColor-hover)",
+        "oklch": "oklch(57.6% 0.154 146)",
         "tonalRamp": [
-          "#0e0b07",
-          "#24211d",
-          "#3e3a35",
-          "#595550",
-          "#75716c",
-          "#938e89",
-          "#bbb7b1",
-          "#e8e4de"
-        ],
-        "darkCounterpart": "night-graphite-muted"
+          "#001002",
+          "#012e09",
+          "#075018",
+          "#137529",
+          "#359a44",
+          "#5cbe67",
+          "#81e48a",
+          "#caffcc"
+        ]
+      },
+      "dark-button-default-bgColor-rest": {
+        "role": "neutral",
+        "displayName": "Default Button / Control Surface (dark)",
+        "canonical": "var(--button-default-bgColor-rest)",
+        "oklch": "oklch(27.4% 0.018 252)",
+        "tonalRamp": [
+          "#060c13",
+          "#1f262e",
+          "#3b434b",
+          "#5a626b",
+          "#7b838d",
+          "#9da6b0",
+          "#c1cad5",
+          "#e6f0fb"
+        ]
+      },
+      "dark-button-default-fgColor-rest": {
+        "role": "neutral",
+        "displayName": "Default Button Text (dark)",
+        "canonical": "var(--button-default-fgColor-rest)",
+        "oklch": "oklch(97.0% 0.010 248)",
+        "tonalRamp": [
+          "#080c0f",
+          "#21262a",
+          "#3e4347",
+          "#5d6267",
+          "#7e8388",
+          "#a0a6ab",
+          "#c4cad0",
+          "#e9eff5"
+        ]
+      },
+      "dark-underlineNav-borderColor-active": {
+        "role": "primary",
+        "displayName": "UnderlineNav Coral (current tab underline only) (dark)",
+        "canonical": "var(--underlineNav-borderColor-active)",
+        "oklch": "oklch(73.0% 0.150 34)",
+        "tonalRamp": [
+          "#1d0200",
+          "#480c02",
+          "#771d08",
+          "#a5371e",
+          "#cc5a41",
+          "#f47e63",
+          "#feb4a2",
+          "#fee9e4"
+        ]
       }
     },
     "typographyMeta": {
-      "headline": {
-        "displayName": "Headline",
-        "purpose": "Page title (h1), 600, 1.375rem/28px. One per page."
+      "title-large": {
+        "displayName": "Title large (--text-title-size-large)",
+        "purpose": "Score in the project header."
       },
-      "lead": {
-        "displayName": "Lead sentence",
-        "purpose": "The one dominant sentence under the title (\"3 of 4 projects need attention\"), 600, 1.0625rem/24px."
+      "title-medium": {
+        "displayName": "Title medium (--text-title-size-medium)",
+        "purpose": "Page title (h1) and the score in a list row."
       },
-      "title": {
-        "displayName": "Title",
-        "purpose": "Section and card titles (h2), 600, 1.125rem/24px; card titles inside forms 15px/22px."
+      "title-small": {
+        "displayName": "Title small (--text-title-size-small)",
+        "purpose": "Section titles (h2), environment versions."
+      },
+      "body-large": {
+        "displayName": "Body large (--text-body-size-large)",
+        "purpose": "Lead sentence, project names, brand name, count values."
       },
       "body": {
-        "displayName": "Body",
-        "purpose": "Lists, tables, reasons and forms, 400, 0.875rem/1.5. Never below 14px for running text."
-      },
-      "small": {
-        "displayName": "Small",
-        "purpose": "Notes, filter labels, secondary lines, 0.8125rem."
+        "displayName": "Body (--text-body-size-medium)",
+        "purpose": "Lists, tables, forms; running text never below 14px."
       },
       "label": {
-        "displayName": "Label",
-        "purpose": "Pills, column heads, dimension labels, confidence, 600 (pills) or 400, 0.75rem. The smallest size used."
-      },
-      "score": {
-        "displayName": "Score figure",
-        "purpose": "Project score, 700, tabular: 1.125rem/24px in a row, 1.75rem/34px in the project header."
+        "displayName": "Label (--text-body-size-small)",
+        "purpose": "Labels, column heads, confidence, notes, run bar, footer; 12px minimum."
       },
       "mono": {
-        "displayName": "Mono",
-        "purpose": "IBM Plex Mono 400/500 for code, repository names, SHAs and versions only."
+        "displayName": "Mono (--fontStack-monospace)",
+        "purpose": "Code, repository names, SHAs and versions only."
       }
     },
     "shadows": [
       {
-        "name": "none",
-        "value": "none",
-        "purpose": "No elevation: surfaces are separated by 1px hairlines, never by shadows."
+        "name": "pressed-ring",
+        "value": "inset 0 0 0 1px var(--fgColor-default)",
+        "purpose": "Pressed count filter only."
       },
       {
-        "name": "pressed-ring",
-        "value": "inset 0 0 0 1px var(--text)",
-        "purpose": "State only: pressed count filter and current project type segment."
+        "name": "overdue-ring",
+        "value": "inset 0 0 0 1px currentColor",
+        "purpose": "Overdue Label emphasis (not a health state)."
+      },
+      {
+        "name": "invalid-ring",
+        "value": "0 0 0 1px var(--fgColor-danger)",
+        "purpose": "Invalid catalog field."
       }
     ],
     "motion": [
       {
-        "name": "reduced-motion",
-        "value": "transition: none !important; animation: none !important under prefers-reduced-motion",
-        "purpose": "No motion grammar: state changes are instant; disclosures use native <details>."
+        "name": "disclosure-turn",
+        "value": "transform 0.15s ease",
+        "purpose": "Chevron rotation on <details>; removed under prefers-reduced-motion."
       }
     ],
     "breakpoints": [
       {
+        "name": "stack",
+        "value": "640px"
+      },
+      {
         "name": "phone",
-        "value": "640px",
-        "purpose": "Project header, environments path, security cards and data-quality rows stack vertically."
-      },
-      {
-        "name": "narrow",
-        "value": "720px",
-        "purpose": "Generic tables become stacked label/value cards; side gutters drop to 16px."
-      },
-      {
-        "name": "compact",
-        "value": "760px",
-        "purpose": "Portfolio and workflow rows wrap into two lines (name, status and score first; bars and reason second); no horizontal page scroll."
-      },
-      {
-        "name": "catalog",
-        "value": "900px",
-        "purpose": "Catalog editor: side list and form side by side."
+        "value": "720px"
       }
     ],
-    "focus": {
-      "value": "outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm)"
-    },
     "themes": {
-      "switch": "prefers-color-scheme, overridable with :root[data-theme='light'|'dark']",
-      "contrastTest": "tests/unit/tokens-contrast.test.ts"
+      "mechanism": "<html data-color-mode=\"auto|light|dark\" data-light-theme=\"light\" data-dark-theme=\"dark\">",
+      "storageKey": "eph-theme",
+      "restoreScript": "public/theme-init.js",
+      "source": "@primer/primitives 11.10.0"
+    },
+    "icons": {
+      "library": "@primer/octicons",
+      "brandMark": "stack",
+      "health": {
+        "green": "check-circle-fill",
+        "amber": "alert-fill",
+        "red": "x-circle-fill",
+        "grey": "question",
+        "info": "clock",
+        "muted": "dash"
+      },
+      "controlSymbols": {
+        "ok": "check-circle",
+        "gap": "alert",
+        "stale": "clock",
+        "blind": "question",
+        "na": "dash",
+        "failed": "x-circle"
+      },
+      "nav": {
+        "portfolio": "apps",
+        "changes": "history",
+        "security": "shield",
+        "versions": "tag",
+        "workflows": "workflow",
+        "dataQuality": "database",
+        "catalog": "book",
+        "howToRead": "question"
+      }
+    },
+    "hubTokens": {
+      "--status-col": "112px"
     }
   },
   "components": [
     {
-      "name": "Status Dot",
-      "kind": "indicator",
-      "refersTo": "status-dot",
-      "description": "10px circle: filled vermilion / ochre / emerald for Critical / Attention / Healthy, a 1.5px dashed outline for Unknown (never a fill). Has an accessible name and always sits next to text.",
-      "html": "<span class=\"ds-root\"><span class=\"ds-dot ds-dot--red\" role=\"img\" aria-label=\"Critical\"></span> <span class=\"ds-dot ds-dot--amber\" role=\"img\" aria-label=\"Attention\"></span> <span class=\"ds-dot ds-dot--green\" role=\"img\" aria-label=\"Healthy\"></span> <span class=\"ds-dot ds-dot--grey\" role=\"img\" aria-label=\"Unknown\"></span></span>",
-      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle}.ds-dot--red{background:var(--red)}.ds-dot--amber{background:var(--amber)}.ds-dot--green{background:var(--green)}.ds-dot--grey{border:1.5px dashed var(--unknown)}"
+      "name": "Header band with UnderlineNav",
+      "kind": "nav",
+      "refersTo": "header-band",
+      "description": "One muted band: brand row, then icon + label tabs; current tab semibold with a 2px coral underline.",
+      "html": "<header class=\"ds-band\"><div class=\"ds-brand\"><svg version=\"1.1\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"octicon octicon-stack\" aria-hidden=\"true\" data-component=\"Octicon\" fill=\"currentColor\"><path d=\"M11.063 1.456a1.749 1.749 0 0 1 1.874 0l8.383 5.316a1.751 1.751 0 0 1 0 2.956l-8.383 5.316a1.749 1.749 0 0 1-1.874 0L2.68 9.728a1.751 1.751 0 0 1 0-2.956Zm1.071 1.267a.25.25 0 0 0-.268 0L3.483 8.039a.25.25 0 0 0 0 .422l8.383 5.316a.25.25 0 0 0 .268 0l8.383-5.316a.25.25 0 0 0 0-.422Z\"></path><path d=\"M1.867 12.324a.75.75 0 0 1 1.035-.232l8.964 5.685a.25.25 0 0 0 .268 0l8.964-5.685a.75.75 0 0 1 .804 1.267l-8.965 5.685a1.749 1.749 0 0 1-1.874 0l-8.965-5.685a.75.75 0 0 1-.231-1.035Z\"></path><path d=\"M1.867 16.324a.75.75 0 0 1 1.035-.232l8.964 5.685a.25.25 0 0 0 .268 0l8.964-5.685a.75.75 0 0 1 .804 1.267l-8.965 5.685a1.749 1.749 0 0 1-1.874 0l-8.965-5.685a.75.75 0 0 1-.231-1.035Z\"></path></svg>Engineering Project Hub</div><nav><a class=\"ds-tab\" aria-current=\"page\" href=\"#\">Portfolio</a><a class=\"ds-tab\" href=\"#\">Security</a><a class=\"ds-tab\" href=\"#\">Versions</a></nav></header>",
+      "css": ".ds-band{background:var(--bgColor-muted);border-bottom:1px solid var(--borderColor-default);padding:12px 24px 0;font-family:var(--fontStack-system);color:var(--fgColor-default)}.ds-brand{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:600;min-height:40px}.ds-brand svg{color:var(--fgColor-default)}.ds-band nav{display:flex;gap:8px}.ds-tab{position:relative;display:flex;align-items:center;min-height:48px;padding:0 8px;color:var(--fgColor-default);font-size:14px;text-decoration:none;border-radius:6px}.ds-tab:hover{background:var(--bgColor-neutral-muted)}.ds-tab:focus-visible{outline:2px solid var(--fgColor-accent);outline-offset:-2px}.ds-tab[aria-current=page]{font-weight:600}.ds-tab[aria-current=page]::after{content:\"\";position:absolute;left:0;right:0;bottom:0;height:2px;border-radius:6px;background:var(--underlineNav-borderColor-active)}"
     },
     {
-      "name": "Dimension Bars",
-      "kind": "indicator",
-      "refersTo": "dimension-bars",
-      "description": "Five 32px bars with a 4px gap (Delivery, Versions, Security, Coverage, Governance), 4px corners, bottom-aligned in a 12px box. Height repeats the state (WCAG 1.4.1): critical 12px, attention 8px, healthy 4px; unknown is a full-height dashed outline, no fill. Each bar has an accessible name such as \"Security risk: Critical\"; labels appear once in the list header.",
-      "html": "<span class=\"ds-root\"><span class=\"ds-bars\" role=\"group\" aria-label=\"Health dimensions\"><span class=\"ds-bar ds-bar--red\" role=\"img\" aria-label=\"Delivery: Critical\"></span><span class=\"ds-bar ds-bar--amber\" role=\"img\" aria-label=\"Versions: Attention\"></span><span class=\"ds-bar ds-bar--red\" role=\"img\" aria-label=\"Security risk: Critical\"></span><span class=\"ds-bar ds-bar--grey\" role=\"img\" aria-label=\"Coverage: Unknown\"></span><span class=\"ds-bar ds-bar--green\" role=\"img\" aria-label=\"Governance: Healthy\"></span></span></span>",
-      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-bars{display:inline-flex;gap:4px;align-items:flex-end;height:12px}.ds-bar{display:block;width:32px;height:12px;border-radius:4px}.ds-bar--red{background:var(--red)}.ds-bar--amber{height:8px;background:var(--amber)}.ds-bar--green{height:4px;border-radius:2px;background:var(--green)}.ds-bar--grey{border:1.5px dashed var(--unknown)}"
-    },
-    {
-      "name": "Score",
-      "kind": "figure",
-      "refersTo": "score",
-      "description": "Project score 0–100 in 700 tabular figures with its confidence as visible secondary text (\"measured 4 of 5\"). With insufficient data: an em dash and \"insufficient data\", never 0.",
-      "html": "<span class=\"ds-root\"><span class=\"ds-score\"><span class=\"ds-score__v\">38</span><span class=\"ds-score__c\">measured 5 of 5</span></span> <span class=\"ds-score\"><span class=\"ds-score__v ds-score__v--none\">—</span><span class=\"ds-score__c\">insufficient data · measured 0 of 5</span></span></span>",
-      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-root{display:flex;gap:32px}.ds-score{display:inline-flex;flex-direction:column;font-variant-numeric:tabular-nums}.ds-score__v{font-size:1.125rem;line-height:24px;font-weight:700}.ds-score__v--none{color:var(--text-muted)}.ds-score__c{font-size:.75rem;line-height:16px;color:var(--text-muted)}"
-    },
-    {
-      "name": "Status Pill",
-      "kind": "chip",
-      "refersTo": "status-pill",
-      "description": "12px/600 label on a fixed status tint, 999px radius, 3px 10px padding, shape icon before the text. Unknown is transparent with a dashed outline. Pills placed before text sit in a 112px column so the text aligns.",
-      "html": "<span class=\"ds-root\"><span class=\"ds-pill ds-pill--red\">Critical</span> <span class=\"ds-pill ds-pill--amber\">Attention</span> <span class=\"ds-pill ds-pill--green\">Healthy</span> <span class=\"ds-pill ds-pill--grey\">Unknown</span></span>",
-      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:.75rem;line-height:16px;font-weight:600;border:1px solid transparent}.ds-pill--red{background:var(--red-tint);color:var(--red-text)}.ds-pill--amber{background:var(--amber-tint);color:var(--amber-text)}.ds-pill--green{background:var(--green-tint);color:var(--green-text)}.ds-pill--grey{color:var(--text-muted);border:1px dashed var(--unknown)}"
-    },
-    {
-      "name": "Control Symbol",
-      "kind": "indicator",
-      "refersTo": "control-symbol",
-      "description": "24px box with one of six glyphs, same meaning everywhere: ✓ enabled, ! required but not configured, ⧖ stale scan, ✕ failed, ? not visible, – not required. The glyph carries the meaning and has an accessible name; colour is secondary.",
-      "html": "<span class=\"ds-root\"><span class=\"ds-sym ds-sym--green\" role=\"img\" aria-label=\"Enabled\">✓</span> <span class=\"ds-sym ds-sym--amber\" role=\"img\" aria-label=\"Required but not configured\">!</span> <span class=\"ds-sym ds-sym--amber\" role=\"img\" aria-label=\"Stale scan\">⧖</span> <span class=\"ds-sym ds-sym--red\" role=\"img\" aria-label=\"Scan failed\">✕</span> <span class=\"ds-sym ds-sym--unknown\" role=\"img\" aria-label=\"Not visible\">?</span> <span class=\"ds-sym ds-sym--muted\" role=\"img\" aria-label=\"Not required\">–</span></span>",
-      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-sym{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;font-size:.8125rem;font-weight:700;line-height:1}.ds-sym--green{background:var(--green-tint);color:var(--green-text)}.ds-sym--amber{background:var(--amber-tint);color:var(--amber-text)}.ds-sym--red{background:var(--red-tint);color:var(--red-text)}.ds-sym--unknown{color:var(--text-muted);border:1.5px dashed var(--unknown)}.ds-sym--muted{color:var(--text-muted)}"
-    },
-    {
-      "name": "Count Filter",
+      "name": "Default Button",
       "kind": "button",
-      "refersTo": "count-filter",
-      "description": "Status counts in the Portfolio title line double as the status filter: 40px high, hairline border, 8px radius, dot + 700 tabular value + label. Pressed: ink border with a 1px inset ink ring on the sunk surface.",
-      "html": "<span class=\"ds-root\"><button class=\"ds-count\" aria-pressed=\"true\"><span class=\"ds-count__dot\" style=\"background:oklch(0.6 0.19 35)\"></span><b>1</b> Critical</button> <button class=\"ds-count\" aria-pressed=\"false\"><span class=\"ds-count__dot\" style=\"background:oklch(0.66 0.15 72)\"></span><b>2</b> Attention</button></span>",
-      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-count{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:inherit;cursor:pointer}.ds-count b{font-size:1rem;font-variant-numeric:tabular-nums}.ds-count[aria-pressed=true]{border-color:var(--text);background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--text)}.ds-count__dot{width:10px;height:10px;border-radius:50%}"
+      "refersTo": "button-default",
+      "description": "Every button except the one GitHub action.",
+      "html": "<button class=\"ds-btn\">Add repository</button>",
+      "css": ".ds-btn{font:inherit;font-family:var(--fontStack-system);font-size:14px;font-weight:500;min-height:40px;padding:6px 16px;color:var(--button-default-fgColor-rest);background:var(--button-default-bgColor-rest);border:1px solid var(--button-default-borderColor-rest);border-radius:6px;cursor:pointer}.ds-btn:hover{background:var(--button-default-bgColor-hover);border-color:var(--button-default-borderColor-hover)}.ds-btn:focus-visible{outline:2px solid var(--fgColor-accent);outline-offset:2px}"
     },
     {
-      "name": "Portfolio Row",
-      "kind": "list-row",
-      "refersTo": "portfolio-row",
-      "description": "One row per project, worst first, in a 10px-radius surface list: status dot, project link, score with confidence, five dimension bars, one-line main reason. 14px 16px cell padding, hairline row rules, sunk-surface hover. At 760px and below the row wraps into two lines.",
-      "html": "<div class=\"ds-root\"><div class=\"ds-row\"><span class=\"ds-dot\" style=\"background:oklch(0.6 0.19 35)\"></span><a href=\"#\">Project Beta</a><span class=\"ds-sc\"><b>38</b><small>measured 5 of 5</small></span><span class=\"ds-bars\"><i style=\"background:oklch(0.6 0.19 35)\"></i><i style=\"background:oklch(0.66 0.15 72)\"></i><i style=\"background:oklch(0.6 0.19 35)\"></i><i style=\"background:oklch(0.66 0.15 72)\"></i><i style=\"background:oklch(0.66 0.15 72)\"></i></span><span class=\"ds-reason\">1 open critical alert</span></div></div>",
-      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px}.ds-dot{width:10px;height:10px;border-radius:50%}.ds-row a{color:var(--accent);font-weight:600}.ds-sc{display:inline-flex;flex-direction:column;font-variant-numeric:tabular-nums}.ds-sc b{font-size:1.125rem}.ds-sc small{font-size:.75rem;color:var(--text-muted)}.ds-bars{display:inline-flex;gap:4px;align-items:flex-end;height:12px}.ds-bars i{width:32px;height:12px;border-radius:4px}.ds-reason{color:var(--text)}"
-    },
-    {
-      "name": "Dimension Card",
-      "kind": "card",
-      "refersTo": "dimension-card",
-      "description": "Project page: one card per dimension (status dot, name, status pill, one-line summary) linking to its section. 16px padding, 10px radius, hairline border; an Unknown dimension shows a dashed dot and names the cause. No side-stripe borders.",
-      "html": "<div class=\"ds-root\"><a class=\"ds-card\" href=\"#\"><span class=\"ds-card__head\"><span class=\"ds-dot\"></span>Security risk</span><span class=\"ds-card__sum\">1 open critical alert</span></a></div>",
-      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-card{display:flex;flex-direction:column;gap:6px;width:220px;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);text-decoration:none}.ds-card__head{display:flex;align-items:center;gap:8px;font-weight:600}.ds-dot{width:10px;height:10px;border-radius:50%;background:var(--red)}.ds-card__sum{color:var(--text-muted);font-size:.8125rem}"
-    },
-    {
-      "name": "Environments Path",
-      "kind": "sequence",
-      "refersTo": "environments-path",
-      "description": "DEV → UAT → PROD as cards (10px radius, 12px 16px padding, min 140px) joined by muted arrows; each shows the version in IBM Plex Mono and aligned / behind. Turns vertical at 640px and below.",
-      "html": "<div class=\"ds-root\"><span class=\"ds-env\"><small>DEV</small><code>2.4.0</code></span><span class=\"ds-arrow\">→</span><span class=\"ds-env\"><small>UAT</small><code>2.4.0</code></span><span class=\"ds-arrow\">→</span><span class=\"ds-env\"><small>PROD</small><code>2.3.1</code><em>behind</em></span></div>",
-      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-root{display:flex;align-items:center;gap:8px}.ds-env{display:flex;flex-direction:column;gap:4px;min-width:140px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px}.ds-env small{font-size:.75rem;font-weight:600;color:var(--text-muted)}.ds-env code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:1rem}.ds-env em{font-style:normal;font-size:.75rem;color:var(--amber-text)}.ds-arrow{color:var(--text-muted)}"
-    },
-    {
-      "name": "Button",
+      "name": "Primary Button",
       "kind": "button",
-      "refersTo": "button",
-      "description": "Secondary by default: surface ground, control-stroke border, 8px radius, ≥40px. The one primary action per view (\"Propose on GitHub\") is teal with ≥44px height.",
-      "html": "<span class=\"ds-root\"><button class=\"ds-btn ds-btn--primary\">Propose on GitHub</button> <button class=\"ds-btn\">Download YAML</button></span>",
-      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-btn{min-height:40px;padding:6px 16px;font:inherit;font-weight:600;color:var(--text);background:var(--surface);border:1px solid var(--border-strong);border-radius:8px;cursor:pointer}.ds-btn--primary{min-height:44px;padding:6px 18px;background:var(--accent);border-color:var(--accent);color:var(--on-accent)}"
+      "refersTo": "button-primary",
+      "description": "Green, GitHub style; only the action that opens GitHub to propose or edit a catalog file.",
+      "html": "<button class=\"ds-btn-primary\">Propose on GitHub</button>",
+      "css": ".ds-btn-primary{font:inherit;font-family:var(--fontStack-system);font-size:14px;font-weight:500;min-height:44px;padding:6px 18px;color:var(--button-primary-fgColor-rest);background:var(--button-primary-bgColor-rest);border:1px solid var(--button-primary-borderColor-rest);border-radius:6px;cursor:pointer}.ds-btn-primary:hover{background:var(--button-primary-bgColor-hover);border-color:var(--button-primary-borderColor-hover)}.ds-btn-primary:focus-visible{outline:2px solid var(--fgColor-accent);outline-offset:2px}"
     },
     {
-      "name": "Text Input",
+      "name": "Text Field",
       "kind": "input",
       "refersTo": "input-field",
-      "description": "Surface field, control-stroke border (3:1), 8px radius, ≥40px, 0.875rem text. Focus: 2px teal outline at 2px offset.",
-      "html": "<span class=\"ds-root\"><label class=\"ds-field\">Search<input value=\"Alpha\"></label></span>",
-      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-field{display:flex;flex-direction:column;gap:4px;font-size:.75rem;font-weight:600;color:var(--text-muted)}.ds-field input{font:inherit;font-size:.875rem;font-weight:400;color:var(--text);background:var(--surface);border:1px solid var(--border-strong);border-radius:8px;padding:0 12px;min-height:40px}.ds-field input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}"
+      "description": "Primer FormControl look: label above, 40px field.",
+      "html": "<label class=\"ds-field\"><span>Search</span><input class=\"ds-input\" placeholder=\"Project or repository\"></label>",
+      "css": ".ds-field{display:flex;flex-direction:column;gap:4px;font-family:var(--fontStack-system);font-size:12px;font-weight:600;color:var(--fgColor-default)}.ds-input{font:inherit;font-size:14px;font-weight:400;height:40px;padding:0 12px;color:var(--fgColor-default);background:var(--control-bgColor-rest);border:1px solid var(--control-borderColor-rest);border-radius:6px}.ds-input:hover{background:var(--control-bgColor-hover)}.ds-input:focus-visible{outline:2px solid var(--fgColor-accent);outline-offset:2px}.ds-input::placeholder{color:var(--fgColor-muted)}"
     },
     {
-      "name": "Top Navigation",
-      "kind": "navigation",
-      "refersTo": "nav-link",
-      "description": "Surface bar with a hairline under it: brand, then Portfolio, Security, Versions, Workflows, Data quality, Catalog (muted 500, 40px targets, 8px radius); the current page is ink on the sunk surface. \"How to read\", theme and language sit at the right.",
-      "html": "<nav class=\"ds-root ds-nav\"><b>Engineering Project Hub</b><a aria-current=\"page\" href=\"#\">Portfolio</a><a href=\"#\">Security</a><a href=\"#\">Versions</a><a href=\"#\">Workflows</a></nav>",
-      "css": ":host,.ds-root{--bg:#f6f5f3;--surface:#fffefc;--surface-2:#f6f5f3;--border:#e7e5e1;--border-strong:#928d86;--text:#1c1917;--text-muted:#57534e;--unknown:#8f8a83;--accent:oklch(0.52 0.09 195);--on-accent:#fff;--red:oklch(0.6 0.19 35);--red-text:oklch(0.48 0.16 35);--red-tint:oklch(0.95 0.03 35);--amber:oklch(0.66 0.15 72);--amber-text:oklch(0.47 0.1 65);--amber-tint:oklch(0.95 0.05 85);--green:oklch(0.6 0.12 165);--green-text:oklch(0.45 0.1 165);--green-tint:oklch(0.95 0.03 165);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;color:var(--text)}.ds-nav{display:flex;align-items:center;gap:2px;padding:12px 24px;background:var(--surface);border-bottom:1px solid var(--border)}.ds-nav b{margin-right:16px}.ds-nav a{display:flex;align-items:center;min-height:40px;padding:8px 10px;border-radius:8px;color:var(--text-muted);text-decoration:none;font-weight:500}.ds-nav a[aria-current=page]{color:var(--text);background:var(--surface-2)}"
+      "name": "Status Labels",
+      "kind": "chip",
+      "refersTo": "label-danger",
+      "description": "Primer Label per state with its Octicon; unknown is a dashed outline, never a fill.",
+      "html": "<span class=\"ds-label ds-danger\"><svg version=\"1.1\" width=\"14\" height=\"14\" viewBox=\"0 0 12 12\" class=\"octicon octicon-x-circle-fill\" aria-hidden=\"true\" data-component=\"Octicon\" fill=\"currentColor\"><path d=\"M1.757 10.243a6.001 6.001 0 1 1 8.488-8.486 6.001 6.001 0 0 1-8.488 8.486ZM6 4.763l-2-2L2.763 4l2 2-2 2L4 9.237l2-2 2 2L9.237 8l-2-2 2-2L8 2.763Z\"></path></svg>Critical</span> <span class=\"ds-label ds-attention\"><svg version=\"1.1\" width=\"14\" height=\"14\" viewBox=\"0 0 12 12\" class=\"octicon octicon-alert-fill\" aria-hidden=\"true\" data-component=\"Octicon\" fill=\"currentColor\"><path d=\"M4.855.708c.5-.896 1.79-.896 2.29 0l4.675 8.351a1.312 1.312 0 0 1-1.146 1.954H1.33A1.313 1.313 0 0 1 .183 9.058ZM7 7V3H5v4Zm-1 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z\"></path></svg>Attention</span> <span class=\"ds-label ds-success\"><svg version=\"1.1\" width=\"14\" height=\"14\" viewBox=\"0 0 12 12\" class=\"octicon octicon-check-circle-fill\" aria-hidden=\"true\" data-component=\"Octicon\" fill=\"currentColor\"><path d=\"M6 0a6 6 0 1 1 0 12A6 6 0 0 1 6 0Zm-.705 8.737L9.63 4.403 8.392 3.166 5.295 6.263l-1.7-1.702L2.356 5.8l2.938 2.938Z\"></path></svg>Healthy</span> <span class=\"ds-label ds-unknown\"><svg version=\"1.1\" width=\"14\" height=\"14\" viewBox=\"0 0 16 16\" class=\"octicon octicon-question\" aria-hidden=\"true\" data-component=\"Octicon\" fill=\"currentColor\"><path d=\"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.92 6.085h.001a.749.749 0 1 1-1.342-.67c.169-.339.436-.701.849-.977C6.845 4.16 7.369 4 8 4a2.756 2.756 0 0 1 1.637.525c.503.377.863.965.863 1.725 0 .448-.115.83-.329 1.15-.205.307-.47.513-.692.662-.109.072-.22.138-.313.195l-.006.004a6.24 6.24 0 0 0-.26.16.952.952 0 0 0-.276.245.75.75 0 0 1-1.248-.832c.184-.264.42-.489.692-.661.103-.067.207-.132.313-.195l.007-.004c.1-.061.182-.11.258-.161a.969.969 0 0 0 .277-.245C8.96 6.514 9 6.427 9 6.25a.612.612 0 0 0-.262-.525A1.27 1.27 0 0 0 8 5.5c-.369 0-.595.09-.74.187a1.01 1.01 0 0 0-.34.398ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z\"></path></svg>Unknown</span> <span class=\"ds-label ds-severe\">High</span>",
+      "css": ".ds-label{display:inline-flex;align-items:center;gap:4px;min-height:20px;line-height:18px;padding:0 7px;border:1px solid var(--borderColor-default);border-radius:9999px;font-family:var(--fontStack-system);font-size:12px;font-weight:500;white-space:nowrap}.ds-danger{background:var(--bgColor-danger-muted);color:var(--fgColor-danger);border-color:var(--borderColor-danger-muted)}.ds-attention{background:var(--bgColor-attention-muted);color:var(--fgColor-attention);border-color:var(--borderColor-attention-muted)}.ds-success{background:var(--bgColor-success-muted);color:var(--fgColor-success);border-color:var(--borderColor-success-muted)}.ds-severe{background:var(--bgColor-severe-muted);color:var(--fgColor-severe);border-color:var(--borderColor-severe-muted)}.ds-unknown{background:transparent;color:var(--fgColor-muted);border:1.5px dashed var(--borderColor-emphasis)}"
+    },
+    {
+      "name": "Box with list rows",
+      "kind": "card",
+      "refersTo": "box",
+      "description": "Primer Box: muted header row, rows split by borders, muted hover.",
+      "html": "<div class=\"ds-box\"><div class=\"ds-box-head\">Project</div><div class=\"ds-row\">payments-platform</div><div class=\"ds-row\">identity-service</div></div>",
+      "css": ".ds-box{background:var(--bgColor-default);border:1px solid var(--borderColor-default);border-radius:6px;overflow:hidden;font-family:var(--fontStack-system);font-size:14px;color:var(--fgColor-default)}.ds-box-head{padding:10px 16px;background:var(--bgColor-muted);border-bottom:1px solid var(--borderColor-default);font-size:12px;font-weight:600;color:var(--fgColor-muted)}.ds-row{padding:14px 16px;border-bottom:1px solid var(--borderColor-default)}.ds-row:last-child{border-bottom:0}.ds-row:hover{background:var(--bgColor-muted)}"
+    },
+    {
+      "name": "Dimension bars",
+      "kind": "custom",
+      "refersTo": "dimension-bar",
+      "description": "Six 32px bars; height repeats state (critical 20, attention 13, healthy 7); unknown dashed at full height.",
+      "html": "<span class=\"ds-bars\"><i class=\"ds-b ds-red\"></i><i class=\"ds-b ds-amber\"></i><i class=\"ds-b ds-green\"></i><i class=\"ds-b ds-grey\"></i><i class=\"ds-b ds-green\"></i><i class=\"ds-b ds-amber\"></i></span>",
+      "css": ".ds-bars{display:inline-flex;gap:4px;align-items:flex-end;height:20px}.ds-b{display:block;width:32px;border-radius:2px}.ds-red{height:20px;background:var(--fgColor-danger)}.ds-amber{height:13px;background:var(--fgColor-attention)}.ds-green{height:7px;background:var(--fgColor-success)}.ds-grey{height:20px;box-sizing:border-box;border:1.5px dashed var(--borderColor-emphasis)}"
+    },
+    {
+      "name": "Control symbols",
+      "kind": "custom",
+      "refersTo": "control-symbol",
+      "description": "24px chips holding the SYMBOL_ICON Octicon; blind is dashed, na has no fill.",
+      "html": "<span class=\"ds-sym ds-ok\" role=\"img\" aria-label=\"Enabled\"><svg version=\"1.1\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" class=\"octicon octicon-check-circle\" aria-hidden=\"true\" data-component=\"Octicon\" fill=\"currentColor\"><path d=\"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm1.5 0a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm10.28-1.72-4.5 4.5a.75.75 0 0 1-1.06 0l-2-2a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l1.47 1.47 3.97-3.97a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042Z\"></path></svg></span> <span class=\"ds-sym ds-blind\" role=\"img\" aria-label=\"Not visible\"><svg version=\"1.1\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" class=\"octicon octicon-question\" aria-hidden=\"true\" data-component=\"Octicon\" fill=\"currentColor\"><path d=\"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.92 6.085h.001a.749.749 0 1 1-1.342-.67c.169-.339.436-.701.849-.977C6.845 4.16 7.369 4 8 4a2.756 2.756 0 0 1 1.637.525c.503.377.863.965.863 1.725 0 .448-.115.83-.329 1.15-.205.307-.47.513-.692.662-.109.072-.22.138-.313.195l-.006.004a6.24 6.24 0 0 0-.26.16.952.952 0 0 0-.276.245.75.75 0 0 1-1.248-.832c.184-.264.42-.489.692-.661.103-.067.207-.132.313-.195l.007-.004c.1-.061.182-.11.258-.161a.969.969 0 0 0 .277-.245C8.96 6.514 9 6.427 9 6.25a.612.612 0 0 0-.262-.525A1.27 1.27 0 0 0 8 5.5c-.369 0-.595.09-.74.187a1.01 1.01 0 0 0-.34.398ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z\"></path></svg></span> <span class=\"ds-sym ds-na\" role=\"img\" aria-label=\"Not applicable\"><svg version=\"1.1\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" class=\"octicon octicon-dash\" aria-hidden=\"true\" data-component=\"Octicon\" fill=\"currentColor\"><path d=\"M2 7.75A.75.75 0 0 1 2.75 7h10a.75.75 0 0 1 0 1.5h-10A.75.75 0 0 1 2 7.75Z\"></path></svg></span>",
+      "css": ".ds-sym{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;box-sizing:border-box;border-radius:3px}.ds-ok{background:var(--bgColor-success-muted);color:var(--fgColor-success)}.ds-blind{color:var(--fgColor-muted);border:1.5px dashed var(--borderColor-emphasis)}.ds-na{color:var(--fgColor-muted)}"
     }
   ],
   "narrative": {
-    "northStar": "Warm Graphite: legibility first",
-    "overview": "Warm Graphite is a reading instrument for a weekly portfolio review. Each page says one thing first (a single sentence such as \"3 of 4 projects need attention\"), then shows the list sorted worst first, and keeps the detail one click away. Character comes from restraint and precision: warm neutral greys, generous padding, hairline borders, one teal accent, and status colours used only where a status is.\n\nStatus is a small, exact mark rather than a painted area: a 10px dot, five 32px dimension bars whose height repeats the state, a pill on a fixed tint, a 24px control symbol. Vermilion, ochre and emerald fill those marks; darker *-text variants carry any text on their tints. Unknown is never a fill and never calm: it is a dashed outline in a dedicated stroke colour, with the cause named in words. A project score (0–100) sits next to the status dot with its confidence (\"measured 4 of 5\") always visible; when data is insufficient there is an em dash, never a 0.\n\nLight and dark themes share hues and character; dark lifts the fills and inverts the tints onto a warm near-black. Both follow `prefers-color-scheme` and can be overridden with `[data-theme]`. Every text and graphic pair, including the fixed pill tints, is held to WCAG 2.2 AA by `tests/unit/tokens-contrast.test.ts`.",
+    "northStar": "A natural extension of GitHub: legibility first",
+    "overview": "The hub is a reading instrument for a weekly portfolio review, dressed in GitHub Primer (`@primer/primitives` 11.10.0, `@primer/octicons`) so it feels like one more tab of a GitHub organisation. Each page says one thing first (a single sentence such as \"3 of 4 projects need attention\"), then shows the list sorted worst first, and keeps the detail one click away. Character comes from Primer's restraint: white or near-black page, hairline Box borders, one muted header band, Labels for state, Octicons for every symbol, and status colour only where a status is.\n\nStatus is a small, exact mark rather than a painted area: a 10px dot, six 32px dimension bars whose height repeats the state, a Primer Label with an Octicon, a 24px control symbol. Primer's `success`, `attention`, `severe` and `danger` families colour those marks. Unknown is never a fill and never calm: no fill, a 1.5px dashed `--borderColor-emphasis` outline and `--fgColor-muted` text, with the cause named in words, never shown as zero. A project score (0–100) sits next to the status with its confidence (\"measured 4 of 6\") always visible; with insufficient data there is an em dash, never a 0.\n\nComponents use Primer functional tokens directly (`--fgColor-*`, `--bgColor-*`, `--borderColor-*`, `--button-*`, `--base-size-*`, `--borderRadius-*`, `--text-*`, `--fontStack-*`); `src/styles/tokens.css` only imports them and adds one hub token, `--status-col`. Shared base styles live in `src/styles/global.css`, page styles in each page's scoped `<style>`. The hub's earlier \"Warm Graphite\" system was retired in v0.10.0.",
     "keyCharacteristics": [
       "One dominant sentence per page, then the list worst first, detail on demand.",
-      "Warm neutral greys; one teal accent for links, focus and the primary action, never for status.",
-      "Status as small exact marks (dot, dimension bars, pill, control symbol), always paired with text or an accessible name.",
+      "Primer functional tokens only; light and dark through Primer colour modes.",
+      "Status as small exact marks (dot, dimension bars, Label, control symbol), always with an Octicon, a word or an accessible name.",
       "Unknown is a dashed outline with the cause in words: never a fill, never zero, never calmer than a gap.",
-      "Score next to the status, with visible confidence; insufficient data shows a dash and says so.",
-      "IBM Plex Sans with tabular figures; IBM Plex Mono only for code, repositories and versions.",
-      "8px controls, 10px cards and lists, 999px pills; 1px hairlines; no shadows, gradients or side stripes."
+      "System font stack, no web fonts; monospace only for code, repositories, SHAs and versions.",
+      "Flat Boxes with 1px borders and 6px corners; Labels fully rounded.",
+      "Looks like GitHub, never claims to be GitHub."
     ],
     "rules": [
       {
-        "name": "The One Sentence Rule",
-        "body": "Every page opens with one sentence that states what matters now (\"1 open critical alert · 3 required controls we cannot see\"). Counts and filters follow it; they never replace it.",
-        "section": "overview"
-      },
-      {
         "name": "The Accent Is Not Status Rule",
-        "body": "Teal is for links, focus rings and the single primary action. It never marks a health state, a severity or a count.",
+        "body": "Blue is for links, focus and invisible buttons; coral only underlines the current tab; green fills only the primary button outside status marks. None of them ever marks a health state, a severity or a count.",
         "section": "colors"
       },
       {
         "name": "The Dashed Unknown Rule",
-        "body": "Unknown, not authorised and collection failed are drawn with a 1.5px dashed `--unknown` outline and muted text, and the cause is named. They are never filled, never green, never shown as 0, and never visually calmer than an optional gap.",
+        "body": "Unknown, not authorised and collection failed are drawn with no fill, a 1.5px dashed `--borderColor-emphasis` outline and `--fgColor-muted` text, and the cause is named. They are never filled, never green, never shown as 0, and never visually calmer than an optional gap. The 10px status dot is the one exception: a hollow 2px solid ring, because a dashed 10px circle reads as a loading spinner.",
         "section": "colors"
       },
       {
-        "name": "The Fixed Tint Rule",
-        "body": "Pill and symbol tints are fixed OKLCH values per theme (not `color-mix`), so every `*-text` on its tint can be contrast-tested. Fills reach 3:1 on the surface as graphics; text variants reach 4.5:1 on their tint and on the surface.",
+        "name": "The Tested Pair Rule",
+        "body": "Primer's own colours are used without substitutions. `tests/unit/tokens-contrast.test.ts` reads the pinned theme files in both themes, composites translucent tints, and asserts 4.5:1 for default, muted and accent text on the page and muted surfaces, for each status `fgColor` on its own muted tint, and for the primary button text; and 3:1 for the danger, attention, success marks and the emphasis border. A new text/background pair is added to that test before it ships.",
         "section": "colors"
-      },
-      {
-        "name": "The Status Column Rule",
-        "body": "A pill placed before text sits in a fixed 112px column (`--status-col`) so the text after it starts at the same x on every row, whatever the label length.",
-        "section": "layout"
       },
       {
         "name": "The Tabular Figures Rule",
-        "body": "Scores, counts, versions in tables and times use `tabular-nums`. A partial count is marked as incomplete; an unknown count is a dash with accessible text, never 0.",
+        "body": "Scores, counts, table cells, versions and relative times use `tabular-nums`. A partial count is marked as incomplete; an unknown count is a dash with accessible text, never 0.",
         "section": "typography"
       },
       {
-        "name": "The Flat Surface Rule",
-        "body": "Nothing floats. Surfaces are separated by 1px hairlines; the only inset ring marks a pressed state (count filter, current project type).",
+        "name": "The Status Column Rule",
+        "body": "A Label placed before text sits in a fixed 112px column (`--status-col`, the only hub token) so the text after it starts at the same x on every row.",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat Box Rule",
+        "body": "Nothing floats. The only rings are insets that mark state: the pressed count filter (`inset 0 0 0 1px` in `--fgColor-default`), the Overdue Label (`inset 0 0 0 1px currentColor`) and an invalid catalog field (`0 0 0 1px` in `--fgColor-danger`).",
         "section": "elevation"
       }
     ],
     "dos": [
-      "**Do** start each page with one sentence, then the list sorted worst first; put detail in collapsible sections or on the project page.",
-      "**Do** pair every status mark with a text label or an accessible name; use the six control symbols with the same meaning everywhere.",
-      "**Do** draw unknown with the dashed `--unknown` outline and name the cause (\"2 collection errors\").",
-      "**Do** show the score with its confidence as visible text, and an em dash with \"insufficient data\" when fewer than half the dimensions are measured.",
-      "**Do** keep pills before text in the 112px status column.",
-      "**Do** keep touch targets at least 40px, and 44px for the primary action.",
-      "**Do** use IBM Plex Mono only for code, repository names, SHAs and versions."
+      "**Do** use Primer functional tokens directly; add a hub token only when Primer has no equivalent (today only `--status-col`).",
+      "**Do** start each page with one sentence, then the list sorted worst first; put detail in `<details>` or on the project page.",
+      "**Do** pair every status mark with an Octicon and a word or an accessible name; use `SYMBOL_ICON` with the same meaning everywhere.",
+      "**Do** draw unknown with no fill, a 1.5px dashed `--borderColor-emphasis` outline and `--fgColor-muted` text, and name the cause.",
+      "**Do** write severity as a word: critical `danger`, high `severe`, medium `attention`, low neutral.",
+      "**Do** keep Labels before text in the 112px status column.",
+      "**Do** keep touch targets at least 40px, and 44px for the primary button.",
+      "**Do** add every new text/background pair to `tests/unit/tokens-contrast.test.ts` in both themes.",
+      "**Do** keep the footer line \"Not affiliated with GitHub · built with Primer\"."
     ],
     "donts": [
+      "**Don't** pass as GitHub: no Octocat or `mark-github`, no \"GitHub\" as the product name, no \"official\".",
       "**Don't** render unknown, not authorised, collection failed or partial counts as 0, as a fill, or in green.",
-      "**Don't** use teal for status, or status colours for links.",
-      "**Don't** draw severity with health shapes or as health states; severity keeps its own scale and text labels.",
-      "**Don't** add side-stripe borders to cards, gradients, gradient text, glassmorphism or heavy shadows.",
-      "**Don't** add decorative KPI tiles that carry no decision.",
+      "**Don't** use the accent blue, the primary green or the UnderlineNav coral for status, or status colours for links.",
+      "**Don't** draw severity with health shapes or call it a health state.",
+      "**Don't** load web fonts, override Primer colours with hand-picked hex values, or set a literal font size.",
+      "**Don't** add drop shadows, gradients, side-stripe borders or glassmorphism.",
       "**Don't** let colour be the only carrier of status.",
       "**Don't** set running text below 14px or any label below 12px."
     ]

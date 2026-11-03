@@ -112,6 +112,7 @@ test('adds a discovered single repository as a new project proposed on GitHub', 
     /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/new\/main\?filename=config\/projects\/docs-site\.yaml&value=/,
   );
   await expect(propose).toHaveAttribute('target', '_blank');
+  await expect(propose.locator('svg.octicon-git-pull-request')).toHaveCount(1);
   const href = (await propose.getAttribute('href'))!;
   expect(new URL(href).searchParams.get('value')).toBe(await yaml(page).inputValue());
   await expect(change.getByRole('button', { name: 'Download docs-site.yaml' })).toBeVisible();

@@ -79,43 +79,43 @@ const HEIGHT: Record<HealthStatus, 1 | 2 | 3> = { red: 3, amber: 2, green: 1, gr
   }
   /* Fixed-height box, bars sit on its bottom edge so their heights compare at a glance. */
   .dimbars--bars {
-    height: 12px;
+    height: 20px;
     align-items: flex-end;
   }
   .dimbars__bar {
     display: block;
     flex: none;
     width: 32px;
-    height: 12px;
-    border-radius: var(--radius-sm);
+    height: 20px;
+    border-radius: 2px;
   }
   .dimbars__bar--h2 {
-    height: 8px;
+    height: 13px;
   }
   .dimbars__bar--h1 {
-    height: 4px;
+    height: 7px;
   }
   .dimbars__bar--red {
-    background: var(--red);
+    background: var(--fgColor-danger);
   }
   .dimbars__bar--amber {
-    background: var(--amber);
+    background: var(--fgColor-attention);
   }
   .dimbars__bar--green {
-    background: var(--green);
+    background: var(--fgColor-success);
   }
   .dimbars__bar--grey {
     background: transparent;
-    border: 1.5px dashed var(--unknown);
+    border: 1.5px dashed var(--borderColor-emphasis);
   }
   .dimbars__label {
     width: 32px;
     flex: none;
     text-align: center;
     text-decoration: none;
-    font-size: var(--fs-xs);
+    font-size: var(--text-body-size-small);
     font-weight: 600;
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
     cursor: help;
   }
   /* Forced colours drop the fills: keep the bars solid so their heights still read. */

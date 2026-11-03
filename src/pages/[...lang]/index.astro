@@ -305,6 +305,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
                           width={96}
                           height={20}
                           label={trend.text.label}
+                          tone={p.overall}
                         />
                         <span class="plist__delta" aria-hidden="true">
                           {trend.text.arrow} {trend.text.short}
@@ -404,55 +405,66 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
   .portfolio {
     display: flex;
     flex-direction: column;
-    gap: var(--space-5);
+    gap: var(--base-size-24);
   }
   .portfolio__head {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
     justify-content: space-between;
-    gap: var(--space-4);
+    gap: var(--base-size-16);
   }
   .portfolio__head h1 {
     margin: 0;
   }
   .portfolio__lead {
     margin: 6px 0 0;
-    font-size: var(--fs-lead);
+    font-size: var(--text-body-size-large);
     line-height: 24px;
     font-weight: 600;
   }
 
-  /* Status counts: shortcuts for the status filter; pressing the active one clears it. */
+  /* Status counts: a Primer SegmentedControl with a Counter per state; pressing the active
+     one clears the filter. */
   .counts {
-    display: flex;
+    display: inline-flex;
     flex-wrap: wrap;
-    gap: var(--space-2);
+    gap: 2px;
+    padding: 2px;
+    border-radius: var(--borderRadius-medium);
+    background: var(--bgColor-neutral-muted);
   }
   .count-btn {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--base-size-8);
     min-height: 40px;
-    padding: 0 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    background: var(--surface);
-    color: var(--text);
+    padding: 0 var(--base-size-12);
+    border: 1px solid transparent;
+    border-radius: var(--borderRadius-medium);
+    background: transparent;
+    color: var(--fgColor-default);
     font: inherit;
     cursor: pointer;
   }
   .count-btn:hover {
-    border-color: var(--border-strong);
+    background: var(--control-transparent-bgColor-hover);
   }
   .count-btn[aria-pressed='true'] {
-    border-color: var(--text);
-    background: var(--surface-2);
-    box-shadow: inset 0 0 0 1px var(--text);
+    border-color: var(--borderColor-default);
+    background: var(--bgColor-default);
+    font-weight: 600;
   }
   .count-btn__value {
-    font-size: var(--fs-count);
-    font-weight: 700;
+    display: inline-block;
+    min-width: 20px;
+    padding: 0 6px;
+    border-radius: var(--borderRadius-full);
+    background: var(--bgColor-neutral-muted);
+    font-size: var(--text-body-size-small);
+    font-weight: 500;
+    line-height: 18px;
+    text-align: center;
     font-variant-numeric: tabular-nums;
   }
   .count-btn__dot {
@@ -462,16 +474,16 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     border-radius: 50%;
   }
   .count-btn__dot--red {
-    background: var(--red);
+    background: var(--fgColor-danger);
   }
   .count-btn__dot--amber {
-    background: var(--amber);
+    background: var(--fgColor-attention);
   }
   .count-btn__dot--green {
-    background: var(--green);
+    background: var(--fgColor-success);
   }
   .count-btn__dot--grey {
-    border: 2px solid var(--unknown);
+    border: 2px solid var(--borderColor-emphasis);
   }
 
   /* Filters: one inline row; lifecycle and severity under "More filters". */
@@ -479,7 +491,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
-    gap: var(--space-3);
+    gap: var(--base-size-12);
   }
   .portfolio__filterbox {
     flex: 1 1 auto;
@@ -492,20 +504,20 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
-    gap: var(--space-3);
+    gap: var(--base-size-12);
   }
   .portfolio__more {
     align-self: flex-end;
-    font-size: var(--fs-sm);
+    font-size: var(--text-body-size-small);
   }
   .portfolio__more > summary {
     display: inline-flex;
     align-items: center;
     min-height: 40px;
     padding: 0 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    color: var(--text);
+    border: 1px solid var(--borderColor-default);
+    border-radius: var(--borderRadius-medium);
+    color: var(--fgColor-default);
     font-weight: 500;
   }
   .portfolio__more[open] {
@@ -514,8 +526,8 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
   .portfolio__more-body {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-3);
-    margin-top: var(--space-3);
+    gap: var(--base-size-12);
+    margin-top: var(--base-size-12);
   }
   .portfolio__results {
     margin: 0 0 0 auto;
@@ -523,8 +535,8 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     display: flex;
     align-items: center;
     min-height: 40px;
-    font-size: var(--fs-sm);
-    color: var(--text-muted);
+    font-size: var(--text-body-size-small);
+    color: var(--fgColor-muted);
   }
   .portfolio__clear {
     align-self: flex-end;
@@ -535,9 +547,9 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
 
   /* The list: one row per project, worst first. */
   .plist {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    background: var(--bgColor-default);
+    border: 1px solid var(--borderColor-default);
+    border-radius: var(--borderRadius-medium);
     overflow-x: auto;
   }
   .plist__table {
@@ -546,19 +558,19 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     font-variant-numeric: tabular-nums;
   }
   .plist__table thead th {
-    padding: 10px var(--space-4);
-    background: var(--surface-2);
-    border-bottom: 1px solid var(--border);
-    font-size: var(--fs-xs);
+    padding: 10px var(--base-size-16);
+    background: var(--bgColor-muted);
+    border-bottom: 1px solid var(--borderColor-default);
+    font-size: var(--text-body-size-small);
     font-weight: 600;
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
     text-align: left;
     white-space: nowrap;
   }
   .plist__table td,
   .plist__table tbody th {
-    padding: 14px var(--space-4);
-    border-bottom: 1px solid var(--border);
+    padding: 14px var(--base-size-16);
+    border-bottom: 1px solid var(--borderColor-default);
     text-align: left;
     vertical-align: middle;
   }
@@ -566,7 +578,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     border-bottom: 0;
   }
   .plist__table tbody tr:hover {
-    background: var(--surface-2);
+    background: var(--bgColor-muted);
   }
   .plist__c-dot {
     width: 44px;
@@ -585,22 +597,22 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
   }
   .plist__delta {
     display: block;
-    font-size: var(--fs-xs);
+    font-size: var(--text-body-size-small);
     font-weight: 600;
     white-space: nowrap;
   }
   .plist__trendnote {
-    font-size: var(--fs-xs);
-    color: var(--text-muted);
+    font-size: var(--text-body-size-small);
+    color: var(--fgColor-muted);
   }
   .portfolio__export {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2) var(--space-3);
+    gap: var(--base-size-8) var(--base-size-12);
     margin: 0;
-    font-size: var(--fs-sm);
-    color: var(--text-muted);
+    font-size: var(--text-body-size-small);
+    color: var(--fgColor-muted);
   }
   /* Six 32px bars with 4px gaps (212px) plus the cell padding. */
   .plist__c-dims {
@@ -612,30 +624,30 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
   }
   .plist__link {
     display: inline-block;
-    font-size: var(--fs-card);
+    font-size: var(--text-body-size-large);
     font-weight: 600;
     white-space: nowrap;
   }
   .plist__bu {
     display: block;
-    font-size: var(--fs-sm);
-    color: var(--text-muted);
+    font-size: var(--text-body-size-small);
+    color: var(--fgColor-muted);
   }
   /* Pill in a fixed-width column so every reason sentence starts at the same x. */
   .plist__why {
     display: grid;
     grid-template-columns: var(--status-col) minmax(0, 1fr);
     align-items: center;
-    column-gap: var(--space-3);
+    column-gap: var(--base-size-12);
     min-width: 240px;
   }
   .plist__empty {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2) var(--space-4);
-    padding: var(--space-4);
-    color: var(--text-muted);
+    gap: var(--base-size-8) var(--base-size-16);
+    padding: var(--base-size-16);
+    color: var(--fgColor-muted);
   }
   .plist__empty[hidden] {
     display: none;
@@ -650,12 +662,12 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
   .portfolio__foot {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-4);
+    gap: var(--base-size-16);
     margin: 0;
-    padding-top: var(--space-4);
-    border-top: 1px solid var(--border);
-    font-size: var(--fs-sm);
-    color: var(--text-muted);
+    padding-top: var(--base-size-16);
+    border-top: 1px solid var(--borderColor-default);
+    font-size: var(--text-body-size-small);
+    color: var(--fgColor-muted);
   }
 
   /*
@@ -687,9 +699,9 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
         'dims dims dims'
         'reason reason reason';
       align-items: center;
-      gap: var(--space-2) var(--space-3);
-      padding: var(--space-3) var(--space-4);
-      border-bottom: 1px solid var(--border);
+      gap: var(--base-size-8) var(--base-size-12);
+      padding: var(--base-size-12) var(--base-size-16);
+      border-bottom: 1px solid var(--borderColor-default);
     }
     .plist__table tbody tr:last-child {
       border-bottom: 0;
@@ -728,7 +740,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
       grid-area: trend;
       display: flex;
       align-items: center;
-      gap: var(--space-3);
+      gap: var(--base-size-12);
       min-width: 0;
     }
     .plist__c-trend {
@@ -775,16 +787,16 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
       align-items: center;
       min-height: 40px;
       padding: 0 14px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      background: var(--surface);
-      color: var(--text);
-      font-size: var(--fs-sm);
+      border: 1px solid var(--borderColor-default);
+      border-radius: var(--borderRadius-medium);
+      background: var(--bgColor-default);
+      color: var(--fgColor-default);
+      font-size: var(--text-body-size-small);
       font-weight: 500;
       cursor: pointer;
     }
     .portfolio__filterbody {
-      margin-top: var(--space-3);
+      margin-top: var(--base-size-12);
     }
     .portfolio__results {
       flex: 1 1 12rem;
@@ -796,7 +808,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     .plist__why {
       grid-template-columns: minmax(0, 1fr);
       justify-items: start;
-      row-gap: var(--space-1);
+      row-gap: var(--base-size-4);
     }
   }
 </style>

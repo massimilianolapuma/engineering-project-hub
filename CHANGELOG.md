@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The interface is restyled on GitHub's Primer design system, replacing "Warm Graphite": Primer
+  functional tokens (`@primer/primitives` 11.10.0) for colours, spacing, radii and type, Octicons
+  (`@primer/octicons` 19.40.0, rendered at build time) for every status, control symbol, navigation
+  item and external link, and system fonts (IBM Plex removed). A GitHub-style header with an
+  underline navigation, a run bar, a warning Flash for stale data, Primer Labels, Boxes, Buttons and
+  form controls, and charts in Primer status colours. Pages, sections, copy, data and score are
+  unchanged.
+- Severity colours follow Primer: critical danger, high severe, medium attention, low neutral,
+  always with the word.
+- Colour modes use Primer's `data-color-mode`; a theme saved with the previous version still
+  applies.
+
+### Added
+
+- Footer line "Not affiliated with GitHub · built with Primer" (EN and IT).
+- Optional "signed in as" initials for builds behind Cloudflare Access
+  (`PUBLIC_IDENTITY_SOURCE=cloudflare-access`, set by `rw-hub-cloudflare-deploy.yml`); GitHub Pages
+  builds have no slot and make no request.
+- Score sparklines end with a dot in the latest collection's status colour.
+- ADR 0009 (EN and IT): Primer as the design system.
+- Tests: Primer token contrast in both themes, a guard against legacy tokens and colour literals,
+  Octicon rendering, the identity parser, and no horizontal scroll at 390px on every page.
+
 ## [0.9.0] - 2026-10-22
 
 ### Added

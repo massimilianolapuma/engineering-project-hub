@@ -564,19 +564,19 @@ const SECTIONS = [
 <style>
   .htr-hero {
     margin: 6px 0 0;
-    font-size: var(--fs-lead);
+    font-size: var(--text-body-size-large);
     line-height: 24px;
     font-weight: 600;
     max-width: 70ch;
   }
   .htr-head .lead {
-    margin: var(--space-1) 0 0;
+    margin: var(--base-size-4) 0 0;
   }
   .htr-toc ul {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-1) var(--space-2);
-    margin: 0 0 var(--space-5);
+    gap: var(--base-size-4) var(--base-size-8);
+    margin: 0 0 var(--base-size-24);
     padding: 0;
     list-style: none;
   }
@@ -584,29 +584,29 @@ const SECTIONS = [
     display: inline-flex;
     align-items: center;
     min-height: 40px;
-    padding: 0 var(--space-3);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
-    background: var(--surface);
-    font-size: var(--fs-sm);
+    padding: 0 var(--base-size-12);
+    border: 1px solid var(--borderColor-default);
+    border-radius: var(--borderRadius-full);
+    background: var(--bgColor-default);
+    font-size: var(--text-body-size-small);
     text-decoration: none;
   }
   .htr-toc a:hover {
-    border-color: var(--border-strong);
+    border-color: var(--borderColor-emphasis);
   }
   .htr-section {
-    scroll-margin-top: var(--space-4);
+    scroll-margin-top: var(--base-size-16);
   }
   .htr-section > p {
     max-width: 75ch;
   }
   .htr-section h3 {
-    margin: var(--space-5) 0 var(--space-2);
-    font-size: var(--fs-md);
+    margin: var(--base-size-24) 0 var(--base-size-8);
+    font-size: var(--text-body-size-medium);
   }
   /* Key (symbol or dot + label) in a fixed-width column, so every explanation starts at the same x. */
   .htr-rows {
-    margin: var(--space-3) 0 0;
+    margin: var(--base-size-12) 0 0;
     padding: 0;
     list-style: none;
   }
@@ -614,10 +614,10 @@ const SECTIONS = [
   .htr-term {
     display: grid;
     grid-template-columns: minmax(var(--status-col), 14rem) minmax(0, 1fr);
-    gap: var(--space-1) var(--space-4);
+    gap: var(--base-size-4) var(--base-size-16);
     align-items: start;
     padding: 10px 0;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--borderColor-default);
   }
   .htr-row:first-child,
   .htr-term:first-child {
@@ -626,7 +626,7 @@ const SECTIONS = [
   .htr-key {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--base-size-8);
     min-height: 24px;
   }
   .htr-key--inline {
@@ -638,21 +638,21 @@ const SECTIONS = [
     width: 24px;
   }
   .htr-rule {
-    margin: var(--space-3) 0 0;
-    padding-top: var(--space-3);
-    border-top: 1px solid var(--border);
+    margin: var(--base-size-12) 0 0;
+    padding-top: var(--base-size-12);
+    border-top: 1px solid var(--borderColor-default);
   }
   .htr-bars {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2) var(--space-3);
+    gap: var(--base-size-8) var(--base-size-12);
   }
   .htr-bars > span:last-child {
     flex: 1 1 24ch;
   }
   .htr-terms {
-    margin: var(--space-3) 0 0;
+    margin: var(--base-size-12) 0 0;
   }
   .htr-term dd {
     margin: 0;
@@ -661,19 +661,19 @@ const SECTIONS = [
     margin: 0;
   }
   .htr-term dd p + p {
-    margin-top: var(--space-1);
+    margin-top: var(--base-size-4);
   }
   .htr-formula {
-    margin: var(--space-4) 0 var(--space-1);
-    padding: var(--space-3) var(--space-4);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    background: var(--surface-2);
+    margin: var(--base-size-16) 0 var(--base-size-4);
+    padding: var(--base-size-12) var(--base-size-16);
+    border: 1px solid var(--borderColor-default);
+    border-radius: var(--borderRadius-medium);
+    background: var(--bgColor-muted);
     overflow-x: auto;
   }
   .htr-formula code {
-    font-family: var(--font-mono);
-    font-size: var(--fs-sm);
+    font-family: var(--fontStack-monospace);
+    font-size: var(--text-body-size-small);
     white-space: pre-wrap;
   }
   .htr-block {
@@ -682,32 +682,32 @@ const SECTIONS = [
   .htr-pair {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
-    gap: 0 var(--space-5);
+    gap: 0 var(--base-size-24);
   }
   .htr-measure {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: var(--space-1) var(--space-3);
-    padding: var(--space-2) 0;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
+    gap: var(--base-size-4) var(--base-size-12);
+    padding: var(--base-size-8) 0;
+    border-top: 1px solid var(--borderColor-default);
+    border-bottom: 1px solid var(--borderColor-default);
   }
   .htr-measure strong {
-    font-size: var(--fs-lg);
+    font-size: var(--text-title-size-small);
   }
   .htr-points {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--base-size-8);
     margin: 0;
     padding-left: 1.25rem;
   }
   .htr-docs {
-    margin-top: var(--space-5);
+    margin-top: var(--base-size-24);
   }
   .htr-docs h2 {
-    font-size: var(--fs-md);
+    font-size: var(--text-body-size-medium);
   }
   @media (max-width: 720px) {
     .htr-row,

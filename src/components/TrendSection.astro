@@ -70,6 +70,7 @@ const sentence =
               height={56}
               label={text.label}
               guides
+              tone={points.at(-1)?.overall}
             />
           </div>
         ) : (
@@ -173,34 +174,34 @@ const sentence =
 
 <style>
   .trend {
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--base-size-32);
   }
   .trend h2 {
-    margin: 0 0 var(--space-3);
+    margin: 0 0 var(--base-size-12);
   }
   .trend__state,
   .trend__note,
   .trend__stripsummary,
   .trend__striplabel {
     margin: 0;
-    color: var(--text-muted);
-    font-size: var(--fs-sm);
+    color: var(--fgColor-muted);
+    font-size: var(--text-body-size-small);
   }
   .trend__card {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--base-size-12);
     margin: 0;
   }
   .trend__chart {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-4) var(--space-6);
+    gap: var(--base-size-16) var(--base-size-32);
     align-items: flex-end;
   }
   .trend__spark {
     display: flex;
-    gap: var(--space-2);
+    gap: var(--base-size-8);
     align-items: stretch;
     max-width: 100%;
   }
@@ -208,15 +209,15 @@ const sentence =
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    font-size: var(--fs-xs);
+    font-size: var(--text-body-size-small);
     line-height: 1;
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
     font-variant-numeric: tabular-nums;
   }
   .trend__strip {
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
+    gap: var(--base-size-4);
     flex: 1 1 200px;
     min-width: 0;
   }
@@ -227,34 +228,34 @@ const sentence =
     display: inline-flex;
     align-items: center;
     min-height: 40px;
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
     font-weight: 500;
     cursor: pointer;
   }
   .trend__scroll {
     overflow-x: auto;
-    margin-top: var(--space-2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
+    margin-top: var(--base-size-8);
+    border: 1px solid var(--borderColor-default);
+    border-radius: var(--borderRadius-medium);
   }
   .trend__table {
     width: 100%;
     border-collapse: collapse;
-    font-size: var(--fs-sm);
+    font-size: var(--text-body-size-small);
     font-variant-numeric: tabular-nums;
   }
   .trend__table th,
   .trend__table td {
-    padding: 8px var(--space-3);
-    border-bottom: 1px solid var(--border);
+    padding: 8px var(--base-size-12);
+    border-bottom: 1px solid var(--borderColor-default);
     text-align: left;
     white-space: nowrap;
     vertical-align: middle;
   }
   .trend__table thead th {
-    background: var(--surface-2);
-    font-size: var(--fs-xs);
-    color: var(--text-muted);
+    background: var(--bgColor-muted);
+    font-size: var(--text-body-size-small);
+    color: var(--fgColor-muted);
   }
   .trend__table tbody tr:last-child > * {
     border-bottom: 0;
@@ -263,10 +264,10 @@ const sentence =
     text-align: right;
   }
   .trend__untracked {
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
     font-style: italic;
   }
   .trend__link {
-    margin: var(--space-3) 0 0;
+    margin: var(--base-size-12) 0 0;
   }
 </style>

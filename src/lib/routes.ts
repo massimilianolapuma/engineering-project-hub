@@ -1,4 +1,5 @@
 import type { Locale } from '../i18n';
+import type { OcticonName } from './octicon';
 
 export type PageKey =
   | 'portfolio'
@@ -31,6 +32,18 @@ export const NAV: readonly PageKey[] = [
   'dataQuality',
   'catalog',
 ];
+
+/** Octicon shown before each navigation label (Primer UnderlineNav). */
+export const NAV_ICON: Record<PageKey, OcticonName> = {
+  portfolio: 'apps',
+  changes: 'history',
+  security: 'shield',
+  versions: 'tag',
+  workflows: 'workflow',
+  dataQuality: 'database',
+  catalog: 'book',
+  howToRead: 'question',
+};
 
 const base = () => {
   const b = import.meta.env.BASE_URL ?? '/';

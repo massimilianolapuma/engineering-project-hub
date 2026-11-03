@@ -30,18 +30,18 @@ const { status, label } = Astro.props;
     vertical-align: middle;
   }
   .dot--red {
-    background: var(--red);
+    background: var(--fgColor-danger);
   }
   .dot--amber {
-    background: var(--amber);
+    background: var(--fgColor-attention);
   }
   .dot--green {
-    background: var(--green);
+    background: var(--fgColor-success);
   }
   /* A dashed 10px circle reads as a loading spinner: small marks use a hollow ring. */
   .dot--grey {
     background: transparent;
-    border: 2px solid var(--unknown);
+    border: 2px solid var(--borderColor-emphasis);
   }
   @media (forced-colors: active) {
     .dot {

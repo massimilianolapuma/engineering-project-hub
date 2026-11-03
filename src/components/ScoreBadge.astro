@@ -34,7 +34,7 @@ const hasValue = score.value !== null;
     <div class="score__conf">{measured}</div>
   ) : (
     <div class="score__conf">
-      <span class="score__conf-line">{d.score.insufficient}</span>
+      <span class="pill pill--unknown score__label">{d.score.insufficient}</span>
       <span class="visually-hidden"> · </span>
       <span class="score__conf-line">{measured}</span>
     </div>
@@ -49,23 +49,26 @@ const hasValue = score.value !== null;
     font-variant-numeric: tabular-nums;
   }
   .score__value {
-    font-weight: 700;
-    color: var(--text);
+    font-weight: 600;
+    color: var(--fgColor-default);
   }
   .score__value--none {
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
   }
   .score__out,
   .score__conf {
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
   }
   .score--row .score__value {
-    font-size: var(--fs-lg);
-    line-height: 24px;
+    font-size: var(--text-title-size-medium);
+    line-height: 28px;
   }
   .score--row .score__conf {
-    font-size: var(--fs-xs);
+    font-size: var(--text-body-size-small);
     line-height: 16px;
+  }
+  .score__label {
+    margin: 2px 0;
   }
   .score__conf-line {
     display: block;
@@ -76,10 +79,10 @@ const hasValue = score.value !== null;
     text-align: right;
   }
   .score--header .score__value {
-    font-size: var(--fs-score);
-    line-height: 34px;
+    font-size: var(--text-title-size-large);
+    line-height: 40px;
   }
   .score--header .score__conf {
-    font-size: var(--fs-sm);
+    font-size: var(--text-body-size-small);
   }
 </style>

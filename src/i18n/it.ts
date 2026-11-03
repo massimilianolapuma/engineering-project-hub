@@ -22,6 +22,10 @@ export const it: Dict = {
     themeLight: 'Chiaro',
     themeDark: 'Scuro',
     skip: 'Vai al contenuto',
+    signedInAs: 'Accesso come {name}',
+  },
+  footer: {
+    notAffiliated: 'Non affiliato a GitHub · realizzato con Primer',
   },
   common: {
     lastRun: 'Ultima esecuzione del collector',

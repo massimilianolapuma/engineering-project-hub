@@ -12,6 +12,7 @@ import Legend from '../../components/Legend.astro';
 import Pill from '../../components/Pill.astro';
 import StatusDot from '../../components/StatusDot.astro';
 import UnknownValue from '../../components/UnknownValue.astro';
+import Octicon from '../../components/Octicon.astro';
 import Base from '../../layouts/Base.astro';
 import { displayVersion, shortSha } from '../../lib/format';
 import { pageContext } from '../../lib/page';
@@ -233,7 +234,7 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
                         <li class="vpath__step" data-env={e.name} data-env-status={e.status}>
                           {i > 0 && (
                             <span class="vpath__arrow" aria-hidden="true">
-                              →
+                              <Octicon name="arrow-right" />
                             </span>
                           )}
                           <span class:list={['vpath__env', `vpath__env--${e.status}`]}>
@@ -430,53 +431,53 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
 <style>
   .vlead {
     margin: 6px 0 0;
-    font-size: var(--fs-lead);
+    font-size: var(--text-body-size-large);
     line-height: 24px;
     font-weight: 600;
-    color: var(--text);
+    color: var(--fgColor-default);
   }
   .vcards {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
-    margin-bottom: var(--space-5);
+    gap: var(--base-size-16);
+    margin-bottom: var(--base-size-24);
   }
   .vcard {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: var(--base-size-16);
     min-width: 0;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: var(--space-4);
+    background: var(--bgColor-default);
+    border: 1px solid var(--borderColor-default);
+    border-radius: var(--borderRadius-medium);
+    padding: var(--base-size-16);
   }
   .vcard--aligned,
   .vcard--unknown {
-    gap: var(--space-2);
+    gap: var(--base-size-8);
   }
   /* Unknown is a dashed outline, never calmer than a gap and never a fill. */
   .vcard--unknown {
     border-style: dashed;
-    border-color: var(--unknown);
+    border-color: var(--borderColor-emphasis);
   }
   .vcard__head {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2) 10px;
+    gap: var(--base-size-8) 10px;
   }
   .vcard__dot {
     display: inline-flex;
   }
   .vcard__title {
     margin: 0;
-    font-size: var(--fs-card);
+    font-size: var(--text-body-size-large);
     line-height: 22px;
     font-weight: 600;
   }
   .vcard__title a {
-    color: var(--text);
+    color: var(--fgColor-default);
   }
   .vcard__meta {
     margin-left: auto;
@@ -485,7 +486,7 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
     margin: 0;
   }
   .vcauses {
-    margin: var(--space-1) 0 var(--space-2);
+    margin: var(--base-size-4) 0 var(--base-size-8);
     padding-left: 1.25rem;
   }
   .vcard__link {
@@ -508,39 +509,44 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
     gap: 10px;
   }
   .vpath__arrow {
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
   }
   .vpath__env {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--space-1);
+    gap: var(--base-size-4);
     min-width: 130px;
     padding: 10px 14px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    background: var(--bgColor-default);
+    border: 1px solid var(--borderColor-default);
+    border-radius: var(--borderRadius-medium);
   }
   .vpath__env--unknown {
     border-style: dashed;
-    border-color: var(--unknown);
+    border-color: var(--borderColor-emphasis);
+  }
+  .vpath__env--behind,
+  .vpath__env--mismatch {
+    background: var(--bgColor-attention-muted);
+    border-color: var(--borderColor-attention-muted);
   }
   .vcheck {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--base-size-8);
     margin: 0;
   }
   .vcheck__title {
     margin: 0;
-    font-size: var(--fs-md);
+    font-size: var(--text-body-size-medium);
     font-weight: 600;
   }
   /* A bordered table inside the card. Above 720px it scrolls inside its own container when the
      card is narrower than the table; below, the global rule stacks each row into a labelled card. */
   .vcheck__wrap {
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    border: 1px solid var(--borderColor-default);
+    border-radius: var(--borderRadius-medium);
   }
   @media (min-width: 721px) {
     .vcheck__table {
@@ -557,7 +563,7 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
   .vissues {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--base-size-8);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -567,14 +573,14 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
     display: flex;
     flex-wrap: nowrap;
     align-items: baseline;
-    gap: var(--space-2);
+    gap: var(--base-size-8);
   }
   .vissue > span:last-child {
     flex: 1 1 auto;
     min-width: 0;
   }
   .valigned {
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--borderColor-default);
     padding-top: 10px;
   }
   .valigned summary {
@@ -582,10 +588,10 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
     min-height: 40px;
     box-sizing: border-box;
     cursor: pointer;
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
   }
   .valigned__list {
-    margin: var(--space-1) 0 0;
+    margin: var(--base-size-4) 0 0;
     padding-left: 1.25rem;
   }
   @media (max-width: 720px) {
@@ -596,14 +602,14 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
     /* The issues need the full row width: label above them instead of beside. */
     /* Labels in the sans face, also beside monospace values. */
     .vcheck__table td[data-label]::before {
-      font-family: var(--font-sans);
+      font-family: var(--fontStack-system);
     }
     .vcheck__table td.vcheck__what {
       display: block;
     }
     .vcheck__table td.vcheck__what::before {
       display: block;
-      margin-bottom: var(--space-1);
+      margin-bottom: var(--base-size-4);
     }
   }
   @media (max-width: 640px) {
