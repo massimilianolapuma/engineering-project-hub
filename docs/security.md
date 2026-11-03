@@ -182,7 +182,7 @@ only chooses what to count.
     `supplyChain.sbom.dependencyGraph: true`. Without it the SBOM comes from the CI summary (or
     the status file), otherwise it is unknown.
   - **SBOM download host.** `fetch-report` answers with a redirect. The collector follows it only
-    to an `https` host ending in `githubusercontent.com` or equal to `github.com`
+    to an `https` host that is `githubusercontent.com`, `github.com` or one of their subdomains
     (`SBOM_DOWNLOAD_HOST_SUFFIXES`), without the Authorization header. Observed host: not yet
     observed; the allowlist fails closed.
 

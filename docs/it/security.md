@@ -182,8 +182,8 @@ l'hub sceglie solo cosa contare.
     `supplyChain.sbom.dependencyGraph: true`. Senza, lo SBOM arriva dal riepilogo CI (o dal file
     di stato), altrimenti è sconosciuto.
   - **Host di download dello SBOM.** `fetch-report` risponde con un redirect. Il collector lo
-    segue solo verso un host `https` che termina con `githubusercontent.com` o è uguale a
-    `github.com` (`SBOM_DOWNLOAD_HOST_SUFFIXES`), senza header Authorization. Host osservato: non
+    segue solo verso un host `https` che è `githubusercontent.com`, `github.com` o un loro
+    sottodominio (`SBOM_DOWNLOAD_HOST_SUFFIXES`), senza header Authorization. Host osservato: non
     ancora osservato; la allowlist si chiude in caso di dubbio.
 
 - **Fallback (solo MVP): un PAT fine-grained** in `GH_READ_TOKEN`. Limitalo ai repository

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Supply chain: when a repository's CI summary exists but cannot be read, the signed and
+  unsigned image counts are unknown instead of 0. The Security page's Supply chain hint now says
+  how many projects have unknown values.
+- SonarQube: coverage from an analysis without a date is stale, never shown as fresh. The same
+  project key mapped on two branches is read once per branch instead of reusing the first one.
+- Data quality: an enabled provider with nothing mapped in the catalog says so, instead of
+  "0 read".
+- GitHub errors: a message mentioning the dependency graph means "not configured" only on the
+  SBOM export calls; on other endpoints it keeps its normal classification.
+- Docs: the SBOM download host allowlist is described as it is enforced (`githubusercontent.com`,
+  `github.com` or one of their subdomains).
+
 ## [0.12.0] - 2026-11-03
 
 ### Added

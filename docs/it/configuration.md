@@ -920,6 +920,7 @@ Come lo legge il collector:
 | JSON o schema non validi, altro repository, zip troppo grande o senza file | `invalid`, più un errore di raccolta `invalid-data` |
 | Errore di rete o altro fallimento                                          | `unknown`                                           |
 | Valido, `generatedAt` più vecchio di `freshness.qualityReportStaleDays`    | `stale` (contato, sempre mostrato con la sua età)   |
+| Analisi SonarQube senza data (età sconosciuta)                             | `stale` (mai presentata come aggiornata)            |
 | Valido e aggiornato                                                        | `readable`                                          |
 
 La copertura del progetto è la somma di `covered` sulla somma di `valid` dei repository
