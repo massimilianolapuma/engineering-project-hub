@@ -115,7 +115,7 @@ precedence:
 
 Resolution per (repository, control), pure function `resolveControl(candidates, order)`:
 
-1. Walk the list. The first candidate whose state is **definitive** (`enabled`, `stale`, `failed`) wins.
+1. Walk the list. The first candidate whose state is `enabled` or `failed` wins; otherwise the first `stale` one (a stale answer never beats a fresher one from a later source). These three states are the **definitive** ones.
 2. Otherwise the first candidate whose state is `not-authorised`, `collection-failed`, `unknown` or `configured-not-run` wins (the most informative non-answer).
 3. Otherwise `not-configured` (every source said "not set up" or was off).
 4. A source that is off (provider disabled, feature switched off) is skipped, never `not-configured` evidence.
@@ -131,15 +131,15 @@ Resolution per (repository, control), pure function `resolveControl(candidates, 
 
 Per-source state for each control:
 
-| Control            | Source                 | State                                                                                                                                                                                                                     |
-| ------------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| container/iac/dast | `code-scanning`        | newest matching analysis ≤ `securityScanStaleDays` → `enabled`; older → `stale`; no matching analysis → `not-configured`; 403 → `not-authorised`; other errors → `unknown`                                                |
-| containerScanning  | `harbor`               | every mapped image scanned (`scan_status` Success) → `enabled` (stale by `end_time`); any `Error` → `failed`; `Running`/`Pending`/none → `configured-not-run`; 401/403 → `not-authorised`; tag 404 → `unknown`            |
-| sbom               | `supply-chain-summary` | summary readable with an `sbom` block → `enabled`; summary readable without it → `not-configured`; summary states as in v0.6.0 (missing → `not-configured`, others → `unknown` / `not-authorised`)                        |
-| sbom               | `dependency-graph`     | export readable → `enabled`; "dependency graph not enabled" (403/404 with that message) → `not-configured`; 403 → `not-authorised`; pending, too large, invalid, other → `unknown`                                        |
-| artifactSignature  | `supply-chain-summary` | every listed image `signature.status: verified` → `enabled`; any `failed` / `not-verified` → `failed`; any `missing` → `not-configured`; no images → `not-configured`                                                     |
-| artifactSignature  | `attestations`         | every checked asset has ≥ 1 `provenance` attestation → `enabled`; none has → `not-configured`; some → `failed` **(BC)**; assets without any digest → `unknown`; no release or no assets → skipped; 403 → `not-authorised` |
-| artifactSignature  | `harbor`               | every mapped image has a `signature.cosign` or `signature.notation` accessory → `enabled`; none → `not-configured`; some → `failed`                                                                                       |
+| Control            | Source                 | State                                                                                                                                                                                                                                                                                                          |
+| ------------------ | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| container/iac/dast | `code-scanning`        | newest matching analysis ≤ `securityScanStaleDays` → `enabled`; older → `stale`; no matching analysis → `not-configured`; 403 → `not-authorised`; other errors → `unknown`                                                                                                                                     |
+| containerScanning  | `harbor`               | every mapped image scanned (`scan_status` Success) → `enabled` (stale by `end_time`); any `Error` → `failed`; `Running`/`Pending`/none → `configured-not-run`; 401/403 → `not-authorised`; tag 404 → `unknown`                                                                                                 |
+| sbom               | `supply-chain-summary` | summary readable with an `sbom` block → `enabled`; summary readable without it → `not-configured`; summary states as in v0.6.0 (missing → `not-configured`, others → `unknown` / `not-authorised`)                                                                                                             |
+| sbom               | `dependency-graph`     | export readable → `enabled`; "dependency graph not enabled" (403/404 with that message) → `not-configured`; 403 → `not-authorised`; pending, too large, invalid, other → `unknown`                                                                                                                             |
+| artifactSignature  | `supply-chain-summary` | every listed image `signature.status: verified` → `enabled`; any `failed` / `not-verified` → `failed`; any `missing` → `not-configured`; no images → `not-configured`                                                                                                                                          |
+| artifactSignature  | `attestations`         | every checked asset has ≥ 1 `provenance` attestation → `enabled`; none has → `not-configured`; some → `configured-not-run` (presence only, never a definitive failure; amended by the final review) **(BC)**; assets without any digest → `unknown`; no release or no assets → skipped; 403 → `not-authorised` |
+| artifactSignature  | `harbor`               | every mapped image has a `signature.cosign` or `signature.notation` accessory → `enabled`; none → `not-configured`; some → `failed`                                                                                                                                                                            |
 
 ### 5.2 SBOM from the dependency graph (D3)
 

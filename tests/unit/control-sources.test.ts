@@ -124,7 +124,7 @@ describe('resolveControl: precedence (spec 5.1)', () => {
     expect(notConfigured).toMatchObject({ state: 'not-configured', source: null });
   });
 
-  it('stale counts as definitive; failed counts as definitive', () => {
+  it('stale is definitive but yields to a later enabled; failed keeps its precedence', () => {
     expect(
       resolveControl(
         'dast',
@@ -132,6 +132,17 @@ describe('resolveControl: precedence (spec 5.1)', () => {
         {
           'code-scanning': cand('code-scanning', 'stale', { lastScanAt: daysAgo(10) }),
           'status-file': cand('status-file', 'enabled'),
+        },
+        ['code-scanning', 'status-file'],
+      ),
+    ).toMatchObject({ state: 'enabled', source: 'status-file' });
+    expect(
+      resolveControl(
+        'dast',
+        true,
+        {
+          'code-scanning': cand('code-scanning', 'stale', { lastScanAt: daysAgo(10) }),
+          'status-file': cand('status-file', 'not-authorised', { evidence: null }),
         },
         ['code-scanning', 'status-file'],
       ),
@@ -502,8 +513,11 @@ describe('signatureCandidates', () => {
     expect(run(summary([image()]), off())['supply-chain-summary'].state).toBe('unknown');
   });
 
-  it('attestations: 1 of 2 with provenance → failed; 2 of 2 → enabled/present; none → not-configured', () => {
-    expect(run(none, att({ withProvenance: 1 })).attestations.state).toBe('failed');
+  it('attestations: 1 of 2 with provenance → configured-not-run (never failed); 2 of 2 → enabled/present; none → not-configured', () => {
+    expect(run(none, att({ withProvenance: 1 })).attestations).toMatchObject({
+      state: 'configured-not-run',
+      evidence: null,
+    });
     expect(run(none, att({ withProvenance: 2 })).attestations).toMatchObject({
       state: 'enabled',
       evidence: 'present',
@@ -617,6 +631,58 @@ describe('toRepositoryControls with sources', () => {
       source: 'code-scanning',
       evidence: 'reported',
       tool: 'Trivy',
+    });
+  });
+
+  /** A status file reporting every control as done, one day ago. */
+  const withStatusFile = () => {
+    const d = repoData('app', {
+      securityStatusFile: ok({
+        text: JSON.stringify({
+          schemaVersion: '1.0',
+          generatedAt: daysAgo(1),
+          repository: 'example-org/app',
+          controls: {
+            containerScanning: { status: 'completed', tool: 'trivy', completedAt: daysAgo(1) },
+            artifactSignature: { status: 'verified', tool: 'cosign' },
+          },
+        }),
+      }),
+    } as never);
+    return { d, sf: parseStatusFile(ctx, d) };
+  };
+
+  it('C-1: a release with one attested and one plain asset does not fail a signature the status file verified', () => {
+    const { d, sf } = withStatusFile();
+    const rc = toRepositoryControls(ctx, project(), d, [], sf, {
+      ...NO_SUPPLY_EVIDENCE,
+      attestations: {
+        state: 'available',
+        release: 'v1.0.0',
+        checked: 2,
+        withProvenance: 1,
+        withSbom: 0,
+        withoutDigest: 0,
+      },
+    });
+    expect(rc.controls.find((c) => c.control === 'artifactSignature')).toMatchObject({
+      state: 'enabled',
+      source: 'status-file',
+    });
+  });
+
+  it('C-1: an old Trivy analysis does not make a control stale when the status file reports a fresh scan', () => {
+    const { d, sf } = withStatusFile();
+    const rc = toRepositoryControls(ctx, project(), d, [], sf, {
+      ...NO_SUPPLY_EVIDENCE,
+      analyses: new Map([
+        ['trivy', ok([{ createdAt: daysAgo(60), toolName: 'Trivy', category: 'trivy-image' }])],
+      ]),
+      alerts: [],
+    });
+    expect(rc.controls.find((c) => c.control === 'containerScanning')).toMatchObject({
+      state: 'enabled',
+      source: 'status-file',
     });
   });
 

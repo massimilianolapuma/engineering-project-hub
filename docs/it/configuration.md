@@ -582,7 +582,9 @@ fallisce. Gli alert di uno strumento associato restano finding normali, con cate
 **Precedenza.** Ogni elenco è un sottoinsieme non vuoto delle fonti ammesse per quel controllo,
 senza duplicati. Per ogni repository e controllo il collector scorre l'elenco:
 
-1. Vince la prima fonte con uno stato definitivo (`enabled`, `stale`, `failed`).
+1. Vince la prima fonte `enabled` o `failed`; altrimenti la prima `stale`. Una risposta non
+   aggiornata non batte mai una più recente di una fonte successiva. Attestazioni di release solo su
+   alcuni asset sono presenza, mai un fallimento: da sole valgono come configurato ma non eseguito.
 2. Altrimenti vince la prima fonte con una non-risposta informativa (`not-authorised`,
    `unknown`, raccolta fallita, configurato ma non eseguito).
 3. Altrimenti il controllo è `not-configured`.

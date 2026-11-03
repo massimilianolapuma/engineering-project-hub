@@ -106,9 +106,10 @@ const NON_ANSWER: ReadonlySet<ControlCandidate['state']> = new Set([
 ]);
 
 /**
- * Spec 5.1, steps 1 to 4: the first definitive candidate (enabled, stale, failed) wins; else the
- * first non-answer (not-authorised, collection-failed, unknown, configured-not-run); else
- * not-configured with no source. Off candidates are skipped, never evidence of "not set up".
+ * Spec 5.1, steps 1 to 4: the first enabled or failed candidate wins; else the first stale one (a
+ * stale answer never beats a fresher one from a later source); else the first non-answer
+ * (not-authorised, collection-failed, unknown, configured-not-run); else not-configured with no
+ * source. Off candidates are skipped, never evidence of "not set up".
  * (Step 5, notApplicableControls, belongs to the caller.)
  */
 export function resolveControl(
@@ -122,7 +123,9 @@ export function resolveControl(
     return c && c.state !== 'off' ? [c] : [];
   });
   const winner =
-    present.find((c) => DEFINITIVE.has(c.state)) ?? present.find((c) => NON_ANSWER.has(c.state));
+    present.find((c) => c.state === 'enabled' || c.state === 'failed') ??
+    present.find((c) => c.state === 'stale') ??
+    present.find((c) => NON_ANSWER.has(c.state));
   if (!winner) {
     return {
       control,
@@ -459,11 +462,9 @@ function attestationSignature(a: AttestationResult): ControlCandidate {
   if (a.checked === 0) return candidate(source, a.withoutDigest > 0 ? 'unknown' : 'off', null);
   if (a.withProvenance === null) return candidate(source, 'unknown', null);
   if (a.withProvenance >= a.checked) return candidate(source, 'enabled', 'present');
-  return candidate(
-    source,
-    a.withProvenance === 0 ? 'not-configured' : 'failed',
-    a.withProvenance === 0 ? null : 'present',
-  );
+  // Some assets attested: presence only, never a definitive failure (a checksum file or a source
+  // archive often has no provenance). Another source decides; alone it reads as not finished.
+  return candidate(source, a.withProvenance === 0 ? 'not-configured' : 'configured-not-run', null);
 }
 
 function harborSignature(images: HarborImageResult[]): ControlCandidate {

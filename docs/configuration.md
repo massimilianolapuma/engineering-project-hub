@@ -576,7 +576,9 @@ validation fails. Alerts of a mapped tool keep being ordinary findings, with the
 **Precedence.** Each list is a non-empty subset of the sources allowed for that control, with no
 duplicates. For each repository and control the collector walks the list:
 
-1. The first source with a definitive state (`enabled`, `stale`, `failed`) wins.
+1. The first source that is `enabled` or `failed` wins; otherwise the first `stale` one. A stale
+   answer never beats a fresher one from a later source. Release attestations on only some assets
+   are presence, never a failure: alone they read as configured but not run.
 2. Otherwise the first source with an informative non-answer (`not-authorised`, `unknown`,
    collection failed, configured but not run) wins.
 3. Otherwise the control is `not-configured`.
