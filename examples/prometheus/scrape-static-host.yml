@@ -1,0 +1,13 @@
+# Prometheus scrapes the hub's metrics file straight from the static host (GitHub Pages or any
+# host without access control). Replace <owner> and <base>. Docs: docs/outputs.md.
+scrape_configs:
+  - job_name: engineering-project-hub
+    # The file changes every 6 hours; scraping more often adds nothing.
+    scrape_interval: 15m
+    scrape_timeout: 30s
+    scheme: https
+    metrics_path: /<base>/data/metrics/hub.prom
+    # Required on Prometheus 3: GitHub Pages serves .prom without a text/plain content type.
+    fallback_scrape_protocol: PrometheusText0.0.4
+    static_configs:
+      - targets: ['<owner>.github.io']
