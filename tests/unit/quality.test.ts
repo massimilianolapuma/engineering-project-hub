@@ -888,7 +888,13 @@ describe('normaliseSonarProject', () => {
     expect(norm(ok(dto({ linesToCover: null }))).quality.state).toBe('unknown');
     expect(norm(ok(dto({ uncoveredLines: null }))).error).toBeNull();
     expect(norm(ok(dto({ analysedAt: daysAgo(30) }))).quality.state).toBe('stale');
-    expect(norm(ok(dto({ analysedAt: null }))).quality.state).toBe('readable');
+  });
+
+  it('M-4: coverage without an analysis date is stale, never presented as fresh', () => {
+    const { quality } = norm(ok(dto({ analysedAt: null })));
+    expect(quality.state).toBe('stale');
+    expect(quality.linesValid).toBe(8000);
+    expect(quality.generatedAt).toBeNull();
   });
 
   it('404 → missing (never counted, never 0, no error); 403 → not-authorised + error; skipped → unknown, no error', () => {
