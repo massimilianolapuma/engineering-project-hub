@@ -902,6 +902,7 @@ How the collector reads it:
 | Invalid JSON or schema, other repository, zip too large or without file | `invalid`, plus an `invalid-data` collection error |
 | Network error or other failure                                          | `unknown`                                          |
 | Valid, `generatedAt` older than `freshness.qualityReportStaleDays`      | `stale` (still counted, always shown with its age) |
+| SonarQube analysis without a date (unknown age)                         | `stale` (never presented as fresh)                 |
 | Valid and fresh                                                         | `readable`                                         |
 
 Project coverage is the sum of `covered` over the sum of `valid` across the applicable

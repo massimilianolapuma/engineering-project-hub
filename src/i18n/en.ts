@@ -333,7 +333,7 @@ export const en = {
   /** Supply chain (schema 1.8): evidence, sources, providers and the deployed environments. */
   supplyChain: {
     title: 'Supply chain',
-    summary: 'SBOM on {n} of {m} repositories · {k} unsigned images · {f} flagged licenses',
+    summary: 'SBOM on {n} of {m} repositories · {k} · {f}',
     summaryUnknown: 'unknown',
     off: 'Supply chain collection is off in the policies.',
     legend:
@@ -423,7 +423,9 @@ export const en = {
     flaggedLicenses: '{n} flagged licenses',
     flaggedLicensesOne: '1 flagged license',
     licensesUnknown: 'licenses',
-    portfolioHint: 'SBOM on {n} of {m} repositories · {k} unsigned images · {f} flagged licenses',
+    portfolioHint: 'SBOM on {n} of {m} repositories · {k} · {f}',
+    portfolioUnknown: '{n} projects with unknown values',
+    portfolioUnknownOne: '1 project with unknown values',
     portfolioCaption: 'Supply chain per project',
     portfolioCol: {
       project: 'Project',
@@ -482,6 +484,7 @@ export const en = {
     },
     counts: '{items} read · {errors} not readable',
     countsClean: '{items} read',
+    nothingMapped: 'nothing mapped in the catalog',
     none: 'No provider is configured.',
     sbomTitle: 'SBOM not readable',
     sbomRepository: 'Repository',

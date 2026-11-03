@@ -350,7 +350,7 @@
       "supplyChain": {
         "repositories": 2,
         "sbomAvailable": null,
-        "unsignedImages": 0,
+        "unsignedImages": null,
         "flagged": null
       },
       "freshness": "grey",

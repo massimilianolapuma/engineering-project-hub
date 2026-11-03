@@ -263,8 +263,9 @@ describe('supply chain providers: golden story', () => {
     expect(p['project-gamma']!.supplyChain.totals).toEqual({
       repositories: 2,
       sbomAvailable: null,
-      signedImages: 0,
-      unsignedImages: 0,
+      // M-3: Gamma's CI summaries cannot be read, so its image counts are unknown, not 0.
+      signedImages: null,
+      unsignedImages: null,
       attestedAssets: null,
       flagged: null,
     });

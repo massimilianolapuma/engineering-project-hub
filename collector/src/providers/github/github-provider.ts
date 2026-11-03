@@ -40,7 +40,7 @@ import {
 } from '../types';
 import { DownloadError, downloadBounded } from '../../util/bounded-fetch';
 import { readZipEntry, ZipError } from '../../util/zip';
-import { classifyGitHubError } from './errors';
+import { classifyGitHubError, type ClassifyOptions } from './errors';
 
 const ThrottledOctokit = Octokit.plugin(throttling, retry);
 type Client = InstanceType<typeof ThrottledOctokit>;
@@ -72,6 +72,8 @@ const SBOM_API_VERSION = '2026-03-10';
  */
 export const SBOM_DOWNLOAD_HOST_SUFFIXES = ['githubusercontent.com', 'github.com'] as const;
 const SBOM_UUID = /^[0-9a-fA-F-]{36}$/;
+/** "Dependency graph …" in a 403/404 means not set up, but only on the SBOM export calls. */
+const SBOM_ERRORS: ClassifyOptions = { notConfigured: /dependency graph/i };
 const SBOM_REPORT_URL = /\/dependency-graph\/sbom\/fetch-report\/([0-9a-fA-F-]{36})$/;
 const SBOM_DOWNLOAD_TIMEOUT_MS = 20_000;
 const DEFAULT_SBOM_MAX_BYTES = 16 * 1024 * 1024;
@@ -129,11 +131,12 @@ const split = (repo: string) => {
 async function guard<T>(
   task: () => Promise<T>,
   notFoundAs?: () => ProviderResult<T>,
+  classify?: ClassifyOptions,
 ): Promise<ProviderResult<T>> {
   try {
     return ok(await task());
   } catch (e) {
-    const error = classifyGitHubError(e);
+    const error = classifyGitHubError(e, classify);
     if (e instanceof FindingsPageCapExceeded) error.incomplete = true;
     if (notFoundAs && error.classification === 'not-found') return notFoundAs();
     return fail<T>(error);
@@ -853,39 +856,47 @@ export class GitHubProvider implements SourceProvider {
           skipped: true,
         }),
       );
-    return guard(async () => {
-      const { data } = await this.client.request(
-        'GET /repos/{owner}/{repo}/dependency-graph/sbom/generate-report',
-        { ...split(repo), headers: { 'X-GitHub-Api-Version': SBOM_API_VERSION } },
-      );
-      // The report URL is never called: only the uuid is kept, and only from the expected path.
-      const url = (data as { sbom_url?: unknown } | null)?.sbom_url;
-      const uuid = typeof url === 'string' ? SBOM_REPORT_URL.exec(url)?.[1] : undefined;
-      if (!uuid) throw new InvalidData('unexpected sbom_url');
-      return { uuid };
-    });
+    return guard(
+      async () => {
+        const { data } = await this.client.request(
+          'GET /repos/{owner}/{repo}/dependency-graph/sbom/generate-report',
+          { ...split(repo), headers: { 'X-GitHub-Api-Version': SBOM_API_VERSION } },
+        );
+        // The report URL is never called: only the uuid is kept, and only from the expected path.
+        const url = (data as { sbom_url?: unknown } | null)?.sbom_url;
+        const uuid = typeof url === 'string' ? SBOM_REPORT_URL.exec(url)?.[1] : undefined;
+        if (!uuid) throw new InvalidData('unexpected sbom_url');
+        return { uuid };
+      },
+      undefined,
+      SBOM_ERRORS,
+    );
   }
 
   async fetchDependencySbom(repo: string, uuid: string): Promise<ProviderResult<SbomFetchDTO>> {
-    const step = await guard(async () => {
-      if (!SBOM_UUID.test(uuid)) throw new InvalidData('invalid report id');
-      const res = await this.client.request(
-        'GET /repos/{owner}/{repo}/dependency-graph/sbom/fetch-report/{sbom_uuid}',
-        {
-          ...split(repo),
-          sbom_uuid: uuid,
-          headers: { 'X-GitHub-Api-Version': SBOM_API_VERSION },
-          // The temporary download link is read from the Location header, never followed here.
-          request: { redirect: 'manual' },
-        },
-      );
-      // Octokit types this route as 302 only; 202 (still generating) is documented.
-      const status: number = res.status;
-      if (status === 202) return { pending: true as const };
-      const location = (res.headers as Record<string, string | undefined>).location;
-      if (status !== 302 || !location) throw new InvalidData('unexpected SBOM response');
-      return { pending: false as const, location };
-    });
+    const step = await guard(
+      async () => {
+        if (!SBOM_UUID.test(uuid)) throw new InvalidData('invalid report id');
+        const res = await this.client.request(
+          'GET /repos/{owner}/{repo}/dependency-graph/sbom/fetch-report/{sbom_uuid}',
+          {
+            ...split(repo),
+            sbom_uuid: uuid,
+            headers: { 'X-GitHub-Api-Version': SBOM_API_VERSION },
+            // The temporary download link is read from the Location header, never followed here.
+            request: { redirect: 'manual' },
+          },
+        );
+        // Octokit types this route as 302 only; 202 (still generating) is documented.
+        const status: number = res.status;
+        if (status === 202) return { pending: true as const };
+        const location = (res.headers as Record<string, string | undefined>).location;
+        if (status !== 302 || !location) throw new InvalidData('unexpected SBOM response');
+        return { pending: false as const, location };
+      },
+      undefined,
+      SBOM_ERRORS,
+    );
     if (!step.ok) return step;
     if (step.data.pending) return ok({ state: 'pending' });
     try {

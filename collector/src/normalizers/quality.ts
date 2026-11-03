@@ -174,7 +174,8 @@ export function normaliseSonarProject(
     };
   }
   const age = ageMs(p.analysedAt, now);
-  const stale = age !== null && age > policies.freshness.qualityReportStaleDays * DAY_MS;
+  // An analysis without a date has an unknown age: never presented as fresh.
+  const stale = age === null || age > policies.freshness.qualityReportStaleDays * DAY_MS;
   return {
     quality: {
       repository: key,

@@ -97,9 +97,10 @@ export async function collectExternal(
     if (external.sonarqube) {
       const sonarqube = external.sonarqube;
       for (const [key, branch] of sonarKeys(config)) {
+        // The branch is part of the item: the same key on another branch is another read.
         pending.push(
-          run('sonarqube', key, () => sonarqube.getProject(key, branch)).then((r) =>
-            sonar.set(key, r),
+          run('sonarqube', `${key}@${branch ?? ''}`, () => sonarqube.getProject(key, branch)).then(
+            (r) => sonar.set(key, r),
           ),
         );
       }

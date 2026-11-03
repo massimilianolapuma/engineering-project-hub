@@ -54,6 +54,19 @@ describe('GitHub error classification', () => {
   ])('%i "%s" → not-configured', (status, msg) =>
     expect(classifyGitHubError(httpError(status, msg)).classification).toBe('not-configured'),
   );
+  it('M-2: a "dependency graph" message outside the SBOM export keeps its normal classification', () => {
+    expect(
+      classifyGitHubError(httpError(404, 'Dependency graph data not found')).classification,
+    ).toBe('not-found');
+    expect(
+      classifyGitHubError(httpError(403, 'Dependency graph access denied')).classification,
+    ).toBe('not-authorised');
+    expect(
+      classifyGitHubError(httpError(404, 'Dependency graph data not found'), {
+        notConfigured: /dependency graph/i,
+      }).classification,
+    ).toBe('not-configured');
+  });
   it('plain 404 → not-found (ambiguous, shown as unknown for security)', () => {
     expect(classifyGitHubError(httpError(404, 'Not Found'))).toEqual({
       classification: 'not-found',
@@ -1090,6 +1103,21 @@ describe('GitHubProvider: dependency-graph SBOM export', () => {
     expect(await plain.p.requestDependencySbom('o/a')).toMatchObject({
       ok: false,
       error: { classification: 'not-authorised' },
+    });
+  });
+
+  it('M-2: on the SBOM export a 404 naming the dependency graph is not-configured; a plain 404 is not-found (unknown)', async () => {
+    const named = sbomProvider(() =>
+      json(404, { message: 'Dependency graph data not found for this repository' }),
+    );
+    expect(await named.p.requestDependencySbom('o/a')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-configured', httpStatus: 404 },
+    });
+    const plain = sbomProvider(() => json(404, { message: 'Not Found' }));
+    expect(await plain.p.requestDependencySbom('o/a')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-found' },
     });
   });
 

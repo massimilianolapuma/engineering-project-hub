@@ -1850,6 +1850,32 @@ describe('static site', () => {
       expect(textOf(beta.slice(0, beta.indexOf('</article>')))).toMatch(/\b1 unsigned image(?!s)/);
     });
 
+    it('M-3: the portfolio Supply chain hint names the projects with unknown values (EN + IT)', async () => {
+      const hint = (html: string) => {
+        const i = html.indexOf('class="sec-supply__hint"');
+        return textOf(html.slice(i, html.indexOf('</span>', i)));
+      };
+      // Beta (flagged licenses) and Gamma (SBOM, images, licenses) are not fully readable.
+      expect(hint(await page('security'))).toContain('2 projects with unknown values');
+      expect(hint(await page('it/security'))).toContain('2 progetti con valori sconosciuti');
+    });
+
+    it('supply chain summary lines say "1 unsigned image", never "1 unsigned images" (EN + IT)', async () => {
+      const hintAfter = (html: string, marker: string) => {
+        const i = html.indexOf(marker);
+        expect(i).toBeGreaterThan(-1);
+        return textOf(html.slice(i, html.indexOf('</span>', i)));
+      };
+      // Project Beta has one unsigned image: the fold hint and the portfolio hint both sum to 1.
+      const fold = (html: string) =>
+        hintAfter(html.slice(html.indexOf('id="supply-chain"')), 'class="fold__hint"');
+      expect(fold(await page('projects/project-beta'))).toContain('1 unsigned image ·');
+      expect(fold(await page('it/projects/project-beta'))).toContain('1 immagine non firmata ·');
+      const portfolio = hintAfter(await page('security'), 'class="sec-supply__hint"');
+      expect(portfolio).toContain('1 unsigned image ·');
+      expect(portfolio).not.toContain('unsigned images');
+    });
+
     it('data quality has a Providers card with each provider state', async () => {
       const html = await page('data-quality');
       const i = html.indexOf('id="h-providers"');

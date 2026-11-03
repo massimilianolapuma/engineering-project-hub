@@ -10,7 +10,6 @@ import {
 } from '@model/index';
 import { scrubIdentifier } from '../sanitizers/sanitize';
 import {
-  sbomCandidates,
   type AttestationResult,
   type HarborImageResult,
   type ParsedSupplyChainSummary,
@@ -182,8 +181,7 @@ function sbomRank(state: SbomEntry['state']): number {
 }
 
 function sbomEntry(ctx: BuildContext, input: SupplyChainRepoInput): SbomEntry {
-  // The candidates give the states; the order is the owner's precedence for the sbom control.
-  sbomCandidates(ctx, input.summary, input.sbomDependencyGraph);
+  // The order is the owner's precedence for the sbom control.
   const bySource = {
     'supply-chain-summary': summarySbom(ctx, input),
     'dependency-graph': graphSbom(input.sbomDependencyGraph),
@@ -302,6 +300,13 @@ const UNKNOWN_SBOM: ReadonlySet<SbomEntry['state']> = new Set([
   'invalid',
 ]);
 
+const UNREADABLE_SUMMARY: ReadonlySet<RepoEntry['summary']['state']> = new Set([
+  'not-authorised',
+  'unknown',
+  'invalid',
+  'expired',
+]);
+
 const sumKnown = (values: (number | null)[]): number | null => {
   const known = values.filter((v): v is number => v !== null);
   return known.length ? known.reduce((a, b) => a + b, 0) : null;
@@ -345,8 +350,10 @@ export function buildSupplyChain(input: SupplyChainInput, ctx: BuildContext): Su
   const allUnknown = sboms.length > 0 && sboms.every((s) => UNKNOWN_SBOM.has(s.state));
   // Per repository: the same digest in another repository is a different deployable.
   const tallies = repositories.map((r) => tallyImages(r.images));
-  const signedImages = tallies.reduce((sum, t) => sum + t.signed, 0);
-  const unsignedImages = tallies.reduce((sum, t) => sum + t.unsigned, 0);
+  // A CI summary that exists but cannot be read may list images we cannot see: unknown, never 0.
+  const imagesUnreadable = repositories.some((r) => UNREADABLE_SUMMARY.has(r.summary.state));
+  const signedImages = imagesUnreadable ? null : tallies.reduce((sum, t) => sum + t.signed, 0);
+  const unsignedImages = imagesUnreadable ? null : tallies.reduce((sum, t) => sum + t.unsigned, 0);
   const attestations = repositories.map((r) => r.attestations);
   const attested = attestations.filter((a) => a.state === 'available');
   const attestationUnknown = attestations.some(

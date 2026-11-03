@@ -739,8 +739,8 @@
     "totals": {
       "repositories": 2,
       "sbomAvailable": null,
-      "signedImages": 0,
-      "unsignedImages": 0,
+      "signedImages": null,
+      "unsignedImages": null,
       "attestedAssets": null,
       "flagged": null
     },

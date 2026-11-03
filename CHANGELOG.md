@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Supply chain summary lines on the Project and Security pages say "1 unsigned image" and "1 flagged
+  license" in the singular.
+- Supply chain: when a repository's CI summary exists but cannot be read, the signed and
+  unsigned image counts are unknown instead of 0. The Security page's Supply chain hint now says
+  how many projects have unknown values.
+- SonarQube: coverage from an analysis without a date is stale, never shown as fresh. The same
+  project key mapped on two branches is read once per branch instead of reusing the first one.
+- Data quality: an enabled provider with nothing mapped in the catalog says so, instead of
+  "0 read".
+- GitHub errors: a message mentioning the dependency graph means "not configured" only on the
+  SBOM export calls; on other endpoints it keeps its normal classification.
+- Docs: the SBOM download host allowlist is described as it is enforced (`githubusercontent.com`,
+  `github.com` or one of their subdomains).
+
 ## [0.12.0] - 2026-11-03
 
 ### Added
@@ -129,6 +145,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Supply chain summary lines on the Project and Security pages say "1 unsigned image" and "1 flagged
+  license" in the singular.
+
 - Unmeasured overdue counts are shown as "not measured" (never "0 overdue") on project cards and the portfolio tooltip, and incomplete counts read as lower bounds ("≥ n"), including "Nothing overdue in the sources that could be read".
 - Italian SLA classes and accepted findings agree in number ("1 alto", "2 problemi accettati").
 - An exception with `created` in the future is an error in the loader and in `policy:check`; a collection that still meets one never applies it and reports it as `invalid` in Data quality.
@@ -180,6 +199,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Supply chain summary lines on the Project and Security pages say "1 unsigned image" and "1 flagged
+  license" in the singular.
+
 - The `codeQuality` capability no longer drops to "partial" when a repository has more than 300 open findings: the call answered, so the permission works (the count stays "unknown").
 - Release v0.4.0 is now tagged on its release commit, so the 0.4.0 and 0.5.0 changelog links are compares like the others.
 - Docs: the "not enabled" skip also applies to a 403, the `unknown` capability case is documented, the Italian ADR 0003 status is translated, and the confidence examples match the UI and the sixth dimension (EN/IT).
@@ -217,6 +239,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Supply chain summary lines on the Project and Security pages say "1 unsigned image" and "1 flagged
+  license" in the singular.
+
 - Portfolio filters: the search field and the selects share one 40px box with their labels on one line (WebKit ignored `min-height` on native popups); the results count sits on the controls' line; project names no longer wrap on desktop.
 - The `<meta>` Content-Security-Policy no longer lists `frame-ancestors`, which browsers ignore there and report as a console error; clickjacking protection stays in the HTTP headers of `public/_headers`.
 
@@ -243,6 +268,9 @@ Tagged after the fact (2026-10-21) and not deployed on its own: its changes ship
 - Dependencies: Astro 7.3.8, Playwright 1.64.0, Prettier 3.9.10, prettier-plugin-astro 1.1.1, @types/node 24.19.2.
 
 ### Fixed
+
+- Supply chain summary lines on the Project and Security pages say "1 unsigned image" and "1 flagged
+  license" in the singular.
 
 - Contrast below AA on the active navigation item, red badges, muted rows and input placeholders.
 
@@ -278,6 +306,9 @@ Tagged after the fact (2026-10-21) and not deployed on its own: its changes ship
 - Deploy: SBOM attestation uses `actions/attest` (`actions/attest-sbom` is deprecated).
 
 ### Fixed
+
+- Supply chain summary lines on the Project and Security pages say "1 unsigned image" and "1 flagged
+  license" in the singular.
 
 - Repositories that cannot be read (e.g. 404 from a wrong catalog) no longer turn skipped calls into "workflow missing" or "status file missing": they are Unknown (or Not authorised), so health is grey instead of amber.
 - Pull-request runs from forks and `action_required` conclusions no longer affect the default-branch workflow state.
