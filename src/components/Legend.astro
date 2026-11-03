@@ -6,8 +6,8 @@
  */
 import type { I18n } from '../i18n';
 import { href } from '../lib/routes';
-import type { ControlGlyph } from '../lib/symbols';
-import { GLYPH_KEY } from '../lib/symbols';
+import { SYMBOL_ICON, type SymbolKey } from '../lib/symbols';
+import Octicon from './Octicon.astro';
 interface Props {
   i18n: I18n;
   kind?: 'status' | 'symbols';
@@ -16,7 +16,7 @@ const { i18n, kind = 'status' } = Astro.props;
 const { d, locale } = i18n;
 const l = d.legend;
 const id = `legend-${kind}`;
-const glyphs: ControlGlyph[] = ['✓', '!', '⧖', '✕', '?', '–'];
+const keys: SymbolKey[] = ['ok', 'gap', 'stale', 'failed', 'blind', 'na'];
 ---
 
 <aside class={`legend legend--${kind}`} aria-labelledby={id}>
@@ -31,12 +31,12 @@ const glyphs: ControlGlyph[] = ['✓', '!', '⧖', '✕', '?', '–'];
             {s === 'grey' ? l.unknownDashed : i18n.status(s)}
           </li>
         ))
-      : glyphs.map((g) => (
-          <li>
-            <span class="legend__glyph" aria-hidden="true">
-              {g}
+      : keys.map((k) => (
+          <li data-symbol={k}>
+            <span class={`legend__glyph legend__glyph--${k}`}>
+              <Octicon name={SYMBOL_ICON[k]} />
             </span>
-            {d.symbols[GLYPH_KEY[g]]}
+            {d.symbols[k]}
           </li>
         ))}
   </ul>
@@ -91,10 +91,11 @@ const glyphs: ControlGlyph[] = ['✓', '!', '⧖', '✕', '?', '–'];
     border: 2px solid var(--borderColor-emphasis);
   }
   .legend__glyph {
-    min-width: 1ch;
-    font-weight: 700;
+    display: inline-flex;
     color: var(--fgColor-default);
-    text-align: center;
+  }
+  .legend__glyph--blind {
+    color: var(--fgColor-muted);
   }
   .legend__link {
     display: inline-flex;

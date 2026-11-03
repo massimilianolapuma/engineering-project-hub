@@ -12,7 +12,9 @@
  */
 import type { ProjectSnapshot, RepositoryCheckId, RepositoryCheckState } from '@model/index';
 import type { I18n } from '../i18n';
+import type { OcticonName } from '../lib/octicon';
 import ExtLink from './ExtLink.astro';
+import Octicon from './Octicon.astro';
 import RelTime from './RelTime.astro';
 interface Props {
   s: ProjectSnapshot;
@@ -23,11 +25,11 @@ const { d, f } = i18n;
 const t = d.project.repoControls;
 const rc = s.repositoryControls;
 
-const GLYPH: Record<RepositoryCheckState, string> = {
-  pass: '✓',
-  fail: '✕',
-  unknown: '?',
-  'not-applicable': '–',
+const ICON: Record<RepositoryCheckState, OcticonName> = {
+  pass: 'check',
+  fail: 'x',
+  unknown: 'question',
+  'not-applicable': 'dash',
 };
 const stateLabel = (state: RepositoryCheckState) => d.repositoryCheckState[state];
 const levelOf = (id: RepositoryCheckId) => rc.perCheck.find((c) => c.id === id)?.level ?? 'info';
@@ -85,8 +87,9 @@ const reusableTone = (status: string) =>
             role="img"
             aria-label={t.symbolUnknown}
             title={t.symbolUnknown}
+            data-symbol="blind"
           >
-            ?
+            <Octicon name="question" />
           </span>
           <span class="rc-tile__big tabular">{i18n.number(rc.unknown)}</span>
         </span>
@@ -141,7 +144,7 @@ const reusableTone = (status: string) =>
               {r.checks.map((c) => (
                 <td data-state={c.state} data-check={c.id}>
                   <span class={`rc-sym rc-sym--${c.state}`} aria-hidden="true">
-                    {GLYPH[c.state]}
+                    <Octicon name={ICON[c.state]} />
                   </span>
                   <span class="visually-hidden">{stateLabel(c.state)}</span>
                 </td>
@@ -156,8 +159,8 @@ const reusableTone = (status: string) =>
 
     {withheld.length > 0 && (
       <p class="note" data-withheld>
-        <span class="rc-sym rc-sym--na" aria-hidden="true">
-          –
+        <span class="rc-sym rc-sym--na" aria-hidden="true" data-symbol="na">
+          <Octicon name="dash" />
         </span>{' '}
         {t.withheld}:{' '}
         <span class="mono">{withheld.map((r) => repoName(r.repository)).join(', ')}</span>
@@ -276,9 +279,15 @@ const reusableTone = (status: string) =>
                         </td>
                         <td>
                           <span class={`rc-status rc-status--${reusableTone(w.status)}`}>
-                            <span aria-hidden="true">
-                              {w.status === 'current' ? '✓' : w.status === 'behind' ? '✕' : '?'}
-                            </span>{' '}
+                            <Octicon
+                              name={
+                                w.status === 'current'
+                                  ? 'check'
+                                  : w.status === 'behind'
+                                    ? 'x'
+                                    : 'question'
+                              }
+                            />{' '}
                             {d.reusableStatus[w.status]}
                           </span>
                         </td>
@@ -500,8 +509,6 @@ const reusableTone = (status: string) =>
     width: 24px;
     height: 24px;
     border-radius: var(--borderRadius-small);
-    font-size: var(--text-body-size-small);
-    font-weight: 700;
     line-height: 1;
   }
   .rc-sym--pass {
@@ -521,6 +528,9 @@ const reusableTone = (status: string) =>
     color: var(--fgColor-muted);
   }
   .rc-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--base-size-4);
     font-weight: 600;
   }
   .rc-status--ok {

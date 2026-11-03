@@ -1,12 +1,13 @@
 ---
 /**
- * Control symbol (✓ ! ⧖ ✕ ? –) in a 24px box, with the same meaning on every page. The glyph
- * carries the meaning and has an accessible name; colour is secondary. With `label`, the
+ * Control symbol (an Octicon per key, see SYMBOL_ICON) in a 24px box, with the same meaning on
+ * every page. The shape carries the meaning and has an accessible name; colour is secondary. With `label`, the
  * control name follows the symbol as visible text.
  */
 import type { ControlState } from '@model/index';
 import { useI18n, type Locale } from '../i18n';
-import { GLYPH_KEY, controlSymbol } from '../lib/symbols';
+import { SYMBOL_ICON, controlSymbol } from '../lib/symbols';
+import Octicon from './Octicon.astro';
 interface Props {
   state: ControlState;
   required: boolean;
@@ -16,8 +17,8 @@ interface Props {
 }
 const { state, required, locale, label } = Astro.props;
 const { d, f } = useI18n(locale);
-const { glyph, tone } = controlSymbol(state, required);
-const meaning = d.symbols[GLYPH_KEY[glyph]];
+const { key, tone } = controlSymbol(state, required);
+const meaning = d.symbols[key];
 /** The meaning alone when it already says the state; otherwise add the precise state. */
 const selfExplaining =
   state === 'enabled' ||
@@ -29,8 +30,8 @@ const name = selfExplaining
 ---
 
 <span class="ctl" data-state={state} data-required={required ? 'true' : 'false'}>
-  <span class={`sym sym--${tone}`} role="img" aria-label={name} title={name}>
-    {glyph}
+  <span class={`sym sym--${tone}`} role="img" aria-label={name} title={name} data-symbol={key}>
+    <Octicon name={SYMBOL_ICON[key]} />
   </span>
   {label && <span class="ctl__label">{label}</span>}
 </span>
@@ -49,8 +50,6 @@ const name = selfExplaining
     width: 24px;
     height: 24px;
     border-radius: var(--borderRadius-small);
-    font-size: var(--text-body-size-small);
-    font-weight: 700;
     line-height: 1;
     cursor: default;
   }

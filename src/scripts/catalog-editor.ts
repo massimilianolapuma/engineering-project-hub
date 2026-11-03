@@ -176,6 +176,14 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
     return el;
   }
 
+  /** Decorative Octicon, cloned from the build-time <template data-icon> in the page. */
+  function icon(name: 'check' | 'x'): HTMLElement {
+    const t = root.querySelector<HTMLTemplateElement>(`template[data-icon="${name}"]`);
+    const span = h('span', { class: 'ce-icon', 'aria-hidden': 'true' });
+    if (t) span.append(t.content.cloneNode(true));
+    return span;
+  }
+
   const fid = (path: Path) => `ce-${path.join('-')}`;
   const key = (path: Path) => path.join('.');
 
@@ -439,12 +447,7 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
           const mapped = isSubmoduleMapped(p, s.path);
           let action: HTMLElement;
           if (mapped) {
-            action = h(
-              'span',
-              { class: 'pill' },
-              h('span', { 'aria-hidden': 'true' }, '✓'),
-              S.linked,
-            );
+            action = h('span', { class: 'pill' }, icon('check'), S.linked);
           } else {
             action = button(S.addAsComponent, () => addSuggestion(p, s));
             action.setAttribute('aria-describedby', pathId);
@@ -952,24 +955,19 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
     lastSignature = signature;
     if (!issues.length) {
       dockValidEl.className = 'pill pill--green';
-      dockValidEl.textContent = `✓ ${S.dockValid}`;
+      dockValidEl.replaceChildren(icon('check'), S.dockValid);
       validationEl.replaceChildren(
-        h(
-          'p',
-          { class: 'ce-summary ce-summary--ok' },
-          h('span', { 'aria-hidden': 'true' }, '✓ '),
-          S.valid,
-        ),
+        h('p', { class: 'ce-summary ce-summary--ok' }, icon('check'), S.valid),
       );
       return;
     }
     dockValidEl.className = 'pill pill--red';
-    dockValidEl.textContent = `✕ ${fill(S.dockInvalid, { count: issues.length })}`;
+    dockValidEl.replaceChildren(icon('x'), fill(S.dockInvalid, { count: issues.length }));
     validationEl.replaceChildren(
       h(
         'p',
         { class: 'ce-summary ce-summary--bad' },
-        h('span', { 'aria-hidden': 'true' }, '✕ '),
+        icon('x'),
         fill(issues.length === 1 ? S.invalidOne : S.invalid, { count: issues.length }),
       ),
       h(
@@ -1261,7 +1259,7 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
         h(
           'p',
           { class: 'ce-proposal__status' },
-          h('span', { 'aria-hidden': 'true' }, '✓ '),
+          icon('check'),
           fill(publishedIds.has(match.id.trim()) ? S.alreadyInCatalog : S.inEditor, { name }),
         ),
         button(S.compareMerge, () => openMerge(match, pr), { describedBy: repoId, small: true }),

@@ -15,6 +15,7 @@ import { shortSha } from '../lib/format';
 import { href } from '../lib/routes';
 import CoverageMeter from './CoverageMeter.astro';
 import ExtLink from './ExtLink.astro';
+import Octicon from './Octicon.astro';
 import Pill from './Pill.astro';
 import RelTime from './RelTime.astro';
 interface Props {
@@ -85,8 +86,14 @@ const findings = qh.findings;
           </span>
           {qh.stale > 0 && (
             <span class="qtile__foot qtile__stale">
-              <span class="qsym qsym--stale" role="img" aria-label={q.symStale} title={q.symStale}>
-                ⧖
+              <span
+                class="qsym qsym--stale"
+                role="img"
+                aria-label={q.symStale}
+                title={q.symStale}
+                data-symbol="stale"
+              >
+                <Octicon name="clock" />
               </span>
               {f(qh.stale === 1 ? q.staleOne : q.staleOther, { n: qh.stale })}
             </span>
@@ -102,8 +109,9 @@ const findings = qh.findings;
                 role="img"
                 aria-label={q.symUnknown}
                 title={q.symUnknown}
+                data-symbol="blind"
               >
-                ?
+                <Octicon name="question" />
               </span>
             </span>
             <span class="qtile__state">{q.notVisible}</span>
@@ -118,8 +126,8 @@ const findings = qh.findings;
       {overall === 'na' && (
         <>
           <span class="qtile__value">
-            <span class="qsym qsym--na" aria-hidden="true">
-              –
+            <span class="qsym qsym--na" aria-hidden="true" data-symbol="na">
+              <Octicon name="dash" />
             </span>
             <span class="qtile__state">{q.notApplicable}</span>
           </span>
@@ -150,8 +158,8 @@ const findings = qh.findings;
       ) : (
         <span class="qtile__value qtile__value--message">
           {findings.state === 'not-configured' ? (
-            <span class="qsym qsym--na" aria-hidden="true">
-              –
+            <span class="qsym qsym--na" aria-hidden="true" data-symbol="na">
+              <Octicon name="dash" />
             </span>
           ) : (
             <span
@@ -159,8 +167,9 @@ const findings = qh.findings;
               role="img"
               aria-label={q.notVisible}
               title={q.notVisible}
+              data-symbol="blind"
             >
-              ?
+              <Octicon name="question" />
             </span>
           )}
           <span>{q.findingsState[findings.state]}</span>
@@ -227,8 +236,8 @@ const findings = qh.findings;
                     </span>
                   ) : r.state === 'not-applicable' ? (
                     <span class="qcov">
-                      <span class="qsym qsym--na" aria-hidden="true">
-                        –
+                      <span class="qsym qsym--na" aria-hidden="true" data-symbol="na">
+                        <Octicon name="dash" />
                       </span>
                       <span class="muted">{q.notApplicableRow}</span>
                     </span>
@@ -240,8 +249,9 @@ const findings = qh.findings;
                           role="img"
                           aria-label={q.symUnknown}
                           title={q.symUnknown}
+                          data-symbol="blind"
                         >
-                          ?
+                          <Octicon name="question" />
                         </span>
                       </span>
                       <CoverageMeter percentage={null} status="grey" threshold={green} />
@@ -259,8 +269,9 @@ const findings = qh.findings;
                             role="img"
                             aria-label={q.symStale}
                             title={q.symStale}
+                            data-symbol="stale"
                           >
-                            ⧖
+                            <Octicon name="clock" />
                           </span>
                         )}
                         {r.tool ?? d.common.unknownValue}
@@ -282,7 +293,9 @@ const findings = qh.findings;
                     <span class="muted">{q.state[r.state]}</span>
                   ) : (
                     <span class="muted">
-                      <span aria-hidden="true">–</span>
+                      <span class="qsym qsym--na qsym--inline" aria-hidden="true" data-symbol="na">
+                        <Octicon name="dash" />
+                      </span>
                       <span class="visually-hidden">{q.notApplicable}</span>
                     </span>
                   )}
@@ -454,8 +467,6 @@ const findings = qh.findings;
     width: 24px;
     height: 24px;
     border-radius: var(--borderRadius-small);
-    font-size: var(--text-body-size-small);
-    font-weight: 700;
     line-height: 1;
     cursor: default;
   }

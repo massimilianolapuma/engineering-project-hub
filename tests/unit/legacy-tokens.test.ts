@@ -71,6 +71,13 @@ describe('Primer tokens only', () => {
     expect(defined).toEqual(['--status-col']);
   });
 
+  it('forced colours keep the dashed outline of the unknown control symbol', () => {
+    const src = readFileSync('src/components/ControlSymbol.astro', 'utf8');
+    const block = /@media \(forced-colors: active\) \{([\s\S]*?)\n {2}\}/.exec(src)?.[1] ?? '';
+    expect(block).toMatch(/\.sym \{[^}]*border: 1px solid CanvasText/);
+    expect(block).toMatch(/\.sym--unknown \{[^}]*border-style: dashed/);
+  });
+
   it('IBM Plex is gone', () => {
     expect(readFileSync('package.json', 'utf8')).not.toMatch(/ibm-plex/);
     const found = files.flatMap((f) => hits(f, readFileSync(f, 'utf8'), /ibm-plex|IBM Plex/));

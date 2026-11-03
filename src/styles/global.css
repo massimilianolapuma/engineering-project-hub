@@ -316,9 +316,11 @@ main section {
   gap: 2px;
 }
 
-/* Status icons. Fills are graphics (3:1 on surface); text uses the *-text tokens. */
+/* Status icons (Octicons, or the severity bars). Fills are graphics (3:1 on surface). */
 .icon {
   flex: none;
+  width: 14px;
+  height: 14px;
 }
 .icon--green {
   color: var(--fgColor-success);

@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { CONTROL_IDS } from '@model/index';
 import ErrorState from '../../components/ErrorState.astro';
+import Octicon from '../../components/Octicon.astro';
 import Base from '../../layouts/Base.astro';
 import { catalogRepository, jsonForScript } from '../../lib/catalog-editor-core';
 import { loadCatalogSnapshot } from '../../lib/data';
@@ -71,6 +72,13 @@ const editorStrings = jsonForScript({
         <p class="callout callout--red">{c.noscript}</p>
       </noscript>
       <div class="ce" data-catalog-editor>
+        {/* Icons the editor script clones (it never builds markup from strings). */}
+        <template data-icon="check">
+          <Octicon name="check" />
+        </template>
+        <template data-icon="x">
+          <Octicon name="x" />
+        </template>
         <div class="ce__side">
           <section class="card ce-panel ce-panel--projects" aria-labelledby="ce-h-projects">
             <h2 id="ce-h-projects" class="ce-panel__title">
@@ -614,6 +622,11 @@ const editorStrings = jsonForScript({
   }
   .ce-part .note {
     margin: 0 0 var(--base-size-12);
+  }
+  .ce :global(.ce-icon) {
+    display: inline-flex;
+    margin-right: var(--base-size-4);
+    vertical-align: text-bottom;
   }
   .ce :global(.ce-summary) {
     display: inline-flex;
