@@ -577,7 +577,10 @@ corrisponde al nome dello strumento di code scanning senza distinzione tra maius
 esempio `{ tool: Trivy, category: trivy-config }` sotto `iacScanning`. Uno strumento può comparire
 sotto più controlli solo se ogni regola ha una categoria diversa; altrimenti la validazione
 fallisce. Gli alert di uno strumento associato restano finding normali, con categoria
-`container`, `iac` o `dast`; non vengono mai contati due volte.
+`container`, `iac` o `dast`. Non vengono mai contati due volte: quando Harbor o il file di stato
+vince un controllo, i suoi conteggi si sommano agli alert aperti solo se il repository non ha
+finding di code scanning di quella categoria, qualunque sia l'ordine di precedenza e anche quando
+le analisi non sono leggibili.
 
 **Precedenza.** Ogni elenco è un sottoinsieme non vuoto delle fonti ammesse per quel controllo,
 senza duplicati. Per ogni repository e controllo il collector scorre l'elenco:

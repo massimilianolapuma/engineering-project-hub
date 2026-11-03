@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { RepositoryControls, SeverityCounts, SupplyChainSummary } from '@model/index';
+import type {
+  RepositoryControls,
+  SecurityFinding,
+  SeverityCounts,
+  SupplyChainSummary,
+} from '@model/index';
 import { SupplyChainSchema } from '@model/index';
 import type {
   AttestationResult,
@@ -71,6 +76,29 @@ describe('externalCountsFrom', () => {
       ),
     ]);
     expect(r).toMatchObject({ critical: 0, high: 3, low: 1 });
+  });
+
+  it('I-1: a control won by Harbor or the status file adds nothing when its mapped tool already has findings in that repository', () => {
+    const trivy = (repository: string, category: 'container' | 'iac' | 'code' = 'container') =>
+      ({ repository, source: 'github-code-scanning', category }) as SecurityFinding;
+    const controls = [
+      repo(
+        control('containerScanning', 'harbor', c({ medium: 2, low: 6 })),
+        control('iacScanning', 'status-file', c({ high: 1 })),
+      ),
+    ];
+    // Trivy container alerts of o/a are findings: Harbor's counts for o/a would count them twice.
+    expect(externalCountsFrom(controls, [trivy('O/A')])).toMatchObject({
+      medium: 0,
+      low: 0,
+      high: 1,
+    });
+    // Alerts of another repository, or of another category, do not overlap.
+    expect(externalCountsFrom(controls, [trivy('o/b'), trivy('o/a', 'code')])).toMatchObject({
+      medium: 2,
+      low: 6,
+      high: 1,
+    });
   });
 
   it('nothing measured stays null, never 0', () => {

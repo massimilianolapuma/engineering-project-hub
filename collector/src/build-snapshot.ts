@@ -261,8 +261,9 @@ export function buildProjectSnapshot(
       (k) => r[k].ok || (!r[k].ok && r[k].error.classification === 'not-configured'),
     ),
   );
-  // Only controls owned by Harbor or the status file add counts: code-scanning alerts are findings.
-  const external = externalCountsFrom(securityControls);
+  // Only controls owned by Harbor or the status file add counts, and never for a repository whose
+  // mapped tool alerts are already findings: the same vulnerabilities are never counted twice.
+  const external = externalCountsFrom(securityControls, findings);
   const githubCounts = anyGitHubSourceReadable ? countOpen(findings) : emptyCounts(null);
   const openCounts = sumCounts(githubCounts, external);
   const anySourceReadable = anyGitHubSourceReadable || external.critical !== null;

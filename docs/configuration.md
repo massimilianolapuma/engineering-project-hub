@@ -571,7 +571,9 @@ code-scanning tool name case-insensitively; `category` (optional, at most 100) m
 the analysis category, for example `{ tool: Trivy, category: trivy-config }` under `iacScanning`.
 A tool can appear under several controls only if each rule has a different category; otherwise
 validation fails. Alerts of a mapped tool keep being ordinary findings, with the category
-`container`, `iac` or `dast`; they are never counted twice.
+`container`, `iac` or `dast`. They are never counted twice: when Harbor or the status file wins a
+control, its counts are added to the open alerts only if the repository has no code-scanning
+finding of that category, whatever the precedence order and even when the analyses cannot be read.
 
 **Precedence.** Each list is a non-empty subset of the sources allowed for that control, with no
 duplicates. For each repository and control the collector walks the list:

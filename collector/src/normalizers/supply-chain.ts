@@ -1,7 +1,9 @@
 import {
   NATIVE_CONTROLS,
+  type ControlId,
   type Ecosystem,
   type RepositoryControls,
+  type SecurityFinding,
   type SeverityCounts,
   type SupplyChain,
   tallyImages,
@@ -377,12 +379,29 @@ export function buildSupplyChain(input: SupplyChainInput, ctx: BuildContext): Su
 
 const KEYS = ['critical', 'high', 'medium', 'low', 'informational', 'unknown'] as const;
 
+/** Finding category of the code-scanning alerts mapped to each scanning control. */
+const CONTROL_CATEGORY: Partial<Record<ControlId, SecurityFinding['category']>> = {
+  containerScanning: 'container',
+  iacScanning: 'iac',
+  dast: 'dast',
+};
+
 /**
  * Counts reported by the external controls that actually own them: a control won by `harbor` or
  * `status-file`. A control won by `code-scanning` adds nothing (its alerts are already findings),
- * a losing source never adds, and nothing measured stays null (never 0).
+ * a losing source never adds, and nothing measured stays null (never 0). Whatever the precedence,
+ * a control whose mapped tool already has code-scanning findings in the same repository adds
+ * nothing either: the same vulnerabilities are never counted twice.
  */
-export function externalCountsFrom(controls: RepositoryControls[]): SeverityCounts {
+export function externalCountsFrom(
+  controls: RepositoryControls[],
+  findings: readonly Pick<SecurityFinding, 'repository' | 'source' | 'category'>[] = [],
+): SeverityCounts {
+  const covered = new Set(
+    findings
+      .filter((f) => f.source === 'github-code-scanning')
+      .map((f) => `${f.repository.toLowerCase()}#${f.category}`),
+  );
   const total: SeverityCounts = {
     critical: null,
     high: null,
@@ -391,13 +410,17 @@ export function externalCountsFrom(controls: RepositoryControls[]): SeverityCoun
     informational: null,
     unknown: null,
   };
-  for (const c of controls.flatMap((rc) => rc.controls)) {
-    if (NATIVE_CONTROLS.includes(c.control) || c.state === 'not-applicable' || !c.counts) continue;
-    if (c.source !== 'harbor' && c.source !== 'status-file') continue;
-    for (const k of KEYS) {
-      const v = c.counts[k];
-      if (v !== null) total[k] = (total[k] ?? 0) + v;
+  for (const rc of controls)
+    for (const c of rc.controls) {
+      if (NATIVE_CONTROLS.includes(c.control) || c.state === 'not-applicable' || !c.counts)
+        continue;
+      if (c.source !== 'harbor' && c.source !== 'status-file') continue;
+      const category = CONTROL_CATEGORY[c.control];
+      if (category && covered.has(`${rc.repository.toLowerCase()}#${category}`)) continue;
+      for (const k of KEYS) {
+        const v = c.counts[k];
+        if (v !== null) total[k] = (total[k] ?? 0) + v;
+      }
     }
-  }
   return total;
 }
