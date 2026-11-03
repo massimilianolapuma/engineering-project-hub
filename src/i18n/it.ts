@@ -335,7 +335,7 @@ export const it: Dict = {
   /** Catena di fornitura (schema 1.8): evidenze, fonti, provider e ambienti distribuiti. */
   supplyChain: {
     title: 'Catena di fornitura',
-    summary: 'SBOM su {n} di {m} repository · {k} immagini non firmate · {f} licenze segnalate',
+    summary: 'SBOM su {n} di {m} repository · {k} · {f}',
     summaryUnknown: 'sconosciuto',
     off: 'La raccolta della catena di fornitura è spenta nelle policy.',
     legend:
@@ -426,8 +426,7 @@ export const it: Dict = {
     flaggedLicenses: '{n} licenze segnalate',
     flaggedLicensesOne: '1 licenza segnalata',
     licensesUnknown: 'licenze',
-    portfolioHint:
-      'SBOM su {n} di {m} repository · {k} immagini non firmate · {f} licenze segnalate',
+    portfolioHint: 'SBOM su {n} di {m} repository · {k} · {f}',
     portfolioUnknown: '{n} progetti con valori sconosciuti',
     portfolioUnknownOne: '1 progetto con valori sconosciuti',
     portfolioCaption: 'Catena di fornitura per progetto',

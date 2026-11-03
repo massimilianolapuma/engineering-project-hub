@@ -147,6 +147,9 @@ const controlVia = (control: string): string | null => {
 const scTotals = s?.supplyChain.totals;
 const scKnown = (n: number | null | undefined) =>
   n === null || n === undefined ? d.supplyChain.summaryUnknown : i18n.number(n);
+/** "1 unsigned image" / "3 unsigned images" / "unknown unsigned images". */
+const scPhrase = (n: number | null | undefined, one: string, many: string) =>
+  n === 1 ? one : f(many, { n: scKnown(n) });
 
 /** One-line summary on a dimension card. */
 const topReason = (h: HealthResult) =>
@@ -908,8 +911,16 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
                 ? f(d.supplyChain.summary, {
                     n: scKnown(scTotals.sbomAvailable),
                     m: scKnown(scTotals.repositories),
-                    k: scKnown(scTotals.unsignedImages),
-                    f: scKnown(scTotals.flagged),
+                    k: scPhrase(
+                      scTotals.unsignedImages,
+                      d.supplyChain.unsignedImagesOne,
+                      d.supplyChain.unsignedImages,
+                    ),
+                    f: scPhrase(
+                      scTotals.flagged,
+                      d.supplyChain.flaggedLicensesOne,
+                      d.supplyChain.flaggedLicenses,
+                    ),
                   })
                 : d.supplyChain.off}
             </span>

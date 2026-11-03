@@ -82,12 +82,16 @@ const SC_KEYS = ['sbomAvailable', 'unsignedImages', 'flagged'] as const;
 const scUnknown = scProjects.filter((p) =>
   SC_KEYS.some((k) => p.supplyChain.totals[k] === null),
 ).length;
+const unsignedText = (n: number) =>
+  n === 1 ? sct.unsignedImagesOne : f(sct.unsignedImages, { n: i18n.number(n) });
+const flaggedText = (n: number) =>
+  n === 1 ? sct.flaggedLicensesOne : f(sct.flaggedLicenses, { n: i18n.number(n) });
 const scHint = [
   f(sct.portfolioHint, {
     n: i18n.number(scSum('sbomAvailable')),
     m: i18n.number(scSum('repositories')),
-    k: i18n.number(scSum('unsignedImages')),
-    f: i18n.number(scSum('flagged')),
+    k: unsignedText(scSum('unsignedImages')),
+    f: flaggedText(scSum('flagged')),
   }),
   ...(scUnknown === 0
     ? []
@@ -97,10 +101,6 @@ const scHint = [
           : f(sct.portfolioUnknown, { n: i18n.number(scUnknown) }),
       ]),
 ].join(' · ');
-const unsignedText = (n: number) =>
-  n === 1 ? sct.unsignedImagesOne : f(sct.unsignedImages, { n: i18n.number(n) });
-const flaggedText = (n: number) =>
-  n === 1 ? sct.flaggedLicensesOne : f(sct.flaggedLicenses, { n: i18n.number(n) });
 
 /** Collection error source that feeds each control (for the HTTP status of a blind spot). */
 const SOURCE: Partial<Record<ControlId, CollectionError['source']>> = {
