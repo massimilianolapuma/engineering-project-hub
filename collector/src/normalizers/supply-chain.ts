@@ -10,7 +10,6 @@ import {
 } from '@model/index';
 import { scrubIdentifier } from '../sanitizers/sanitize';
 import {
-  sbomCandidates,
   type AttestationResult,
   type HarborImageResult,
   type ParsedSupplyChainSummary,
@@ -182,8 +181,7 @@ function sbomRank(state: SbomEntry['state']): number {
 }
 
 function sbomEntry(ctx: BuildContext, input: SupplyChainRepoInput): SbomEntry {
-  // The candidates give the states; the order is the owner's precedence for the sbom control.
-  sbomCandidates(ctx, input.summary, input.sbomDependencyGraph);
+  // The order is the owner's precedence for the sbom control.
   const bySource = {
     'supply-chain-summary': summarySbom(ctx, input),
     'dependency-graph': graphSbom(input.sbomDependencyGraph),

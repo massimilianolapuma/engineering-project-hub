@@ -447,6 +447,8 @@ function summarySignature(summary: ParsedSupplyChainSummary): ControlCandidate {
   const base = { tool, lastScanAt: summary.generatedAt };
   if (statuses.some((s) => s === 'failed' || s === 'not-verified'))
     return candidate(source, 'failed', 'verified', base);
+  // Not definitive on purpose (final review M-6): a definitive "missing" would let one CI line
+  // change a status by default, which the C-1 ruling (spec §2) forbids.
   if (statuses.some((s) => s === 'missing')) return candidate(source, 'not-configured', null);
   if (statuses.some((s) => s === null)) return candidate(source, 'unknown', null);
   return candidate(source, summary.state === 'stale' ? 'stale' : 'enabled', 'verified', base);
