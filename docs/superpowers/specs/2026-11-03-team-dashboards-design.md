@@ -2,7 +2,7 @@
 
 Italiano: [../../it/superpowers/specs/2026-11-03-team-dashboards-design.md](../../it/superpowers/specs/2026-11-03-team-dashboards-design.md)
 
-Status: draft for the owner's review (builder check done) · Date: 2026-11-03 · Target release: after v0.10.0 (order with the supply chain work decided in the plan, see §9)
+Status: approved by the owner on 2026-11-03 · Date: 2026-11-03 · Target release: after v0.10.0 (order with the supply chain work decided in the plan, see §9)
 
 ## 1. Intent and why
 

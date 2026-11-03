@@ -2,7 +2,7 @@
 
 English: [../../../superpowers/specs/2026-11-03-team-dashboards-design.md](../../../superpowers/specs/2026-11-03-team-dashboards-design.md)
 
-Stato: bozza per la revisione del titolare (verifica del costruttore fatta) · Data: 2026-11-03 · Release prevista: dopo la v0.10.0 (ordine rispetto al lavoro supply chain deciso nel piano, vedi §9)
+Stato: approvato dal titolare il 2026-11-03 · Data: 2026-11-03 · Release prevista: dopo la v0.10.0 (ordine rispetto al lavoro supply chain deciso nel piano, vedi §9)
 
 ## 1. Intento e perché
 
