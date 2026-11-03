@@ -133,6 +133,7 @@ coordinator:
   defaultBranch: main # optional: otherwise the repository default; mismatch = governance amber
   manifestPath: release-manifest.yaml # optional (default shown)
   notApplicableControls: [containerScanning] # optional
+  # sonarProjectKey: alpha-coordinator # optional: SonarQube project key (see Provider mappings)
 
 components: # optional: empty for single-repository projects
   - id: backend # slug, unique, "coordinator" is reserved
@@ -145,9 +146,13 @@ components: # optional: empty for single-repository projects
     versionSource: auto # optional: auto | submodule | manifest | release (see below)
     releaseTagPrefix: backend- # optional: tags of this component ("backend-1.2.0")
     notApplicableControls: [] # optional: controls that do not apply (e.g. containerScanning on Helm)
+    sonarProjectKey: alpha-backend # optional: SonarQube project key
+    # sonarBranch: main             # optional: SonarQube branch (default: the main branch in SonarQube)
+    containerImages: # optional, max 5: Harbor images of this component
+      - { project: alpha, repository: backend } # tagTemplate: "{version}" by default
 
 environments: # optional, display order
-  - { id: dev, name: DEV }
+  - { id: dev, name: DEV, argocdApplication: { name: alpha-dev } } # optional: Argo CD application
   - { id: prod, name: PROD }
 
 trackedWorkflows: # optional
@@ -269,7 +274,9 @@ A run is **stale** when its last completed run is older than
 - **Native GitHub controls**: code scanning (with the latest analysis date, used for
   staleness), secret scanning and Dependabot.
 - **Pipeline controls**: container and IaC scanning, DAST, SBOM and artifact signature.
-  These are read from the security status file.
+  From v0.12.0 each one is resolved from an ordered list of sources (code scanning, the
+  dependency-graph SBOM, release attestations, the `hub-supply-chain-summary` CI artifact,
+  Harbor and the security status file): see [Supply chain](#supply-chain-supplychain).
 
 ### Test coverage applicability (`testCoverage`)
 
@@ -300,6 +307,22 @@ publishes summaries. Quality is not critical: a red Quality counts as amber over
 make Quality required (a grey Quality is then treated like any other grey required dimension), set
 `optionalDimensions: []` and add `quality` to `requiredDimensions`. A dimension listed in
 both lists is rejected at validation.
+
+### Provider mappings (`sonarProjectKey`, `containerImages`, `argocdApplication`)
+
+Optional fields that tell the [external providers](#external-providers-configprovidersyaml) what
+to read. They are ignored while the provider is off.
+
+| Where                    | Field                                                     | Used by   | Rule                                                                                                                                                                                                                                                                                   |
+| ------------------------ | --------------------------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `coordinator`, component | `sonarProjectKey`                                         | SonarQube | `^[A-Za-z0-9_.:-]{1,400}$`                                                                                                                                                                                                                                                             |
+| `coordinator`, component | `sonarBranch`                                             | SonarQube | a branch name; absent = the project's main branch in SonarQube                                                                                                                                                                                                                         |
+| `coordinator`, component | `containerImages: [{ project, repository, tagTemplate }]` | Harbor    | at most 5. `project`: Harbor project name (`^[a-z0-9]+(?:[._-][a-z0-9]+)*$`). `repository`: OCI path without a registry host. `tagTemplate` (default `{version}`) must contain `{version}` once; the reference is the component's version rendered with it. Unknown version → unknown. |
+| environment              | `argocdApplication: { name, namespace, project }`         | Argo CD   | lowercase DNS labels (≤ 253 characters); `namespace` and `project` optional                                                                                                                                                                                                            |
+
+These are names, never hosts or credentials, and they are **published** with the catalog in
+`catalog.json` (so in the public demo they are synthetic). Base URLs and tokens live elsewhere:
+`config/providers.yaml` and the environment.
 
 ### Adding a project (no code change)
 
@@ -386,6 +409,7 @@ frontend change.
 | `freshness.securityScanStaleDays`       | 7                                                                            | Last code scanning analysis older than this is stale.                                                                  |
 | `freshness.securityStatusFileStaleDays` | 7                                                                            | Pipeline status results older than this are stale.                                                                     |
 | `freshness.qualityReportStaleDays`      | 14                                                                           | A test coverage report (`generatedAt`) older than this is stale: still counted, but capped at amber.                   |
+| `freshness.supplyChainSummaryStaleDays` | 14                                                                           | A `hub-supply-chain-summary` (`generatedAt`) older than this is stale.                                                 |
 | `delivery.queuedThresholdMinutes`       | 60                                                                           | Queued or running longer than this means Attention.                                                                    |
 | `delivery.missingCriticalWorkflow`      | amber                                                                        | Status for a critical workflow that is missing or has never run.                                                       |
 | `delivery.failedCriticalWorkflow`       | red                                                                          | Status for a failed or cancelled critical workflow.                                                                    |
@@ -399,6 +423,8 @@ frontend change.
 | `quality.greenThresholdPercent`         | 80                                                                           | Line coverage is green at or above this percentage.                                                                    |
 | `quality.amberThresholdPercent`         | 60                                                                           | Amber at or above this percentage, red below.                                                                          |
 | `quality.missingReportIsAmber`          | true                                                                         | An applicable component without a visible report caps Quality at amber (a red stays red).                              |
+| `quality.sources`                       | [ci-summary, sonarqube]                                                      | Report sources per component, in order. A readable report beats a stale one across sources, then this order wins.      |
+| `quality.qualityGateFailed`             | info                                                                         | `info` or `amber`: effect of a failed SonarQube quality gate.                                                          |
 | `version.componentDrift`                | amber                                                                        | Declared version differs from the latest release.                                                                      |
 | `version.environmentBehind`             | amber                                                                        | Environment behind, or mismatched with, the coordinator version.                                                       |
 | `version.unresolvableSubmodule`         | red                                                                          | A configured submodule cannot be resolved.                                                                             |
@@ -406,6 +432,8 @@ frontend change.
 | `version.unmappedSubmodule`             | amber                                                                        | A submodule not mapped to any component.                                                                               |
 | `version.untaggedSubmodule`             | amber                                                                        | The coordinator pins a SHA that is not a release tag of the component.                                                 |
 | `version.manifestSubmoduleMismatch`     | amber                                                                        | The manifest declares a version different from the one pinned by the submodule.                                        |
+| `version.environmentOutOfSync`          | info                                                                         | `info`, `amber` or `red`: Argo CD reports an environment out of sync with Git.                                         |
+| `version.environmentDegraded`           | info                                                                         | `info`, `amber` or `red`: Argo CD reports an environment degraded, missing or suspended.                               |
 | `governance.*`                          | amber                                                                        | Missing standard workflow, archived repository, missing or invalid status file, default branch mismatch.               |
 | `overall.criticalDimensions`            | [delivery, version, security]                                                | A red here makes the project red. A red elsewhere counts as amber.                                                     |
 | `overall.requiredDimensions`            | [delivery, version, security, coverage, governance]                          | All must be green for Overall to be green.                                                                             |
@@ -510,6 +538,60 @@ amber (reason `repository-check-failed`, naming the check and the repositories);
 stay informative; and the score only moves when a Governance status moves. Step by step
 instructions are in [Operations](operations.md#enforcing-repository-controls).
 
+### Supply chain (`supplyChain`)
+
+Supply-chain evidence (SBOM, signatures and attestations, Trivy / Checkov / ZAP results) feeds
+the five pipeline controls and the project's Supply chain section. It adds no dimension and is
+informative by default. The whole block is optional. Background:
+[ADR 0011](architecture/adr/0011-supply-chain-evidence-github-native-and-ci-summaries.md).
+
+| Key                                          | Default                                                   | Meaning                                                                                                                                                                                |
+| -------------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `supplyChain.enabled`                        | true                                                      | `false` collects no supply-chain evidence.                                                                                                                                             |
+| `supplyChain.sbom.dependencyGraph`           | false                                                     | `true` requests GitHub's SBOM export (`generate-report`, then `fetch-report`): the one call that asks GitHub to run a job. Off, the SBOM comes from the CI summary or the status file. |
+| `supplyChain.sbom.maxBytes`                  | 16777216                                                  | Largest SBOM download (1 024 to 67 108 864 bytes). Larger → `too-large` (unknown).                                                                                                     |
+| `supplyChain.sbom.pollAttempts`              | 3                                                         | Fetch attempts while GitHub is still building the export (1 to 10). Still building → `pending` (unknown, never 0).                                                                     |
+| `supplyChain.sbom.pollIntervalSeconds`       | 5                                                         | Wait between attempts (1 to 30).                                                                                                                                                       |
+| `supplyChain.sbom.flaggedLicenses`           | []                                                        | SPDX ids (at most 50, case-insensitive) that make a package "flagged". Informative.                                                                                                    |
+| `supplyChain.attestations.releaseAssets`     | true                                                      | Look up provenance and SBOM attestations for the assets of the latest release.                                                                                                         |
+| `supplyChain.attestations.maxAssets`         | 5                                                         | Assets with a digest checked per release (1 to 20), sorted by name.                                                                                                                    |
+| `supplyChain.toolControls.containerScanning` | [{ tool: Trivy }]                                         | Code-scanning tools whose analyses answer container scanning (at most 10 rules).                                                                                                       |
+| `supplyChain.toolControls.iacScanning`       | [{ tool: Checkov }]                                       | Same for IaC scanning.                                                                                                                                                                 |
+| `supplyChain.toolControls.dast`              | [{ tool: ZAP }]                                           | Same for DAST.                                                                                                                                                                         |
+| `supplyChain.precedence.containerScanning`   | [code-scanning, harbor, status-file]                      | Source order (see below).                                                                                                                                                              |
+| `supplyChain.precedence.iacScanning`         | [code-scanning, status-file]                              |                                                                                                                                                                                        |
+| `supplyChain.precedence.dast`                | [code-scanning, status-file]                              |                                                                                                                                                                                        |
+| `supplyChain.precedence.sbom`                | [supply-chain-summary, dependency-graph, status-file]     |                                                                                                                                                                                        |
+| `supplyChain.precedence.artifactSignature`   | [supply-chain-summary, attestations, harbor, status-file] |                                                                                                                                                                                        |
+| `supplyChain.levels.unsignedArtifact`        | info                                                      | `info`, `amber` or `red`: an image or release asset without signature or provenance.                                                                                                   |
+| `supplyChain.levels.flaggedLicense`          | info                                                      | `info`, `amber` or `red`: a repository with flagged licenses.                                                                                                                          |
+
+**Tool rules.** Each rule is `{ tool, category }`: `tool` (at most 50 characters) matches the
+code-scanning tool name case-insensitively; `category` (optional, at most 100) must be a prefix of
+the analysis category, for example `{ tool: Trivy, category: trivy-config }` under `iacScanning`.
+A tool can appear under several controls only if each rule has a different category; otherwise
+validation fails. Alerts of a mapped tool keep being ordinary findings, with the category
+`container`, `iac` or `dast`. They are never counted twice: when Harbor or the status file wins a
+control, its counts are added to the open alerts only if the repository has no open code-scanning
+finding of that category, whatever the precedence order and even when the analyses cannot be read.
+
+**Precedence.** Each list is a non-empty subset of the sources allowed for that control, with no
+duplicates. For each repository and control the collector walks the list:
+
+1. The first source that is `enabled` or `failed` wins; otherwise the first `stale` one. A stale
+   answer never beats a fresher one from a later source. Release attestations on only some assets
+   are presence, never a failure: alone they read as configured but not run.
+2. Otherwise the first source with an informative non-answer (`not-authorised`, `unknown`,
+   collection failed, configured but not run) wins.
+3. Otherwise the control is `not-configured`.
+4. A source that is off (provider disabled, SBOM export not opted in) is skipped, never read as
+   "not configured". `notApplicableControls` still wins over everything.
+
+The winning source and its evidence are published on the control: `verified` (CI verified it and
+said so in the summary), `present` (it exists in GitHub or the registry, nobody verified it in
+this run) or `reported` (scan results reported by a tool). The site shows them as Labels with the
+word always visible; Unknown is never "unsigned".
+
 ### Project score
 
 The collector computes a score from 0 to 100 for each project, to rank and compare
@@ -544,6 +626,52 @@ dimensions. The optional `score` block in `config/policies.yaml` changes the for
 Snapshot schema 1.4 publishes it as `score: { value, measured, required }` on each
 project snapshot and on each project of `index.json`. With the mock data: Platform 82,
 Project Alpha 78, Project Beta 40, Project Gamma insufficient data.
+
+## External providers: `config/providers.yaml`
+
+Optional read-only providers next to GitHub: **SonarQube** (a Quality source), **Harbor**
+(container scanning and signatures of images) and **Argo CD** (what is deployed in each
+environment). All three are **off** by default: without this file, or with `enabled: false`,
+the hub contacts none of their hosts. The file is never published. Background:
+[ADR 0012](architecture/adr/0012-optional-external-read-only-providers.md).
+
+```yaml
+# yaml-language-server: $schema=./schema/providers.schema.json
+schemaVersion: '1.0'
+sonarqube:
+  enabled: true
+  baseUrl: https://sonarqube.example.com # https only; an optional context root such as /sonar
+  timeoutSeconds: 20 # 1–60
+  maxItems: 200 # project keys read per run (1–1000)
+harbor:
+  enabled: false
+argocd:
+  enabled: false
+```
+
+| Key (per provider) | Default | Meaning                                                                                                                     |
+| ------------------ | ------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`          | false   | `true` requires `baseUrl`.                                                                                                  |
+| `baseUrl`          | —       | `https:` only, no user or password, no query or fragment; the path may only be a context root (`^(/[A-Za-z0-9._-]+)*/?$`).  |
+| `timeoutSeconds`   | 20      | Per request, 1 to 60.                                                                                                       |
+| `maxItems`         | 200     | Items read per run (SonarQube project keys, Harbor image references, Argo CD applications), 1 to 1000. Beyond it → unknown. |
+
+- **Where the file is read from.** A `github` collection reads `<config dir>/providers.yaml`; a
+  `mock` collection reads `fixtures/providers/providers.yaml`, which enables the three providers
+  against synthetic fixtures. `--providers <file>` overrides both.
+- **Credentials** come from the environment only, never from this file: `SONARQUBE_TOKEN`,
+  `HARBOR_ROBOT_NAME` + `HARBOR_ROBOT_SECRET`, `ARGOCD_TOKEN` (see [Security](security.md#external-providers)
+  for the minimum permissions). An enabled provider without its credential marks its items
+  `not-authorised` and the run goes on; only one of the two Harbor variables is a configuration
+  error. A disabled provider ignores its variables.
+- **What the collector does with each.** SonarQube: line coverage, quality gate, new-code
+  coverage and the last analysis of each mapped `sonarProjectKey`. Harbor: digest, scan overview
+  and signature accessories of each mapped image reference (it never starts a scan). Argo CD:
+  sync status, health, revision and deployed images of each mapped application (it never syncs).
+- **Mappings** live in the project files: see [Provider mappings](#provider-mappings-sonarprojectkey-containerimages-argocdapplication).
+- The Data quality page has a **Providers** card with each provider's state (`off`, `available`,
+  `partial`, `not-authorised`, `unknown`) and how many items it read.
+- JSON Schema: [`config/schema/providers.schema.json`](../config/schema/providers.schema.json).
 
 ## Security exceptions: `config/exceptions.yaml`
 
@@ -795,6 +923,59 @@ pages remain, that repository's findings are unknown (a collection error), never
 count. GitHub exposes no endpoint for the coverage percentage, which is why coverage comes
 from the CI summary.
 
+### `hub-supply-chain-summary` artifact (each repository, optional)
+
+CI uploads a GitHub Actions artifact named **`hub-supply-chain-summary`** with one file,
+**`supply-chain-summary.json`**, on runs on the default branch. It is the only place where the
+hub gets **verified** signatures and provenance (CI ran `cosign verify` or
+`gh attestation verify`) and image digests. It is read like `hub-quality-summary` (same rules for
+branch, same repository, 64 KB zip, **Actions: read**). See
+[Operations](operations.md#publishing-the-supply-chain-summary-from-ci) for an example job.
+
+```json
+{
+  "schemaVersion": "1.0",
+  "repository": "example-org/project-alpha-frontend",
+  "ref": "refs/heads/main",
+  "commitSha": "<40-hex sha>",
+  "generatedAt": "2026-01-14T10:00:00Z",
+  "sbom": {
+    "format": "cyclonedx",
+    "specVersion": "1.6",
+    "tool": "syft",
+    "packages": 812,
+    "withoutLicense": 9,
+    "licenses": [{ "id": "MIT", "count": 640 }],
+    "ecosystems": [{ "id": "npm", "count": 812 }]
+  },
+  "images": [
+    {
+      "name": "example-org/project-alpha-frontend",
+      "tag": "2.1.0",
+      "digest": "sha256:<64 hex>",
+      "signature": { "status": "verified", "tool": "cosign" },
+      "provenance": { "status": "verified", "tool": "gh-attestation" },
+      "sbomAttestation": { "status": "missing" }
+    }
+  ]
+}
+```
+
+- Strict schema: unknown keys anywhere make it `invalid`. `sbom` and `images` are optional.
+- `sbom.format`: `cyclonedx` or `spdx`; `specVersion` like `1.6`; `tool` at most 40 characters;
+  counts are integers ≥ 0 and `withoutLicense` ≤ `packages`; at most 20 `licenses` (SPDX
+  expressions; any `LicenseRef-…` is grouped as `LicenseRef-*`) and 20 `ecosystems` (`npm`,
+  `maven`, `pypi`, `nuget`, `golang`, `cargo`, `gem`, `composer`, `githubactions`, `docker`,
+  `pub`, `swift`, `hex`, `other`, `unknown`).
+- `images`: at most 10. `name` is the OCI repository path **without** the registry host; `tag`
+  optional; `digest` `sha256:` plus 64 hex characters. `signature`, `provenance` and
+  `sbomAttestation` are `{ status, tool }` with `status` `verified`, `not-verified`, `failed` or
+  `missing` and `tool` `cosign`, `notation`, `gh-attestation` or `other`.
+- Counts and verification results only: no package names, keys, certificates, identities or
+  transparency-log entries.
+- `generatedAt` older than `freshness.supplyChainSummaryStaleDays` (14) → stale.
+- JSON Schema: [`config/schema/supply-chain-summary.schema.json`](../config/schema/supply-chain-summary.schema.json).
+
 ## History and CSV export
 
 From v0.7.0 the collector keeps a compact history of every collection and publishes two
@@ -816,6 +997,12 @@ was written by an older collector and the trend table says "not tracked", never 
 From v0.11.0 the snapshot schema is `1.7`: project snapshots and index entries carry `teams`,
 `catalog.json` carries the catalog's `teams` settings and a `teams` result (null when team
 discovery is off), and `portfolio.csv` ends with a `teams` column.
+From v0.12.0 the snapshot schema is `1.8`: controls carry their `source` and `evidence`, each
+project has a `supplyChain` section, Quality components carry their source, quality gate and
+new-code coverage, environments carry the declared and deployed versions with Argo CD sync and
+health, and the index carries the provider states. A site built from this version reads only
+`1.8` snapshots: run the collector once after upgrading. `versions.csv` gains four columns at
+the end and `supply-chain.csv` is new.
 `changes.json` keeps schema `1.0` and gains the optional lists `newlyOverdue` (counted critical
 and high alerts whose SLA fell due since the previous collection) and `expiredExceptions`
 (exceptions whose last day ended since then), with totals; both are empty when the basis is not a
@@ -829,6 +1016,7 @@ accepted alert is still open on GitHub, and the history baseline keeps seeing it
 | `exports/portfolio.csv`        | One row per project, with the previous collection's status and score.                                                                                                |
 | `exports/findings-summary.csv` | One row per project and repository: open alerts by severity, no titles.                                                                                              |
 | `exports/versions.csv`         | One row per coordinator, component and environment.                                                                                                                  |
+| `exports/supply-chain.csv`     | One row per project and repository: SBOM, attestations, images and the winning source of each scanning control. Counts only.                                         |
 
 Both JSON files are versioned separately from the snapshot, so history survives a snapshot
 schema bump. A missing or invalid file never fails the site build: the pages say why.
@@ -841,6 +1029,7 @@ schema bump. A missing or invalid file never fails the site build: the pages say
 | `--history-from <dir>`     | Directory with the previous `history.json`. Default: `$HISTORY_FROM`, then the `--out` directory (an empty value counts as unset). |
 | `--history-fixture <file>` | Mock source only: the synthetic history to start from (default `fixtures/history/history.json`).                                   |
 | `--fresh-history`          | Ignore any previous history and start again from this collection (state `none`).                                                   |
+| `--providers <file>`       | The providers file to read (default: `<config dir>/providers.yaml`; the mock source: `fixtures/providers/providers.yaml`).         |
 
 A mock run never restores real history: it always starts from the synthetic fixture, so
 mock and real history never meet. A previous history written by the other data source is
@@ -857,21 +1046,25 @@ separator: use Data, From Text/CSV.
 
 - `portfolio.csv`: `project_id, project_name, business_unit, lifecycle, overall, score, score_measured, score_required, delivery, version, security, controls_coverage, controls_coverage_percent, governance, quality, quality_percent, open_critical, open_high, open_medium, open_low, counts_complete, open_secret_alerts, failed_critical_workflows, collection_errors, collected_at, previous_overall, previous_score, previous_collected_at, controls_passed, controls_failed, controls_unknown, overdue, overdue_critical_high, accepted, exception_issues, teams`. The `previous_*` columns are `n/a` when there is no previous collection. `teams` lists the project's teams (`org/slug`) joined with `;`, empty when it has none.
 - `findings-summary.csv`: `project_id, component_id, repository, open_critical, open_high, open_medium, open_low, open_informational, open_unknown, sources_complete, overdue, accepted`. `overdue` and `accepted` count that repository's findings (`unknown` when SLAs are off or no alert source was readable). All counts are `unknown` when no alert source was readable; when only some were, the counts are a lower bound and `sources_complete` is `false`.
-- `versions.csv`: `row_type (coordinator|component|environment), project_id, item_id, item_name, repository, version, version_source, declared_version, latest_release, drift, manifest_consistency, pin_status, environment_status`.
+- `versions.csv`: `row_type (coordinator|component|environment), project_id, item_id, item_name, repository, version, version_source, declared_version, latest_release, drift, manifest_consistency, pin_status, environment_status, environment_source, environment_declared_version, sync_status, health_status`. The last four apply to environment rows (`n/a` elsewhere): `environment_source` is `argocd` or `manifest`, `environment_declared_version` the manifest's version of the environment, `sync_status` and `health_status` what Argo CD reported (`n/a` without Argo CD).
+- `supply-chain.csv`: `project_id, repository, component_ids, sbom_state, sbom_source, packages, without_license, flagged, attestation_state, assets_checked, assets_with_provenance, images, images_signed, images_unsigned, container_scanning_source, iac_scanning_source, dast_source, summary_state`. `component_ids` is joined with `;`. Counts are `unknown` when the source could not be read, never 0.
 
 If the snapshot data is missing or invalid, each CSV has its header and one row that starts with `data unavailable` and has `unknown` elsewhere. It is never a header-only file, which would read as "no projects".
 
 ## Environment variables
 
-| Variable                                                    | Where                     | Purpose                                                                                                                                                                           |
-| ----------------------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATA_SOURCE`                                               | repository variable / env | `mock` (default) or `github`                                                                                                                                                      |
-| `GH_APP_ID`, `GH_APP_PRIVATE_KEY`, `GH_APP_INSTALLATION_ID` | Actions secrets           | GitHub App authentication (preferred)                                                                                                                                             |
-| `GH_READ_TOKEN`                                             | Actions secret            | Fallback fine-grained PAT                                                                                                                                                         |
-| `GITHUB_TOKEN`                                              | automatic                 | Last fallback (current repository only)                                                                                                                                           |
-| `GITHUB_API_URL`                                            | automatic / env           | API base URL (GitHub Enterprise Server)                                                                                                                                           |
-| `SITE_URL`, `BASE_PATH`                                     | set by deploy workflow    | Astro `site` and `base` (from configure-pages)                                                                                                                                    |
-| `SNAPSHOT_DIR`                                              | local / tests             | Alternative snapshot directory for the site build                                                                                                                                 |
-| `POLICIES_FILE`                                             | site build                | Policies explained on the "How to read" page (default `config/policies.yaml`; schema defaults only if the default file is missing; an unreadable or invalid file fails the build) |
-| `HISTORY_FROM`                                              | collect job / local       | Directory holding the previous `history.json` (set by the workflow to `.history-restore`)                                                                                         |
-| `HISTORY_RESTORE_STATE`                                     | collect job               | `none` or `failed`, from the restore step; anything else reads the file                                                                                                           |
+| Variable                                                    | Where                      | Purpose                                                                                                                                                                           |
+| ----------------------------------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATA_SOURCE`                                               | repository variable / env  | `mock` (default) or `github`                                                                                                                                                      |
+| `GH_APP_ID`, `GH_APP_PRIVATE_KEY`, `GH_APP_INSTALLATION_ID` | Actions secrets            | GitHub App authentication (preferred)                                                                                                                                             |
+| `GH_READ_TOKEN`                                             | Actions secret             | Fallback fine-grained PAT                                                                                                                                                         |
+| `GITHUB_TOKEN`                                              | automatic                  | Last fallback (current repository only)                                                                                                                                           |
+| `GITHUB_API_URL`                                            | automatic / env            | API base URL (GitHub Enterprise Server)                                                                                                                                           |
+| `SITE_URL`, `BASE_PATH`                                     | set by deploy workflow     | Astro `site` and `base` (from configure-pages)                                                                                                                                    |
+| `SNAPSHOT_DIR`                                              | local / tests              | Alternative snapshot directory for the site build                                                                                                                                 |
+| `POLICIES_FILE`                                             | site build                 | Policies explained on the "How to read" page (default `config/policies.yaml`; schema defaults only if the default file is missing; an unreadable or invalid file fails the build) |
+| `HISTORY_FROM`                                              | collect job / local        | Directory holding the previous `history.json` (set by the workflow to `.history-restore`)                                                                                         |
+| `HISTORY_RESTORE_STATE`                                     | collect job                | `none` or `failed`, from the restore step; anything else reads the file                                                                                                           |
+| `SONARQUBE_TOKEN`                                           | Actions secret (optional)  | SonarQube user token, only when `sonarqube.enabled` (see [Security](security.md#external-providers))                                                                              |
+| `HARBOR_ROBOT_NAME`, `HARBOR_ROBOT_SECRET`                  | Actions secrets (optional) | Harbor robot account, only when `harbor.enabled`; both or neither                                                                                                                 |
+| `ARGOCD_TOKEN`                                              | Actions secret (optional)  | Argo CD account token, only when `argocd.enabled`                                                                                                                                 |

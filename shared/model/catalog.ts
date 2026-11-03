@@ -6,6 +6,7 @@ import {
   RepositoryCheckIdSchema,
   type ControlId,
 } from './enums';
+import { ociRepository } from './contracts';
 import { TeamRefSchema, TeamsConfigSchema, teamSlug } from './teams';
 
 export const VersionSourceSchema = z.enum(['auto', 'submodule', 'manifest', 'release']);
@@ -30,6 +31,43 @@ const relativePath = z
   .min(1)
   .max(255)
   .refine((p) => !p.startsWith('/') && !p.split('/').includes('..'), 'must be a relative path');
+
+/** SonarQube project key (published with the catalog: a name, never a host or a token). */
+const sonarProjectKey = z
+  .string()
+  .regex(/^[A-Za-z0-9_.:-]{1,400}$/, 'must be a SonarQube project key');
+
+/** Harbor project and Argo CD names. */
+const harborProject = z
+  .string()
+  .max(255)
+  .regex(/^[a-z0-9]+(?:[._-][a-z0-9]+)*$/, 'must be a Harbor project name');
+const k8sName = z
+  .string()
+  .max(253)
+  .regex(/^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$/, 'must be a lowercase DNS label');
+
+/** A Harbor image of a component. The reference is the version rendered with `tagTemplate`. */
+export const ContainerImageSchema = z
+  .object({
+    project: harborProject,
+    repository: ociRepository,
+    /** Must contain "{version}" once; other characters are limited to tag characters. */
+    tagTemplate: z
+      .string()
+      .max(100)
+      .regex(/^[A-Za-z0-9._-]*\{version\}[A-Za-z0-9._-]*$/, 'must contain "{version}" once')
+      .default('{version}'),
+  })
+  .strict();
+export type ContainerImage = z.infer<typeof ContainerImageSchema>;
+
+const containerImages = z.array(ContainerImageSchema).max(5);
+
+export const ArgocdApplicationSchema = z
+  .object({ name: k8sName, namespace: k8sName.optional(), project: k8sName.optional() })
+  .strict();
+export type ArgocdApplication = z.infer<typeof ArgocdApplicationSchema>;
 
 /** Overrides whether test coverage applies (default by component type, see quality normaliser). */
 export const TestCoverageSchema = z.enum(['required', 'not-applicable']);
@@ -63,6 +101,11 @@ export const CoordinatorConfigSchema = z
     notApplicableChecks: z.array(RepositoryCheckIdSchema).default([]),
     /** Test coverage applies to the coordinator like a service unless overridden. */
     testCoverage: TestCoverageSchema.optional(),
+    /** SonarQube project of the repository (read only when SonarQube is enabled). */
+    sonarProjectKey: sonarProjectKey.optional(),
+    sonarBranch: branch.optional(),
+    /** Harbor images scanned and signed for this repository (max 5). */
+    containerImages: containerImages.optional(),
   })
   .strict();
 
@@ -96,12 +139,20 @@ export const ComponentConfigSchema = z
     versionSource: VersionSourceSchema.default('auto'),
     /** Overrides the default applicability of test coverage for this component type. */
     testCoverage: TestCoverageSchema.optional(),
+    sonarProjectKey: sonarProjectKey.optional(),
+    sonarBranch: branch.optional(),
+    containerImages: containerImages.optional(),
   })
   .strict();
 export type ComponentConfig = z.infer<typeof ComponentConfigSchema>;
 
 export const EnvironmentConfigSchema = z
-  .object({ id: slug, name: z.string().min(1).max(50) })
+  .object({
+    id: slug,
+    name: z.string().min(1).max(50),
+    /** Argo CD application that deploys this environment (read only when Argo CD is enabled). */
+    argocdApplication: ArgocdApplicationSchema.optional(),
+  })
   .strict();
 
 export const TrackedWorkflowConfigSchema = z
@@ -204,6 +255,24 @@ export const ProjectConfigSchema = z
         message: `duplicate component location "${key}"`,
       });
     }
+    const images = [
+      { path: ['coordinator'], list: p.coordinator.containerImages },
+      ...p.components.map((c, i) => ({ path: ['components', i], list: c.containerImages })),
+    ].flatMap(({ path, list }) =>
+      (list ?? []).map((image, j) => ({
+        path: [...path, 'containerImages', j],
+        key: `${image.project}/${image.repository}`,
+      })),
+    );
+    images.forEach((image, i) => {
+      if (images.findIndex((other) => other.key === image.key) !== i) {
+        ctx.addIssue({
+          code: 'custom',
+          path: image.path,
+          message: `duplicate container image "${image.key}"`,
+        });
+      }
+    });
     const targets = new Set(['coordinator', ...p.components.map((c) => c.id)]);
     p.trackedWorkflows.forEach((w, i) => {
       for (const target of w.appliesTo ?? []) {

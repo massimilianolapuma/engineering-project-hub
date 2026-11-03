@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.7",
+  "schemaVersion": "1.8",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-beta",
@@ -259,22 +259,44 @@
       "id": "dev",
       "name": "DEV",
       "version": "3.2.0",
+      "declaredVersion": "3.2.0",
       "source": "manifest",
-      "status": "aligned"
+      "status": "aligned",
+      "deployment": {
+        "state": "not-authorised",
+        "sync": null,
+        "health": null,
+        "revision": null,
+        "version": null,
+        "deployedAt": null,
+        "images": []
+      }
     },
     {
       "id": "uat",
       "name": "UAT",
       "version": "3.2.0",
+      "declaredVersion": "3.2.0",
       "source": "manifest",
-      "status": "aligned"
+      "status": "aligned",
+      "deployment": null
     },
     {
       "id": "prod",
       "name": "PROD",
       "version": "3.1.0",
-      "source": "manifest",
-      "status": "behind"
+      "declaredVersion": "3.1.0",
+      "source": "argocd",
+      "status": "behind",
+      "deployment": {
+        "state": "available",
+        "sync": "synced",
+        "health": "degraded",
+        "revision": "bbbbbbb",
+        "version": "3.1.0",
+        "deployedAt": "2026-01-11T12:00:00.000Z",
+        "images": []
+      }
     }
   ],
   "workflows": [
@@ -629,6 +651,35 @@
       }
     },
     {
+      "id": "example-org/project-beta-api#code-scanning#21",
+      "projectId": "project-beta",
+      "componentId": "api",
+      "repository": "example-org/project-beta-api",
+      "source": "github-code-scanning",
+      "category": "iac",
+      "severity": "low",
+      "originalSeverity": "low",
+      "status": "open",
+      "originalStatus": "open",
+      "ruleId": null,
+      "title": null,
+      "detectedAt": "2026-01-12T12:00:00.000Z",
+      "updatedAt": "2026-01-12T12:00:00.000Z",
+      "fixAvailable": null,
+      "htmlUrl": "https://github.com/example-org/project-beta-api/security/code-scanning/21",
+      "tool": "Checkov",
+      "repositoryPrivate": true,
+      "dataClassification": "internal",
+      "exception": null,
+      "sla": {
+        "state": "within",
+        "days": 180,
+        "dueAt": "2026-07-11T12:00:00.000Z",
+        "ageDays": 3,
+        "overdueDays": null
+      }
+    },
+    {
       "id": "example-org/project-beta-web#dependabot#11",
       "projectId": "project-beta",
       "componentId": "web",
@@ -719,7 +770,9 @@
             "informational": 0,
             "unknown": 0
           },
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": "reported"
         },
         {
           "control": "secretScanning",
@@ -728,7 +781,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": null
         },
         {
           "control": "dependabot",
@@ -744,7 +799,9 @@
             "informational": 0,
             "unknown": 0
           },
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": "reported"
         },
         {
           "control": "containerScanning",
@@ -753,7 +810,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": null,
+          "evidence": null
         },
         {
           "control": "iacScanning",
@@ -762,7 +821,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": null,
+          "evidence": null
         },
         {
           "control": "dast",
@@ -771,7 +832,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": null,
+          "evidence": null
         },
         {
           "control": "sbom",
@@ -780,7 +843,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": null,
+          "evidence": null
         },
         {
           "control": "artifactSignature",
@@ -789,7 +854,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": null,
+          "evidence": null
         }
       ]
     },
@@ -807,11 +874,13 @@
             "critical": 1,
             "high": 1,
             "medium": 1,
-            "low": 0,
+            "low": 1,
             "informational": 0,
             "unknown": 0
           },
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": "reported"
         },
         {
           "control": "secretScanning",
@@ -820,7 +889,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": null
         },
         {
           "control": "dependabot",
@@ -836,7 +907,9 @@
             "informational": 0,
             "unknown": 0
           },
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": "reported"
         },
         {
           "control": "containerScanning",
@@ -852,16 +925,27 @@
             "informational": 0,
             "unknown": 0
           },
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "status-file",
+          "evidence": "reported"
         },
         {
           "control": "iacScanning",
           "required": false,
-          "state": "not-configured",
-          "tool": null,
-          "lastScanAt": null,
-          "counts": null,
-          "reportUrl": null
+          "state": "enabled",
+          "tool": "Checkov",
+          "lastScanAt": "2026-01-12T12:00:00.000Z",
+          "counts": {
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 1,
+            "informational": 0,
+            "unknown": 0
+          },
+          "reportUrl": null,
+          "source": "code-scanning",
+          "evidence": "reported"
         },
         {
           "control": "dast",
@@ -870,25 +954,31 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": null,
+          "evidence": null
         },
         {
           "control": "sbom",
           "required": false,
-          "state": "not-configured",
+          "state": "not-authorised",
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "dependency-graph",
+          "evidence": null
         },
         {
           "control": "artifactSignature",
           "required": false,
-          "state": "not-configured",
+          "state": "not-authorised",
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "attestations",
+          "evidence": null
         }
       ]
     },
@@ -910,7 +1000,9 @@
             "informational": 0,
             "unknown": 0
           },
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": "reported"
         },
         {
           "control": "secretScanning",
@@ -919,7 +1011,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": null
         },
         {
           "control": "dependabot",
@@ -935,7 +1029,9 @@
             "informational": 0,
             "unknown": 0
           },
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": "reported"
         },
         {
           "control": "containerScanning",
@@ -951,7 +1047,9 @@
             "informational": 0,
             "unknown": 0
           },
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "status-file",
+          "evidence": "reported"
         },
         {
           "control": "iacScanning",
@@ -960,7 +1058,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": null,
+          "evidence": null
         },
         {
           "control": "dast",
@@ -969,7 +1069,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": null,
+          "evidence": null
         },
         {
           "control": "sbom",
@@ -978,7 +1080,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": null,
+          "evidence": null
         },
         {
           "control": "artifactSignature",
@@ -987,7 +1091,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": null,
+          "evidence": null
         }
       ]
     },
@@ -1009,7 +1115,9 @@
             "informational": 0,
             "unknown": 0
           },
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": "reported"
         },
         {
           "control": "secretScanning",
@@ -1025,7 +1133,9 @@
             "informational": 0,
             "unknown": 0
           },
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": "reported"
         },
         {
           "control": "dependabot",
@@ -1041,7 +1151,9 @@
             "informational": 0,
             "unknown": 0
           },
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": "reported"
         },
         {
           "control": "containerScanning",
@@ -1050,7 +1162,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": null,
+          "evidence": null
         },
         {
           "control": "iacScanning",
@@ -1059,7 +1173,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": null,
+          "evidence": null
         },
         {
           "control": "dast",
@@ -1068,7 +1184,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": null,
+          "evidence": null
         },
         {
           "control": "sbom",
@@ -1077,7 +1195,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": null,
+          "evidence": null
         },
         {
           "control": "artifactSignature",
@@ -1086,7 +1206,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": null,
+          "evidence": null
         }
       ]
     }
@@ -1163,6 +1285,20 @@
           "version": "3.1.0",
           "expected": "3.2.0"
         }
+      },
+      {
+        "code": "environment-degraded",
+        "level": "info",
+        "params": {
+          "environments": "PROD"
+        }
+      },
+      {
+        "code": "environment-deployment-unknown",
+        "level": "info",
+        "params": {
+          "environments": "DEV"
+        }
       }
     ]
   },
@@ -1188,7 +1324,7 @@
         "code": "open-medium-low-alerts",
         "level": "amber",
         "params": {
-          "count": 5
+          "count": 6
         }
       },
       {
@@ -1214,6 +1350,14 @@
         }
       },
       {
+        "code": "supply-chain-unsigned-artifact",
+        "level": "info",
+        "params": {
+          "count": 1,
+          "repositories": "example-org/project-beta-api"
+        }
+      },
+      {
         "code": "coverage-incomplete",
         "level": "amber",
         "params": {
@@ -1235,7 +1379,7 @@
       "critical": 1,
       "high": 3,
       "medium": 4,
-      "low": 1,
+      "low": 2,
       "informational": 0,
       "unknown": 0
     },
@@ -1281,13 +1425,13 @@
       "dependency": 1,
       "secret": 0,
       "container": 5,
-      "iac": 0,
+      "iac": 1,
       "dast": 0,
       "supply-chain": 0,
       "configuration": 0
     },
     "bySource": {
-      "github-code-scanning": 3,
+      "github-code-scanning": 4,
       "github-dependabot": 1,
       "github-secret-scanning": 0,
       "security-status-file": 5
@@ -1354,12 +1498,12 @@
       {
         "control": "sbom",
         "required": false,
-        "state": "not-configured"
+        "state": "not-authorised"
       },
       {
         "control": "artifactSignature",
         "required": false,
-        "state": "not-configured"
+        "state": "not-authorised"
       }
     ]
   },
@@ -1438,25 +1582,25 @@
         "code": "quality-below-threshold",
         "level": "amber",
         "params": {
-          "components": "coordinator, api",
-          "percentage": 67.2,
+          "components": "coordinator, api, web",
+          "percentage": 66.7,
           "threshold": 80
         }
       },
       {
-        "code": "quality-report-missing",
-        "level": "amber",
+        "code": "quality-gate-failed",
+        "level": "info",
         "params": {
           "components": "web"
         }
       }
     ],
-    "percentage": 67.2,
-    "linesCovered": 6454,
-    "linesValid": 9600,
-    "measured": 2,
+    "percentage": 66.7,
+    "linesCovered": 8404,
+    "linesValid": 12600,
+    "measured": 3,
     "applicable": 3,
-    "notVisible": 1,
+    "notVisible": 0,
     "stale": 0,
     "collectedAt": "2026-01-15T12:00:00.000Z",
     "perComponent": [
@@ -1470,7 +1614,10 @@
         "commitSha": "971a7f034dadeeaea0d6daacfc265dd40cde39e8",
         "generatedAt": "2026-01-13T12:00:00.000Z",
         "tool": "coverlet",
-        "runUrl": "https://github.com/example-org/project-beta-coordinator/actions/runs/9011"
+        "runUrl": "https://github.com/example-org/project-beta-coordinator/actions/runs/9011",
+        "source": "ci-summary",
+        "qualityGate": null,
+        "newCoverage": null
       },
       {
         "componentId": "api",
@@ -1482,19 +1629,25 @@
         "commitSha": "3214cb086d9f6b265d49568ba63b3eb3afb5b505",
         "generatedAt": "2026-01-13T12:00:00.000Z",
         "tool": "coverlet",
-        "runUrl": "https://github.com/example-org/project-beta-api/actions/runs/9012"
+        "runUrl": "https://github.com/example-org/project-beta-api/actions/runs/9012",
+        "source": "ci-summary",
+        "qualityGate": null,
+        "newCoverage": null
       },
       {
         "componentId": "web",
-        "state": "missing",
+        "state": "readable",
         "sharedRepository": false,
-        "percentage": null,
-        "linesCovered": null,
-        "linesValid": null,
+        "percentage": 65,
+        "linesCovered": 1950,
+        "linesValid": 3000,
         "commitSha": null,
-        "generatedAt": null,
-        "tool": null,
-        "runUrl": null
+        "generatedAt": "2026-01-13T12:00:00.000Z",
+        "tool": "sonarqube",
+        "runUrl": null,
+        "source": "sonarqube",
+        "qualityGate": "failed",
+        "newCoverage": 41.2
       },
       {
         "componentId": "helm",
@@ -1506,7 +1659,10 @@
         "commitSha": null,
         "generatedAt": null,
         "tool": null,
-        "runUrl": null
+        "runUrl": null,
+        "source": null,
+        "qualityGate": null,
+        "newCoverage": null
       }
     ],
     "findings": {
@@ -1865,6 +2021,285 @@
       }
     ]
   },
+  "supplyChain": {
+    "enabled": true,
+    "collectedAt": "2026-01-15T12:00:00.000Z",
+    "totals": {
+      "repositories": 4,
+      "sbomAvailable": 0,
+      "signedImages": 0,
+      "unsignedImages": 1,
+      "attestedAssets": null,
+      "flagged": null
+    },
+    "repositories": [
+      {
+        "componentIds": [
+          "coordinator"
+        ],
+        "repository": "example-org/project-beta-coordinator",
+        "sbom": {
+          "state": "not-configured",
+          "source": null,
+          "format": null,
+          "specVersion": null,
+          "generatedAt": null,
+          "packages": null,
+          "withoutLicense": null,
+          "flagged": null,
+          "licenses": [],
+          "otherLicenses": 0,
+          "ecosystems": []
+        },
+        "attestations": {
+          "state": "not-applicable",
+          "release": "v3.2.0",
+          "checked": 0,
+          "withProvenance": null,
+          "withSbom": null,
+          "withoutDigest": 0
+        },
+        "images": [],
+        "tools": [
+          {
+            "control": "containerScanning",
+            "tool": "Trivy",
+            "state": "not-configured",
+            "lastAnalysisAt": null,
+            "open": null
+          },
+          {
+            "control": "iacScanning",
+            "tool": "Checkov",
+            "state": "not-configured",
+            "lastAnalysisAt": null,
+            "open": null
+          },
+          {
+            "control": "dast",
+            "tool": "ZAP",
+            "state": "not-configured",
+            "lastAnalysisAt": null,
+            "open": null
+          }
+        ],
+        "otherTools": [],
+        "summary": {
+          "state": "missing",
+          "generatedAt": null,
+          "commitSha": null,
+          "runUrl": null
+        }
+      },
+      {
+        "componentIds": [
+          "api"
+        ],
+        "repository": "example-org/project-beta-api",
+        "sbom": {
+          "state": "not-authorised",
+          "source": "dependency-graph",
+          "format": null,
+          "specVersion": null,
+          "generatedAt": null,
+          "packages": null,
+          "withoutLicense": null,
+          "flagged": null,
+          "licenses": [],
+          "otherLicenses": 0,
+          "ecosystems": []
+        },
+        "attestations": {
+          "state": "not-authorised",
+          "release": "v3.2.0",
+          "checked": 0,
+          "withProvenance": null,
+          "withSbom": null,
+          "withoutDigest": 0
+        },
+        "images": [
+          {
+            "componentId": "api",
+            "source": "supply-chain-summary",
+            "name": null,
+            "tag": "3.1.0",
+            "digest": "sha256:e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5",
+            "signature": "missing",
+            "provenance": "missing",
+            "scan": null
+          },
+          {
+            "componentId": "api",
+            "source": "harbor",
+            "name": null,
+            "tag": "3.1.0",
+            "digest": "sha256:e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5",
+            "signature": "missing",
+            "provenance": "unknown",
+            "scan": {
+              "state": "scan-pending",
+              "scannedAt": null,
+              "counts": null,
+              "fixable": null
+            }
+          }
+        ],
+        "tools": [
+          {
+            "control": "containerScanning",
+            "tool": "Trivy",
+            "state": "not-configured",
+            "lastAnalysisAt": null,
+            "open": null
+          },
+          {
+            "control": "iacScanning",
+            "tool": "Checkov",
+            "state": "enabled",
+            "lastAnalysisAt": "2026-01-12T12:00:00.000Z",
+            "open": {
+              "critical": 0,
+              "high": 0,
+              "medium": 0,
+              "low": 1,
+              "informational": 0,
+              "unknown": 0
+            }
+          },
+          {
+            "control": "dast",
+            "tool": "ZAP",
+            "state": "not-configured",
+            "lastAnalysisAt": null,
+            "open": null
+          }
+        ],
+        "otherTools": [],
+        "summary": {
+          "state": "readable",
+          "generatedAt": "2026-01-14T12:00:00.000Z",
+          "commitSha": "3214cb086d9f6b265d49568ba63b3eb3afb5b505",
+          "runUrl": "https://github.com/example-org/project-beta-api/actions/runs/9103"
+        }
+      },
+      {
+        "componentIds": [
+          "web"
+        ],
+        "repository": "example-org/project-beta-web",
+        "sbom": {
+          "state": "not-configured",
+          "source": null,
+          "format": null,
+          "specVersion": null,
+          "generatedAt": null,
+          "packages": null,
+          "withoutLicense": null,
+          "flagged": null,
+          "licenses": [],
+          "otherLicenses": 0,
+          "ecosystems": []
+        },
+        "attestations": {
+          "state": "not-applicable",
+          "release": "v3.1.0",
+          "checked": 0,
+          "withProvenance": null,
+          "withSbom": null,
+          "withoutDigest": 0
+        },
+        "images": [],
+        "tools": [
+          {
+            "control": "containerScanning",
+            "tool": "Trivy",
+            "state": "not-configured",
+            "lastAnalysisAt": null,
+            "open": null
+          },
+          {
+            "control": "iacScanning",
+            "tool": "Checkov",
+            "state": "not-configured",
+            "lastAnalysisAt": null,
+            "open": null
+          },
+          {
+            "control": "dast",
+            "tool": "ZAP",
+            "state": "not-configured",
+            "lastAnalysisAt": null,
+            "open": null
+          }
+        ],
+        "otherTools": [],
+        "summary": {
+          "state": "missing",
+          "generatedAt": null,
+          "commitSha": null,
+          "runUrl": null
+        }
+      },
+      {
+        "componentIds": [
+          "helm"
+        ],
+        "repository": "example-org/project-beta-helm",
+        "sbom": {
+          "state": "not-configured",
+          "source": null,
+          "format": null,
+          "specVersion": null,
+          "generatedAt": null,
+          "packages": null,
+          "withoutLicense": null,
+          "flagged": null,
+          "licenses": [],
+          "otherLicenses": 0,
+          "ecosystems": []
+        },
+        "attestations": {
+          "state": "not-applicable",
+          "release": "v1.0.0",
+          "checked": 0,
+          "withProvenance": null,
+          "withSbom": null,
+          "withoutDigest": 0
+        },
+        "images": [],
+        "tools": [
+          {
+            "control": "containerScanning",
+            "tool": "Trivy",
+            "state": "not-configured",
+            "lastAnalysisAt": null,
+            "open": null
+          },
+          {
+            "control": "iacScanning",
+            "tool": "Checkov",
+            "state": "not-configured",
+            "lastAnalysisAt": null,
+            "open": null
+          },
+          {
+            "control": "dast",
+            "tool": "ZAP",
+            "state": "not-configured",
+            "lastAnalysisAt": null,
+            "open": null
+          }
+        ],
+        "otherTools": [],
+        "summary": {
+          "state": "missing",
+          "generatedAt": null,
+          "commitSha": null,
+          "runUrl": null
+        }
+      }
+    ]
+  },
   "overallHealth": {
     "status": "red",
     "reasons": [
@@ -1958,6 +2393,28 @@
       "classification": "not-authorised",
       "httpStatus": 403,
       "detail": "Resource not accessible by integration"
+    },
+    {
+      "repository": "example-org/project-beta-api",
+      "componentId": "api",
+      "source": "dependency-sbom",
+      "classification": "not-authorised",
+      "httpStatus": 403
+    },
+    {
+      "repository": "example-org/project-beta-api",
+      "componentId": "api",
+      "source": "attestations",
+      "classification": "not-authorised",
+      "httpStatus": 403
+    },
+    {
+      "repository": "example-org/project-beta-coordinator",
+      "componentId": "coordinator",
+      "source": "argocd",
+      "classification": "not-authorised",
+      "httpStatus": 403,
+      "detail": "environment dev"
     },
     {
       "repository": "example-org/project-beta-helm",

@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=./schema/providers.schema.json
+#
+# Engineering Project Hub — optional external providers (SonarQube, Harbor, Argo CD).
+# Everything is OFF by default: the hub contacts none of these hosts unless you opt in below.
+# This file is never published. Base URLs are infrastructure details: keep real ones in a
+# reviewed (ideally private) config repository, never in the public demo.
+# Credentials come from the environment only, never from this file:
+#   SONARQUBE_TOKEN · HARBOR_ROBOT_NAME + HARBOR_ROBOT_SECRET · ARGOCD_TOKEN
+# Reference: docs/configuration.md (EN) · docs/it/configuration.md (IT)
+
+schemaVersion: '1.0'
+
+sonarqube:
+  enabled: false
+  # baseUrl: https://sonarqube.example.com # https only, no credentials or query; "/sonar" context root allowed
+  # timeoutSeconds: 20 # 1–60
+  # maxItems: 200 # project keys read per run (1–1000)
+
+harbor:
+  enabled: false
+  # baseUrl: https://harbor.example.com
+  # timeoutSeconds: 20
+  # maxItems: 200 # image references read per run
+
+argocd:
+  enabled: false
+  # baseUrl: https://argocd.example.com
+  # timeoutSeconds: 20
+  # maxItems: 200 # applications read per run

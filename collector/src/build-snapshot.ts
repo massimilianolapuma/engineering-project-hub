@@ -14,7 +14,6 @@ import {
   type ProjectSummary,
   type SecurityException,
   type SecurityFinding,
-  type SeverityCounts,
 } from '@model/index';
 import type { RawProjectData } from './collectors/collect';
 import {
@@ -45,6 +44,7 @@ import type { TargetVersions } from './normalizers/workflow-refs';
 import {
   isCoverageApplicable,
   normaliseQualitySummary,
+  normaliseSonarProject,
   type RepoQuality,
 } from './normalizers/quality';
 import {
@@ -53,6 +53,14 @@ import {
   type SourceReadability,
 } from './policy/exceptions';
 import { applySla } from './policy/sla';
+import { buildSupplyChain, externalCountsFrom } from './normalizers/supply-chain';
+import type { SupplyEvidence } from './normalizers/control-sources';
+import {
+  harborResults,
+  recordDeploymentErrors,
+  supplyChainRepoInput,
+  supplyEvidence,
+} from './normalizers/supply-chain-model';
 import {
   countAccepted,
   countOpen,
@@ -130,7 +138,23 @@ export function buildProjectSnapshot(
     : null;
   const coord = coordinatorVersion(manifest, coordinatorRelease);
   const components = toComponents(ctx, raw, manifest, submodules);
-  const environments = toEnvironments(config, manifest, coord.version);
+  const imageMappings = [
+    { componentId: 'coordinator', images: config.coordinator.containerImages },
+    ...config.components.map((c) => ({ componentId: c.id, images: c.containerImages })),
+  ].flatMap((m) =>
+    (m.images ?? []).map((i) => ({
+      componentId: m.componentId,
+      path: `${i.project}/${i.repository}`,
+    })),
+  );
+  const environments = toEnvironments(
+    config,
+    manifest,
+    coord.version,
+    raw.argocd,
+    raw.coordinatorTags?.ok ? raw.coordinatorTags.data : [],
+    imageMappings,
+  );
 
   // Workflows.
   const workflows = raw.workflows.map((w) => {
@@ -184,6 +208,18 @@ export function buildProjectSnapshot(
   const sla = applySla(applied.findings, policies, now, anyGitHubSourceReadable);
   const findings: SecurityFinding[] = sla.findings;
   const securityExceptions: SecurityException[] = applied.records;
+  // Supply chain evidence per unique repository (errors are recorded once, here).
+  const versions = new Map<string, string | null>([
+    ['coordinator', coord.version],
+    ...components.map((c) => [c.id, c.effectiveVersion] as const),
+  ]);
+  const evidences = new Map<string, SupplyEvidence>();
+  for (const r of uniqueRepos)
+    evidences.set(
+      r.componentId,
+      supplyEvidence(ctx, r, harborResults(ctx, config, raw, versions, r.repository)),
+    );
+  recordDeploymentErrors(ctx, config, raw);
   const securityControls = uniqueRepos.map((r) =>
     toRepositoryControls(
       ctx,
@@ -191,7 +227,24 @@ export function buildProjectSnapshot(
       r,
       findings.filter((f) => f.repository === r.repository),
       statusFiles.get(r.componentId)!,
+      evidences.get(r.componentId)!,
     ),
+  );
+  const supplyChain = buildSupplyChain(
+    {
+      enabled: policies.supplyChain.enabled,
+      repositories: uniqueRepos.map((r) =>
+        supplyChainRepoInput(
+          ctx,
+          raw.repos
+            .filter((x) => x.repository.toLowerCase() === r.repository.toLowerCase())
+            .map((x) => x.componentId),
+          r,
+          evidences.get(r.componentId)!,
+        ),
+      ),
+    },
+    ctx,
   );
 
   const required = requiredControls(config);
@@ -208,10 +261,9 @@ export function buildProjectSnapshot(
       (k) => r[k].ok || (!r[k].ok && r[k].error.classification === 'not-configured'),
     ),
   );
-  const external = securityControls
-    .flatMap((rc) => rc.controls)
-    .filter((c) => !NATIVE_CONTROLS.includes(c.control) && c.counts && c.state !== 'not-applicable')
-    .reduce<SeverityCounts>((acc, c) => sumCounts(acc, c.counts!), emptyCounts(null));
+  // Only controls owned by Harbor or the status file add counts, and never for a repository whose
+  // mapped tool alerts are already findings: the same vulnerabilities are never counted twice.
+  const external = externalCountsFrom(securityControls, findings);
   const githubCounts = anyGitHubSourceReadable ? countOpen(findings) : emptyCounts(null);
   const openCounts = sumCounts(githubCounts, external);
   const anySourceReadable = anyGitHubSourceReadable || external.critical !== null;
@@ -237,6 +289,7 @@ export function buildProjectSnapshot(
       remediation: sla.remediation,
       exceptions: securityExceptions,
       acceptedCount,
+      supplyChain,
     },
     openCounts,
     openSecretAlerts,
@@ -255,9 +308,10 @@ export function buildProjectSnapshot(
     byCategory[f.category]++;
     bySource[f.source]++;
   }
-  // External scanners report counts per control, not individual findings.
+  // External scanners (status file, Harbor) report counts per control, not individual findings.
   for (const c of securityControls.flatMap((rc) => rc.controls)) {
     if (!c.counts || NATIVE_CONTROLS.includes(c.control) || c.state === 'not-applicable') continue;
+    if (c.source !== 'harbor' && c.source !== 'status-file') continue;
     const total =
       (c.counts.critical ?? 0) +
       (c.counts.high ?? 0) +
@@ -327,14 +381,21 @@ export function buildProjectSnapshot(
     const c = config.components.find((x) => x.id === componentId)!;
     return isCoverageApplicable(c.type, c.testCoverage);
   };
+  const sonarKeyOf = (componentId: string) =>
+    (componentId === 'coordinator'
+      ? config.coordinator.sonarProjectKey
+      : config.components.find((c) => c.id === componentId)?.sonarProjectKey) ?? null;
   const qualityComponents = raw.repos.map((r) => ({
     componentId: r.componentId,
     repository: r.repository,
     applicable: applicable(r.componentId),
+    sonarKey: sonarKeyOf(r.componentId),
   }));
   const qualityInput: QualityInput = {
     components: qualityComponents,
-    repos: new Map(),
+    ciReports: new Map(),
+    sonarReports: new Map(),
+    sources: policies.quality.sources,
     findings: new Map(),
     collectedAt: generatedAt,
   };
@@ -350,7 +411,7 @@ export function buildProjectSnapshot(
       policies,
       now,
     );
-    qualityInput.repos.set(key, quality);
+    qualityInput.ciReports.set(key, quality);
     qualityInput.findings.set(key, r.codeQualityFindings);
     // The normaliser already built the one error for this summary: never record it twice.
     // A repository no component needs a report from is not reported.
@@ -364,6 +425,20 @@ export function buildProjectSnapshot(
         expectedNotFound: true,
       });
     }
+  }
+  // SonarQube: one report per mapped project key (only when the provider is on, i.e. loaded).
+  for (const c of qualityComponents) {
+    const result = c.sonarKey ? raw.sonar?.get(c.sonarKey) : undefined;
+    if (!c.sonarKey || !result || qualityInput.sonarReports!.has(c.sonarKey)) continue;
+    const { quality, error } = normaliseSonarProject(c.sonarKey, result, policies, now);
+    qualityInput.sonarReports!.set(c.sonarKey, quality);
+    if (error && c.applicable) {
+      // The key is a catalog value, not a repository: report the component's repository.
+      const { repository: _key, ...rest } = error;
+      ctx.errors.push({ repository: c.repository, componentId: c.componentId, ...rest });
+    }
+    if (quality.state === 'stale' && c.applicable)
+      staleQuality.push({ ...quality, repository: c.repository });
   }
   const qualityHealth = evaluateQuality(qualityInput, policies);
 
@@ -407,6 +482,15 @@ export function buildProjectSnapshot(
         staleSources.push({ repository: rc.repository, source, lastUpdatedAt: c.lastScanAt });
       }
     }
+  }
+  for (const r of uniqueRepos) {
+    const summary = evidences.get(r.componentId)!.summary;
+    if (summary.state === 'stale')
+      staleSources.push({
+        repository: r.repository,
+        source: 'supply-chain-summary',
+        lastUpdatedAt: summary.generatedAt,
+      });
   }
   for (const q of staleQuality) {
     staleSources.push({
@@ -470,6 +554,7 @@ export function buildProjectSnapshot(
     governanceHealth,
     qualityHealth,
     repositoryControls: repositoryControls.health,
+    supplyChain,
     overallHealth,
     score,
     dataFreshness: {
@@ -535,6 +620,12 @@ export function toProjectSummary(s: ProjectSnapshot): ProjectSummary {
       unknown: s.repositoryControls.unknown,
       notApplicable: s.repositoryControls.notApplicable,
       ratio: s.repositoryControls.ratio,
+    },
+    supplyChain: {
+      repositories: s.supplyChain.totals.repositories,
+      sbomAvailable: s.supplyChain.totals.sbomAvailable,
+      unsignedImages: s.supplyChain.totals.unsignedImages,
+      flagged: s.supplyChain.totals.flagged,
     },
     freshness: s.dataFreshness.status,
     openCounts: s.securityHealth.openCounts,

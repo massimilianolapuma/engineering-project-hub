@@ -54,9 +54,28 @@
   ],
   "codeQualityFindings": [],
   "branchRules": [
-    { "type": "pull_request", "requiredApprovals": 1 },
-    { "type": "required_status_checks", "requiredApprovals": null },
-    { "type": "non_fast_forward", "requiredApprovals": null },
-    { "type": "deletion", "requiredApprovals": null }
-  ]
+    {
+      "type": "pull_request",
+      "requiredApprovals": 1
+    },
+    {
+      "type": "required_status_checks",
+      "requiredApprovals": null
+    },
+    {
+      "type": "non_fast_forward",
+      "requiredApprovals": null
+    },
+    {
+      "type": "deletion",
+      "requiredApprovals": null
+    }
+  ],
+  "dependencySbom": {
+    "$error": {
+      "classification": "not-configured",
+      "httpStatus": 403,
+      "message": "Dependency graph is not enabled for this repository"
+    }
+  }
 }

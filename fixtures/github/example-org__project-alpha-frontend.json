@@ -126,17 +126,121 @@
       "generatedAt": "@now-2d",
       "tool": "vitest",
       "format": "lcov",
-      "lines": { "covered": 3780, "valid": 4500 }
+      "lines": {
+        "covered": 3780,
+        "valid": 4500
+      }
     },
     "createdAt": "@now-2d",
     "runId": 9005
   },
-  "codeQualityFindings": [{ "category": "maintainability", "severity": "warning" }],
-  "directories": { ".github/workflows": [{ "name": "ci-main.yml", "type": "file" }] },
+  "codeQualityFindings": [
+    {
+      "category": "maintainability",
+      "severity": "warning"
+    }
+  ],
+  "directories": {
+    ".github/workflows": [
+      {
+        "name": "ci-main.yml",
+        "type": "file"
+      }
+    ]
+  },
   "branchRules": [
-    { "type": "pull_request", "requiredApprovals": 1 },
-    { "type": "required_status_checks", "requiredApprovals": null },
-    { "type": "non_fast_forward", "requiredApprovals": null },
-    { "type": "deletion", "requiredApprovals": null }
-  ]
+    {
+      "type": "pull_request",
+      "requiredApprovals": 1
+    },
+    {
+      "type": "required_status_checks",
+      "requiredApprovals": null
+    },
+    {
+      "type": "non_fast_forward",
+      "requiredApprovals": null
+    },
+    {
+      "type": "deletion",
+      "requiredApprovals": null
+    }
+  ],
+  "dependencySbom": {
+    "$error": {
+      "classification": "not-configured",
+      "httpStatus": 403,
+      "message": "Dependency graph is not enabled for this repository"
+    }
+  },
+  "supplyChainSummary": {
+    "summary": {
+      "schemaVersion": "1.0",
+      "repository": "example-org/project-alpha-frontend",
+      "ref": "refs/heads/main",
+      "commitSha": "ae4b58f791cf66bf510c92ca102cc34470fbdf7d",
+      "generatedAt": "@now-1d",
+      "sbom": {
+        "format": "cyclonedx",
+        "specVersion": "1.6",
+        "tool": "syft",
+        "packages": 812,
+        "withoutLicense": 9,
+        "licenses": [
+          {
+            "id": "MIT",
+            "count": 640
+          },
+          {
+            "id": "ISC",
+            "count": 90
+          },
+          {
+            "id": "Apache-2.0",
+            "count": 50
+          },
+          {
+            "id": "BSD-2-Clause",
+            "count": 20
+          },
+          {
+            "id": "LicenseRef-canary-acme-9b2e",
+            "count": 3
+          }
+        ],
+        "ecosystems": [
+          {
+            "id": "npm",
+            "count": 812
+          }
+        ]
+      },
+      "images": [
+        {
+          "name": "example-org/project-alpha-frontend",
+          "tag": "2.1.0",
+          "digest": "sha256:c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+          "signature": {
+            "status": "verified",
+            "tool": "cosign"
+          },
+          "provenance": {
+            "status": "verified",
+            "tool": "gh-attestation"
+          }
+        }
+      ]
+    },
+    "createdAt": "@now-1d",
+    "runId": 9102
+  },
+  "codeScanningAnalyses": {
+    "ZAP": [
+      {
+        "createdAt": "@now-10d",
+        "toolName": "ZAP",
+        "category": "zap-baseline"
+      }
+    ]
+  }
 }

@@ -12,7 +12,7 @@
     "newFindings": 1,
     "resolvedFindings": 1,
     "versionMoves": 1,
-    "newErrors": 1,
+    "newErrors": 6,
     "checkChanges": 1,
     "newlyOverdue": 1,
     "expiredExceptions": 1
@@ -105,7 +105,13 @@
           "to": "2.1.0"
         }
       ],
-      "newErrors": [],
+      "newErrors": [
+        {
+          "repository": "example-org/project-alpha-frontend",
+          "source": "harbor",
+          "classification": "not-found"
+        }
+      ],
       "resolvedErrors": 0,
       "checkChanges": [],
       "newlyOverdue": [],
@@ -155,6 +161,21 @@
       "versionMoves": [],
       "newErrors": [
         {
+          "repository": "example-org/project-beta-api",
+          "source": "attestations",
+          "classification": "not-authorised"
+        },
+        {
+          "repository": "example-org/project-beta-api",
+          "source": "dependency-sbom",
+          "classification": "not-authorised"
+        },
+        {
+          "repository": "example-org/project-beta-coordinator",
+          "source": "argocd",
+          "classification": "not-authorised"
+        },
+        {
           "repository": "example-org/project-beta-web",
           "source": "secret-scanning",
           "classification": "not-authorised"
@@ -189,7 +210,13 @@
       "findingsTruncated": 0,
       "findingsPartial": true,
       "versionMoves": [],
-      "newErrors": [],
+      "newErrors": [
+        {
+          "repository": "example-org/project-gamma-service",
+          "source": "sonarqube",
+          "classification": "not-authorised"
+        }
+      ],
       "resolvedErrors": 0,
       "checkChanges": [],
       "newlyOverdue": [],

@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { mkdtemp, mkdir, writeFile, cp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { parse } from 'yaml';
 import { CatalogSchema, PoliciesSchema, ProjectConfigSchema } from '@model/index';
 import {
   ConfigError,
@@ -245,6 +246,8 @@ describe('policies.yaml validation', () => {
       greenThresholdPercent: 80,
       amberThresholdPercent: 60,
       missingReportIsAmber: true,
+      sources: ['ci-summary', 'sonarqube'],
+      qualityGateFailed: 'info',
     });
     expect(p.freshness.qualityReportStaleDays).toBe(14);
     // Omitted from the file, the schema defaults are the same.
@@ -500,5 +503,231 @@ exceptions:
     const r = spawnSync('npx', ['tsx', 'scripts/validate-config.ts', dir], { encoding: 'utf8' });
     expect(r.status).toBe(1);
     expect(r.stderr).toContain('exceptions[0] (EXC-0001)');
+  });
+});
+
+describe('policies: supply chain, quality sources and version levels', () => {
+  const raw = parse(policiesText) as Record<string, Record<string, unknown>>;
+  // Schema defaults: the same file without the blocks this release adds.
+  const bare = (): Record<string, unknown> => {
+    const { supplyChain: _s, ...rest } = raw;
+    void _s;
+    const quality = { ...raw.quality } as Record<string, unknown>;
+    delete quality.sources;
+    delete quality.qualityGateFailed;
+    const version = { ...raw.version } as Record<string, unknown>;
+    delete version.environmentOutOfSync;
+    delete version.environmentDegraded;
+    const freshness = { ...raw.freshness } as Record<string, unknown>;
+    delete freshness.supplyChainSummaryStaleDays;
+    return { ...rest, quality, version, freshness };
+  };
+  const parsePolicies = (over: Record<string, unknown> = {}) =>
+    PoliciesSchema.safeParse({ ...bare(), ...over });
+  const withSupplyChain = (supplyChain: unknown) => parsePolicies({ supplyChain });
+
+  it('defaults: SBOM export OFF, enabled true, maxBytes 16777216, pollAttempts 3, maxAssets 5, levels info', () => {
+    const p = PoliciesSchema.parse(bare());
+    expect(p.supplyChain.enabled).toBe(true);
+    expect(p.supplyChain.sbom).toEqual({
+      dependencyGraph: false,
+      maxBytes: 16777216,
+      pollAttempts: 3,
+      pollIntervalSeconds: 5,
+      flaggedLicenses: [],
+    });
+    expect(p.supplyChain.attestations).toEqual({ releaseAssets: true, maxAssets: 5 });
+    expect(p.supplyChain.toolControls).toEqual({
+      containerScanning: [{ tool: 'Trivy' }],
+      iacScanning: [{ tool: 'Checkov' }],
+      dast: [{ tool: 'ZAP' }],
+    });
+    expect(p.supplyChain.precedence).toEqual({
+      containerScanning: ['code-scanning', 'harbor', 'status-file'],
+      iacScanning: ['code-scanning', 'status-file'],
+      dast: ['code-scanning', 'status-file'],
+      sbom: ['supply-chain-summary', 'dependency-graph', 'status-file'],
+      artifactSignature: ['supply-chain-summary', 'attestations', 'harbor', 'status-file'],
+    });
+    expect(p.supplyChain.levels).toEqual({ unsignedArtifact: 'info', flaggedLicense: 'info' });
+    expect(p.quality.sources).toEqual(['ci-summary', 'sonarqube']);
+    expect(p.quality.qualityGateFailed).toBe('info');
+    expect(p.version.environmentOutOfSync).toBe('info');
+    expect(p.version.environmentDegraded).toBe('info');
+    expect(p.freshness.supplyChainSummaryStaleDays).toBe(14);
+  });
+
+  it('the demo file keeps the export off and flags GPL licenses (informative)', () => {
+    const p = PoliciesSchema.parse(raw);
+    expect(p.supplyChain.sbom.dependencyGraph).toBe(false);
+    expect(p.supplyChain.sbom.flaggedLicenses).toEqual(['GPL-3.0-only', 'AGPL-3.0-only']);
+    expect(p.supplyChain.levels).toEqual({ unsignedArtifact: 'info', flaggedLicense: 'info' });
+  });
+
+  it('precedence.iacScanning [harbor] rejected; precedence.sbom [] rejected; duplicate rejected', () => {
+    const precedence = (over: Record<string, unknown>) =>
+      withSupplyChain({ precedence: over }).success;
+    expect(precedence({ iacScanning: ['harbor'] })).toBe(false);
+    expect(precedence({ sbom: [] })).toBe(false);
+    expect(precedence({ sbom: ['dependency-graph', 'dependency-graph'] })).toBe(false);
+    expect(precedence({ sbom: ['dependency-graph'] })).toBe(true);
+    expect(precedence({ artifactSignature: ['harbor', 'attestations'] })).toBe(true);
+  });
+
+  it('toolControls: Trivy under container and iac needs categories; trivy-image / trivy-config accepted', () => {
+    const rules = (toolControls: unknown) => withSupplyChain({ toolControls }).success;
+    expect(
+      rules({
+        containerScanning: [{ tool: 'Trivy' }],
+        iacScanning: [{ tool: 'trivy' }],
+        dast: [],
+      }),
+    ).toBe(false);
+    expect(
+      rules({
+        containerScanning: [{ tool: 'Trivy', category: 'trivy-image' }],
+        iacScanning: [{ tool: 'Trivy', category: 'trivy-config' }],
+        dast: [],
+      }),
+    ).toBe(true);
+  });
+
+  it('quality.sources must be non-empty and unique; qualityGateFailed is info or amber', () => {
+    const q = raw.quality as Record<string, unknown>;
+    const quality = (over: Record<string, unknown>) =>
+      PoliciesSchema.safeParse({ ...raw, quality: { ...q, ...over } }).success;
+    expect(quality({ sources: [] })).toBe(false);
+    expect(quality({ sources: ['sonarqube', 'sonarqube'] })).toBe(false);
+    expect(quality({ sources: ['sonarqube'] })).toBe(true);
+    expect(quality({ sources: ['jenkins'] })).toBe(false);
+    expect(quality({ qualityGateFailed: 'red' })).toBe(false);
+    expect(quality({ qualityGateFailed: 'amber' })).toBe(true);
+  });
+
+  it('SBOM bounds: pollAttempts 0 / maxBytes over 64 MiB rejected', () => {
+    expect(withSupplyChain({ sbom: { pollAttempts: 0 } }).success).toBe(false);
+    expect(withSupplyChain({ sbom: { maxBytes: 67108865 } }).success).toBe(false);
+    expect(withSupplyChain({ attestations: { maxAssets: 0 } }).success).toBe(false);
+  });
+});
+
+describe('catalog: supply chain mappings', () => {
+  const alpha = parse(catalogText) as Record<string, unknown> & {
+    coordinator: Record<string, unknown>;
+    components: Record<string, unknown>[];
+    environments: Record<string, unknown>[];
+  };
+  const mutate = (fn: (p: typeof alpha) => void) => {
+    const copy = structuredClone(alpha);
+    fn(copy);
+    return ProjectConfigSchema.safeParse(copy);
+  };
+  const image = (over: Record<string, unknown> = {}) => ({
+    project: 'alpha',
+    repository: 'backend',
+    ...over,
+  });
+
+  it('accepts a sonar key, container images and an argocd application', () => {
+    const r = mutate((p) => {
+      p.components[0]!.sonarProjectKey = 'example-org_project-alpha-backend';
+      p.components[0]!.sonarBranch = 'main';
+      p.components[0]!.containerImages = [image({ tagTemplate: 'v{version}' })];
+      p.environments[0]!.argocdApplication = {
+        name: 'alpha-dev',
+        namespace: 'argocd',
+        project: 'alpha',
+      };
+    });
+    expect(r.success).toBe(true);
+    if (r.success)
+      expect(r.data.components[0]!.containerImages![0]!.tagTemplate).toBe('v{version}');
+  });
+
+  it('tagTemplate defaults to {version}', () => {
+    const r = mutate((p) => {
+      p.components[0]!.containerImages = [image()];
+    });
+    expect(r.success && r.data.components[0]!.containerImages![0]!.tagTemplate).toBe('{version}');
+  });
+
+  it('sonarProjectKey "a b" rejected', () => {
+    expect(mutate((p) => void (p.components[0]!.sonarProjectKey = 'a b')).success).toBe(false);
+  });
+
+  it('containerImages repository "Alpha/Backend" rejected; a registry host is rejected', () => {
+    const images = (repository: string) =>
+      mutate((p) => void (p.components[0]!.containerImages = [image({ repository })])).success;
+    expect(images('Alpha/Backend')).toBe(false);
+    expect(images('ghcr.io/alpha/backend')).toBe(false);
+    expect(images('team/backend')).toBe(true);
+  });
+
+  it('tagTemplate "v{version}" accepted, "latest" and "{version}{version}" rejected', () => {
+    const tag = (tagTemplate: string) =>
+      mutate((p) => void (p.components[0]!.containerImages = [image({ tagTemplate })])).success;
+    expect(tag('v{version}')).toBe(true);
+    expect(tag('latest')).toBe(false);
+    expect(tag('{version}{version}')).toBe(false);
+    expect(tag('{version}/x')).toBe(false);
+  });
+
+  it('argocdApplication name "Beta_Prod" rejected', () => {
+    const app = (name: string) =>
+      mutate((p) => void (p.environments[0]!.argocdApplication = { name })).success;
+    expect(app('Beta_Prod')).toBe(false);
+    expect(app('beta-prod')).toBe(true);
+  });
+
+  it('a duplicate image across the project targets is rejected; more than 5 images too', () => {
+    expect(
+      mutate((p) => {
+        p.components[0]!.containerImages = [image()];
+        p.components[1]!.containerImages = [image()];
+      }).success,
+    ).toBe(false);
+    expect(
+      mutate((p) => {
+        p.coordinator.containerImages = [image({ repository: 'coord' })];
+        p.components[0]!.containerImages = [image({ repository: 'coord' })];
+      }).success,
+    ).toBe(false);
+    expect(
+      mutate(
+        (p) =>
+          void (p.components[0]!.containerImages = ['a', 'b', 'c', 'd', 'e', 'f'].map((r) =>
+            image({ repository: r }),
+          )),
+      ).success,
+    ).toBe(false);
+  });
+
+  it('config/schema documents the mapping fields', () => {
+    const schema = readFileSync('config/schema/project.schema.json', 'utf8');
+    for (const key of ['sonarProjectKey', 'containerImages', 'argocdApplication']) {
+      expect(schema).toContain(key);
+    }
+  });
+});
+
+describe('validate-config with providers.yaml', () => {
+  it('prints the provider states of the shipped file', () => {
+    const r = spawnSync('npx', ['tsx', 'scripts/validate-config.ts', 'config'], {
+      encoding: 'utf8',
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('✔ config/providers.yaml: sonarqube off · harbor off · argocd off');
+  });
+
+  it('exits 1 on a providers file that enables a host without baseUrl', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'hub-cfg-'));
+    await cp('config', dir, { recursive: true });
+    await writeFile(
+      join(dir, 'providers.yaml'),
+      "schemaVersion: '1.0'\nsonarqube:\n  enabled: true\n",
+    );
+    const r = spawnSync('npx', ['tsx', 'scripts/validate-config.ts', dir], { encoding: 'utf8' });
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('providers.yaml');
   });
 });

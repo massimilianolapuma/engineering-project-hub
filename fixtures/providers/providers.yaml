@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../config/schema/providers.schema.json
+#
+# Engineering Project Hub: external providers of the MOCK source (SYNTHETIC demo data).
+# The mock source reads fixtures/providers/<provider>.json instead of contacting any host, so
+# the base URLs below are reserved ".invalid" names. config/providers.yaml ships with all three
+# providers off: a real run never contacts a provider unless its owner opts in.
+schemaVersion: '1.0'
+sonarqube:
+  enabled: true
+  baseUrl: https://sonarqube.example.invalid
+harbor:
+  enabled: true
+  baseUrl: https://harbor.example.invalid
+argocd:
+  enabled: true
+  baseUrl: https://argocd.example.invalid

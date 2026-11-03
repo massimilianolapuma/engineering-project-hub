@@ -4,6 +4,8 @@ export * from './teams';
 export * from './exceptions';
 export * from './findings';
 export * from './policies';
+export * from './providers';
 export * from './contracts';
 export * from './snapshot';
 export * from './history';
+export * from './images';

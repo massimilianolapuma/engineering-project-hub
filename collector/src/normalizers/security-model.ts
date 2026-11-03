@@ -3,6 +3,7 @@ import {
   NATIVE_CONTROLS,
   SecurityStatusFileSchema,
   type ControlId,
+  type ControlSource,
   type ControlState,
   type ControlStatus,
   type ErrorClassification,
@@ -16,6 +17,17 @@ import type { RepoData } from '../collectors/collect';
 import type { ProviderResult } from '../providers/types';
 import type { BaseFinding, MatchableFinding } from '../policy/exceptions';
 import { scrubIdentifier, scrubText } from '../sanitizers/sanitize';
+import {
+  harborContainerCandidate,
+  matchToolRule,
+  NO_SUPPLY_EVIDENCE,
+  resolveControl,
+  sbomCandidates,
+  signatureCandidates,
+  toolCandidate,
+  type ControlCandidate,
+  type SupplyEvidence,
+} from './control-sources';
 import { ageMs, DAY_MS } from '../util/clock';
 import { codeScanningSeverity, normaliseSeverity, normaliseStatus } from './security';
 import { link, pushError, recordError, type BuildContext } from './model';
@@ -54,6 +66,15 @@ export function toFindings(
     ...cls,
   };
 
+  const toolControls = ctx.policies.supplyChain.toolControls;
+  const mappedCategory = (a: { toolName: string | null; category?: string | null }) => {
+    if (!ctx.policies.supplyChain.enabled) return 'code' as const;
+    if (matchToolRule(toolControls.containerScanning, a.toolName, a.category))
+      return 'container' as const;
+    if (matchToolRule(toolControls.iacScanning, a.toolName, a.category)) return 'iac' as const;
+    if (matchToolRule(toolControls.dast, a.toolName, a.category)) return 'dast' as const;
+    return 'code' as const;
+  };
   if (data.codeScanning.ok) {
     for (const a of data.codeScanning.data) {
       const sev = codeScanningSeverity(a.securitySeverityLevel, a.ruleSeverity);
@@ -62,7 +83,7 @@ export function toFindings(
         componentId: componentOf(a.path),
         id: `${data.repository}#code-scanning#${a.number}`,
         source: 'github-code-scanning',
-        category: 'code',
+        category: mappedCategory(a),
         severity: sev.severity,
         originalSeverity: scrubIdentifier(sev.original, 50),
         status: normaliseStatus(a.state, a.dismissedReason),
@@ -256,13 +277,14 @@ function nativeControl(
   findings: SecurityFinding[],
   lastScanAt: string | null,
 ): ControlStatus {
-  const base = { control, required, tool: null, reportUrl: null };
+  const base = { control, required, tool: null, reportUrl: null, source: 'github' as const };
   if (!result.ok)
     return {
       ...base,
       state: stateFromError(result.error.classification, result.error.skipped === true),
       lastScanAt: null,
       counts: null,
+      evidence: null,
     };
   let state: ControlState = 'enabled';
   if (control === 'codeScanning') {
@@ -273,7 +295,7 @@ function nativeControl(
         state = 'stale';
     }
   }
-  return { ...base, state, lastScanAt, counts: countOpen(findings) };
+  return { ...base, state, lastScanAt, counts: countOpen(findings), evidence: 'reported' };
 }
 
 export function toRepositoryControls(
@@ -282,7 +304,9 @@ export function toRepositoryControls(
   data: RepoData,
   findings: SecurityFinding[],
   statusFile: ParsedStatusFile,
+  supply: SupplyEvidence = NO_SUPPLY_EVIDENCE,
 ): RepositoryControls {
+  const evidence = ctx.policies.supplyChain.enabled ? supply : NO_SUPPLY_EVIDENCE;
   const notApplicable = new Set<ControlId>(
     data.componentId === 'coordinator'
       ? project.coordinator.notApplicableControls
@@ -303,6 +327,8 @@ export function toRepositoryControls(
           lastScanAt: null,
           counts: null,
           reportUrl: null,
+          source: null,
+          evidence: null,
         };
       }
       switch (control) {
@@ -334,20 +360,77 @@ export function toRepositoryControls(
             null,
           );
         default:
-          return externalControl(ctx, control, required, statusFile);
+          return resolveExternal(ctx, control, required, statusFile, evidence);
       }
     },
   );
   return { componentId: data.componentId, repository: data.repository, controls };
 }
 
-function externalControl(
+function resolveExternal(
   ctx: BuildContext,
   control: ControlId,
   required: boolean,
   statusFile: ParsedStatusFile,
+  evidence: SupplyEvidence,
 ): ControlStatus {
-  const base = { control, required, tool: null, lastScanAt: null, counts: null, reportUrl: null };
+  const sc = ctx.policies.supplyChain;
+  const candidates: Partial<Record<ControlSource, ControlCandidate>> = {
+    'status-file': statusFileCandidate(ctx, control, statusFile),
+  };
+  const tools = sc.toolControls;
+  switch (control) {
+    case 'containerScanning':
+      candidates['code-scanning'] = toolCandidate(
+        ctx,
+        tools.containerScanning,
+        evidence.analyses,
+        evidence.alerts,
+      );
+      candidates.harbor = harborContainerCandidate(ctx, evidence.harbor);
+      return resolveControl(control, required, candidates, sc.precedence.containerScanning);
+    case 'iacScanning':
+      candidates['code-scanning'] = toolCandidate(
+        ctx,
+        tools.iacScanning,
+        evidence.analyses,
+        evidence.alerts,
+      );
+      return resolveControl(control, required, candidates, sc.precedence.iacScanning);
+    case 'dast':
+      candidates['code-scanning'] = toolCandidate(
+        ctx,
+        tools.dast,
+        evidence.analyses,
+        evidence.alerts,
+      );
+      return resolveControl(control, required, candidates, sc.precedence.dast);
+    case 'sbom':
+      Object.assign(candidates, sbomCandidates(ctx, evidence.summary, evidence.sbom));
+      return resolveControl(control, required, candidates, sc.precedence.sbom);
+    default:
+      Object.assign(
+        candidates,
+        signatureCandidates(ctx, evidence.summary, evidence.attestations, evidence.harbor),
+      );
+      return resolveControl(control, required, candidates, sc.precedence.artifactSignature);
+  }
+}
+
+/** The `.security/project-security-status.json` answer for one control, as a candidate. */
+function statusFileCandidate(
+  ctx: BuildContext,
+  control: ControlId,
+  statusFile: ParsedStatusFile,
+): ControlCandidate {
+  const base = {
+    source: 'status-file' as const,
+    tool: null,
+    lastScanAt: null,
+    counts: null,
+    reportUrl: null,
+    evidence: null,
+  };
   if (statusFile.status === 'missing') return { ...base, state: 'not-configured' };
   if (statusFile.status === 'unavailable')
     return {
@@ -372,8 +455,8 @@ function externalControl(
     ? { ...emptyCounts(0), ...reported }
     : null;
   return {
-    control,
-    required,
+    ...base,
+    evidence: 'reported',
     state,
     tool: 'tool' in entry ? scrubIdentifier(entry.tool, 50) : null,
     lastScanAt,

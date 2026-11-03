@@ -16,6 +16,7 @@ function stub(overrides: Partial<Record<keyof SourceProvider, unknown>> = {}) {
   const provider = {
     dataSource: 'mock',
     authenticationMode: 'mock',
+    dependencyGraphExport: true,
     getRepository: vi.fn(async (repo: string) => ok(repoDto(repo.split('/')[1]!))),
     getBranchHead: vi.fn(async () => ok({ sha: A, htmlUrl: null, committedAt: null })),
     getLatestRelease: vi.fn(async () => NOT_FOUND),

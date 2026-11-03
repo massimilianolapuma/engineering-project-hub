@@ -19,6 +19,7 @@ import {
 import { loadConfig, resolveExceptionsPath } from '../../collector/src/config/load';
 import { buildHistoryExtras } from '../../collector/src/history/extras';
 import { loadPreviousHistory } from '../../collector/src/history/load';
+import { createMockExternalProviders } from '../../collector/src/providers/external/mock';
 import { MockProvider } from '../../collector/src/providers/mock/mock-provider';
 import { fail, ok, type SourceProvider } from '../../collector/src/providers/types';
 import { runCollection } from '../../collector/src/run';
@@ -49,13 +50,14 @@ afterAll(() => rm(out, { recursive: true, force: true }));
 async function loadMockConfig() {
   return loadConfig('config', {
     exceptionsFile: 'fixtures/exceptions/exceptions.yaml',
+    providersFile: 'fixtures/providers/providers.yaml',
     allowDateTokens: true,
     now: new Date(GOLDEN_NOW),
   });
 }
 
 async function mockRun() {
-  const { catalog, policies, exceptions } = await loadMockConfig();
+  const { catalog, policies, exceptions, providers } = await loadMockConfig();
   const clock = fixedClock(GOLDEN_NOW);
   return runCollection({
     catalog,
@@ -63,6 +65,8 @@ async function mockRun() {
     provider: new MockProvider('fixtures/github', clock),
     clock,
     exceptions,
+    providers: providers.file,
+    external: createMockExternalProviders('fixtures/providers', clock, providers.file),
   });
 }
 
@@ -225,9 +229,10 @@ describe('mock collection', () => {
     expect(gamma.overallHealth.status).toBe('grey');
     expect(gamma.securityHealth.openCounts.critical).toBeNull(); // unknown, not zero
     expect(gamma.securityCoverage.percentage).toBeNull();
-    expect(gamma.collectionErrors.map((e) => e.classification).sort()).toEqual([
-      'not-authorised',
-      'not-found',
+    expect(gamma.collectionErrors.map((e) => [e.source, e.classification]).sort()).toEqual([
+      ['repository', 'not-authorised'],
+      ['repository', 'not-found'],
+      ['sonarqube', 'not-authorised'],
     ]);
   });
 
@@ -265,14 +270,16 @@ const readGolden = async <T>(file: string): Promise<T> =>
   JSON.parse(await readFile(join('fixtures/snapshots', file), 'utf8')) as T;
 
 describe('history and changes (mock run)', () => {
-  it('golden changes totals are {statusChanges:6,newFindings:1,resolvedFindings:1,versionMoves:1,newErrors:1}', async () => {
+  it('golden changes totals are {statusChanges:6,newFindings:1,resolvedFindings:1,versionMoves:1,newErrors:6}', async () => {
     const changes = await readGolden<ChangesFile>('changes.json');
     expect(changes.totals).toEqual({
       statusChanges: 6,
       newFindings: 1,
       resolvedFindings: 1,
       versionMoves: 1,
-      newErrors: 1,
+      // New against the fixture history: Alpha 1 (harbor), Beta 4 (3 new + web secret scanning),
+      // Gamma 1 (sonarqube).
+      newErrors: 6,
       checkChanges: 1,
       newlyOverdue: 1,
       expiredExceptions: 1,
@@ -334,6 +341,21 @@ describe('history and changes (mock run)', () => {
     expect(beta.findingsPartial).toBe(true);
     expect(beta.newErrors).toEqual([
       {
+        repository: 'example-org/project-beta-api',
+        source: 'attestations',
+        classification: 'not-authorised',
+      },
+      {
+        repository: 'example-org/project-beta-api',
+        source: 'dependency-sbom',
+        classification: 'not-authorised',
+      },
+      {
+        repository: 'example-org/project-beta-coordinator',
+        source: 'argocd',
+        classification: 'not-authorised',
+      },
+      {
         repository: 'example-org/project-beta-web',
         source: 'secret-scanning',
         classification: 'not-authorised',
@@ -372,16 +394,20 @@ describe('history and changes (mock run)', () => {
 
   it('golden changes: gamma has empty lists; basis {state:"compared", previousCollectedAt:"2026-01-14T12:00:00.000Z", synthetic:true}', async () => {
     const changes = await readGolden<ChangesFile>('changes.json');
-    for (const id of ['project-gamma']) {
-      expect(changes.projects.find((p) => p.id === id)).toMatchObject({
-        added: false,
-        statusChanges: [],
-        newFindings: [],
-        resolvedFindings: [],
-        versionMoves: [],
-        newErrors: [],
-      });
-    }
+    expect(changes.projects.find((p) => p.id === 'project-gamma')).toMatchObject({
+      added: false,
+      statusChanges: [],
+      newFindings: [],
+      resolvedFindings: [],
+      versionMoves: [],
+      newErrors: [
+        {
+          repository: 'example-org/project-gamma-service',
+          source: 'sonarqube',
+          classification: 'not-authorised',
+        },
+      ],
+    });
     expect(changes.basis).toEqual({
       state: 'compared',
       previousCollectedAt: '2026-01-14T12:00:00.000Z',
@@ -631,20 +657,20 @@ describe('quality dimension (mock run)', () => {
   const byId = (projects: ProjectSnapshot[]) =>
     Object.fromEntries(projects.map((p) => [p.project.id, p])) as Record<string, ProjectSnapshot>;
 
-  it('beta qualityHealth.percentage 67.2 status amber', async () => {
+  it('beta qualityHealth.percentage 66.7 status amber (web read from SonarQube)', async () => {
     const beta = byId((await mockRun()).projects)['project-beta']!;
     expect(beta.qualityHealth).toMatchObject({
       status: 'amber',
-      percentage: 67.2,
-      measured: 2,
+      percentage: 66.7,
+      measured: 3,
       applicable: 3,
-      notVisible: 1,
+      notVisible: 0,
     });
-    expect(beta.qualityHealth.perComponent.map((c) => [c.componentId, c.state])).toEqual([
-      ['coordinator', 'readable'],
-      ['api', 'readable'],
-      ['web', 'missing'],
-      ['helm', 'not-applicable'],
+    expect(beta.qualityHealth.perComponent.map((c) => [c.componentId, c.state, c.source])).toEqual([
+      ['coordinator', 'readable', 'ci-summary'],
+      ['api', 'readable', 'ci-summary'],
+      ['web', 'readable', 'sonarqube'],
+      ['helm', 'not-applicable', null],
     ]);
     expect(beta.qualityHealth.findings).toMatchObject({
       state: 'available',
@@ -854,6 +880,7 @@ describe('sanitisation end to end', () => {
   const poisoned: SourceProvider = {
     dataSource: 'github',
     authenticationMode: 'fine-grained-token',
+    dependencyGraphExport: false,
     getRepository: async (repo) =>
       ok({
         owner: 'example-org',
@@ -874,6 +901,7 @@ describe('sanitisation end to end', () => {
         publishedAt: GOLDEN_NOW,
         prerelease: false,
         htmlUrl: url,
+        assets: [],
       }),
     getLatestTag: async () => fail({ classification: 'not-found' }),
     getFile: async (_r, path) =>
@@ -1004,6 +1032,11 @@ describe('sanitisation end to end', () => {
         runUrl: url,
       }),
     listCodeQualityFindings: async () => ok([{ category: poison, severity: poison }]),
+    listCodeScanningAnalyses: async () => ok([]),
+    getAttestationPresence: async () => fail({ classification: 'not-found' }),
+    getSupplyChainSummary: async () => fail({ classification: 'not-found' }),
+    requestDependencySbom: async () => fail({ classification: 'not-configured' }),
+    fetchDependencySbom: async () => fail({ classification: 'not-configured' }),
     listSecretScanningAlerts: async () =>
       ok([
         {
@@ -1056,7 +1089,7 @@ describe('sanitisation end to end', () => {
 describe('snapshot schema versions', () => {
   it('fails in a controlled way on an unsupported schemaVersion', async () => {
     const text = (await readFile('fixtures/snapshots/index.json', 'utf8')).replace(
-      '"schemaVersion": "1.7"',
+      '"schemaVersion": "1.8"',
       '"schemaVersion": "9.0"',
     );
     const r = validatePortfolio(text);
@@ -1130,10 +1163,10 @@ describe('repository controls (mock run)', () => {
     p.repositoryControls.repositories.find((r) => r.repository === `example-org/${name}`)!;
   const states = (p: ProjectSnapshot, name: string) => repoOf(p, name).checks.map((c) => c.state);
 
-  it('writes snapshot schema 1.7', async () => {
+  it('writes snapshot schema 1.8', async () => {
     const { index, projects } = await byId();
-    expect(index.schemaVersion).toBe('1.7');
-    for (const p of Object.values(projects)) expect(p.schemaVersion).toBe('1.7');
+    expect(index.schemaVersion).toBe('1.8');
+    for (const p of Object.values(projects)) expect(p.schemaVersion).toBe('1.8');
   });
 
   it('counts the checks per project over unique repositories', async () => {
@@ -1494,12 +1527,12 @@ describe('risk governance (mock run)', () => {
   const finding = (p: ProjectSnapshot, id: string) =>
     p.securityFindings.find((f) => f.id === `${id}`)!;
 
-  it('schemaVersion is "1.7" in index, projects and catalog', async () => {
+  it('schemaVersion is "1.8" in index, projects and catalog', async () => {
     const { index, projects } = await mockRun();
-    expect(index.schemaVersion).toBe('1.7');
-    for (const p of projects) expect(p.schemaVersion).toBe('1.7');
+    expect(index.schemaVersion).toBe('1.8');
+    for (const p of projects) expect(p.schemaVersion).toBe('1.8');
     const catalog = JSON.parse(await readFile('fixtures/snapshots/catalog.json', 'utf8'));
-    expect(catalog.schemaVersion).toBe('1.7');
+    expect(catalog.schemaVersion).toBe('1.8');
   });
 
   it('index.run.exceptions equals { source: "fixture", total: 7, orphaned: ["EXC-LEGACY-001"] }', async () => {

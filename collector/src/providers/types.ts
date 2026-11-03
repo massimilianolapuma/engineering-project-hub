@@ -77,12 +77,20 @@ export interface CustomPropertyDTO {
   value: string | string[] | null;
 }
 
+/** A release asset: name and digest only (never the download URL). */
+export interface ReleaseAssetDTO {
+  name: string;
+  /** Kept only when it matches /^sha256:[0-9a-f]{64}$/. */
+  digest: string | null;
+}
+
 export interface ReleaseDTO {
   tagName: string;
   name: string | null;
   publishedAt: string | null;
   prerelease: boolean;
   htmlUrl: string;
+  assets: ReleaseAssetDTO[];
 }
 
 export interface TagDTO {
@@ -141,11 +149,20 @@ export interface CodeScanningAlertDTO {
   htmlUrl: string;
   /** File of the most recent instance; used only to attribute the alert to a monorepo component. */
   path?: string | null;
+  /** most_recent_instance.category: tells apart tools mapped to several controls (e.g. Trivy). */
+  category?: string | null;
 }
 
 export interface CodeScanningAnalysisDTO {
   createdAt: string;
   toolName: string | null;
+  category?: string | null;
+}
+
+/** Whether attestations exist for a digest. The bundle is never read into the DTO. */
+export interface AttestationPresenceDTO {
+  provenance: boolean;
+  sbom: boolean;
 }
 
 export interface DependabotAlertDTO {
@@ -180,6 +197,21 @@ export interface SecretScanningAlertDTO {
 }
 
 export interface QualitySummaryArtifactDTO {
+  /** null when the newest default-branch artifact has expired and no live one exists. */
+  summaryText: string | null;
+  createdAt: string | null;
+  runUrl: string | null;
+}
+
+/** Result of asking GitHub to generate the dependency-graph SBOM report. */
+export interface SbomRequestDTO {
+  uuid: string;
+}
+
+/** `ready` carries the downloaded SPDX text: parsed and dropped by the collector, never published. */
+export type SbomFetchDTO = { state: 'pending' } | { state: 'ready'; text: string };
+
+export interface SupplyChainSummaryArtifactDTO {
   /** null when the newest default-branch artifact has expired and no live one exists. */
   summaryText: string | null;
   createdAt: string | null;
@@ -222,6 +254,12 @@ export const fail = <T = never>(error: ProviderError): ProviderResult<T> => ({ o
 export interface SourceProvider {
   readonly dataSource: DataSource;
   readonly authenticationMode: AuthenticationMode;
+  /**
+   * Whether the dependency-graph SBOM export may be used. The real GitHub provider follows the
+   * owner's opt-in switch (`policies.supplyChain.sbom.dependencyGraph`, off by default); the mock
+   * provider reads fixtures and is always true. When false, `requestDependencySbom` makes no call.
+   */
+  readonly dependencyGraphExport: boolean;
   getRepository(repo: string): Promise<ProviderResult<RepositoryDTO>>;
   /** Discovery: repositories of an owner (organisation or user); public only unless asked. */
   listOwnerRepositories(
@@ -289,6 +327,29 @@ export interface SourceProvider {
     branch: string,
   ): Promise<ProviderResult<QualitySummaryArtifactDTO>>;
   listCodeQualityFindings(repo: string): Promise<ProviderResult<CodeQualityFindingDTO[]>>;
+  /** Code scanning analyses of one tool on a ref (a branch name or refs/heads/<branch>), newest first, up to 10. */
+  listCodeScanningAnalyses(
+    repo: string,
+    tool: string,
+    ref: string,
+  ): Promise<ProviderResult<CodeScanningAnalysisDTO[]>>;
+  /** Presence of provenance / SBOM attestations for a `sha256:` digest (never verified here). */
+  getAttestationPresence(
+    repo: string,
+    digest: string,
+  ): Promise<ProviderResult<AttestationPresenceDTO>>;
+  /** Newest `hub-supply-chain-summary` artifact of a branch, unzipped to the summary JSON text. */
+  getSupplyChainSummary(
+    repo: string,
+    branch: string,
+  ): Promise<ProviderResult<SupplyChainSummaryArtifactDTO>>;
+  /**
+   * Asks GitHub to generate the dependency-graph SBOM (GET .../sbom/generate-report): the single
+   * call that makes GitHub run a job (ADR 0011). Only called when the owner opted in.
+   */
+  requestDependencySbom(repo: string): Promise<ProviderResult<SbomRequestDTO>>;
+  /** Polls the report: 202 → pending; 302 → the SPDX text, downloaded from an allow-listed host. */
+  fetchDependencySbom(repo: string, uuid: string): Promise<ProviderResult<SbomFetchDTO>>;
 }
 
 /**

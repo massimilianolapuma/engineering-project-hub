@@ -6,6 +6,7 @@
  * aligned project is a single line; an unreadable project is a dashed card with its cause.
  */
 import type { ProjectSnapshot } from '@model/index';
+import EnvDeployment from '../../components/EnvDeployment.astro';
 import ErrorState from '../../components/ErrorState.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import Legend from '../../components/Legend.astro';
@@ -241,6 +242,11 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
                             <strong>{e.name}</strong>
                             <span class="mono">{ver(e.version)}</span>
                             <Pill tone={driftTone(e.status)} label={d.envStatus[e.status]} />
+                            <EnvDeployment
+                              e={e}
+                              i18n={i18n}
+                              names={Object.fromEntries(s.components.map((c) => [c.id, c.name]))}
+                            />
                           </span>
                         </li>
                       ))}

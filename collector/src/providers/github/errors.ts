@@ -22,7 +22,7 @@ function apiMessage(e: ErrorLike): string {
 }
 
 const NOT_CONFIGURED =
-  /(not enabled|is disabled|are disabled|must be enabled|advanced security|no analysis found|not available for this repository)/i;
+  /(not enabled|is disabled|are disabled|must be enabled|advanced security|no analysis found|not available for this repository|dependency graph)/i;
 
 /**
  * Classifies a GitHub API error without ever reading request data (which holds the

@@ -3,7 +3,7 @@
  * Engineering Project Hub collector CLI.
  *
  *   tsx collector/src/index.ts [--source mock|github] [--out public/data] [--config config]
- *                              [--exceptions <file>] [--fixtures fixtures/github] [--now 2026-01-15T12:00:00Z]
+ *                              [--exceptions <file>] [--providers <file>] [--fixtures fixtures/github] [--now 2026-01-15T12:00:00Z]
  *                              [--history-from <dir>] [--history-fixture <file>] [--fresh-history]
  *
  * --source defaults to $DATA_SOURCE, then "mock". The previous history is read from
@@ -13,8 +13,15 @@
  */
 import { parseArgs } from 'node:util';
 import { DataSourceSchema } from '@model/index';
-import { ConfigError, loadConfig, resolveExceptionsPath } from './config/load';
+import {
+  ConfigError,
+  loadConfig,
+  resolveExceptionsPath,
+  resolveProvidersPath,
+} from './config/load';
 import { AuthConfigError, resolveAuth } from './providers/auth';
+import { ProviderAuthError, resolveProviderAuth } from './providers/external/auth';
+import { createExternalProviders } from './providers/external/create';
 import { createGitHubClient, GitHubProvider } from './providers/github/github-provider';
 import { buildHistoryExtras } from './history/extras';
 import { historyDir, loadPreviousHistory } from './history/load';
@@ -36,6 +43,7 @@ async function main(): Promise<number> {
       out: { type: 'string', default: 'public/data' },
       config: { type: 'string', default: 'config' },
       exceptions: { type: 'string' },
+      providers: { type: 'string' },
       fixtures: { type: 'string', default: 'fixtures/github' },
       now: { type: 'string' },
       'history-from': { type: 'string' },
@@ -61,8 +69,14 @@ async function main(): Promise<number> {
     config: values.config,
     exceptions: values.exceptions,
   });
-  const { catalog, policies, exceptions } = await loadConfig(values.config, {
+  const providersPath = resolveProvidersPath({
+    source,
+    config: values.config,
+    providers: values.providers,
+  });
+  const { catalog, policies, exceptions, providers } = await loadConfig(values.config, {
     exceptionsFile: file,
+    providersFile: providersPath.file,
     allowDateTokens,
     now: clock(),
   });
@@ -74,12 +88,39 @@ async function main(): Promise<number> {
       : new GitHubProvider(
           createGitHubClient(auth, { baseUrl: values['api-url'] ?? process.env.GITHUB_API_URL }),
           auth.mode,
+          {
+            dependencyGraphExport: policies.supplyChain.sbom.dependencyGraph,
+            sbomMaxBytes: policies.supplyChain.sbom.maxBytes,
+          },
         );
+
+  // Credentials come from the environment only and are never printed: only variable names.
+  const mock = auth.mode === 'mock';
+  const providerAuth = resolveProviderAuth(providers.file, process.env, { mock });
+  for (const id of ['sonarqube', 'harbor', 'argocd'] as const)
+    if (providerAuth[id].enabled && providerAuth[id].authHeader === null)
+      console.warn(
+        `⚠ ${id} is enabled but its credential is not set: its items are reported as not authorised`,
+      );
+  const external = createExternalProviders(
+    providers.file,
+    providerAuth,
+    mock ? { mock, providersFile: providersPath.file, clock } : { mock },
+  );
 
   console.log(
     `Collecting ${catalog.projects.length} project(s) · source=${source} · auth=${provider.authenticationMode}`,
   );
-  const result = await runCollection({ catalog, policies, provider, clock, exceptions });
+  const result = await runCollection({
+    catalog,
+    policies,
+    provider,
+    clock,
+    exceptions,
+    providers: providers.file,
+    external,
+    providerAuth,
+  });
   // The previous history is read before writeSnapshots, which replaces the output directory.
   let extras: HistoryExtras = { history: null, changes: null };
   if (policies.history.enabled) {
@@ -132,6 +173,7 @@ main()
     if (
       e instanceof ConfigError ||
       e instanceof AuthConfigError ||
+      e instanceof ProviderAuthError ||
       e instanceof SnapshotValidationError ||
       e instanceof SanitizationError
     ) {

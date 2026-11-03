@@ -25,12 +25,14 @@ components:
     type: service
     defaultBranch: main
     submodulePath: services/api
+    containerImages: [{ project: beta, repository: api }]
   - id: web
     name: Web console
     repository: example-org/project-beta-web
     type: webapp
     defaultBranch: main
     submodulePath: apps/web
+    sonarProjectKey: example-org_project-beta-web
   - id: helm
     name: Helm deployment
     repository: example-org/project-beta-helm
@@ -40,9 +42,13 @@ components:
     notApplicableControls: [containerScanning]
 
 environments:
-  - { id: dev, name: DEV }
-  - { id: uat, name: UAT }
-  - { id: prod, name: PROD }
+  - id: dev
+    name: DEV
+    argocdApplication: { name: beta-dev, namespace: argocd, project: beta }
+  - { id: uat, name: UAT } # not managed by Argo CD
+  - id: prod
+    name: PROD
+    argocdApplication: { name: beta-prod, namespace: argocd, project: beta }
 
 trackedWorkflows:
   - id: ci

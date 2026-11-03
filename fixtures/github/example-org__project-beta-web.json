@@ -84,7 +84,26 @@
       "sha": "74d77c07925aea1b9d655d1455dcae68b2a0c3ce"
     }
   ],
-  "codeQualityFindings": [{ "category": "maintainability", "severity": "warning" }],
-  "directories": { ".github/workflows": [{ "name": "ci.yml", "type": "file" }] },
-  "branchRules": []
+  "codeQualityFindings": [
+    {
+      "category": "maintainability",
+      "severity": "warning"
+    }
+  ],
+  "directories": {
+    ".github/workflows": [
+      {
+        "name": "ci.yml",
+        "type": "file"
+      }
+    ]
+  },
+  "branchRules": [],
+  "dependencySbom": {
+    "$error": {
+      "classification": "not-configured",
+      "httpStatus": 403,
+      "message": "Dependency graph is not enabled for this repository"
+    }
+  }
 }

@@ -6,6 +6,7 @@
 import { loadConfig } from '../collector/src/config/load';
 import { buildHistoryExtras } from '../collector/src/history/extras';
 import { loadPreviousHistory } from '../collector/src/history/load';
+import { createMockExternalProviders } from '../collector/src/providers/external/mock';
 import { MockProvider } from '../collector/src/providers/mock/mock-provider';
 import { runCollection } from '../collector/src/run';
 import { fixedClock } from '../collector/src/util/clock';
@@ -14,9 +15,10 @@ import { writeSnapshots } from '../collector/src/writers/write-snapshots';
 export const GOLDEN_NOW = '2026-01-15T12:00:00.000Z';
 
 const clock = fixedClock(GOLDEN_NOW);
-// The mock source reads the fixture exceptions, whose dates may use @now tokens.
-const { catalog, policies, exceptions } = await loadConfig('config', {
+// The mock source reads the fixture exceptions and providers, whose dates may use @now tokens.
+const { catalog, policies, exceptions, providers } = await loadConfig('config', {
   exceptionsFile: 'fixtures/exceptions/exceptions.yaml',
+  providersFile: 'fixtures/providers/providers.yaml',
   allowDateTokens: true,
   now: clock(),
 });
@@ -26,6 +28,8 @@ const result = await runCollection({
   provider: new MockProvider('fixtures/github', clock),
   clock,
   exceptions,
+  providers: providers.file,
+  external: createMockExternalProviders('fixtures/providers', clock, providers.file),
 });
 // Mock history always starts from the fixture, never from the previous golden output, so
 // running this twice gives the same files.

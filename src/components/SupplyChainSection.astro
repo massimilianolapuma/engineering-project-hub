@@ -1,0 +1,303 @@
+---
+/**
+ * Project page, "Supply chain" (body of the #supply-chain fold): the evidence legend and one row
+ * per repository with its SBOM (packages, source), license counts, release attestations, the
+ * container images per source (CI summary, Harbor) and the CI supply-chain summary state.
+ *
+ * Only counts, license identifiers and tags are shown: package names, license texts and custom
+ * license names never reach the snapshot. A pending or unreadable SBOM says why and never shows
+ * 0 packages. Evidence always carries its word (EvidenceLabel); unknown is never "unsigned".
+ */
+import { scanLine } from '../lib/supply-chain-view';
+import type { ProjectSnapshot, SeverityCounts } from '@model/index';
+import type { I18n } from '../i18n';
+import EvidenceLabel, { type EvidenceLevel } from './EvidenceLabel.astro';
+import ExtLink from './ExtLink.astro';
+import Pill from './Pill.astro';
+import RelTime from './RelTime.astro';
+interface Props {
+  s: ProjectSnapshot;
+  i18n: I18n;
+}
+const { s, i18n } = Astro.props;
+const { d, f } = i18n;
+const t = d.supplyChain;
+const sc = s.supplyChain;
+
+type Repo = (typeof sc.repositories)[number];
+type Image = Repo['images'][number];
+
+const nameOf = (componentId: string) =>
+  componentId === 'coordinator'
+    ? d.common.coordinator
+    : (s.components.find((c) => c.id === componentId)?.name ?? componentId);
+const shortRepo = (r: string) => r.slice(r.indexOf('/') + 1);
+
+const sbomSource = (src: Repo['sbom']['source']) =>
+  src === 'dependency-graph'
+    ? t.source.dependencyGraph
+    : src === 'supply-chain-summary'
+      ? t.source.summary
+      : null;
+const SBOM_COUNTED = new Set<Repo['sbom']['state']>(['available', 'partial']);
+const SBOM_BLIND = new Set<Repo['sbom']['state']>([
+  'pending',
+  'not-authorised',
+  'unknown',
+  'invalid',
+  'too-large',
+]);
+/** "{n} packages" around a bold number: the template split at {n}. */
+const packagesParts = (n: number) =>
+  (n === 1 ? t.packagesOne.replace('1', '{n}') : t.packages).split('{n}');
+const formatName = (r: Repo['sbom']) =>
+  r.format
+    ? `${r.format === 'cyclonedx' ? 'CycloneDX' : 'SPDX'} ${r.specVersion ?? ''}`.trim()
+    : null;
+const hasLicenseRef = sc.repositories.some((r) =>
+  r.sbom.licenses.some((l) => l.id.startsWith('LicenseRef')),
+);
+
+/** Release-asset attestations: present when some asset carries one, missing when none does. */
+const attLevel = (n: number | null, checked: number): EvidenceLevel =>
+  n === null ? 'unknown' : n > 0 ? 'present' : checked > 0 ? 'missing' : 'na';
+
+const scanText = (c: SeverityCounts | null) => {
+  const line = scanLine(
+    c,
+    (k, n) => `${n} ${n === 1 ? d.project.sevOne[k] : d.project.sevMany[k]}`,
+  );
+  return line.kind === 'counts'
+    ? line.text
+    : line.kind === 'clean'
+      ? t.scanClean
+      : t.scanCountsUnknown;
+};
+const imgSource = (i: Image) => (i.source === 'harbor' ? t.source.harbor : t.source.summary);
+---
+
+{!sc.enabled ? (
+  <p class="muted">{t.off}</p>
+) : (
+  <>
+    <div class="sc-legend" role="note">
+      <EvidenceLabel level="verified" i18n={i18n} />
+      <EvidenceLabel level="present" i18n={i18n} />
+      <EvidenceLabel level="missing" i18n={i18n} />
+      <EvidenceLabel level="unknown" i18n={i18n} />
+      <span>
+        <EvidenceLabel level="na" i18n={i18n} /> {t.evidence.notApplicable}
+      </span>
+      <p>{t.legend}</p>
+    </div>
+    <div class="table-wrap" tabindex="0" role="region" aria-label={t.tableCaption}>
+      <table role="table" class="table sc-table">
+        <caption class="visually-hidden">{t.tableCaption}</caption>
+        <thead role="rowgroup">
+          <tr role="row">
+            <th role="columnheader" scope="col">
+              {t.col.repository}
+            </th>
+            <th role="columnheader" scope="col">
+              {t.col.sbom}
+            </th>
+            <th role="columnheader" scope="col">
+              {t.col.licenses}
+            </th>
+            <th role="columnheader" scope="col">
+              {t.col.attestations}
+            </th>
+            <th role="columnheader" scope="col">
+              {t.col.images}
+            </th>
+            <th role="columnheader" scope="col">
+              {t.col.summary}
+            </th>
+          </tr>
+        </thead>
+        <tbody role="rowgroup">
+          {sc.repositories.map((r) => {
+            const src = sbomSource(r.sbom.source);
+            const a = r.attestations;
+            return (
+              <tr role="row" data-sc-repository={r.repository}>
+                <th role="rowheader" scope="row">
+                  {r.componentIds.map(nameOf).join(' · ')}
+                  <code class="sub">{shortRepo(r.repository)}</code>
+                </th>
+                <td role="cell" data-label={t.col.sbom}>
+                  <div class="sc-stack">
+                    {SBOM_COUNTED.has(r.sbom.state) && r.sbom.packages !== null ? (
+                      <span>
+                        {packagesParts(r.sbom.packages)[0]}
+                        <b class="tabular">{i18n.number(r.sbom.packages)}</b>
+                        {packagesParts(r.sbom.packages)[1]}
+                        {(r.sbom.withoutLicense ?? 0) > 0 &&
+                          ` · ${f(t.withoutLicense, { n: i18n.number(r.sbom.withoutLicense ?? 0) })}`}
+                      </span>
+                    ) : SBOM_BLIND.has(r.sbom.state) ? (
+                      <Pill tone="grey" label={t.sbomState[r.sbom.state]} />
+                    ) : (
+                      <span class="muted">{t.sbomState[r.sbom.state]}</span>
+                    )}
+                    {src && <span class="srcl">{src}</span>}
+                    {r.sbom.source === 'supply-chain-summary' && formatName(r.sbom) && (
+                      <span class="via">{formatName(r.sbom)}</span>
+                    )}
+                  </div>
+                </td>
+                <td role="cell" data-label={t.col.licenses}>
+                  {r.sbom.licenses.length > 0 ? (
+                    <ul class="sc-lic">
+                      {r.sbom.licenses.map((l) => (
+                        <li>
+                          <span>{l.id.startsWith('LicenseRef') ? t.customLicenses : l.id}</span>
+                          <b class="tabular">{i18n.number(l.count)}</b>
+                        </li>
+                      ))}
+                      {r.sbom.otherLicenses > 0 && (
+                        <li>
+                          <span>{t.otherLicenses}</span>
+                          <b class="tabular">{i18n.number(r.sbom.otherLicenses)}</b>
+                        </li>
+                      )}
+                    </ul>
+                  ) : (
+                    <span class="muted">–</span>
+                  )}
+                </td>
+                <td role="cell" data-label={t.col.attestations}>
+                  {a.state === 'available' ? (
+                    <div class="sc-stack">
+                      <EvidenceLabel
+                        level={attLevel(a.withProvenance, a.checked)}
+                        kind={t.kind.provenance}
+                        i18n={i18n}
+                      />
+                      <EvidenceLabel
+                        level={attLevel(a.withSbom, a.checked)}
+                        kind={t.kind.sbom}
+                        i18n={i18n}
+                      />
+                      {a.release && (
+                        <span class="via">
+                          {f(a.checked === 1 ? t.attestationsAssetsOne : t.attestationsAssets, {
+                            release: a.release,
+                            n: a.withProvenance ?? 0,
+                            m: a.checked,
+                          })}
+                        </span>
+                      )}
+                    </div>
+                  ) : a.state === 'not-applicable' ? (
+                    <div class="sc-stack">
+                      <EvidenceLabel level="na" i18n={i18n} />
+                      {a.release && (
+                        <span class="via">{f(t.attestationsNoAssets, { release: a.release })}</span>
+                      )}
+                    </div>
+                  ) : a.state === 'none' ? (
+                    <EvidenceLabel level="missing" text={t.attestationsState.none} i18n={i18n} />
+                  ) : a.state === 'off' ? (
+                    <span class="muted">{t.attestationsState.off}</span>
+                  ) : (
+                    <EvidenceLabel
+                      level="unknown"
+                      text={
+                        a.state === 'not-authorised'
+                          ? t.attestationsState['not-authorised']
+                          : undefined
+                      }
+                      i18n={i18n}
+                    />
+                  )}
+                </td>
+                <td role="cell" data-label={t.col.images}>
+                  {r.images.length === 0 ? (
+                    <EvidenceLabel level="na" i18n={i18n} />
+                  ) : (
+                    <div class="sc-stack">
+                      {r.images.map((img) => (
+                        <div class="sc-img">
+                          <div class="sc-row">
+                            {img.name ? (
+                              <code>
+                                {img.name}
+                                {img.tag ? `:${img.tag}` : ''}
+                              </code>
+                            ) : (
+                              <span class="muted">
+                                {t.imageWithheld}
+                                {img.tag ? ` · ${img.tag}` : ''}
+                              </span>
+                            )}
+                            <span class="srcl">{imgSource(img)}</span>
+                          </div>
+                          <div class="sc-row">
+                            <EvidenceLabel
+                              level={img.signature}
+                              kind={t.kind.signature}
+                              i18n={i18n}
+                            />
+                            <EvidenceLabel
+                              level={img.provenance}
+                              kind={t.kind.provenance}
+                              i18n={i18n}
+                            />
+                          </div>
+                          {img.scan &&
+                            (img.scan.state === 'scanned' ? (
+                              <span class="via">
+                                {scanText(img.scan.counts)}
+                                {(img.scan.fixable ?? 0) > 0 &&
+                                  ` · ${f(t.scanFixable, { n: img.scan.fixable ?? 0 })}`}
+                                {img.scan.scannedAt && (
+                                  <>
+                                    {' · '}
+                                    <RelTime iso={img.scan.scannedAt} i18n={i18n} />
+                                  </>
+                                )}
+                              </span>
+                            ) : (
+                              <span class="via">{t.scanState[img.scan.state]}</span>
+                            ))}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </td>
+                <td role="cell" data-label={t.col.summary}>
+                  {r.summary.state === 'readable' || r.summary.state === 'stale' ? (
+                    <div class="sc-stack">
+                      <Pill
+                        tone={r.summary.state === 'readable' ? 'green' : 'amber'}
+                        label={t.summaryState[r.summary.state]}
+                      />
+                      <span class="via">
+                        <RelTime iso={r.summary.generatedAt} i18n={i18n} />
+                        {r.summary.runUrl && (
+                          <>
+                            {' · '}
+                            <ExtLink href={r.summary.runUrl} i18n={i18n} label={t.run} />
+                          </>
+                        )}
+                      </span>
+                    </div>
+                  ) : r.summary.state === 'missing' || r.summary.state === 'off' ? (
+                    <span class="muted">{t.summaryState[r.summary.state]}</span>
+                  ) : (
+                    <Pill tone="grey" label={t.summaryState[r.summary.state]} />
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+    <p class="sc-foot">
+      {hasLicenseRef && `* ${t.licenseRef} `}
+      {t.namesNote}
+    </p>
+  </>
+)}

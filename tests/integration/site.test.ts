@@ -87,7 +87,7 @@ describe('static site', () => {
     expect(row).toMatch(/class="pill pill--unknown score__label"[^>]*>[^<]*insufficient data/);
     expect(row).toMatch(/dimbars__bar--grey/);
     expect(row).toMatch(/href="[^"]*data-quality\/#project-gamma"/);
-    expect(row).toContain('2 collection errors');
+    expect(row).toContain('3 collection errors');
     expect(row).not.toMatch(/>\s*0\s*</);
   });
 
@@ -318,9 +318,9 @@ describe('static site', () => {
       // (the third high comes from container scanning). It must not be counted as "other".
       const html = await page('projects/project-beta');
       const card = between(html, 'data-dimension="security"', '</a>');
-      expect(card).toContain('1 critical · 3 high · 5 other');
+      expect(card).toContain('1 critical · 3 high · 6 other');
       const security = between(html, 'id="security"', '</details>');
-      expect(security).toContain('5 other open alerts are counted here');
+      expect(security).toContain('6 other open alerts are counted here');
       const unlisted = between(security, 'data-unlisted-crit-high', '</p>');
       expect(unlisted).toContain('no detail in the hub');
       expect(unlisted).toContain('1 high');
@@ -335,7 +335,7 @@ describe('static site', () => {
       expect(head).toMatch(/class="pill pill--unknown score__label"[^>]*>[^<]*insufficient data/);
       expect(head).not.toMatch(/class="score__value"[^>]*>\s*0\s*</);
       const why = between(html, 'id="h-why"', '</section>');
-      expect(why).toContain('2 collection errors');
+      expect(why).toContain('3 collection errors');
       expect(why).toContain('Not found (404)');
       expect(why).toMatch(/href="[^"]*data-quality\/"/);
     });
@@ -430,7 +430,7 @@ describe('static site', () => {
       // Beta: secret scanning is not authorised, so the card's counts are a lower bound.
       const beta = await page('projects/project-beta');
       const card = between(beta, 'data-dimension="security"', '</a>');
-      expect(card).toContain('1 critical · 3 high · 5 other · partial');
+      expect(card).toContain('1 critical · 3 high · 6 other · partial');
       expect(between(beta, 'data-dimension="coverage"', '</a>')).toContain('1 not visible');
     });
 
@@ -443,10 +443,10 @@ describe('static site', () => {
     it('uses one severity vocabulary in Italian, number first', async () => {
       const html = await page('it/projects/project-beta');
       expect(between(html, 'data-dimension="security"', '</a>')).toContain(
-        '1 critico · 3 high · 5 altri',
+        '1 critico · 3 high · 6 altri',
       );
       const security = between(html, 'id="security"', '</details>');
-      expect(security).toContain('Altri 5 alert aperti');
+      expect(security).toContain('Altri 6 alert aperti');
       expect(between(security, 'data-unlisted-crit-high', '</p>')).toContain('1 high');
     });
 
@@ -460,7 +460,7 @@ describe('static site', () => {
     it('agrees in gender and number in Italian', async () => {
       const html = await page('it/projects/project-gamma');
       expect(html).not.toContain('coordinator sconosciuto');
-      expect(between(html, 'id="h-why"', '</section>')).toContain('2 errori di raccolta');
+      expect(between(html, 'id="h-why"', '</section>')).toContain('3 errori di raccolta');
     });
 
     it('renders the Italian project page in Italian', async () => {
@@ -484,10 +484,12 @@ describe('static site', () => {
       const html = await page('projects/project-beta');
       const q = section(html);
       expect(q).toMatch(/<h2[^>]*>Code quality</);
-      expect(textOf(q)).toMatch(/67(\.2)?%/);
-      expect(textOf(q)).toContain('Does not mean 0%.');
-      // The blind spot is named; the not-applicable chart shows the "na" symbol, never 0%.
-      expect(between(q, 'data-quality-component="web"', '</tr>')).toContain('Not visible');
+      expect(textOf(q)).toMatch(/66\.7%/);
+      // Nothing is hidden any more, so the "not 0%" caveat is not needed.
+      expect(textOf(q)).not.toContain('Does not mean 0%.');
+      // Web has no CI summary, but SonarQube reads it: it is measured, not a blind spot.
+      expect(between(q, 'data-quality-component="web"', '</tr>')).toContain('65%');
+      // The not-applicable chart shows the "na" symbol, never 0%.
       expect(between(q, 'data-quality-component="helm"', '</tr>')).toMatch(
         /data-symbol="na"[\s\S]*?<svg[^>]*octicon-dash/,
       );
@@ -498,12 +500,12 @@ describe('static site', () => {
       expect(q).not.toMatch(/href="[^"]*code-quality/);
       // The card line on the dimension card.
       expect(between(html, 'data-dimension="quality"', '</a>')).toContain(
-        'Tests: 67.2% of lines · threshold 80%',
+        'Tests: 66.7% of lines · threshold 80%',
       );
       const it = section(await page('it/projects/project-beta'));
       expect(it).toMatch(/<h2[^>]*>Qualità del codice</);
-      expect(textOf(it)).toContain('67,2%');
-      expect(textOf(it)).toContain('Non significa 0%.');
+      expect(textOf(it)).toContain('66,7%');
+      expect(textOf(it)).not.toContain('Non significa 0%.');
     });
 
     it('never shows an unmeasured project as 0% or "0 of 0 lines"', async () => {
@@ -552,15 +554,15 @@ describe('static site', () => {
       expect(html).toMatch(/<abbr class="dimbars__label" title="Quality"/);
     });
 
-    it('data-quality lists project-beta web as missing report', async () => {
+    it('data-quality lists gamma service as a report that cannot be read, and no longer beta web', async () => {
       const html = await page('data-quality');
       const reports = html.slice(html.indexOf('id="h-quality-reports"'));
       expect(reports.indexOf('id="h-quality-reports"')).toBe(0);
-      const row = between(reports, 'data-quality-report="project-beta:web"', '</li>');
-      expect(row).toContain('Project Beta');
-      expect(row).toContain('web');
-      expect(row).toContain('Missing');
-      expect(reports).toContain('data-quality-report="project-gamma:service"');
+      // Beta web has no CI summary but SonarQube reads it, so it is not listed.
+      expect(reports).not.toContain('data-quality-report="project-beta:web"');
+      const row = between(reports, 'data-quality-report="project-gamma:service"', '</li>');
+      expect(row).toContain('Project Gamma');
+      expect(row).toContain('Not authorised');
       // Readable and not-applicable reports are not listed.
       expect(reports).not.toContain('data-quality-report="project-beta:api"');
       expect(reports).not.toContain('data-quality-report="project-beta:helm"');
@@ -673,8 +675,8 @@ describe('static site', () => {
     expect(values).toEqual([
       'critical=≥at least 1',
       'high=≥at least 6',
-      'medium=≥at least 8',
-      'low=≥at least 4',
+      'medium=≥at least 9',
+      'low=≥at least 8',
     ]);
     expect(totals).toMatch(
       /<span aria-hidden="true"[^>]*>≥<\/span>\s*<span class="visually-hidden"[^>]*>at least </,
@@ -727,15 +729,15 @@ describe('static site', () => {
     // Repository counts: in catalog / fully read / partly read / unreadable.
     for (const [key, n] of [
       ['total', 12],
-      ['full', 6],
-      ['partial', 4],
+      ['full', 5],
+      ['partial', 5],
       ['unreadable', 2],
     ] as const)
       expect(html).toMatch(new RegExp(`data-repo-count="${key}"[^>]*>\\s*<span[^>]*>${n}<`));
-    // What we could not read, grouped by classification (403: 5 sources, 404: 1 source).
+    // What we could not read, grouped by classification (403: 9 sources, 404: 2 sources).
     expect(html).toContain('What we could not read, by cause');
-    expect(html).toMatch(/data-cause="not-authorised"[^>]*data-sources="5"/);
-    expect(html).toMatch(/data-cause="not-found"[^>]*data-sources="1"/);
+    expect(html).toMatch(/data-cause="not-authorised"[^>]*data-sources="9"/);
+    expect(html).toMatch(/data-cause="not-found"[^>]*data-sources="2"/);
     expect(html.indexOf('data-cause="not-authorised"')).toBeLessThan(
       html.indexOf('data-cause="not-found"'),
     );
@@ -884,8 +886,21 @@ describe('static site', () => {
       );
     });
 
+    it('supply-chain.csv has its header and one row per project and repository', async () => {
+      const text = await csv('supply-chain.csv');
+      expect(text.startsWith('\uFEFFproject_id,repository,component_ids,sbom_state,')).toBe(true);
+      expect(text.split('\r\n').filter(Boolean)).toHaveLength(13);
+      expect(text.split('\r\n').find((r) => r.startsWith('platform,'))).toContain(',1530,3,2,');
+      expect(text).not.toMatch(/canary/);
+    });
+
     it("no CSV cell begins with = + - @ unless prefixed by '", async () => {
-      for (const name of ['portfolio.csv', 'findings-summary.csv', 'versions.csv']) {
+      for (const name of [
+        'portfolio.csv',
+        'findings-summary.csv',
+        'versions.csv',
+        'supply-chain.csv',
+      ]) {
         const rows = (await csv(name)).replace('\uFEFF', '').split('\r\n').filter(Boolean);
         for (const row of rows)
           for (const cell of row.split(',')) expect(cell).not.toMatch(/^[=+\-@]/);
@@ -1317,10 +1332,10 @@ describe('static site', () => {
     it('shows the five totals with their labels', async () => {
       const t = text(await page('changes'));
       expect(t).toContain(
-        '6 status changes · 1 new and 1 resolved critical/high alerts · 1 version moves · 1 new collection errors',
+        '6 status changes · 1 new and 1 resolved critical/high alerts · 1 version moves · 6 new collection errors',
       );
       expect(text(await page('it/changes'))).toContain(
-        '6 cambi di stato · 1 alert critici/alti nuovi e 1 risolti · 1 versioni cambiate · 1 nuovi errori di raccolta',
+        '6 cambi di stato · 1 alert critici/alti nuovi e 1 risolti · 1 versioni cambiate · 6 nuovi errori di raccolta',
       );
       expect(t).toContain('Compared with the collection of 14 Jan 2026');
       expect(t).toContain('Demo data: earlier collections are synthetic.');
@@ -1384,13 +1399,15 @@ describe('static site', () => {
       expect(text(card(html, 'project-alpha'))).not.toContain('No changes.');
       // Gamma could only be partly compared, so it never claims a plain "No changes."
       const gamma = text(card(html, 'project-gamma'));
-      expect(gamma).toContain('No changes in what could be compared.');
+      // It lists its one new error (SonarQube not authorised) and says what it could not compare.
+      expect(gamma).toContain('SonarQube');
+      expect(gamma).toContain('Some alerts were not compared');
       expect(gamma).not.toContain('No changes.');
     });
 
     it('does not say "No changes." when a project\'s alerts could not be compared', async () => {
       const gamma = text(card(await page('changes'), 'project-gamma'));
-      expect(gamma).toContain('No changes in what could be compared.');
+      expect(gamma).toContain('Some alerts were not compared');
       expect(gamma).not.toContain('No changes.');
     });
 
@@ -1717,13 +1734,167 @@ describe('static site', () => {
     });
   });
 
+  describe('supply chain', () => {
+    /** The first element with this id, up to its matching close tag (no nesting of the same tag). */
+    const byId = (html: string, tag: string, id: string) => {
+      const start = html.search(new RegExp(`<${tag}[^>]*\\bid="${id}"`));
+      expect(start, `${tag}#${id}`).toBeGreaterThan(-1);
+      let depth = 0;
+      const re = new RegExp(`<${tag}\\b|</${tag}>`, 'g');
+      re.lastIndex = start;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(html))) {
+        depth += m[0].startsWith('</') ? -1 : 1;
+        if (depth === 0) return html.slice(start, re.lastIndex);
+      }
+      return html.slice(start);
+    };
+    const row = (html: string, marker: string) => {
+      const i = html.indexOf(marker);
+      expect(i, marker).toBeGreaterThan(-1);
+      return html.slice(html.lastIndexOf('<tr', i), html.indexOf('</tr>', i));
+    };
+
+    it('project-alpha has #supply-chain after Repository controls and before Quality', async () => {
+      const html = await page('projects/project-alpha');
+      const sc = byId(html, 'details', 'supply-chain');
+      expect(textOf(sc)).toContain('Supply chain');
+      expect(textOf(sc)).toContain(
+        'SBOM on 3 of 5 repositories · 0 unsigned images · 0 flagged licenses',
+      );
+      expect(textOf(sc)).toContain('The hub never verifies signatures itself.');
+      expect(textOf(sc)).toContain('Unknown is not unsigned.');
+      expect(textOf(row(sc, 'project-alpha-backend'))).toMatch(/214\s*packages/);
+      expect(textOf(row(sc, 'project-alpha-backend'))).toContain('Dependency graph');
+      expect(textOf(row(sc, 'project-alpha-frontend'))).toContain('CI summary');
+      expect(textOf(sc)).toContain('Custom licenses (LicenseRef) are grouped');
+      const rc = html.search(/<details[^>]*id="repository-controls"/);
+      const q = html.search(/<section[^>]*id="quality"/);
+      const at = html.search(/<details[^>]*id="supply-chain"/);
+      expect(rc).toBeLessThan(at);
+      expect(at).toBeLessThan(q);
+    });
+
+    it('a pending SBOM says so and never shows 0 packages', async () => {
+      const sc = byId(await page('projects/project-alpha'), 'details', 'supply-chain');
+      const worker = textOf(row(sc, 'project-alpha-worker'));
+      expect(worker).toContain('Still being generated by GitHub');
+      expect(worker).not.toMatch(/\b0\s*packages/);
+    });
+
+    it('images show the evidence per source: CI verified, Harbor present or unknown', async () => {
+      const sc = byId(await page('projects/project-alpha'), 'details', 'supply-chain');
+      const backend = row(sc, 'project-alpha-backend');
+      expect(backend).toMatch(/class="ev ev--verified"[^>]*>[\s\S]*?Verified/);
+      expect(textOf(backend)).toContain('Harbor');
+      expect(backend).toMatch(/class="ev ev--present"/);
+      expect(textOf(row(sc, 'project-alpha-frontend'))).toContain('Not found in Harbor');
+    });
+
+    it('evidence labels always carry their word as text', async () => {
+      for (const p of ['projects/project-alpha', 'projects/project-beta', 'security']) {
+        const html = await page(p);
+        const labels = [...html.matchAll(/<span class="ev( [^"]*)?"[^>]*>([\s\S]*?)<\/span>/g)];
+        expect(labels.length, p).toBeGreaterThan(0);
+        for (const m of labels) expect(textOf(m[2] ?? '').trim(), `${p}: ${m[0]}`).not.toBe('');
+      }
+    });
+
+    it('Controls coverage names the source of each control ("via")', async () => {
+      const cov = byId(await page('projects/project-alpha'), 'details', 'coverage');
+      const item = (label: string) => {
+        const i = cov.indexOf(`>${label}<`);
+        expect(i, label).toBeGreaterThan(-1);
+        return textOf(cov.slice(i, cov.indexOf('</li>', i)));
+      };
+      expect(item('Container scanning')).toMatch(/via .*Harbor/);
+      expect(item('Code scanning')).toContain('via GitHub');
+      expect(item('SBOM')).toMatch(/via .*Dependency graph/);
+    });
+
+    it('Quality on project-beta names its source, the SonarQube gate and new-code coverage', async () => {
+      const html = await page('projects/project-beta');
+      const q = html.slice(html.search(/<section[^>]*id="quality"/));
+      expect(q).toMatch(/<th[^>]*>\s*Source\s*</);
+      const web = textOf(row(q, 'data-quality-component="web"'));
+      expect(web).toContain('SonarQube');
+      expect(web).toContain('Gate failed');
+      expect(web).toContain('New code 41.2%');
+      expect(textOf(row(q, 'data-quality-component="api"'))).toContain('CI summary');
+    });
+
+    it('versions shows Argo CD sync and health per environment', async () => {
+      const html = await page('versions');
+      const env = (project: string, name: string) => {
+        const card = html.indexOf(`data-project="${project}"`);
+        const i = html.indexOf(`data-env="${name}"`, card);
+        expect(i, `${project} ${name}`).toBeGreaterThan(-1);
+        return textOf(html.slice(i, html.indexOf('</li>', i)));
+      };
+      expect(env('project-alpha', 'DEV')).toMatch(/Argo CD[\s\S]*Synced[\s\S]*Healthy/);
+      expect(env('project-alpha', 'DEV')).toContain('2 images deployed');
+      expect(env('project-alpha', 'UAT')).toContain('Out of sync');
+      expect(env('project-alpha', 'TEST')).toContain('Manifest');
+      expect(env('project-beta', 'PROD')).toContain('Degraded');
+      expect(env('project-beta', 'DEV')).toContain('Manifest');
+      expect(env('project-beta', 'DEV')).toContain('Argo CD not authorised');
+    });
+
+    it('security has a Supply chain fold, card lines and the CSV link', async () => {
+      const html = await page('security');
+      expect(html).toContain('href="/exports/supply-chain.csv"');
+      expect(textOf(html)).toContain('Supply chain (CSV)');
+      const fold = byId(html, 'details', 'supply-chain');
+      expect(textOf(row(fold, '>Project Alpha<'))).toMatch(/3 of 5/);
+      const beta = html.slice(html.indexOf('id="project-beta"'));
+      expect(textOf(beta.slice(0, beta.indexOf('</article>')))).toMatch(/\b1 unsigned image(?!s)/);
+    });
+
+    it('data quality has a Providers card with each provider state', async () => {
+      const html = await page('data-quality');
+      const i = html.indexOf('id="h-providers"');
+      expect(i).toBeGreaterThan(-1);
+      const card = textOf(html.slice(i, html.indexOf('</section>', i)));
+      expect(card).toMatch(/SonarQube\s*Partial/);
+      expect(card).toMatch(/Harbor\s*Available/);
+      expect(card).toMatch(/Argo CD\s*Partial/);
+      expect(card).toContain('project-alpha-worker');
+    });
+
+    it('how to read explains the evidence levels', async () => {
+      const sc = byId(await page('how-to-read'), 'section', 'supply-chain');
+      expect(textOf(sc)).toContain('Unknown is not unsigned.');
+      expect(textOf(sc)).toContain('Verified');
+    });
+
+    it('Italian pages are in Italian', async () => {
+      expect(textOf(await page('it/projects/project-alpha'))).toContain('Catena di fornitura');
+      expect(textOf(await page('it/projects/project-alpha'))).toContain('Verificata');
+      expect(textOf(await page('it/versions'))).toContain('Non sincronizzata');
+    });
+
+    it('the built site contains none of the supply-chain canaries', async () => {
+      const canaries = [
+        'canary-internal-pkg-7f3a',
+        'LicenseRef-canary-acme-9b2e',
+        'git.internal.example',
+        'kubernetes.internal.example',
+        'canary-img-4d2e',
+      ];
+      for (const v of VIEWS) {
+        const html = await page(v);
+        for (const c of canaries) expect(html, `${v} / ${c}`).not.toContain(c);
+      }
+    });
+  });
+
   it('fails in a controlled way on an unsupported snapshot schemaVersion', async () => {
     const data = join(work, 'bad-data');
     await cp('fixtures/snapshots', data, { recursive: true });
     const idx = join(data, 'index.json');
     await writeFile(
       idx,
-      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.7"', '"schemaVersion": "9.0"'),
+      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.8"', '"schemaVersion": "9.0"'),
     );
     const out = join(work, 'dist-bad');
     await buildSite(data, out);

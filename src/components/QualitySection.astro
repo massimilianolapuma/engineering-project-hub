@@ -213,6 +213,9 @@ const findings = qh.findings;
               {q.colCoverage}
             </th>
             <th role="columnheader" scope="col">
+              {d.sources.qualityCol}
+            </th>
+            <th role="columnheader" scope="col">
               {q.colReport}
             </th>
           </tr>
@@ -256,6 +259,38 @@ const findings = qh.findings;
                       </span>
                       <CoverageMeter percentage={null} status="grey" threshold={green} />
                       <span class="muted">{q.notVisible}</span>
+                    </span>
+                  )}
+                </td>
+                <td role="cell" data-label={d.sources.qualityCol}>
+                  {r.source ? (
+                    <span class="qsrc">
+                      <span class:list={['srcl', { 'srcl--accent': r.source === 'sonarqube' }]}>
+                        {d.sources.quality[r.source]}
+                      </span>
+                      {r.qualityGate && (
+                        <span class={`gate gate--${r.qualityGate}`}>
+                          <Octicon
+                            name={
+                              r.qualityGate === 'passed' ? 'check-circle-fill' : 'x-circle-fill'
+                            }
+                            size={12}
+                          />
+                          {d.sources.gate[r.qualityGate]}
+                        </span>
+                      )}
+                      {r.newCoverage !== null && (
+                        <span class="via">
+                          {f(d.sources.newCode, { p: i18n.percent(r.newCoverage) })}
+                        </span>
+                      )}
+                    </span>
+                  ) : (
+                    <span class="muted">
+                      <span class="qsym qsym--na qsym--inline" aria-hidden="true" data-symbol="na">
+                        <Octicon name="dash" />
+                      </span>
+                      <span class="visually-hidden">{q.notApplicable}</span>
                     </span>
                   )}
                 </td>
@@ -315,6 +350,12 @@ const findings = qh.findings;
 </section>
 
 <style>
+  .qsrc {
+    display: flex;
+    flex-direction: column;
+    gap: var(--base-size-4);
+    align-items: flex-start;
+  }
   .quality {
     display: flex;
     flex-direction: column;

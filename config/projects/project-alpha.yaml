@@ -27,12 +27,15 @@ components:
     type: service
     defaultBranch: main
     submodulePath: services/backend
+    sonarProjectKey: example-org_project-alpha-backend
+    containerImages: [{ project: alpha, repository: backend }]
   - id: frontend
     name: Frontend
     repository: example-org/project-alpha-frontend
     type: webapp
     defaultBranch: main
     submodulePath: apps/frontend
+    containerImages: [{ project: alpha, repository: frontend }]
   - id: worker
     name: Settlement worker
     repository: example-org/project-alpha-worker
@@ -49,10 +52,16 @@ components:
     versionSource: release # chart released and deployed on its own cadence
 
 environments:
-  - { id: dev, name: DEV }
-  - { id: test, name: TEST }
-  - { id: uat, name: UAT }
-  - { id: prod, name: PROD }
+  - id: dev
+    name: DEV
+    argocdApplication: { name: alpha-dev, namespace: argocd, project: alpha }
+  - { id: test, name: TEST } # not managed by Argo CD
+  - id: uat
+    name: UAT
+    argocdApplication: { name: alpha-uat, namespace: argocd, project: alpha }
+  - id: prod
+    name: PROD
+    argocdApplication: { name: alpha-prod, namespace: argocd, project: alpha }
 
 trackedWorkflows:
   - id: ci

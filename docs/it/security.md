@@ -18,6 +18,9 @@
 | T10 | Un riepilogo di qualità falsificato, enorme o fuorviante                                               | Vengono letti solo gli artifact di esecuzioni sul branch predefinito che provengono dallo stesso repository (l'esecuzione di una pull request da fork è ignorata). Lo zip è limitato a 64 KB e viene letto solo `quality-summary.json`. Il riepilogo è validato con uno schema strict e deve nominare il repository letto, altrimenti è `invalid` e nulla di esso viene pubblicato. Conteggi e percentuali sono ricalcolati solo da `lines`.                                                                                                                                                                      |
 | T11 | Un artifact di storico piantato o manomesso (una pull request o un fork scrive un falso `hub-history`) | Lo step di ripristino legge solo gli artifact del proprio repository sul branch predefinito, da un'esecuzione diversa, mai da un fork (`head_repository_id` deve coincidere con l'id del repository), al massimo 5 MiB e solo da un'esecuzione del workflow di deploy o di raccolta con un evento consentito. Il file viene poi letto con uno schema strict (limite 8 MiB), ogni link viene ricontrollato con l'allowlist corrente, il testo viene ripulito di nuovo e l'output passa per il gate delle credenziali. Qualsiasi errore fa ripartire lo storico da zero e non fa mai fallire né blocca la raccolta. |
 | T12 | Una formula iniettata tramite testo esportato (CSV injection)                                          | Una cella di testo che inizia con `=`, `+`, `-`, `@`, TAB o CR riceve un `'` iniziale. Gli export contengono solo stati, conteggi, versioni e id, nessun titolo. `scan:output` scansiona i file `.csv`.                                                                                                                                                                                                                                                                                                                                                                                                           |
+| T13 | Un provider viene puntato verso un altro host (SSRF tramite nomi associati o dati di risposta)         | Un unico client condiviso per SonarQube, Harbor e Argo CD: solo `https`, l'URL nasce da un modello di percorso fisso con ogni parametro codificato e il suo host deve coincidere con quello del `baseUrl` configurato prima di ogni richiesta. I redirect sono rifiutati, le risposte limitate a 1 MiB e lette in streaming, le richieste hanno un timeout. Il download dello SBOM segue il redirect di GitHub solo verso un host `https` in una allowlist nel codice, senza header Authorization.                                                                                                                |
+| T14 | Secret o dati interni passano dalle API esterne al sito                                                | Ogni risposta è ridotta a una proiezione rigida (solo i campi che servono all'hub) e il resto viene scartato in memoria. Il testo è ripulito, gli URL di base non vengono mai pubblicati, gli errori hanno un messaggio fisso per classe (mai il corpo o l'URL) e il client non scrive log. `SONARQUBE_TOKEN`, `HARBOR_ROBOT_NAME`, `HARBOR_ROBOT_SECRET` e `ARGOCD_TOKEN` sono tra i valori che `scan:output` e il gate di pubblicazione cercano.                                                                                                                                                                |
+| T15 | La presenza di una firma o di un'attestazione scambiata per una verifica                               | L'evidenza ha tre livelli: `present` (esiste in GitHub o nel registry), `verified` (la CI l'ha verificata e lo ha riportato in `hub-supply-chain-summary`) e `reported` (risultati di scansione). L'hub non verifica mai le firme da solo e non trasforma mai `present` in `verified`. Sconosciuto non viene mai mostrato come non firmato. Vedi [ADR 0011](architecture/adr/0011-supply-chain-evidence-github-native-and-ci-summaries.md).                                                                                                                                                                       |
 
 ## Dati pubblicati
 
@@ -43,6 +46,8 @@
 - Controlli repository: per repository, lo stato di sei controlli (superato, fallito, sconosciuto, non applicabile), i conteggi dei riferimenti nei workflow (totale, fissati, non fissati, sconosciuti), i riferimenti non fissati (nome del file di workflow, una `target` ricostruita da parti validate e il `ref`, al massimo 20)\*, i workflow riutilizzabili con il ref referenziato, l'ultimo tag e uno stato (al massimo 20)\*, un riepilogo delle regole del branch (origine, nomi dei tipi di regola, approvazioni richieste) e un riepilogo OpenSSF Scorecard (data dell'ultima analisi, numero di alert aperti, nomi dei check sotto il minimo della policy)\*. Nient'altro.
 - Suggerimenti di scoperta: solo le tre chiavi di custom property configurate e i topic corrispondenti, come brevi valori slug, nelle proposte di `catalog.json`.
 - Team: i team `org/slug` elencati nel catalogo (snapshot di progetto, indice, CSV). Con la discovery dei team (solo pubblico riservato), `catalog.json` aggiunge gli slug dei team suggeriti con i conteggi dei repository, le organizzazioni lette, il numero di team letti e di team segreti ignorati, e i team elencati che GitHub non ha restituito.
+- Supply chain: per repository, stato, fonte, formato e versione dello SBOM, numero di pacchetti, pacchetti senza licenza, numero di segnalati, le espressioni di licenza più frequenti con i conteggi (licenze personalizzate raggruppate come `LicenseRef-*`) e gli ecosistemi con i conteggi; per l'ultima release, il numero di asset controllati e quanti hanno attestazioni di provenienza o SBOM; per immagine, il path del repository senza host del registry, tag, digest, evidenza di firma e provenienza e conteggi della scansione Harbor per severità; stato, data, SHA del commit e link all'esecuzione del riepilogo CI; i nomi degli strumenti di code scanning associati e degli altri strumenti visti (al massimo 10).
+- Provider: per provider, se è attivo e il suo stato nell'esecuzione; per componente della Qualità, la fonte (`ci-summary` o `sonarqube`), il quality gate e la copertura del nuovo codice; per ambiente, versione dichiarata e rilasciata, sincronizzazione e salute di Argo CD, una revisione breve e le versioni delle immagini rilasciate per componente. Le associazioni dei provider (`sonarProjectKey`, `containerImages`, `argocdApplication`) fanno parte del catalogo pubblicato.
 - Esportazioni CSV (`exports/*.csv`): stati, conteggi, versioni e id costruiti dagli stessi dati validati. Nessun titolo, id di regola, path o link.
 
 \* Omessi per i repository non pubblici quando `audience: public` (per il riepilogo Scorecard solo i nomi dei check; il loro numero resta).
@@ -57,6 +62,8 @@ dei workflow (non raccolti) e tutto ciò che è al di fuori degli schemi degli s
 Per i controlli repository: testo dei workflow, nomi degli step, valori di `run:`, `with:` ed `env:`, espressioni, payload grezzi delle regole e ogni custom property diversa dalle tre chiavi configurate (per esempio una property come `cost-center` non arriva mai all'output). I file dei workflow sono input non attendibile: vengono letti in memoria, limitati (262 144 byte per file, 200 riferimenti per file, 1 000 per repository, 30 file per impostazione predefinita), analizzati con un limite sugli alias (un file che riusa un'ancora più di circa 100 volte non è analizzabile, quindi il pinning del suo repository è sconosciuto) e senza stampare gli avvisi YAML, che citerebbero il sorgente nel log, e ridotti a riferimenti validati prima di qualsiasi altra operazione. Un identificativo più lungo del suo limite pubblicato (un `target` oltre 200 caratteri; un `ref`, un tag o un nome di file di workflow oltre 100) si scarta come sconosciuto e non viene mai troncato, così un solo file di workflow o tag ostile non può fermare una pubblicazione.
 
 Per i team: nomi, descrizioni, membri, numero di membri e team padre dei team, e nulla di un team segreto tranne il fatto che è stato contato.
+
+Per la supply chain e i provider esterni: nomi dei pacchetti, testi delle licenze, nomi `LicenseRef`, bundle e certificati delle attestazioni, documenti SBOM, dati di richiesta e risposta di ZAP, issue di SonarQube, elenchi di vulnerabilità e nomi degli scanner di Harbor, `repoURL`, destinazione e risorse di Argo CD, gli URL di base dei provider e le loro credenziali.
 
 Per storico ed esportazioni: nessun titolo degli alert risolti, nessun payload grezzo, nessun
 valore di secret e nessun progetto che non è più nel catalogo (le voci vengono ridotte al
@@ -158,12 +165,54 @@ l'hub sceglie solo cosa contare.
     nessuna lo è e almeno una risponde 403, e `unknown` quando nessuna lo è e nessuna
     risponde 403 (per esempio solo errori di rete). I finding di Code Quality sono
     informativi: non cambiano mai lo stato della Qualità.
+- **Fonti della supply chain.** Verificate il 2026-10-21 sulla pagina di GitHub
+  [permissions-required-for-github-apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps):
+
+  | Dato                                           | Endpoint                                                                                              | Permesso                                      |
+  | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+  | Esportazione SBOM (su richiesta)               | `GET /repos/{owner}/{repo}/dependency-graph/sbom/generate-report`, poi `.../sbom/fetch-report/{uuid}` | **Contents: read**                            |
+  | Attestazioni dei digest degli asset di release | `GET /repos/{owner}/{repo}/attestations/{subject_digest}`                                             | **Attestations: read** (nuovo)                |
+  | Analisi di Trivy, Checkov, ZAP e altri         | `GET /repos/{owner}/{repo}/code-scanning/analyses?tool_name=…`                                        | **Code scanning alerts: read** (già concesso) |
+  | Artifact `hub-supply-chain-summary`            | elenco e download degli artifact                                                                      | **Actions: read** (già concesso)              |
+  - **Attestations: read** è nuovo per la GitHub App e per il token fine-grained. Senza, le
+    attestazioni sono `not-authorised` e l'esecuzione continua.
+  - **L'esportazione SBOM è l'unica chiamata di "calcolo"** ([ADR 0011](architecture/adr/0011-supply-chain-evidence-github-native-and-ci-summaries.md)):
+    `generate-report` chiede a GitHub di costruire il report. Non cambia nulla nel repository, ma
+    non è una semplice lettura, quindi è **spenta di default** e viene inviata solo con
+    `supplyChain.sbom.dependencyGraph: true`. Senza, lo SBOM arriva dal riepilogo CI (o dal file
+    di stato), altrimenti è sconosciuto.
+  - **Host di download dello SBOM.** `fetch-report` risponde con un redirect. Il collector lo
+    segue solo verso un host `https` che termina con `githubusercontent.com` o è uguale a
+    `github.com` (`SBOM_DOWNLOAD_HOST_SUFFIXES`), senza header Authorization. Host osservato: non
+    ancora osservato; la allowlist si chiude in caso di dubbio.
+
 - **Fallback (solo MVP): un PAT fine-grained** in `GH_READ_TOKEN`. Limitalo ai repository
   monitorati, assegnagli gli stessi permessi in sola lettura e usa una scadenza breve. È
   legato a una persona, quindi è preferibile la App.
 - **`GITHUB_TOKEN`**: ultima risorsa. Può leggere solo il repository corrente.
 - Non esiste alcun fallback silenzioso tra le modalità. La modalità usata è registrata in
   ogni snapshot (`run.authenticationMode`) e mostrata nella pagina Qualità dati.
+
+### Provider esterni
+
+Facoltativi ([ADR 0012](architecture/adr/0012-optional-external-read-only-providers.md)); ognuno
+resta spento finché non viene attivato in `config/providers.yaml`. Usa una credenziale che possa
+solo leggere, dedicata a questo hub:
+
+| Variabile                                  | Credenziale                                                                                                                                                                                                                                                      |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SONARQUBE_TOKEN`                          | Token utente di un utente SonarQube dedicato con **Browse** solo sui progetti associati. Niente Execute Analysis, niente Administer.                                                                                                                             |
+| `HARBOR_ROBOT_NAME`, `HARBOR_ROBOT_SECRET` | Un account robot di progetto con solo **Read Artifact**, **Read Scan** e **List Accessory**. Imposta una scadenza.                                                                                                                                               |
+| `ARGOCD_TOKEN`                             | Un account locale con solo `apiKey`, RBAC `p, role:hub-reader, applications, get, <project>/*, allow`, e un token con scadenza: `argocd account generate-token --account hub-reader --expires-in 2160h` (verifica il flag sulla versione di Argo CD installata). |
+
+- Salvale come secret del repository o dell'ambiente. `collect-data.yml` le passa solo all'`env`
+  dello step Collect, come le credenziali GitHub; i job di build e deploy non le vedono mai.
+- Ruotale come le credenziali GitHub (vedi [Rotazione delle credenziali](#rotazione-delle-credenziali)):
+  crea la nuova, aggiorna il secret, esegui la raccolta, revoca la vecchia.
+- Le chiamate sono solo GET: SonarQube `/api/measures/component` e `/api/project_analyses/search`,
+  Harbor `/api/v2.0/projects/{project}/repositories/{repository}/artifacts/{reference}`, Argo CD
+  `/api/v1/applications/{name}`. L'hub non avvia mai una scansione, un'analisi o una
+  sincronizzazione.
 
 ## Privilegio minimo nei workflow
 

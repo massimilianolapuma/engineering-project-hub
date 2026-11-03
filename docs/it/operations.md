@@ -183,6 +183,144 @@ Note:
 - La copertura è letta dagli attributi radice Cobertura `lines-covered` e `lines-valid`. Per
   gli altri formati calcola i due numeri e imposta `format` di conseguenza.
 
+## Pubblicare il riepilogo supply chain dalla CI
+
+I controlli della supply chain leggono l'artifact `hub-supply-chain-summary` di ogni repository
+monitorato (contratto: [Configurazione](configuration.md#artifact-hub-supply-chain-summary-ogni-repository-opzionale)).
+È l'unico modo in cui l'hub sa che una firma o una provenienza è stata **verificata**, e l'unica
+fonte dei digest delle immagini. Aggiungi un job come questo al workflow che costruisce e pubblica
+l'immagine, solo sul branch di default. Scrive uno SBOM CycloneDX con syft, verifica la firma
+dell'immagine con cosign e la provenienza con `gh attestation verify`, scrive i conteggi con un
+programma `jq` inline (l'hub non fornisce script per questo) e carica il riepilogo con una
+conservazione di 30 giorni:
+
+```yaml
+supply-chain-summary:
+  if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+  needs: build # il job che ha pubblicato l'immagine ed espone digest e versione
+  runs-on: ubuntu-24.04
+  permissions:
+    contents: read
+    packages: read
+    attestations: read
+  steps:
+    - uses: actions/checkout@<full-commit-sha>
+      with:
+        persist-credentials: false
+    # ... installa syft e cosign (versioni fissate) ...
+    - name: SBOM (CycloneDX)
+      run: syft dir:. -o cyclonedx-json=sbom.cdx.json
+    - name: Verify image signature and provenance
+      id: verify
+      env:
+        GH_TOKEN: ${{ github.token }}
+        IMAGE: ghcr.io/${{ github.repository }}@${{ needs.build.outputs.digest }}
+      run: |
+        sig=verified
+        cosign verify "$IMAGE" \
+          --certificate-identity-regexp "^https://github.com/${GITHUB_REPOSITORY}/" \
+          --certificate-oidc-issuer https://token.actions.githubusercontent.com >/dev/null 2>&1 || sig=not-verified
+        prov=verified
+        gh attestation verify "oci://$IMAGE" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || prov=not-verified
+        echo "sig=$sig" >> "$GITHUB_OUTPUT"
+        echo "prov=$prov" >> "$GITHUB_OUTPUT"
+    - name: Write supply-chain-summary.json
+      env:
+        DIGEST: ${{ needs.build.outputs.digest }}
+        TAG: ${{ needs.build.outputs.version }}
+        SIG: ${{ steps.verify.outputs.sig }}
+        PROV: ${{ steps.verify.outputs.prov }}
+      run: |
+        jq -n \
+          --arg repo "$GITHUB_REPOSITORY" --arg ref "$GITHUB_REF" --arg sha "$GITHUB_SHA" \
+          --arg now "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+          --arg image "${GITHUB_REPOSITORY,,}" --arg tag "$TAG" --arg digest "$DIGEST" \
+          --arg sig "$SIG" --arg prov "$PROV" \
+          --slurpfile sbom sbom.cdx.json '
+          def lic: [.licenses[]? | .license.id // .expression // empty] | join(" AND ");
+          def counts: group_by(.) | map({ id: .[0], count: length }) | sort_by(-.count) | .[:20];
+          ($sbom[0].components // []) as $c
+          | {
+              schemaVersion: "1.0",
+              repository: $repo, ref: $ref, commitSha: $sha, generatedAt: $now,
+              sbom: {
+                format: "cyclonedx", specVersion: $sbom[0].specVersion, tool: "syft",
+                packages: ($c | length),
+                withoutLicense: ([$c[] | select(lic == "")] | length),
+                licenses: ([$c[] | lic
+                  | select(. != "" and length <= 100 and test("^[A-Za-z0-9.+()\\s-]+$"))] | counts),
+                ecosystems: ([$c[] | (((.purl // "") | capture("^pkg:(?<t>[a-z]+)/") | .t) // "unknown")
+                  | if IN("npm", "maven", "pypi", "nuget", "golang", "cargo", "gem", "composer",
+                          "githubactions", "docker", "pub", "swift", "hex", "unknown")
+                    then . else "other" end] | counts)
+              },
+              images: [{
+                name: $image, tag: $tag, digest: $digest,
+                signature: { status: $sig, tool: "cosign" },
+                provenance: { status: $prov, tool: "gh-attestation" }
+              }]
+            }' > supply-chain-summary.json
+    - uses: actions/upload-artifact@<full-commit-sha>
+      with:
+        name: hub-supply-chain-summary
+        path: supply-chain-summary.json
+        retention-days: 30
+```
+
+Note:
+
+- Fissa ogni action a uno SHA di commit completo e ogni strumento a una versione esatta.
+- `name` è il path dell'immagine **senza** host del registry, in minuscolo
+  (`${GITHUB_REPOSITORY,,}` per un'immagine con il nome del repository su `ghcr.io`).
+- Come licenze vengono scritti solo id ed espressioni SPDX; un componente la cui licenza è solo un
+  nome libero conta come "senza licenza". L'hub raggruppa ogni `LicenseRef-…` come `LicenseRef-*`
+  e non pubblica mai i nomi personalizzati.
+- Un repository che non costruisce immagini toglie il blocco `images` (e lo step di verifica); un
+  repository che firma solo immagini può togliere `sbom`.
+- Se una verifica fallisce, lo step scrive comunque `not-verified`: l'hub mostra allora il
+  controllo come fallito, mai come verificato.
+- Valgono le stesse regole di conservazione e aggiornamento del riepilogo di qualità
+  (`freshness.supplyChainSummaryStaleDays`, 14 giorni di default).
+
+**Trivy, Checkov e ZAP.** Carica i loro risultati come SARIF in code scanning con
+`github/codeql-action/upload-sarif`; l'hub li legge dalle analisi di code scanning di ogni
+strumento (`supplyChain.toolControls`):
+
+| Strumento | Report                                          | Nome dello strumento in code scanning | Controllo           |
+| --------- | ----------------------------------------------- | ------------------------------------- | ------------------- |
+| Trivy     | `aquasecurity/trivy-action` con `format: sarif` | `Trivy`                               | `containerScanning` |
+| Checkov   | `checkov -o sarif` (tieni il nome predefinito)  | `Checkov`                             | `iacScanning`       |
+| ZAP       | report ZAP `sarif-json`                         | `ZAP`                                 | `dast`              |
+
+Se il tuo strumento usa un altro nome, o Trivy scansiona anche l'IaC, aggiungi una regola con un
+prefisso `category` (per esempio `{ tool: Trivy, category: trivy-config }` sotto `iacScanning`)
+invece di rinominare lo strumento.
+
+## Attivare un provider esterno
+
+SonarQube, Harbor e Argo CD restano spenti finché non li attivi. Per ciascuno:
+
+1. **Configuralo.** Nella cartella di configurazione (il repository di deploy privato per i dati
+   reali) imposta `enabled: true` e `baseUrl` in `providers.yaml`
+   ([Configurazione](configuration.md#provider-esterni-configprovidersyaml)).
+2. **Indica cosa leggere.** Aggiungi `sonarProjectKey` (SonarQube), `containerImages` (Harbor) o
+   `argocdApplication` (Argo CD) ai file di progetto
+   ([Associazioni dei provider](configuration.md#associazioni-dei-provider-sonarprojectkey-containerimages-argocdapplication)).
+   Esegui `npm run validate:config`.
+3. **Crea la credenziale** con i permessi minimi elencati in
+   [Sicurezza](security.md#provider-esterni) e salvala come secret del repository o dell'ambiente
+   (`SONARQUBE_TOKEN`, `HARBOR_ROBOT_NAME` + `HARBOR_ROBOT_SECRET`, `ARGOCD_TOKEN`). Il workflow
+   di deploy la passa a `collect-data.yml`, che la mappa solo nello step Collect.
+4. **Esegui una raccolta** (riesecuzione manuale). Il log avvisa quando un provider attivo non ha
+   credenziale.
+5. **Leggi la scheda Provider** nella pagina Qualità dei dati: `available` vuol dire che ogni
+   elemento associato è stato letto; `partial` che alcuni no (vedi i conteggi); `not-authorised`
+   che la credenziale manca o non ha un permesso; `unknown` che il provider non era raggiungibile.
+   Gli elementi oltre `maxItems` sono sconosciuti, mai 0.
+
+Per spegnere di nuovo un provider, imposta `enabled: false`: i suoi elementi spariscono dalle
+viste alla raccolta successiva e il secret non viene più letto.
+
 ## Gestire eccezioni di sicurezza e SLA
 
 Un'eccezione è una pull request su `config/exceptions.yaml` (CODEOWNERS chiede la revisione del

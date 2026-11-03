@@ -5,7 +5,7 @@
     "schemaVersion": {
       "type": "string",
       "enum": [
-        "1.7"
+        "1.8"
       ]
     },
     "generatedAt": {
@@ -63,7 +63,9 @@
               "dependabot",
               "secretScanning",
               "codeQuality",
-              "repositoryRules"
+              "repositoryRules",
+              "dependencyGraph",
+              "attestations"
             ]
           },
           "additionalProperties": {
@@ -84,7 +86,9 @@
             "dependabot",
             "secretScanning",
             "codeQuality",
-            "repositoryRules"
+            "repositoryRules",
+            "dependencyGraph",
+            "attestations"
           ]
         },
         "inaccessibleSources": {
@@ -115,7 +119,14 @@
                   "code-quality",
                   "workflow-files",
                   "repository-rules",
-                  "scorecard-analysis"
+                  "scorecard-analysis",
+                  "dependency-sbom",
+                  "attestations",
+                  "supply-chain-summary",
+                  "code-scanning-analyses",
+                  "sonarqube",
+                  "harbor",
+                  "argocd"
                 ]
               },
               "classification": {
@@ -205,6 +216,57 @@
           ],
           "additionalProperties": false
         },
+        "providers": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "enum": [
+              "sonarqube",
+              "harbor",
+              "argocd"
+            ]
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "off",
+                  "available",
+                  "partial",
+                  "not-authorised",
+                  "unknown"
+                ]
+              },
+              "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "errors": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "enabled",
+              "state",
+              "items",
+              "errors"
+            ],
+            "additionalProperties": false
+          },
+          "required": [
+            "sonarqube",
+            "harbor",
+            "argocd"
+          ]
+        },
         "policy": {
           "type": "object",
           "properties": {
@@ -239,6 +301,7 @@
         "repositories",
         "configValid",
         "exceptions",
+        "providers",
         "policy"
       ],
       "additionalProperties": false
@@ -488,6 +551,66 @@
             ],
             "additionalProperties": false
           },
+          "supplyChain": {
+            "type": "object",
+            "properties": {
+              "repositories": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "sbomAvailable": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "unsignedImages": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "flagged": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "repositories",
+              "sbomAvailable",
+              "unsignedImages",
+              "flagged"
+            ],
+            "additionalProperties": false
+          },
           "freshness": {
             "type": "string",
             "enum": [
@@ -708,6 +831,7 @@
           "governance",
           "quality",
           "repositoryControls",
+          "supplyChain",
           "freshness",
           "openCounts",
           "risk",

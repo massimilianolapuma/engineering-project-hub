@@ -53,5 +53,17 @@
     }
   ],
   "codeQualityFindings": [],
-  "branchRules": { "$error": { "classification": "not-authorised", "httpStatus": 403 } }
+  "branchRules": {
+    "$error": {
+      "classification": "not-authorised",
+      "httpStatus": 403
+    }
+  },
+  "dependencySbom": {
+    "$error": {
+      "classification": "not-configured",
+      "httpStatus": 403,
+      "message": "Dependency graph is not enabled for this repository"
+    }
+  }
 }

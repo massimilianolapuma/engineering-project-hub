@@ -7,7 +7,8 @@ import {
   createGitHubClient,
   GitHubProvider,
 } from '../../collector/src/providers/github/github-provider';
-import { makeZip } from '../helpers/factories';
+import { makeZip, NOW, policies } from '../helpers/factories';
+import { toolCandidate } from '../../collector/src/normalizers/control-sources';
 import { AuthConfigError, resolveAuth } from '../../collector/src/providers/auth';
 import { MockProvider } from '../../collector/src/providers/mock/mock-provider';
 
@@ -890,6 +891,771 @@ describe('GitHubProvider: organisation teams (Members: read)', () => {
         { fullName: 'example-org/c', permission: 'read' },
         { fullName: 'example-org/d', permission: null },
       ],
+    });
+  });
+});
+
+describe('GitHubProvider: dependency-graph SBOM export', () => {
+  const UUID = '0b9c5f3e-8f4b-4d3a-9d7e-2c1a6b5d4e3f';
+  const API = '/repos/o/a/dependency-graph/sbom';
+  const SIGNED = 'https://objects.githubusercontent.com/sbom/report.json?sig=abc';
+
+  interface Call {
+    path: string;
+    redirect: RequestInit['redirect'];
+    headers: Headers;
+  }
+  /** One handler for the API and for the download link; every request is recorded. */
+  function sbomProvider(
+    handler: (url: URL) => Response,
+    opts: { sbomMaxBytes?: number; dependencyGraphExport?: boolean } = {},
+  ) {
+    const calls: Call[] = [];
+    const fetcher = (async (input: string | URL | Request, init?: RequestInit) => {
+      const url = new URL(
+        typeof input === 'string' ? input : input instanceof URL ? input.href : input.url,
+      );
+      calls.push({
+        path: url.origin + url.pathname,
+        redirect: init?.redirect,
+        headers: new Headers(init?.headers),
+      });
+      return handler(url);
+    }) as typeof fetch;
+    const p = new GitHubProvider(
+      createGitHubClient({ mode: 'fine-grained-token', token: 'synthetic' }, { fetch: fetcher }),
+      'fine-grained-token',
+      { fetch: fetcher, dependencyGraphExport: true, ...opts },
+    );
+    return { p, calls };
+  }
+  const json = (status: number, body: unknown, headers: Record<string, string> = {}) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { 'content-type': 'application/json', ...headers },
+    });
+  const sbomUrl = `https://api.github.com/repos/o/a/dependency-graph/sbom/fetch-report/${UUID}`;
+
+  it('export switch off (the default): generate-report is never requested', async () => {
+    const { p, calls } = sbomProvider(() => json(201, { sbom_url: sbomUrl }), {
+      dependencyGraphExport: false,
+    });
+    expect(p.dependencyGraphExport).toBe(false);
+    expect(await p.requestDependencySbom('o/a')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-configured', skipped: true },
+    });
+    expect(calls).toHaveLength(0);
+    // The default provider (no option) is off too.
+    const dflt = new GitHubProvider(
+      createGitHubClient(
+        { mode: 'fine-grained-token', token: 'synthetic' },
+        {
+          fetch: (() => {
+            throw new Error('network');
+          }) as typeof fetch,
+        },
+      ),
+      'fine-grained-token',
+    );
+    expect(dflt.dependencyGraphExport).toBe(false);
+    expect(await dflt.requestDependencySbom('o/a')).toMatchObject({ ok: false });
+  });
+
+  it('the mock provider serves fixture SBOM data whatever the owner switch says', async () => {
+    const mock = new MockProvider('fixtures/github', () => new Date(0));
+    expect(mock.dependencyGraphExport).toBe(true);
+  });
+
+  it('requestDependencySbom extracts the uuid from sbom_url', async () => {
+    const { p, calls } = sbomProvider(() => json(201, { sbom_url: sbomUrl }));
+    expect(await p.requestDependencySbom('o/a')).toEqual({ ok: true, data: { uuid: UUID } });
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.path).toBe(`https://api.github.com${API}/generate-report`);
+  });
+
+  it('requestDependencySbom with a foreign sbom_url path → invalid-data', async () => {
+    for (const sbom_url of [
+      'https://api.github.com/repos/o/a/other/path',
+      'https://evil.example/x/dependency-graph/sbom/fetch-report/not-a-uuid',
+      undefined,
+    ]) {
+      const { p } = sbomProvider(() => json(201, { sbom_url }));
+      expect(await p.requestDependencySbom('o/a')).toMatchObject({
+        ok: false,
+        error: { classification: 'invalid-data' },
+      });
+    }
+  });
+
+  it('fetchDependencySbom 202 → pending', async () => {
+    const { p, calls } = sbomProvider(() => json(202, {}));
+    expect(await p.fetchDependencySbom('o/a', UUID)).toEqual({
+      ok: true,
+      data: { state: 'pending' },
+    });
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.redirect).toBe('manual');
+    expect(calls[0]!.path).toBe(`https://api.github.com${API}/fetch-report/${UUID}`);
+  });
+
+  it('fetchDependencySbom 302 to an allowed host → ready text, downloaded without Authorization', async () => {
+    const { p, calls } = sbomProvider((url) =>
+      url.pathname.includes('/fetch-report/')
+        ? new Response(null, { status: 302, headers: { location: SIGNED } })
+        : new Response('{"spdxVersion":"SPDX-2.3"}'),
+    );
+    expect(await p.fetchDependencySbom('o/a', UUID)).toEqual({
+      ok: true,
+      data: { state: 'ready', text: '{"spdxVersion":"SPDX-2.3"}' },
+    });
+    expect(calls).toHaveLength(2);
+    expect(calls[0]!.headers.get('authorization')).toBeTruthy();
+    expect(calls[1]!.path).toBe('https://objects.githubusercontent.com/sbom/report.json');
+    expect(calls[1]!.headers.has('authorization')).toBe(false);
+    expect(calls[1]!.redirect).toBe('error');
+  });
+
+  it('fetchDependencySbom 302 to https://evil.example → invalid-data, no download request made', async () => {
+    const { p, calls } = sbomProvider(
+      () => new Response(null, { status: 302, headers: { location: 'https://evil.example/x' } }),
+    );
+    expect(await p.fetchDependencySbom('o/a', UUID)).toMatchObject({
+      ok: false,
+      error: { classification: 'invalid-data', message: 'SBOM download host not allowed' },
+    });
+    expect(calls).toHaveLength(1);
+  });
+
+  it('fetchDependencySbom over the byte cap → invalid-data, incomplete', async () => {
+    const { p } = sbomProvider(
+      (url) =>
+        url.pathname.includes('/fetch-report/')
+          ? new Response(null, { status: 302, headers: { location: SIGNED } })
+          : new Response('x'.repeat(2000)),
+      { sbomMaxBytes: 1000 },
+    );
+    expect(await p.fetchDependencySbom('o/a', UUID)).toMatchObject({
+      ok: false,
+      error: { classification: 'invalid-data', message: 'SBOM too large', incomplete: true },
+    });
+  });
+
+  it('a missing Location, a malformed uuid and an unexpected status are invalid-data', async () => {
+    const noLocation = sbomProvider(() => new Response(null, { status: 302 }));
+    expect(await noLocation.p.fetchDependencySbom('o/a', UUID)).toMatchObject({
+      ok: false,
+      error: { classification: 'invalid-data' },
+    });
+    const bad = sbomProvider(() => json(202, {}));
+    expect(await bad.p.fetchDependencySbom('o/a', '../../admin')).toMatchObject({
+      ok: false,
+      error: { classification: 'invalid-data' },
+    });
+    expect(bad.calls).toHaveLength(0);
+    const odd = sbomProvider(() => json(200, { sbom: {} }));
+    expect(await odd.p.fetchDependencySbom('o/a', UUID)).toMatchObject({
+      ok: false,
+      error: { classification: 'invalid-data' },
+    });
+  });
+
+  it('a failing download is a classified error, never a thrown one', async () => {
+    const { p } = sbomProvider((url) =>
+      url.pathname.includes('/fetch-report/')
+        ? new Response(null, { status: 302, headers: { location: SIGNED } })
+        : new Response('nope', { status: 500 }),
+    );
+    expect(await p.fetchDependencySbom('o/a', UUID)).toMatchObject({
+      ok: false,
+      error: { classification: 'error' },
+    });
+  });
+
+  it('403 "Dependency graph is disabled for this repository" → not-configured; plain 403 → not-authorised', async () => {
+    const disabled = sbomProvider(() =>
+      json(403, { message: 'Dependency graph is disabled for this repository' }),
+    );
+    expect(await disabled.p.requestDependencySbom('o/a')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-configured', httpStatus: 403 },
+    });
+    expect(await disabled.p.fetchDependencySbom('o/a', UUID)).toMatchObject({
+      ok: false,
+      error: { classification: 'not-configured' },
+    });
+    const plain = sbomProvider(() =>
+      json(403, { message: 'Resource not accessible by integration' }),
+    );
+    expect(await plain.p.requestDependencySbom('o/a')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-authorised' },
+    });
+  });
+
+  it('both calls send X-GitHub-Api-Version 2026-03-10', async () => {
+    const { p, calls } = sbomProvider((url) =>
+      url.pathname.endsWith('/generate-report') ? json(201, { sbom_url: sbomUrl }) : json(202, {}),
+    );
+    await p.requestDependencySbom('o/a');
+    await p.fetchDependencySbom('o/a', UUID);
+    expect(calls.map((c) => c.headers.get('x-github-api-version'))).toEqual([
+      '2026-03-10',
+      '2026-03-10',
+    ]);
+  });
+});
+
+describe('MockProvider: dependency-graph SBOM export', () => {
+  async function make(fixture: unknown) {
+    const dir = await mkdtemp(join(tmpdir(), 'hub-mock-sbom-'));
+    await writeFile(join(dir, 'o__a.json'), JSON.stringify(fixture));
+    return new MockProvider(dir, () => new Date('2026-01-15T12:00:00Z'));
+  }
+  const repository = {
+    owner: 'o',
+    name: 'a',
+    fullName: 'o/a',
+    htmlUrl: 'https://github.com/o/a',
+    visibility: 'public',
+    defaultBranch: 'main',
+    archived: false,
+    updatedAt: null,
+    topics: [],
+  };
+
+  it('expand builds a valid SPDX 2.3 document with a DESCRIBES root and no real package names', async () => {
+    const { summariseSpdx } = await import('../../collector/src/normalizers/sbom');
+    const p = await make({
+      repository,
+      dependencySbom: {
+        expand: {
+          name: 'o/a',
+          created: '@now-1h',
+          packages: [
+            { count: 3, license: 'MIT', purl: 'maven' },
+            { count: 2, license: null, purl: null },
+          ],
+          extra: [{ name: 'canary-pkg', license: 'Apache-2.0', purl: 'maven' }],
+        },
+      },
+    });
+    const req = await p.requestDependencySbom('o/a');
+    expect(req.ok).toBe(true);
+    if (!req.ok) return;
+    const fetched = await p.fetchDependencySbom('o/a', req.data.uuid);
+    expect(fetched).toMatchObject({ ok: true, data: { state: 'ready' } });
+    if (!fetched.ok || fetched.data.state !== 'ready') return;
+    const summary = summariseSpdx(JSON.parse(fetched.data.text), [])!;
+    expect(summary.specVersion).toBe('2.3');
+    expect(summary.generatedAt).toBe('2026-01-15T11:00:00.000Z');
+    expect(summary.packages).toBe(6);
+    expect(summary.withoutLicense).toBe(2);
+    expect(summary.licenses).toEqual([
+      { id: 'MIT', count: 3 },
+      { id: 'Apache-2.0', count: 1 },
+    ]);
+    expect(summary.ecosystems).toEqual([
+      { id: 'maven', count: 4 },
+      { id: 'unknown', count: 2 },
+    ]);
+  });
+
+  it('pending makes every fetch pending; $error fails the request; absent is not-configured', async () => {
+    const pending = await make({ repository, dependencySbom: { pending: true } });
+    const req = await pending.requestDependencySbom('o/a');
+    expect(req.ok && (await pending.fetchDependencySbom('o/a', req.data.uuid))).toEqual({
+      ok: true,
+      data: { state: 'pending' },
+    });
+    const denied = await make({
+      repository,
+      dependencySbom: { $error: { classification: 'not-authorised', httpStatus: 403 } },
+    });
+    expect(await denied.requestDependencySbom('o/a')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-authorised' },
+    });
+    const absent = await make({ repository });
+    expect(await absent.requestDependencySbom('o/a')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-configured' },
+    });
+  });
+
+  it('a document fixture is returned verbatim', async () => {
+    const p = await make({ repository, dependencySbom: { document: { spdxVersion: 'SPDX-2.3' } } });
+    const req = await p.requestDependencySbom('o/a');
+    const fetched = req.ok && (await p.fetchDependencySbom('o/a', req.data.uuid));
+    expect(fetched).toEqual({
+      ok: true,
+      data: { state: 'ready', text: '{"spdxVersion":"SPDX-2.3"}' },
+    });
+  });
+});
+
+describe('GitHubProvider: release assets, attestations, analyses by tool, supply-chain summary', () => {
+  const D1 = `sha256:${'a1'.repeat(32)}`;
+  const D2 = `sha256:${'b2'.repeat(32)}`;
+  const releaseBody = (assets: unknown[]) => ({
+    tag_name: 'v1.4.0',
+    name: 'v1.4.0',
+    published_at: '2026-01-10T00:00:00Z',
+    prerelease: false,
+    html_url: 'https://github.com/o/a/releases/tag/v1.4.0',
+    assets,
+  });
+
+  it('latest release maps assets with digest; a "sha1:…" digest becomes null', async () => {
+    const p = provider({
+      '/repos/o/a/releases/latest': {
+        status: 200,
+        body: releaseBody([
+          { name: 'app.tgz', digest: D1, download_url: 'https://x', size: 1 },
+          { name: 'old.zip', digest: `sha1:${'c'.repeat(40)}` },
+          { name: 'nodigest.bin', digest: null },
+          { name: 'missing.bin' },
+          { name: 'upper.bin', digest: `sha256:${'A'.repeat(64)}` },
+        ]),
+      },
+    });
+    expect(await p.getLatestRelease('o/a')).toMatchObject({
+      ok: true,
+      data: {
+        tagName: 'v1.4.0',
+        assets: [
+          { name: 'app.tgz', digest: D1 },
+          { name: 'old.zip', digest: null },
+          { name: 'nodigest.bin', digest: null },
+          { name: 'missing.bin', digest: null },
+          { name: 'upper.bin', digest: null },
+        ],
+      },
+    });
+    const r = await p.getLatestRelease('o/a');
+    expect(r.ok && Object.keys(r.data.assets[0]!).sort()).toEqual(['digest', 'name']);
+  });
+
+  it('a release without an assets array maps to an empty list', async () => {
+    const p = provider({
+      '/repos/o/a/releases/latest': {
+        status: 200,
+        body: { ...releaseBody([]), assets: undefined },
+      },
+    });
+    expect(await p.getLatestRelease('o/a')).toMatchObject({ ok: true, data: { assets: [] } });
+  });
+
+  it('getAttestationPresence sends predicate_type provenance then sbom with per_page 1', async () => {
+    const seen: string[] = [];
+    const p = provider(
+      {
+        [`/repos/o/a/attestations/${D1}`]: {
+          status: 200,
+          body: { attestations: [{ bundle: {} }] },
+        },
+      },
+      seen,
+    );
+    expect(await p.getAttestationPresence('o/a', D1)).toEqual({
+      ok: true,
+      data: { provenance: true, sbom: true },
+    });
+    expect(seen).toHaveLength(2);
+    expect(seen[0]).toContain('predicate_type=provenance');
+    expect(seen[1]).toContain('predicate_type=sbom');
+    expect(seen.every((s) => s.includes('per_page=1'))).toBe(true);
+  });
+
+  it('getAttestationPresence is per predicate: provenance present, sbom empty', async () => {
+    const fetcher = (async (input: string | URL | Request) => {
+      const url = new URL(
+        typeof input === 'string' ? input : input instanceof URL ? input.href : input.url,
+      );
+      const provenance = url.searchParams.get('predicate_type') === 'provenance';
+      return new Response(JSON.stringify({ attestations: provenance ? [{}] : [] }), {
+        headers: { 'content-type': 'application/json' },
+      });
+    }) as typeof fetch;
+    const p = new GitHubProvider(
+      createGitHubClient({ mode: 'fine-grained-token', token: 'synthetic' }, { fetch: fetcher }),
+      'fine-grained-token',
+    );
+    expect(await p.getAttestationPresence('o/a', D1)).toEqual({
+      ok: true,
+      data: { provenance: true, sbom: false },
+    });
+  });
+
+  it('getAttestationPresence 404 → { provenance: false, sbom: false }', async () => {
+    const p = provider({});
+    expect(await p.getAttestationPresence('o/a', D2)).toEqual({
+      ok: true,
+      data: { provenance: false, sbom: false },
+    });
+  });
+
+  it('getAttestationPresence 403 → not-authorised; 500 → error', async () => {
+    const denied = provider({
+      [`/repos/o/a/attestations/${D1}`]: {
+        status: 403,
+        body: { message: 'Resource not accessible by integration' },
+      },
+    });
+    expect(await denied.getAttestationPresence('o/a', D1)).toMatchObject({
+      ok: false,
+      error: { classification: 'not-authorised' },
+    });
+    const broken = provider({
+      [`/repos/o/a/attestations/${D1}`]: { status: 502, body: { message: 'Bad gateway' } },
+    });
+    expect(await broken.getAttestationPresence('o/a', D1)).toMatchObject({
+      ok: false,
+      error: { classification: 'error' },
+    });
+  });
+
+  it('the DTO has exactly the keys provenance and sbom (no bundle)', async () => {
+    const p = provider({
+      [`/repos/o/a/attestations/${D1}`]: {
+        status: 200,
+        body: {
+          attestations: [{ bundle: { secret: 'x' }, bundle_url: 'https://x', initiator: 'a' }],
+        },
+      },
+    });
+    const r = await p.getAttestationPresence('o/a', D1);
+    expect(r.ok && Object.keys(r.data).sort()).toEqual(['provenance', 'sbom']);
+    expect(JSON.stringify(r)).not.toContain('bundle');
+  });
+
+  it('getAttestationPresence refuses a digest that is not sha256:<64 hex> without a request', async () => {
+    const seen: string[] = [];
+    const p = provider({}, seen);
+    expect(await p.getAttestationPresence('o/a', '../../admin')).toMatchObject({
+      ok: false,
+      error: { classification: 'invalid-data' },
+    });
+    expect(seen).toHaveLength(0);
+  });
+
+  it('listCodeScanningAnalyses passes tool_name, ref refs/heads/main, per_page 10 and maps category', async () => {
+    const seen: string[] = [];
+    const p = provider(
+      {
+        '/repos/o/a/code-scanning/analyses': {
+          status: 200,
+          body: [
+            {
+              created_at: '2026-01-14T00:00:00Z',
+              tool: { name: 'Trivy' },
+              category: 'trivy-image',
+              sarif_id: 'x',
+            },
+            { created_at: '2026-01-13T00:00:00Z', tool: { name: 'Trivy' } },
+          ],
+        },
+      },
+      seen,
+    );
+    expect(await p.listCodeScanningAnalyses('o/a', 'Trivy', 'refs/heads/main')).toEqual({
+      ok: true,
+      data: [
+        { createdAt: '2026-01-14T00:00:00Z', toolName: 'Trivy', category: 'trivy-image' },
+        { createdAt: '2026-01-13T00:00:00Z', toolName: 'Trivy', category: null },
+      ],
+    });
+    expect(seen[0]).toContain('tool_name=Trivy');
+    expect(seen[0]).toContain('ref=refs%2Fheads%2Fmain');
+    expect(seen[0]).toContain('per_page=10');
+  });
+
+  it('listCodeScanningAnalyses accepts a bare branch name, treats 404 as none and keeps errors classified', async () => {
+    const seen: string[] = [];
+    const none = provider({}, seen);
+    expect(await none.listCodeScanningAnalyses('o/a', 'ZAP', 'main')).toEqual({
+      ok: true,
+      data: [],
+    });
+    expect(seen[0]).toContain('ref=refs%2Fheads%2Fmain');
+    const denied = provider({
+      '/repos/o/a/code-scanning/analyses': {
+        status: 403,
+        body: { message: 'Resource not accessible by integration' },
+      },
+    });
+    expect(await denied.listCodeScanningAnalyses('o/a', 'ZAP', 'main')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-authorised' },
+    });
+  });
+
+  it('I-2: no analysis (404) or no Advanced Security (403) reads as not-configured, never unknown', async () => {
+    const ctx = { projectId: 'p', policies: policies(), now: NOW, errors: [] };
+    const rules = [{ tool: 'Trivy' }];
+    for (const [status, message] of [
+      [404, 'no analysis found'],
+      [403, 'Advanced Security must be enabled for this repository to use code scanning.'],
+    ] as const) {
+      const p = provider({ '/repos/o/a/code-scanning/analyses': { status, body: { message } } });
+      const r = await p.listCodeScanningAnalyses('o/a', 'Trivy', 'main');
+      expect(r).toMatchObject({ ok: false, error: { classification: 'not-configured' } });
+      expect(toolCandidate(ctx, rules, new Map([['trivy', r]]), []).state).toBe('not-configured');
+    }
+  });
+
+  it('alerts map most_recent_instance.category', async () => {
+    const p = provider({
+      '/repos/o/a/code-scanning/alerts': {
+        status: 200,
+        body: [
+          {
+            number: 1,
+            state: 'open',
+            rule: { id: 'DS002', severity: 'error', description: 'x' },
+            tool: { name: 'Trivy' },
+            most_recent_instance: { category: 'trivy-image', location: { path: 'Dockerfile' } },
+            created_at: '2026-01-01T00:00:00Z',
+            html_url: 'https://github.com/o/a/security/code-scanning/1',
+          },
+          {
+            number: 2,
+            state: 'open',
+            rule: { id: 'js/x' },
+            tool: { name: 'CodeQL' },
+            created_at: '2026-01-01T00:00:00Z',
+            html_url: 'https://github.com/o/a/security/code-scanning/2',
+          },
+        ],
+      },
+    });
+    const r = await p.listCodeScanningAlerts('o/a');
+    expect(r.ok && r.data.map((a) => a.category)).toEqual(['trivy-image', null]);
+  });
+
+  describe('getSupplyChainSummary', () => {
+    const art = (id: number, branch: string, created: string, extra: object = {}) => ({
+      id,
+      name: 'hub-supply-chain-summary',
+      size_in_bytes: 300,
+      expired: false,
+      created_at: created,
+      workflow_run: { id: id * 10, head_branch: branch, head_repository_id: 7, repository_id: 7 },
+      ...extra,
+    });
+    const list = (artifacts: unknown[]): Route => ({
+      status: 200,
+      body: { total_count: artifacts.length, artifacts },
+    });
+    const zipOf = (name: string, text: string): Route => ({
+      status: 200,
+      body: makeZip([{ name, data: text }]),
+    });
+
+    it('picks the newest default-branch artifact named hub-supply-chain-summary and reads supply-chain-summary.json', async () => {
+      const seen: string[] = [];
+      const p = provider(
+        {
+          '/repos/o/a/actions/artifacts': list([
+            art(3, 'feature/x', '2026-01-15T10:00:00Z'),
+            art(1, 'main', '2026-01-10T10:00:00Z'),
+            art(2, 'main', '2026-01-12T10:00:00Z'),
+          ]),
+          '/repos/o/a/actions/artifacts/2/zip': zipOf('supply-chain-summary.json', '{"newest":1}'),
+        },
+        seen,
+      );
+      expect(await p.getSupplyChainSummary('o/a', 'main')).toEqual({
+        ok: true,
+        data: {
+          summaryText: '{"newest":1}',
+          createdAt: '2026-01-12T10:00:00Z',
+          runUrl: 'https://github.com/o/a/actions/runs/20',
+        },
+      });
+      expect(seen[0]).toContain('name=hub-supply-chain-summary');
+    });
+
+    it('a quality-summary.json entry is not read as the supply-chain summary', async () => {
+      const p = provider({
+        '/repos/o/a/actions/artifacts': list([art(1, 'main', '2026-01-10T10:00:00Z')]),
+        '/repos/o/a/actions/artifacts/1/zip': zipOf('quality-summary.json', '{}'),
+      });
+      expect(await p.getSupplyChainSummary('o/a', 'main')).toMatchObject({
+        ok: false,
+        error: { classification: 'invalid-data' },
+      });
+    });
+
+    it('rejects size_in_bytes 65537 as invalid-data without downloading', async () => {
+      const seen: string[] = [];
+      const p = provider(
+        {
+          '/repos/o/a/actions/artifacts': list([
+            art(1, 'main', '2026-01-10T10:00:00Z', { size_in_bytes: 65_537 }),
+          ]),
+        },
+        seen,
+      );
+      expect(await p.getSupplyChainSummary('o/a', 'main')).toMatchObject({
+        ok: false,
+        error: { classification: 'invalid-data' },
+      });
+      expect(seen.some((s) => s.includes('/zip'))).toBe(false);
+    });
+
+    it('expired-only → summaryText null; none → not-found; fork runs are ignored', async () => {
+      const expired = provider({
+        '/repos/o/a/actions/artifacts': list([
+          art(1, 'main', '2026-01-10T10:00:00Z', { expired: true }),
+        ]),
+      });
+      expect(await expired.getSupplyChainSummary('o/a', 'main')).toMatchObject({
+        ok: true,
+        data: { summaryText: null },
+      });
+      const fork = art(3, 'main', '2026-01-15T10:00:00Z');
+      fork.workflow_run.head_repository_id = 99;
+      const none = provider({ '/repos/o/a/actions/artifacts': list([fork]) });
+      expect(await none.getSupplyChainSummary('o/a', 'main')).toMatchObject({
+        ok: false,
+        error: { classification: 'not-found' },
+      });
+    });
+
+    it('getQualitySummary still reads hub-quality-summary (behaviour unchanged)', async () => {
+      const seen: string[] = [];
+      const q = { ...art(1, 'main', '2026-01-10T10:00:00Z'), name: 'hub-quality-summary' };
+      const p = provider(
+        {
+          '/repos/o/a/actions/artifacts': list([q]),
+          '/repos/o/a/actions/artifacts/1/zip': zipOf('quality-summary.json', '{"q":1}'),
+        },
+        seen,
+      );
+      expect(await p.getQualitySummary('o/a', 'main')).toMatchObject({
+        ok: true,
+        data: { summaryText: '{"q":1}' },
+      });
+      expect(seen[0]).toContain('name=hub-quality-summary');
+    });
+  });
+
+  describe('MockProvider', () => {
+    const repository = {
+      owner: 'o',
+      name: 'a',
+      fullName: 'o/a',
+      htmlUrl: 'https://github.com/o/a',
+      visibility: 'public',
+      defaultBranch: 'main',
+      archived: false,
+      updatedAt: null,
+      topics: [],
+    };
+    async function make(fixture: object) {
+      const dir = await mkdtemp(join(tmpdir(), 'hub-mock-t3-'));
+      await writeFile(join(dir, 'o__a.json'), JSON.stringify({ repository, ...fixture }));
+      return new MockProvider(dir, () => new Date('2026-01-15T12:00:00Z'));
+    }
+    const release = {
+      tagName: 'v1.4.0',
+      name: null,
+      publishedAt: '@now-5d',
+      prerelease: false,
+      htmlUrl: 'https://github.com/o/a/releases/tag/v1.4.0',
+    };
+
+    it('release assets default to [] and are returned when present', async () => {
+      expect(await (await make({ latestRelease: release })).getLatestRelease('o/a')).toMatchObject({
+        ok: true,
+        data: { assets: [] },
+      });
+      const p = await make({
+        latestRelease: { ...release, assets: [{ name: 'app.tgz', digest: D1 }] },
+      });
+      expect(await p.getLatestRelease('o/a')).toMatchObject({
+        ok: true,
+        data: { assets: [{ name: 'app.tgz', digest: D1 }] },
+      });
+    });
+
+    it('attestations: per digest, absent → none, $error → error', async () => {
+      const p = await make({
+        attestations: {
+          [D1]: { provenance: true, sbom: false },
+          [D2]: { $error: { classification: 'not-authorised', httpStatus: 403 } },
+        },
+      });
+      expect(await p.getAttestationPresence('o/a', D1)).toEqual({
+        ok: true,
+        data: { provenance: true, sbom: false },
+      });
+      expect(await p.getAttestationPresence('o/a', D2)).toMatchObject({
+        ok: false,
+        error: { classification: 'not-authorised' },
+      });
+      expect(await p.getAttestationPresence('o/a', `sha256:${'0'.repeat(64)}`)).toEqual({
+        ok: true,
+        data: { provenance: false, sbom: false },
+      });
+      expect(await (await make({})).getAttestationPresence('o/a', D1)).toEqual({
+        ok: true,
+        data: { provenance: false, sbom: false },
+      });
+      const all = await make({
+        attestations: { $error: { classification: 'not-authorised', httpStatus: 403 } },
+      });
+      expect(await all.getAttestationPresence('o/a', D1)).toMatchObject({ ok: false });
+    });
+
+    it('analyses by tool (case-insensitive, @now tokens), absent → [], $error → error', async () => {
+      const p = await make({
+        codeScanningAnalyses: {
+          ZAP: [{ createdAt: '@now-10d', toolName: 'ZAP', category: null }],
+          Checkov: { $error: { classification: 'not-authorised', httpStatus: 403 } },
+        },
+      });
+      expect(await p.listCodeScanningAnalyses('o/a', 'zap', 'main')).toEqual({
+        ok: true,
+        data: [{ createdAt: '2026-01-05T12:00:00.000Z', toolName: 'ZAP', category: null }],
+      });
+      expect(await p.listCodeScanningAnalyses('o/a', 'Checkov', 'main')).toMatchObject({
+        ok: false,
+      });
+      expect(await p.listCodeScanningAnalyses('o/a', 'Trivy', 'main')).toEqual({
+        ok: true,
+        data: [],
+      });
+    });
+
+    it('supply-chain summary: like the quality summary (expired, run url, absent → not-found)', async () => {
+      const p = await make({
+        supplyChainSummary: {
+          summary: { schemaVersion: '1.0' },
+          createdAt: '@now-1d',
+          runId: 42,
+        },
+      });
+      expect(await p.getSupplyChainSummary('o/a', 'main')).toEqual({
+        ok: true,
+        data: {
+          summaryText: '{"schemaVersion":"1.0"}',
+          createdAt: '2026-01-14T12:00:00.000Z',
+          runUrl: 'https://github.com/o/a/actions/runs/42',
+        },
+      });
+      const expired = await make({
+        supplyChainSummary: { summary: {}, createdAt: '@now-30d', runId: 1, expired: true },
+      });
+      expect(await expired.getSupplyChainSummary('o/a', 'main')).toMatchObject({
+        ok: true,
+        data: { summaryText: null },
+      });
+      expect(await (await make({})).getSupplyChainSummary('o/a', 'main')).toMatchObject({
+        ok: false,
+        error: { classification: 'not-found' },
+      });
     });
   });
 });

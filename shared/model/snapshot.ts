@@ -8,9 +8,12 @@ import {
   BranchRuleTypeSchema,
   CapabilitySchema,
   ComponentTypeSchema,
+  ControlEvidenceSchema,
   ControlIdSchema,
+  ControlSourceSchema,
   ControlStateSchema,
   DataSourceSchema,
+  EcosystemSchema,
   ErrorClassificationSchema,
   FindingCategorySchema,
   FindingSourceSchema,
@@ -18,6 +21,8 @@ import {
   HealthResultSchema,
   HealthStatusSchema,
   LifecycleSchema,
+  ProviderIdSchema,
+  ProviderStateSchema,
   ReasonSchema,
   RepositoryCheckIdSchema,
   RepositoryCheckStateSchema,
@@ -25,15 +30,13 @@ import {
   SeveritySchema,
   SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS,
 } from './enums';
-import { httpsUrl, isoDate, nullableCount, shortText } from './primitives';
+import { httpsUrl, isoDate, nullableCount, sha, shortText } from './primitives';
 
 /*
  * Normalised, provider-neutral snapshot model. Every object is `.strict()`: unknown keys are
  * rejected, which turns these schemas into the publication allowlist. Nothing outside this
  * model can reach GitHub Pages.
  */
-
-const sha = z.string().regex(/^[0-9a-f]{40}$/);
 
 export const SchemaVersionSchema = z.enum(SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS);
 
@@ -59,6 +62,13 @@ export const CollectionErrorSchema = z
       'workflow-files',
       'repository-rules',
       'scorecard-analysis',
+      'dependency-sbom',
+      'attestations',
+      'supply-chain-summary',
+      'code-scanning-analyses',
+      'sonarqube',
+      'harbor',
+      'argocd',
     ]),
     classification: ErrorClassificationSchema,
     httpStatus: z.number().int().min(100).max(599).optional(),
@@ -334,6 +344,10 @@ export const ControlStatusSchema = z
     lastScanAt: isoDate.nullable(),
     counts: SeverityCountsSchema.nullable(),
     reportUrl: httpsUrl.nullable(),
+    /** Winning source of the control (null: nothing answered, or not applicable). */
+    source: ControlSourceSchema.nullable(),
+    /** How strong the evidence is (null when no source gave a definitive answer). */
+    evidence: ControlEvidenceSchema.nullable(),
   })
   .strict();
 export type ControlStatus = z.infer<typeof ControlStatusSchema>;
@@ -427,6 +441,12 @@ export const QualityHealthSchema = HealthResultSchema.extend({
         generatedAt: isoDate.nullable(),
         tool: z.string().max(40).nullable(),
         runUrl: httpsUrl.nullable(),
+        /** Report that supplied the numbers (null: not applicable, or no report at all). */
+        source: z.enum(['ci-summary', 'sonarqube']).nullable(),
+        /** SonarQube quality gate, whenever the component's Sonar project is readable. */
+        qualityGate: z.enum(['passed', 'failed']).nullable(),
+        /** Coverage on new code (SonarQube), percentage. */
+        newCoverage: percentage.nullable(),
       })
       .strict(),
   ),
@@ -615,16 +635,217 @@ export const ComponentSnapshotSchema = z
   .strict();
 export type ComponentSnapshot = z.infer<typeof ComponentSnapshotSchema>;
 
+/*
+ * Supply chain schemas (schema 1.8). Standalone for now: they are attached to the project
+ * snapshot, the environments and the run metadata when the collector produces them.
+ */
+
+/** What Argo CD reports for an environment (null on the environment when nothing is mapped). */
+export const EnvironmentDeploymentSchema = z
+  .object({
+    state: z.enum(['available', 'not-authorised', 'not-found', 'unknown']),
+    sync: z.enum(['synced', 'out-of-sync', 'unknown']).nullable(),
+    health: z
+      .enum(['healthy', 'progressing', 'degraded', 'suspended', 'missing', 'unknown'])
+      .nullable(),
+    /** 7-character short SHA, or a version-like reference. */
+    revision: z.string().max(100).nullable(),
+    version: z.string().max(100).nullable(),
+    deployedAt: isoDate.nullable(),
+    images: z
+      .array(
+        z
+          .object({ componentId: z.string().max(64), version: z.string().max(100).nullable() })
+          .strict(),
+      )
+      .max(20),
+  })
+  .strict();
+export type EnvironmentDeployment = z.infer<typeof EnvironmentDeploymentSchema>;
+
 export const EnvironmentSnapshotSchema = z
   .object({
     id: z.string().max(64),
     name: z.string().max(50),
+    /** Effective version: the deployed one when Argo CD reports it, else the declared one. */
     version: z.string().max(100).nullable(),
-    source: z.enum(['manifest', 'unknown']),
+    /** Version declared by the release manifest. */
+    declaredVersion: z.string().max(100).nullable(),
+    source: z.enum(['argocd', 'manifest', 'unknown']),
+    /** Effective version against the coordinator's. */
     status: z.enum(['aligned', 'behind', 'mismatch', 'unknown']),
+    /** null when no Argo CD application is mapped or Argo CD is off. */
+    deployment: EnvironmentDeploymentSchema.nullable(),
   })
   .strict();
 export type EnvironmentSnapshot = z.infer<typeof EnvironmentSnapshotSchema>;
+
+const VerificationLevel = z.enum([
+  'verified',
+  'present',
+  'missing',
+  'not-verified',
+  'failed',
+  'unknown',
+]);
+
+/** State of the hub-supply-chain-summary artifact of a repository. */
+export const SupplyChainSummaryStateSchema = z
+  .object({
+    state: z.enum([
+      'readable',
+      'stale',
+      'missing',
+      'expired',
+      'invalid',
+      'not-authorised',
+      'unknown',
+      'off',
+    ]),
+    generatedAt: isoDate.nullable(),
+    commitSha: sha.nullable(),
+    runUrl: httpsUrl.nullable(),
+  })
+  .strict();
+export type SupplyChainSummaryState = z.infer<typeof SupplyChainSummaryStateSchema>;
+
+const count = z.number().int().min(0);
+
+export const SupplyChainSchema = z
+  .object({
+    enabled: z.boolean(),
+    collectedAt: isoDate,
+    totals: z
+      .object({
+        repositories: nullableCount,
+        sbomAvailable: nullableCount,
+        signedImages: nullableCount,
+        unsignedImages: nullableCount,
+        attestedAssets: nullableCount,
+        flagged: nullableCount,
+      })
+      .strict(),
+    repositories: z
+      .array(
+        z
+          .object({
+            componentIds: z.array(z.string().max(64)).min(1),
+            repository: z.string().max(200),
+            sbom: z
+              .object({
+                state: z.enum([
+                  'available',
+                  'partial',
+                  'not-configured',
+                  'not-authorised',
+                  'pending',
+                  'too-large',
+                  'invalid',
+                  'unknown',
+                  'off',
+                ]),
+                source: z.enum(['supply-chain-summary', 'dependency-graph']).nullable(),
+                format: z.enum(['spdx', 'cyclonedx']).nullable(),
+                specVersion: z.string().max(20).nullable(),
+                generatedAt: isoDate.nullable(),
+                packages: nullableCount,
+                withoutLicense: nullableCount,
+                flagged: nullableCount,
+                licenses: z.array(z.object({ id: z.string().max(100), count }).strict()).max(10),
+                otherLicenses: count,
+                ecosystems: z.array(z.object({ id: EcosystemSchema, count }).strict()).max(16),
+              })
+              .strict(),
+            attestations: z
+              .object({
+                state: z.enum([
+                  'available',
+                  'none',
+                  'not-authorised',
+                  'unknown',
+                  'not-applicable',
+                  'off',
+                ]),
+                release: z.string().max(100).nullable(),
+                checked: count,
+                withProvenance: nullableCount,
+                withSbom: nullableCount,
+                withoutDigest: count,
+              })
+              .strict(),
+            images: z
+              .array(
+                z
+                  .object({
+                    componentId: z.string().max(64),
+                    source: z.enum(['supply-chain-summary', 'harbor']),
+                    /** null = withheld (public audience, non-public repository). */
+                    name: z.string().max(200).nullable(),
+                    tag: z.string().max(128).nullable(),
+                    digest: z
+                      .string()
+                      .regex(/^sha256:[0-9a-f]{64}$/)
+                      .nullable(),
+                    signature: VerificationLevel,
+                    provenance: VerificationLevel,
+                    /** null for CI-summary images. */
+                    scan: z
+                      .object({
+                        state: z.enum([
+                          'scanned',
+                          'scan-failed',
+                          'scan-pending',
+                          'not-scanned',
+                          'not-found',
+                          'not-authorised',
+                          'unknown',
+                        ]),
+                        scannedAt: isoDate.nullable(),
+                        counts: SeverityCountsSchema.nullable(),
+                        fixable: nullableCount,
+                      })
+                      .strict()
+                      .nullable(),
+                  })
+                  .strict(),
+              )
+              .max(20),
+            tools: z
+              .array(
+                z
+                  .object({
+                    control: z.enum(['containerScanning', 'iacScanning', 'dast']),
+                    tool: z.string().max(50),
+                    state: ControlStateSchema,
+                    lastAnalysisAt: isoDate.nullable(),
+                    open: SeverityCountsSchema.nullable(),
+                  })
+                  .strict(),
+              )
+              .max(10),
+            otherTools: z.array(z.string().max(50)).max(10),
+            summary: SupplyChainSummaryStateSchema,
+          })
+          .strict(),
+      )
+      .max(200),
+  })
+  .strict();
+export type SupplyChain = z.infer<typeof SupplyChainSchema>;
+
+/** Run-level state of the optional external providers (never base URLs or credentials). */
+export const RunProvidersSchema = z.record(
+  ProviderIdSchema,
+  z
+    .object({
+      enabled: z.boolean(),
+      state: ProviderStateSchema,
+      items: count,
+      errors: count,
+    })
+    .strict(),
+);
+export type RunProviders = z.infer<typeof RunProvidersSchema>;
 
 /**
  * Project score computed by the collector. value is null when too few required dimensions
@@ -683,6 +904,8 @@ export const ProjectSnapshotSchema = z
     governanceHealth: HealthResultSchema,
     qualityHealth: QualityHealthSchema,
     repositoryControls: RepositoryControlsHealthSchema,
+    /** Supply chain evidence per repository (informative: not a dimension). */
+    supplyChain: SupplyChainSchema,
     overallHealth: HealthResultSchema,
     score: ProjectScoreSchema,
     dataFreshness: z
@@ -699,6 +922,8 @@ export const ProjectSnapshotSchema = z
                 'code-scanning',
                 'security-status-file',
                 'quality-report',
+                'supply-chain-summary',
+                'sonarqube',
               ]),
               lastUpdatedAt: isoDate.nullable(),
             })
@@ -750,6 +975,15 @@ export const ProjectSummarySchema = z
         ratio: percent,
       })
       .strict(),
+    /** Supply chain evidence in numbers; null = unknown (never 0). */
+    supplyChain: z
+      .object({
+        repositories: nullableCount,
+        sbomAvailable: nullableCount,
+        unsignedImages: nullableCount,
+        flagged: nullableCount,
+      })
+      .strict(),
     freshness: HealthStatusSchema,
     openCounts: SeverityCountsSchema,
     risk: ProjectRiskSchema,
@@ -793,6 +1027,8 @@ export const RunMetadataSchema = z
       .strict(),
     configValid: z.boolean(),
     exceptions: RunExceptionsSchema,
+    /** Optional external providers: enabled flag and state only, never base URLs or credentials. */
+    providers: RunProvidersSchema,
     policy: z
       .object({
         snapshotStaleHours: z.number().positive(),

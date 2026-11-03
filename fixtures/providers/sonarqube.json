@@ -1,0 +1,21 @@
+{
+  "example-org_project-alpha-backend": {
+    "linesToCover": 8000,
+    "uncoveredLines": 1100,
+    "newCoverage": 88.5,
+    "qualityGate": "OK",
+    "analysedAt": "@now-1d",
+    "revision": "95c7fbdc2c7d81daf6bf050dab7bdd4c1e160a82"
+  },
+  "example-org_project-beta-web": {
+    "linesToCover": 3000,
+    "uncoveredLines": 1050,
+    "newCoverage": 41.2,
+    "qualityGate": "ERROR",
+    "analysedAt": "@now-2d",
+    "revision": null
+  },
+  "example-org_project-gamma-service": {
+    "$error": { "classification": "not-authorised", "httpStatus": 403 }
+  }
+}

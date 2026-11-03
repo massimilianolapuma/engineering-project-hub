@@ -6,7 +6,13 @@ import {
   type RepoQuality,
   type RepoQualityState,
 } from '../../collector/src/normalizers/quality';
-import { evaluateQuality, type QualityInput } from '../../collector/src/evaluators/quality';
+import {
+  evaluateQuality,
+  selectReport,
+  type QualityInput,
+} from '../../collector/src/evaluators/quality';
+import { normaliseSonarProject, type SonarQuality } from '../../collector/src/normalizers/quality';
+import type { SonarProjectDTO } from '../../collector/src/providers/external/types';
 import {
   fail,
   ok,
@@ -70,7 +76,7 @@ function input(
 ): QualityInput {
   return {
     components,
-    repos: new Map(repos.map((r) => [r.repository.toLowerCase(), r])),
+    ciReports: new Map(repos.map((r) => [r.repository.toLowerCase(), r])),
     findings: new Map(),
     collectedAt: NOW.toISOString(),
     ...extra,
@@ -600,5 +606,307 @@ describe('isCoverageApplicable', () => {
     expect(isCoverageApplicable('coordinator')).toBe(true);
     expect(isCoverageApplicable('deployment', 'required')).toBe(true);
     expect(isCoverageApplicable('coordinator', 'not-applicable')).toBe(false);
+  });
+});
+
+/** A SonarQube report as normalised by normaliseSonarProject. */
+function sonar(
+  key: string,
+  state: RepoQualityState,
+  covered: number | null = null,
+  valid: number | null = null,
+  gate: SonarQuality['qualityGate'] = null,
+  newCoverage: number | null = null,
+): SonarQuality {
+  const visible = state === 'readable' || state === 'stale';
+  return {
+    repository: key,
+    state,
+    linesCovered: visible ? covered : null,
+    linesValid: visible ? valid : null,
+    commitSha: null,
+    generatedAt: visible ? daysAgo(1) : null,
+    tool: visible ? 'sonarqube' : null,
+    runUrl: null,
+    source: 'sonarqube',
+    qualityGate: visible ? gate : null,
+    newCoverage: visible ? newCoverage : null,
+  };
+}
+
+describe('quality with SonarQube (spec 5.7)', () => {
+  const comp = (componentId: string, repository: string, sonarKey: string | null = null) => ({
+    componentId,
+    repository,
+    applicable: true,
+    sonarKey,
+  });
+  const run = (
+    components: QualityInput['components'],
+    ci: RepoQuality[],
+    sonars: SonarQuality[],
+    extra: Partial<QualityInput> = {},
+    p: Policies = P,
+  ) =>
+    evaluate(
+      {
+        components,
+        ciReports: new Map(ci.map((r) => [r.repository.toLowerCase(), r])),
+        sonarReports: new Map(sonars.map((r) => [r.repository, r])),
+        sources: ['ci-summary', 'sonarqube'],
+        findings: new Map(),
+        collectedAt: NOW.toISOString(),
+        ...extra,
+      },
+      p,
+    );
+
+  it('beta-like with Sonar web 1950/3000: 8404/12600 = 66.7, measured 3, no quality-report-missing, quality-gate-failed (web) at info, amber', () => {
+    const q = run(
+      [
+        comp('coordinator', BETA),
+        comp('api', BETA_API),
+        comp('web', BETA_WEB, 'beta-web'),
+        { ...comp('helm', BETA_HELM), applicable: false },
+      ],
+      [
+        repo(BETA, 'readable', 456, 1200),
+        repo(BETA_API, 'readable', 5998, 8400),
+        repo(BETA_WEB, 'missing'),
+      ],
+      [sonar('beta-web', 'readable', 1950, 3000, 'failed', 41.2)],
+    );
+    expect(q.percentage).toBe(66.7);
+    expect(q.linesCovered).toBe(8404);
+    expect(q.linesValid).toBe(12600);
+    expect(q).toMatchObject({ measured: 3, applicable: 3, notVisible: 0, status: 'amber' });
+    expect(codes(q)).not.toContain('quality-report-missing');
+    expect(reasonOf(q, 'quality-gate-failed')).toMatchObject({
+      level: 'info',
+      params: { components: 'web' },
+    });
+    expect(q.perComponent[2]).toMatchObject({
+      componentId: 'web',
+      source: 'sonarqube',
+      qualityGate: 'failed',
+      newCoverage: 41.2,
+      percentage: 65,
+    });
+    expect(q.perComponent[0]).toMatchObject({ source: 'ci-summary', qualityGate: null });
+    expect(q.perComponent[3]).toMatchObject({ state: 'not-applicable', source: null });
+  });
+
+  it('alpha-backend: CI 6800/8000 readable and Sonar 6900/8000 readable → CI wins (sources default), qualityGate from Sonar', () => {
+    const q = run(
+      [comp('backend', 'example-org/alpha-backend', 'alpha-backend')],
+      [repo('example-org/alpha-backend', 'readable', 6800, 8000)],
+      [sonar('alpha-backend', 'readable', 6900, 8000, 'passed', 88.5)],
+    );
+    expect(q.linesCovered).toBe(6800);
+    expect(q.perComponent[0]).toMatchObject({
+      source: 'ci-summary',
+      qualityGate: 'passed',
+      newCoverage: 88.5,
+      linesCovered: 6800,
+    });
+  });
+
+  it('sources [sonarqube, ci-summary] → Sonar wins for alpha-backend', () => {
+    const q = run(
+      [comp('backend', 'example-org/alpha-backend', 'alpha-backend')],
+      [repo('example-org/alpha-backend', 'readable', 6800, 8000)],
+      [sonar('alpha-backend', 'readable', 6900, 8000, 'passed')],
+      { sources: ['sonarqube', 'ci-summary'] },
+    );
+    expect(q.linesCovered).toBe(6900);
+    expect(q.perComponent[0]!.source).toBe('sonarqube');
+  });
+
+  it('a readable Sonar report beats a stale CI summary even when ci-summary is first', () => {
+    const q = run(
+      [comp('backend', 'example-org/b', 'k')],
+      [repo('example-org/b', 'stale', 6800, 8000, daysAgo(30))],
+      [sonar('k', 'readable', 6900, 8000, 'passed')],
+    );
+    expect(q.perComponent[0]).toMatchObject({ source: 'sonarqube', state: 'readable' });
+  });
+
+  it('nothing readable: CI unknown + Sonar not-authorised → row not-authorised, reason quality-report-not-authorised', () => {
+    const q = run(
+      [comp('service', 'example-org/g', 'g-key')],
+      [repo('example-org/g', 'unknown')],
+      [sonar('g-key', 'not-authorised')],
+    );
+    expect(q.perComponent[0]).toMatchObject({ state: 'not-authorised', source: 'sonarqube' });
+    expect(codes(q)).toContain('quality-report-not-authorised');
+    expect(codes(q)).not.toContain('quality-report-unknown');
+    expect(q.status).toBe('grey');
+  });
+
+  it('two components in one repository with different Sonar keys count separately (3000 + 2000 valid)', () => {
+    const q = run(
+      [comp('a', 'example-org/mono', 'k1'), comp('b', 'example-org/mono', 'k2')],
+      [repo('example-org/mono', 'missing')],
+      [
+        sonar('k1', 'readable', 2400, 3000, 'passed'),
+        sonar('k2', 'readable', 1500, 2000, 'passed'),
+      ],
+    );
+    expect(q.linesValid).toBe(5000);
+    expect(q.linesCovered).toBe(3900);
+    expect(q.perComponent.every((r) => !r.sharedRepository)).toBe(true);
+  });
+
+  it('two components sharing one Sonar key share the report and count once', () => {
+    const q = run(
+      [comp('a', 'example-org/x', 'same'), comp('b', 'example-org/y', 'same')],
+      [],
+      [sonar('same', 'readable', 50, 100, null)],
+    );
+    expect(q.linesValid).toBe(100);
+    expect(q.perComponent.every((r) => r.sharedRepository)).toBe(true);
+  });
+
+  it('a Sonar key without a loaded report (provider off) falls back to the CI summary', () => {
+    const q = run(
+      [comp('backend', 'example-org/b', 'k')],
+      [repo('example-org/b', 'readable', 10, 20)],
+      [],
+    );
+    expect(q.perComponent[0]).toMatchObject({ source: 'ci-summary', qualityGate: null });
+  });
+
+  it('qualityGateFailed amber caps a green project at amber; grey stays grey', () => {
+    const strict = policies((p) => (p.quality.qualityGateFailed = 'amber'));
+    const q = run(
+      [comp('backend', 'example-org/b', 'k')],
+      [repo('example-org/b', 'readable', 95, 100)],
+      [sonar('k', 'readable', 95, 100, 'failed')],
+      {},
+      strict,
+    );
+    expect(q.status).toBe('amber');
+    expect(reasonOf(q, 'quality-gate-failed')!.level).toBe('amber');
+    const info = run(
+      [comp('backend', 'example-org/b', 'k')],
+      [repo('example-org/b', 'readable', 95, 100)],
+      [sonar('k', 'readable', 95, 100, 'failed')],
+    );
+    expect(info.status).toBe('green');
+  });
+
+  it('without any Sonar data the result equals the CI-only result', () => {
+    const q = run(
+      [comp('backend', 'example-org/b')],
+      [repo('example-org/b', 'readable', 9, 10)],
+      [],
+    );
+    expect(q.perComponent[0]).toMatchObject({
+      source: 'ci-summary',
+      qualityGate: null,
+      newCoverage: null,
+    });
+  });
+});
+
+describe('selectReport', () => {
+  const c = (key: string, source: 'ci-summary' | 'sonarqube', state: RepoQualityState) => ({
+    key,
+    source,
+    report: repo(key, state, 1, 2),
+  });
+  const order = ['ci-summary', 'sonarqube'] as const;
+  it('first readable by precedence; else first stale; else not-authorised, invalid, expired, unknown; else missing', () => {
+    expect(
+      selectReport([c('a', 'ci-summary', 'stale'), c('b', 'sonarqube', 'readable')], order)?.key,
+    ).toBe('b');
+    expect(
+      selectReport([c('a', 'ci-summary', 'stale'), c('b', 'sonarqube', 'stale')], order)?.key,
+    ).toBe('a');
+    expect(
+      selectReport([c('a', 'ci-summary', 'unknown'), c('b', 'sonarqube', 'not-authorised')], order)
+        ?.key,
+    ).toBe('b');
+    expect(
+      selectReport([c('a', 'ci-summary', 'expired'), c('b', 'sonarqube', 'invalid')], order)?.key,
+    ).toBe('b');
+    expect(
+      selectReport([c('a', 'ci-summary', 'missing'), c('b', 'sonarqube', 'unknown')], order)?.key,
+    ).toBe('b');
+    expect(
+      selectReport([c('a', 'ci-summary', 'missing'), c('b', 'sonarqube', 'missing')], order)?.key,
+    ).toBe('a');
+    expect(selectReport([], order)).toBeNull();
+  });
+  it('the sources list decides the precedence, and a source not listed is ignored', () => {
+    const list = [c('a', 'ci-summary', 'readable'), c('b', 'sonarqube', 'readable')];
+    expect(selectReport(list, ['sonarqube', 'ci-summary'])?.key).toBe('b');
+    expect(selectReport(list, ['sonarqube'])?.key).toBe('b');
+  });
+});
+
+describe('normaliseSonarProject', () => {
+  const dto = (over: Partial<SonarProjectDTO> = {}): SonarProjectDTO => ({
+    linesToCover: 8000,
+    uncoveredLines: 1100,
+    newCoverage: 88.5,
+    qualityGate: 'OK',
+    analysedAt: daysAgo(1),
+    revision: SHA,
+    ...over,
+  });
+  const norm = (r: ProviderResult<SonarProjectDTO>, p: Policies = P) =>
+    normaliseSonarProject('proj', r, p, NOW);
+
+  it('maps lines, gate OK → passed, ERROR → failed, tool sonarqube, commit and date from the analysis', () => {
+    const { quality, error } = norm(ok(dto()));
+    expect(error).toBeNull();
+    expect(quality).toMatchObject({
+      repository: 'proj',
+      state: 'readable',
+      linesValid: 8000,
+      linesCovered: 6900,
+      qualityGate: 'passed',
+      newCoverage: 88.5,
+      source: 'sonarqube',
+      tool: 'sonarqube',
+      commitSha: SHA,
+      generatedAt: dto().analysedAt,
+      runUrl: null,
+    });
+    expect(norm(ok(dto({ qualityGate: 'ERROR' }))).quality.qualityGate).toBe('failed');
+    expect(norm(ok(dto({ qualityGate: null }))).quality.qualityGate).toBeNull();
+  });
+
+  it('uncovered 9000 > lines 8000 → invalid + invalid-data error with source sonarqube', () => {
+    const { quality, error } = norm(ok(dto({ uncoveredLines: 9000 })));
+    expect(quality).toMatchObject({ state: 'invalid', linesValid: null, qualityGate: null });
+    expect(error).toMatchObject({ source: 'sonarqube', classification: 'invalid-data' });
+  });
+
+  it('a missing line measure → unknown without an error; an old analysis → stale', () => {
+    expect(norm(ok(dto({ linesToCover: null }))).quality.state).toBe('unknown');
+    expect(norm(ok(dto({ uncoveredLines: null }))).error).toBeNull();
+    expect(norm(ok(dto({ analysedAt: daysAgo(30) }))).quality.state).toBe('stale');
+    expect(norm(ok(dto({ analysedAt: null }))).quality.state).toBe('readable');
+  });
+
+  it('404 → missing (never counted, never 0, no error); 403 → not-authorised + error; skipped → unknown, no error', () => {
+    expect(norm(fail({ classification: 'not-found' }))).toMatchObject({
+      quality: { state: 'missing', linesValid: null },
+      error: null,
+    });
+    expect(norm(fail({ classification: 'not-authorised', httpStatus: 403 }))).toMatchObject({
+      quality: { state: 'not-authorised' },
+      error: { source: 'sonarqube', classification: 'not-authorised' },
+    });
+    expect(norm(fail({ classification: 'error' }))).toMatchObject({
+      quality: { state: 'unknown' },
+      error: { source: 'sonarqube' },
+    });
+    expect(norm(fail({ classification: 'error', skipped: true }))).toMatchObject({
+      quality: { state: 'unknown' },
+      error: null,
+    });
   });
 });

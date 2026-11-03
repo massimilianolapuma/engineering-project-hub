@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type {
   ComponentSnapshot,
   CoverageSummary,
+  EnvironmentSnapshot,
   RepositoryControls,
   SecurityException,
   SecurityFinding,
@@ -15,6 +16,7 @@ import {
   evaluateVersion,
   type SecurityInputs,
 } from '../../collector/src/evaluators/health';
+import type { SupplyChain } from '@model/index';
 import { emptyCounts } from '../../collector/src/normalizers/security-model';
 import { hoursAgo, NOW, policies, remediationSummary, workflow } from '../helpers/factories';
 
@@ -96,6 +98,8 @@ const controls = (states: Record<string, string>, required: string[]): Repositor
       lastScanAt: null,
       counts: null,
       reportUrl: null,
+      source: null,
+      evidence: null,
     })),
   },
 ];
@@ -522,8 +526,10 @@ describe('version health', () => {
       id: 'prod',
       name: 'PROD',
       version: '1.3.0',
+      declaredVersion: '1.3.0',
       source: 'manifest' as const,
       status: 'behind' as const,
+      deployment: null,
     };
     expect(
       evaluateVersion({ ...base, components: [component('aligned')], environments: [env] }, P)
@@ -644,5 +650,250 @@ describe('overall health', () => {
       'dimension-red:delivery',
       'dimension-amber:coverage',
     ]);
+  });
+});
+
+describe('security: supply chain reasons', () => {
+  const entry = (over: Partial<SupplyChain['repositories'][number]> = {}) =>
+    ({
+      componentIds: ['backend'],
+      repository: 'example-org/backend',
+      sbom: {
+        state: 'available',
+        source: 'dependency-graph',
+        format: 'spdx',
+        specVersion: '2.3',
+        generatedAt: null,
+        packages: 10,
+        withoutLicense: 0,
+        flagged: 0,
+        licenses: [],
+        otherLicenses: 0,
+        ecosystems: [],
+      },
+      attestations: {
+        state: 'none',
+        release: null,
+        checked: 0,
+        withProvenance: null,
+        withSbom: null,
+        withoutDigest: 0,
+      },
+      images: [],
+      tools: [],
+      otherTools: [],
+      summary: { state: 'off', generatedAt: null, commitSha: null, runUrl: null },
+      ...over,
+    }) as SupplyChain['repositories'][number];
+  const chain = (
+    repositories: SupplyChain['repositories'],
+    totals: Partial<SupplyChain['totals']> = {},
+  ): SupplyChain => ({
+    enabled: true,
+    collectedAt: NOW.toISOString(),
+    totals: {
+      repositories: repositories.length,
+      sbomAvailable: 1,
+      signedImages: 0,
+      unsignedImages: 0,
+      attestedAssets: 0,
+      flagged: 0,
+      ...totals,
+    },
+    repositories,
+  });
+  const unsignedImage = {
+    componentId: 'backend',
+    source: 'supply-chain-summary' as const,
+    name: null,
+    tag: null,
+    digest: null,
+    signature: 'missing' as const,
+    provenance: 'unknown' as const,
+    scan: null,
+  };
+  const unsigned = chain([entry({ images: [unsignedImage] })], { unsignedImages: 1 });
+
+  it('defaults: unsigned artifacts add supply-chain-unsigned-artifact at info and the status is unchanged', () => {
+    const r = evaluateSecurity(inputs({ supplyChain: unsigned }), counts({}), 0, P);
+    expect(r.status).toBe('green');
+    expect(r.reasons).toContainEqual({
+      code: 'supply-chain-unsigned-artifact',
+      level: 'info',
+      params: { count: 1, repositories: 'example-org/backend' },
+    });
+  });
+
+  it('I-3: the same digest from two sources is one unsigned artifact', () => {
+    const digest = `sha256:${'e'.repeat(64)}`;
+    const twice = chain([
+      entry({
+        images: [
+          { ...unsignedImage, digest },
+          { ...unsignedImage, source: 'harbor' as const, digest },
+        ],
+      }),
+    ]);
+    const r = evaluateSecurity(inputs({ supplyChain: twice }), counts({}), 0, P);
+    expect(
+      r.reasons.find((x) => x.code === 'supply-chain-unsigned-artifact')?.params,
+    ).toMatchObject({ count: 1 });
+  });
+
+  it('release assets checked without provenance count as unsigned too', () => {
+    const assets = chain([
+      entry({
+        attestations: {
+          state: 'available',
+          release: 'v1',
+          checked: 3,
+          withProvenance: 1,
+          withSbom: 0,
+          withoutDigest: 0,
+        },
+      }),
+    ]);
+    const r = evaluateSecurity(inputs({ supplyChain: assets }), counts({}), 0, P);
+    expect(
+      r.reasons.find((x) => x.code === 'supply-chain-unsigned-artifact')?.params,
+    ).toMatchObject({ count: 2 });
+  });
+
+  it('levels.unsignedArtifact amber turns a green Security amber', () => {
+    const strict = policies((p) => (p.supplyChain.levels.unsignedArtifact = 'amber'));
+    const r = evaluateSecurity(inputs({ supplyChain: unsigned }), counts({}), 0, strict);
+    expect(r.status).toBe('amber');
+  });
+
+  it('flagged 2 → supply-chain-flagged-license info with count 2, placed before coverage-incomplete', () => {
+    const withFlag = entry({ repository: 'example-org/mono' });
+    withFlag.sbom.flagged = 2;
+    const flagged = chain([withFlag], { flagged: 2 });
+    const r = evaluateSecurity(
+      inputs({
+        supplyChain: flagged,
+        coverage: coverage({ status: 'amber', percentage: 80 }),
+      }),
+      counts({}),
+      0,
+      P,
+    );
+    const codes = r.reasons.map((x) => x.code);
+    expect(r.reasons.find((x) => x.code === 'supply-chain-flagged-license')).toEqual({
+      code: 'supply-chain-flagged-license',
+      level: 'info',
+      params: { count: 2, repositories: 'example-org/mono' },
+    });
+    expect(codes.indexOf('supply-chain-flagged-license')).toBeLessThan(
+      codes.indexOf('coverage-incomplete'),
+    );
+  });
+
+  it('nothing unsigned and nothing flagged adds no reason; a missing section adds none either', () => {
+    const clean = chain([entry()]);
+    for (const supplyChain of [clean, null, undefined]) {
+      const codes = evaluateSecurity(inputs({ supplyChain }), counts({}), 0, P).reasons.map(
+        (x) => x.code,
+      );
+      expect(codes).toEqual(['no-open-alerts']);
+    }
+  });
+});
+
+describe('version: Argo CD environment reasons', () => {
+  const component = {
+    drift: 'aligned',
+    manifestConsistency: 'consistent',
+    pin: null,
+    latestRelease: { tag: '1.4.0' },
+    declaredVersion: '1.4.0',
+    name: 'API',
+    effectiveVersion: '1.4.0',
+    effectiveVersionSource: 'manifest',
+  } as unknown as ComponentSnapshot;
+  const env = (
+    name: string,
+    deployment: Partial<NonNullable<EnvironmentSnapshot['deployment']>> | null,
+  ): EnvironmentSnapshot => ({
+    id: name.toLowerCase(),
+    name,
+    version: '1.4.0',
+    declaredVersion: '1.4.0',
+    source: 'argocd',
+    status: 'aligned',
+    deployment: deployment && {
+      state: 'available',
+      sync: 'synced',
+      health: 'healthy',
+      revision: null,
+      version: '1.4.0',
+      deployedAt: null,
+      images: [],
+      ...deployment,
+    },
+  });
+  const base = {
+    coordinatorVersion: '1.4.0',
+    manifestState: 'ok' as const,
+    unknownManifestComponents: [],
+    components: [component],
+    submodules: [],
+  };
+  const reasonOf = (r: { reasons: { code: string }[] }, code: string) =>
+    r.reasons.find((x) => x.code === code) as
+      { level: string; params: Record<string, string | number> } | undefined;
+
+  it('OutOfSync → environment-out-of-sync info, status unchanged', () => {
+    const r = evaluateVersion(
+      { ...base, environments: [env('UAT', { sync: 'out-of-sync' }), env('DEV', {})] },
+      P,
+    );
+    expect(r.status).toBe('green');
+    expect(reasonOf(r, 'environment-out-of-sync')).toMatchObject({
+      level: 'info',
+      params: { environments: 'UAT' },
+    });
+  });
+
+  it('environmentDegraded amber → Versions amber (degraded, missing and suspended count)', () => {
+    const strict = policies((p) => (p.version.environmentDegraded = 'amber'));
+    for (const health of ['degraded', 'missing', 'suspended'] as const) {
+      const r = evaluateVersion({ ...base, environments: [env('PROD', { health })] }, strict);
+      expect(r.status).toBe('amber');
+      expect(reasonOf(r, 'environment-degraded')!.params.environments).toBe('PROD');
+    }
+    const info = evaluateVersion(
+      { ...base, environments: [env('PROD', { health: 'degraded' })] },
+      P,
+    );
+    expect(info.status).toBe('green');
+  });
+
+  it('environmentOutOfSync amber → Versions amber', () => {
+    const strict = policies((p) => (p.version.environmentOutOfSync = 'amber'));
+    expect(
+      evaluateVersion({ ...base, environments: [env('UAT', { sync: 'out-of-sync' })] }, strict)
+        .status,
+    ).toBe('amber');
+  });
+
+  it('deployment not-authorised, not-found or unknown → environment-deployment-unknown info', () => {
+    for (const state of ['not-authorised', 'not-found', 'unknown'] as const) {
+      const r = evaluateVersion(
+        { ...base, environments: [env('DEV', { state, sync: null, health: null })] },
+        P,
+      );
+      expect(r.status).toBe('green');
+      expect(reasonOf(r, 'environment-deployment-unknown')).toMatchObject({
+        level: 'info',
+        params: { environments: 'DEV' },
+      });
+      expect(reasonOf(r, 'environment-out-of-sync')).toBeUndefined();
+    }
+  });
+
+  it('no deployment (Argo CD off or not mapped) adds nothing', () => {
+    const r = evaluateVersion({ ...base, environments: [env('DEV', null)] }, P);
+    expect(r.reasons.map((x) => x.code)).toEqual(['versions-aligned']);
   });
 });

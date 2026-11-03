@@ -12,6 +12,7 @@ import {
   type CodeQualityFindingDTO,
   type CustomPropertyDTO,
   type CodeScanningAlertDTO,
+  type AttestationPresenceDTO,
   type CodeScanningAnalysisDTO,
   type CommitRefDTO,
   type CompareDTO,
@@ -26,14 +27,18 @@ import {
   type QualitySummaryArtifactDTO,
   type ReleaseDTO,
   type RepositoryDTO,
+  type SbomFetchDTO,
+  type SbomRequestDTO,
   type RunFailureDTO,
   type SecretScanningAlertDTO,
   type SourceProvider,
   type SubmoduleRefDTO,
+  type SupplyChainSummaryArtifactDTO,
   type TagDTO,
   type WorkflowRunDTO,
   WORKFLOW_FILE,
 } from '../types';
+import { DownloadError, downloadBounded } from '../../util/bounded-fetch';
 import { readZipEntry, ZipError } from '../../util/zip';
 import { classifyGitHubError } from './errors';
 
@@ -51,7 +56,25 @@ const QUALITY_FILE = 'quality-summary.json';
 const ARTIFACT_PAGE_SIZE = 30;
 const MAX_ARTIFACT_PAGES = 3;
 const MAX_QUALITY_ZIP_BYTES = 65_536;
+/** Artifact name / file / size cap of the CI supply-chain summary contract. */
+const SUPPLY_CHAIN_ARTIFACT = 'hub-supply-chain-summary';
+const SUPPLY_CHAIN_FILE = 'supply-chain-summary.json';
+const MAX_SUPPLY_CHAIN_ZIP_BYTES = 65_536;
+const SHA256_DIGEST = /^sha256:[0-9a-f]{64}$/;
+const ANALYSES_PER_PAGE = 10;
 const CODE_QUALITY_API_VERSION = '2026-03-10';
+
+/** Version header of the SBOM export (and attestations) endpoints. */
+const SBOM_API_VERSION = '2026-03-10';
+/**
+ * The 302 target of the SBOM report is not documented: exact host or `.`-suffix match, anything
+ * else fails closed (the observed host is recorded in docs/security.md).
+ */
+export const SBOM_DOWNLOAD_HOST_SUFFIXES = ['githubusercontent.com', 'github.com'] as const;
+const SBOM_UUID = /^[0-9a-fA-F-]{36}$/;
+const SBOM_REPORT_URL = /\/dependency-graph\/sbom\/fetch-report\/([0-9a-fA-F-]{36})$/;
+const SBOM_DOWNLOAD_TIMEOUT_MS = 20_000;
+const DEFAULT_SBOM_MAX_BYTES = 16 * 1024 * 1024;
 
 const silentLog = { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} };
 
@@ -154,13 +177,29 @@ class FindingsPageCapExceeded extends Error {
   override readonly name = 'FindingsPageCapExceeded';
 }
 
+export interface GitHubProviderOptions {
+  /**
+   * Owner opt-in (policies.supplyChain.sbom.dependencyGraph, default false). Only when true may
+   * `requestDependencySbom` call generate-report, the one call that asks GitHub to run a job.
+   */
+  dependencyGraphExport?: boolean;
+  /** Streaming byte cap of the SBOM download (policies.supplyChain.sbom.maxBytes). */
+  sbomMaxBytes?: number;
+  /** Injected in tests: used for the SBOM download link, which never gets the credential. */
+  fetch?: typeof globalThis.fetch;
+}
+
 export class GitHubProvider implements SourceProvider {
   readonly dataSource = 'github' as const;
+  readonly dependencyGraphExport: boolean;
 
   constructor(
     private readonly client: Client,
     readonly authenticationMode: AuthenticationMode,
-  ) {}
+    private readonly options: GitHubProviderOptions = {},
+  ) {
+    this.dependencyGraphExport = options.dependencyGraphExport === true;
+  }
 
   getRepository(repo: string): Promise<ProviderResult<RepositoryDTO>> {
     return guard(async () => {
@@ -394,6 +433,11 @@ export class GitHubProvider implements SourceProvider {
         publishedAt: data.published_at ?? null,
         prerelease: data.prerelease,
         htmlUrl: data.html_url,
+        // Name and digest only: GitHub reports the digest as "sha256:<hex>" or null.
+        assets: (data.assets ?? []).map((a) => ({
+          name: a.name,
+          digest: typeof a.digest === 'string' && SHA256_DIGEST.test(a.digest) ? a.digest : null,
+        })),
       };
     });
   }
@@ -560,6 +604,7 @@ export class GitHubProvider implements SourceProvider {
           ruleDescription: a.rule.description ?? null,
           toolName: a.tool.name ?? null,
           path: a.most_recent_instance?.location?.path ?? null,
+          category: a.most_recent_instance?.category ?? null,
           createdAt: a.created_at,
           updatedAt: a.updated_at ?? null,
           htmlUrl: a.html_url,
@@ -634,6 +679,33 @@ export class GitHubProvider implements SourceProvider {
     repo: string,
     branch: string,
   ): Promise<ProviderResult<QualitySummaryArtifactDTO>> {
+    return this.getSummaryArtifact(repo, branch, {
+      artifact: QUALITY_ARTIFACT,
+      file: QUALITY_FILE,
+      maxBytes: MAX_QUALITY_ZIP_BYTES,
+    });
+  }
+
+  getSupplyChainSummary(
+    repo: string,
+    branch: string,
+  ): Promise<ProviderResult<SupplyChainSummaryArtifactDTO>> {
+    return this.getSummaryArtifact(repo, branch, {
+      artifact: SUPPLY_CHAIN_ARTIFACT,
+      file: SUPPLY_CHAIN_FILE,
+      maxBytes: MAX_SUPPLY_CHAIN_ZIP_BYTES,
+    });
+  }
+
+  /**
+   * Newest non-expired artifact `artifact` of a same-repository run on `branch`, unzipped to the
+   * text of its single `file`. The size is checked before and after the download.
+   */
+  private getSummaryArtifact(
+    repo: string,
+    branch: string,
+    spec: { artifact: string; file: string; maxBytes: number },
+  ): Promise<ProviderResult<QualitySummaryArtifactDTO>> {
     const { owner, repo: name } = split(repo);
     return guard(async () => {
       type Art = Awaited<
@@ -655,7 +727,7 @@ export class GitHubProvider implements SourceProvider {
         const { data } = await this.client.rest.actions.listArtifactsForRepo({
           owner,
           repo: name,
-          name: QUALITY_ARTIFACT,
+          name: spec.artifact,
           per_page: ARTIFACT_PAGE_SIZE,
           page,
         });
@@ -674,7 +746,7 @@ export class GitHubProvider implements SourceProvider {
           runUrl: runUrlOf(newestExpired),
         };
       }
-      if (live.size_in_bytes > MAX_QUALITY_ZIP_BYTES) throw new InvalidData('artifact too large');
+      if (live.size_in_bytes > spec.maxBytes) throw new InvalidData('artifact too large');
       const res = await this.client.rest.actions.downloadArtifact({
         owner,
         repo: name,
@@ -682,10 +754,10 @@ export class GitHubProvider implements SourceProvider {
         archive_format: 'zip',
       });
       const bytes = new Uint8Array(res.data as ArrayBuffer);
-      if (bytes.byteLength > MAX_QUALITY_ZIP_BYTES) throw new InvalidData('artifact too large');
+      if (bytes.byteLength > spec.maxBytes) throw new InvalidData('artifact too large');
       try {
         return {
-          summaryText: readZipEntry(bytes, QUALITY_FILE, MAX_QUALITY_ZIP_BYTES),
+          summaryText: readZipEntry(bytes, spec.file, spec.maxBytes),
           createdAt: live.created_at ?? null,
           runUrl: runUrlOf(live),
         };
@@ -714,5 +786,127 @@ export class GitHubProvider implements SourceProvider {
         { failWhenCapped: true },
       ),
     );
+  }
+
+  listCodeScanningAnalyses(
+    repo: string,
+    tool: string,
+    ref: string,
+  ): Promise<ProviderResult<CodeScanningAnalysisDTO[]>> {
+    return guard(
+      async () => {
+        const { data } = await this.client.rest.codeScanning.listRecentAnalyses({
+          ...split(repo),
+          tool_name: tool,
+          ref: ref.startsWith('refs/') ? ref : `refs/heads/${ref}`,
+          per_page: ANALYSES_PER_PAGE,
+        });
+        return data.map((a) => ({
+          createdAt: a.created_at,
+          toolName: a.tool.name ?? null,
+          category: a.category ?? null,
+        }));
+      },
+      () => ok([]),
+    );
+  }
+
+  getAttestationPresence(
+    repo: string,
+    digest: string,
+  ): Promise<ProviderResult<AttestationPresenceDTO>> {
+    return guard(async () => {
+      // The digest is a path segment: only the exact documented shape is ever sent.
+      if (!SHA256_DIGEST.test(digest)) throw new InvalidData('invalid digest');
+      const has = async (predicate: 'provenance' | 'sbom'): Promise<boolean> => {
+        try {
+          const { data } = await this.client.request(
+            'GET /repos/{owner}/{repo}/attestations/{subject_digest}',
+            {
+              ...split(repo),
+              subject_digest: digest,
+              predicate_type: predicate,
+              per_page: 1,
+              headers: { 'X-GitHub-Api-Version': SBOM_API_VERSION },
+            },
+          );
+          // Only the count is read: the bundle is never copied anywhere.
+          const list = (data as { attestations?: unknown } | null)?.attestations;
+          return Array.isArray(list) && list.length > 0;
+        } catch (e) {
+          // The endpoint answers 404 when nothing matches.
+          if ((e as { status?: number } | null)?.status === 404) return false;
+          throw e;
+        }
+      };
+      return { provenance: await has('provenance'), sbom: await has('sbom') };
+    });
+  }
+
+  requestDependencySbom(repo: string): Promise<ProviderResult<SbomRequestDTO>> {
+    // Gate of the single "compute" call (ADR 0011): without the owner's opt-in nothing is sent.
+    if (!this.dependencyGraphExport)
+      return Promise.resolve(
+        fail({
+          classification: 'not-configured',
+          message: 'dependency-graph SBOM export is off',
+          skipped: true,
+        }),
+      );
+    return guard(async () => {
+      const { data } = await this.client.request(
+        'GET /repos/{owner}/{repo}/dependency-graph/sbom/generate-report',
+        { ...split(repo), headers: { 'X-GitHub-Api-Version': SBOM_API_VERSION } },
+      );
+      // The report URL is never called: only the uuid is kept, and only from the expected path.
+      const url = (data as { sbom_url?: unknown } | null)?.sbom_url;
+      const uuid = typeof url === 'string' ? SBOM_REPORT_URL.exec(url)?.[1] : undefined;
+      if (!uuid) throw new InvalidData('unexpected sbom_url');
+      return { uuid };
+    });
+  }
+
+  async fetchDependencySbom(repo: string, uuid: string): Promise<ProviderResult<SbomFetchDTO>> {
+    const step = await guard(async () => {
+      if (!SBOM_UUID.test(uuid)) throw new InvalidData('invalid report id');
+      const res = await this.client.request(
+        'GET /repos/{owner}/{repo}/dependency-graph/sbom/fetch-report/{sbom_uuid}',
+        {
+          ...split(repo),
+          sbom_uuid: uuid,
+          headers: { 'X-GitHub-Api-Version': SBOM_API_VERSION },
+          // The temporary download link is read from the Location header, never followed here.
+          request: { redirect: 'manual' },
+        },
+      );
+      // Octokit types this route as 302 only; 202 (still generating) is documented.
+      const status: number = res.status;
+      if (status === 202) return { pending: true as const };
+      const location = (res.headers as Record<string, string | undefined>).location;
+      if (status !== 302 || !location) throw new InvalidData('unexpected SBOM response');
+      return { pending: false as const, location };
+    });
+    if (!step.ok) return step;
+    if (step.data.pending) return ok({ state: 'pending' });
+    try {
+      const text = await downloadBounded(step.data.location, {
+        allowedHostSuffixes: SBOM_DOWNLOAD_HOST_SUFFIXES,
+        maxBytes: this.options.sbomMaxBytes ?? DEFAULT_SBOM_MAX_BYTES,
+        timeoutMs: SBOM_DOWNLOAD_TIMEOUT_MS,
+        ...(this.options.fetch ? { fetch: this.options.fetch } : {}),
+      });
+      return ok({ state: 'ready', text });
+    } catch (e) {
+      if (!(e instanceof DownloadError)) throw e;
+      if (e.kind === 'host')
+        return fail({ classification: 'invalid-data', message: 'SBOM download host not allowed' });
+      if (e.kind === 'too-large')
+        return fail({
+          classification: 'invalid-data',
+          message: 'SBOM too large',
+          incomplete: true,
+        });
+      return fail({ classification: 'error', message: 'SBOM download failed' });
+    }
   }
 }

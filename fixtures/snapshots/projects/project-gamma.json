@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.7",
+  "schemaVersion": "1.8",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-gamma",
@@ -69,8 +69,10 @@
       "id": "dev",
       "name": "DEV",
       "version": null,
+      "declaredVersion": null,
       "source": "unknown",
-      "status": "unknown"
+      "status": "unknown",
+      "deployment": null
     }
   ],
   "workflows": [
@@ -105,7 +107,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": null
         },
         {
           "control": "secretScanning",
@@ -114,7 +118,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": null
         },
         {
           "control": "dependabot",
@@ -123,7 +129,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": null
         },
         {
           "control": "containerScanning",
@@ -132,7 +140,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "status-file",
+          "evidence": null
         },
         {
           "control": "iacScanning",
@@ -141,7 +151,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "status-file",
+          "evidence": null
         },
         {
           "control": "dast",
@@ -150,7 +162,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "status-file",
+          "evidence": null
         },
         {
           "control": "sbom",
@@ -159,7 +173,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "supply-chain-summary",
+          "evidence": null
         },
         {
           "control": "artifactSignature",
@@ -168,7 +184,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "supply-chain-summary",
+          "evidence": null
         }
       ]
     },
@@ -183,7 +201,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": null
         },
         {
           "control": "secretScanning",
@@ -192,7 +212,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": null
         },
         {
           "control": "dependabot",
@@ -201,7 +223,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "github",
+          "evidence": null
         },
         {
           "control": "containerScanning",
@@ -210,7 +234,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "status-file",
+          "evidence": null
         },
         {
           "control": "iacScanning",
@@ -219,7 +245,9 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "status-file",
+          "evidence": null
         },
         {
           "control": "dast",
@@ -228,25 +256,31 @@
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "status-file",
+          "evidence": null
         },
         {
           "control": "sbom",
           "required": false,
-          "state": "not-authorised",
+          "state": "unknown",
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "supply-chain-summary",
+          "evidence": null
         },
         {
           "control": "artifactSignature",
           "required": false,
-          "state": "not-authorised",
+          "state": "unknown",
           "tool": null,
           "lastScanAt": null,
           "counts": null,
-          "reportUrl": null
+          "reportUrl": null,
+          "source": "supply-chain-summary",
+          "evidence": null
         }
       ]
     }
@@ -415,12 +449,12 @@
       {
         "control": "sbom",
         "required": false,
-        "state": "not-authorised"
+        "state": "unknown"
       },
       {
         "control": "artifactSignature",
         "required": false,
-        "state": "not-authorised"
+        "state": "unknown"
       }
     ]
   },
@@ -440,10 +474,17 @@
     "status": "grey",
     "reasons": [
       {
+        "code": "quality-report-not-authorised",
+        "level": "info",
+        "params": {
+          "components": "service"
+        }
+      },
+      {
         "code": "quality-report-unknown",
         "level": "info",
         "params": {
-          "components": "coordinator, service"
+          "components": "coordinator"
         }
       }
     ],
@@ -466,11 +507,14 @@
         "commitSha": null,
         "generatedAt": null,
         "tool": null,
-        "runUrl": null
+        "runUrl": null,
+        "source": "ci-summary",
+        "qualityGate": null,
+        "newCoverage": null
       },
       {
         "componentId": "service",
-        "state": "unknown",
+        "state": "not-authorised",
         "sharedRepository": false,
         "percentage": null,
         "linesCovered": null,
@@ -478,7 +522,10 @@
         "commitSha": null,
         "generatedAt": null,
         "tool": null,
-        "runUrl": null
+        "runUrl": null,
+        "source": "sonarqube",
+        "qualityGate": null,
+        "newCoverage": null
       }
     ],
     "findings": {
@@ -686,6 +733,92 @@
       }
     ]
   },
+  "supplyChain": {
+    "enabled": true,
+    "collectedAt": "2026-01-15T12:00:00.000Z",
+    "totals": {
+      "repositories": 2,
+      "sbomAvailable": null,
+      "signedImages": 0,
+      "unsignedImages": 0,
+      "attestedAssets": null,
+      "flagged": null
+    },
+    "repositories": [
+      {
+        "componentIds": [
+          "coordinator"
+        ],
+        "repository": "example-org/project-gamma-coordinator",
+        "sbom": {
+          "state": "unknown",
+          "source": "supply-chain-summary",
+          "format": null,
+          "specVersion": null,
+          "generatedAt": null,
+          "packages": null,
+          "withoutLicense": null,
+          "flagged": null,
+          "licenses": [],
+          "otherLicenses": 0,
+          "ecosystems": []
+        },
+        "attestations": {
+          "state": "unknown",
+          "release": null,
+          "checked": 0,
+          "withProvenance": null,
+          "withSbom": null,
+          "withoutDigest": 0
+        },
+        "images": [],
+        "tools": [],
+        "otherTools": [],
+        "summary": {
+          "state": "unknown",
+          "generatedAt": null,
+          "commitSha": null,
+          "runUrl": null
+        }
+      },
+      {
+        "componentIds": [
+          "service"
+        ],
+        "repository": "example-org/project-gamma-service",
+        "sbom": {
+          "state": "unknown",
+          "source": "supply-chain-summary",
+          "format": null,
+          "specVersion": null,
+          "generatedAt": null,
+          "packages": null,
+          "withoutLicense": null,
+          "flagged": null,
+          "licenses": [],
+          "otherLicenses": 0,
+          "ecosystems": []
+        },
+        "attestations": {
+          "state": "unknown",
+          "release": null,
+          "checked": 0,
+          "withProvenance": null,
+          "withSbom": null,
+          "withoutDigest": 0
+        },
+        "images": [],
+        "tools": [],
+        "otherTools": [],
+        "summary": {
+          "state": "unknown",
+          "generatedAt": null,
+          "commitSha": null,
+          "runUrl": null
+        }
+      }
+    ]
+  },
   "overallHealth": {
     "status": "grey",
     "reasons": [
@@ -753,6 +886,13 @@
       "classification": "not-authorised",
       "httpStatus": 403,
       "detail": "Resource not accessible by integration"
+    },
+    {
+      "repository": "example-org/project-gamma-service",
+      "componentId": "service",
+      "source": "sonarqube",
+      "classification": "not-authorised",
+      "httpStatus": 403
     }
   ]
 }

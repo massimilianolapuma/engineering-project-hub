@@ -15,6 +15,7 @@ import {
 } from '@model/index';
 import ControlSymbol from '../../components/ControlSymbol.astro';
 import DimensionBars from '../../components/DimensionBars.astro';
+import EvidenceLabel from '../../components/EvidenceLabel.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import StatusDot from '../../components/StatusDot.astro';
 import Base from '../../layouts/Base.astro';
@@ -170,6 +171,7 @@ const SECTIONS = [
   ['score', h.scoreTitle],
   ['thresholds', h.thresholdsTitle],
   ['repository-controls', h.repoTitle],
+  ['supply-chain', d.howToReadSupplyChain.title],
   ['trends', h.trendsTitle],
   ['risk', h.riskTitle],
 ] as const;
@@ -537,6 +539,34 @@ const SECTIONS = [
     <p class="note">{h.risk.unknownAge}</p>
   </section>
 
+  <section class="card htr-section" id="supply-chain" aria-labelledby="supply-chain-title">
+    <h2 id="supply-chain-title">{d.howToReadSupplyChain.title}</h2>
+    <p>{d.howToReadSupplyChain.lead}</p>
+    <dl class="htr-ev">
+      <dt>
+        <EvidenceLabel level="verified" i18n={i18n} />
+      </dt>
+      <dd>{d.howToReadSupplyChain.verified}</dd>
+      <dt>
+        <EvidenceLabel level="present" i18n={i18n} />
+      </dt>
+      <dd>{d.howToReadSupplyChain.present}</dd>
+      <dt>
+        <EvidenceLabel level="missing" i18n={i18n} />
+      </dt>
+      <dd>{d.howToReadSupplyChain.missing}</dd>
+      <dt>
+        <EvidenceLabel level="unknown" i18n={i18n} />
+      </dt>
+      <dd>{d.howToReadSupplyChain.unknown}</dd>
+      <dt>
+        <EvidenceLabel level="na" i18n={i18n} />
+      </dt>
+      <dd>{d.howToReadSupplyChain.notApplicable}</dd>
+    </dl>
+    <p class="note">{d.howToReadSupplyChain.sources}</p>
+  </section>
+
   <section class="card htr-section" id="trends" aria-labelledby="trends-title">
     <h2 id="trends-title">{h.trendsTitle}</h2>
     <ul class="htr-points">
@@ -571,6 +601,20 @@ const SECTIONS = [
   }
   .htr-head .lead {
     margin: var(--base-size-4) 0 0;
+  }
+  .htr-ev {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 10px var(--base-size-16);
+    align-items: start;
+    margin: 0;
+  }
+  .htr-ev dt {
+    margin: 0;
+  }
+  .htr-ev dd {
+    margin: 0;
+    color: var(--fgColor-muted);
   }
   .htr-toc ul {
     display: flex;

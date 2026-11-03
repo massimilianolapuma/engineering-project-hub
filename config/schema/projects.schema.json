@@ -242,6 +242,45 @@
                   "required",
                   "not-applicable"
                 ]
+              },
+              "sonarProjectKey": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_.:-]{1,400}$"
+              },
+              "sonarBranch": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255,
+                "pattern": "^[^\\s~^:?*[\\\\]+$"
+              },
+              "containerImages": {
+                "maxItems": 5,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "project": {
+                      "type": "string",
+                      "maxLength": 255,
+                      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+                    },
+                    "repository": {
+                      "type": "string",
+                      "maxLength": 200
+                    },
+                    "tagTemplate": {
+                      "default": "{version}",
+                      "type": "string",
+                      "maxLength": 100,
+                      "pattern": "^[A-Za-z0-9._-]*\\{version\\}[A-Za-z0-9._-]*$"
+                    }
+                  },
+                  "required": [
+                    "project",
+                    "repository"
+                  ],
+                  "additionalProperties": false
+                }
               }
             },
             "required": [
@@ -348,6 +387,45 @@
                     "required",
                     "not-applicable"
                   ]
+                },
+                "sonarProjectKey": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9_.:-]{1,400}$"
+                },
+                "sonarBranch": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255,
+                  "pattern": "^[^\\s~^:?*[\\\\]+$"
+                },
+                "containerImages": {
+                  "maxItems": 5,
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "project": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+                      },
+                      "repository": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "tagTemplate": {
+                        "default": "{version}",
+                        "type": "string",
+                        "maxLength": 100,
+                        "pattern": "^[A-Za-z0-9._-]*\\{version\\}[A-Za-z0-9._-]*$"
+                      }
+                    },
+                    "required": [
+                      "project",
+                      "repository"
+                    ],
+                    "additionalProperties": false
+                  }
                 }
               },
               "required": [
@@ -373,6 +451,30 @@
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 50
+                },
+                "argocdApplication": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "maxLength": 253,
+                      "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$"
+                    },
+                    "namespace": {
+                      "type": "string",
+                      "maxLength": 253,
+                      "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$"
+                    },
+                    "project": {
+                      "type": "string",
+                      "maxLength": 253,
+                      "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ],
+                  "additionalProperties": false
                 }
               },
               "required": [

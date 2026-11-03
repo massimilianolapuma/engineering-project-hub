@@ -72,6 +72,7 @@ describe('catalog editor: draft → catalog', () => {
       name: 'Gamma service',
       repository: 'example-org/project-gamma-service',
       type: 'service',
+      sonarProjectKey: 'example-org_project-gamma-service',
     });
     // manifestPath equals the default, so it is not repeated.
     expect(toProjectInput(project('project-alpha')).coordinator).not.toHaveProperty('manifestPath');
@@ -123,7 +124,12 @@ describe('catalog editor: per-project YAML', () => {
   it('keeps the hand-written style', () => {
     const alpha = projectToYaml(project('project-alpha'));
     expect(alpha).toContain('notApplicableControls: [containerScanning]');
-    expect(alpha).toContain('- { id: dev, name: DEV }');
+    expect(alpha).toContain('- { id: test, name: TEST }');
+    // Provider mappings are kept, in the same flow style.
+    expect(alpha).toContain(
+      'argocdApplication: { name: alpha-dev, namespace: argocd, project: alpha }',
+    );
+    expect(alpha).toContain('containerImages: [{ project: alpha, repository: backend }]');
     expect(alpha).toContain('codeScanning: { required: true }');
     expect(alpha).toContain('appliesTo: [backend, frontend, worker]');
     expect(alpha).toMatch(/\n\ncoordinator:\n/);

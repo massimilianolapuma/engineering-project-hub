@@ -1,0 +1,59 @@
+{
+  "alpha/backend:1.4.0": {
+    "digest": "sha256:b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+    "scan_overview": {
+      "application/vnd.security.vulnerability.report; version=1.1": {
+        "scan_status": "Success",
+        "end_time": "@now-1d",
+        "scanner": {
+          "name": "ghp_canary_harbor_scanner_7c1e",
+          "vendor": "Synthetic",
+          "version": "1.0"
+        },
+        "summary": {
+          "total": 8,
+          "fixable": 3,
+          "summary": {
+            "Critical": 0,
+            "High": 0,
+            "Medium": 2,
+            "Low": 6
+          }
+        }
+      }
+    },
+    "accessories": [
+      {
+        "type": "signature.cosign"
+      }
+    ],
+    "tags": [
+      {
+        "name": "1.4.0"
+      }
+    ],
+    "labels": [
+      {
+        "name": "internal"
+      }
+    ]
+  },
+  "alpha/frontend:2.1.0": {
+    "$error": {
+      "classification": "not-found",
+      "httpStatus": 404
+    }
+  },
+  "beta/api:3.1.0": {
+    "digest": "sha256:e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5",
+    "scan_overview": {
+      "application/vnd.security.vulnerability.report; version=1.1": {
+        "scan_status": "Running",
+        "scanner": {
+          "name": "Synthetic"
+        }
+      }
+    },
+    "accessories": []
+  }
+}

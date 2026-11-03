@@ -27,6 +27,8 @@ flowchart TB
     COMP --- API
   end
 
+  EXT["Optional providers<br/>SonarQube · Harbor · Argo CD"]
+
   subgraph Collect["GitHub Actions · collect job (only job with credentials)"]
     CFG["config/catalog.yaml<br/>config/projects/*.yaml<br/>config/policies.yaml"] --> VAL["Zod validation"]
     VAL --> PROV["Provider<br/>GitHub (Octokit) | Mock (fixtures)"]
@@ -46,6 +48,7 @@ flowchart TB
   end
 
   API -- read-only token / GitHub App --> PROV
+  EXT -- "audited HTTP client · env credentials · off by default" --> PROV
   USER["Browser"] -- static HTML + JSON --> PAGES
   USER -. "Open in GitHub ↗ (GitHub enforces auth)" .-> Sources
 ```
@@ -67,9 +70,9 @@ flowchart TB
 
 ## Data flow
 
-1. **Load and validate** the catalog (`config/catalog.yaml`, `config/projects/*.yaml`) and
-   `config/policies.yaml`. Invalid config
-   stops the run.
+1. **Load and validate** the catalog (`config/catalog.yaml`, `config/projects/*.yaml`),
+   `config/policies.yaml` and the optional `config/providers.yaml`. Invalid config stops the
+   run.
 2. **Resolve credentials** in this order: GitHub App, `GH_READ_TOKEN`, `GITHUB_TOKEN`,
    then mock only when explicitly selected.
 3. **Collect per repository**: metadata, then branch head, latest release (falling back to
@@ -81,8 +84,17 @@ flowchart TB
    `.github/workflows` (at most 30 by default, parsed in memory into validated `uses:`
    references), the latest OpenSSF Scorecard analysis and, only when enabled, classic branch
    protection. The latest release or tag of every referenced reusable-workflow repository is
-   resolved once per run (at most 50 repositories). When the metadata call fails,
-   dependent calls are skipped and inherit its classified error.
+   resolved once per run (at most 50 repositories). **Supply chain** adds, per unique
+   repository: the `hub-supply-chain-summary` artifact (same rules as the quality summary),
+   the code-scanning analyses of the mapped tools (Trivy, Checkov, ZAP), the attestations of the
+   latest release's asset digests and, only when the owner opts in, the dependency-graph SBOM
+   export (requested early, fetched after the other calls, downloaded from an allow-listed host
+   and reduced to counts). When the metadata call fails, dependent calls are skipped and inherit
+   its classified error.
+   **External providers** (only when enabled in `providers.yaml`): SonarQube measures for each
+   mapped project key, the Harbor artifact of each mapped image reference and the Argo CD
+   application of each mapped environment, through one audited HTTP client (concurrency 2 per
+   provider, `maxItems` per run).
 4. **Collect per project**: the release manifest and `.gitmodules` from the coordinator,
    the submodule SHAs, and the tracked workflow runs (the last 20 on the default branch),
    plus the failed job and step names of the last failed run. Each submodule linked to a
@@ -96,20 +108,24 @@ flowchart TB
    an unreadable source is never read as accepted), then remediation SLAs are computed from each
    alert's creation time, then the Security evaluator runs. An excepted finding keeps `status: open`;
    one helper, `countsAsOpen`, decides what is counted.
-7. **Evaluate**: delivery, version, security risk, coverage (controls), governance (with
+7. **Resolve sources**: each pipeline control takes the first definitive answer in
+   `policies.supplyChain.precedence`, with its `source` and `evidence`; Quality takes the best
+   report in `policies.quality.sources`; an environment's version is the deployed one when
+   Argo CD reports it, else the declared one.
+8. **Evaluate**: delivery, version, security risk, coverage (controls), governance (with
    the six repository checks, informative unless enforced), quality (test coverage),
    freshness and overall.
-8. **Sanitise and validate**: free text is scrubbed and links are filtered. Every document
+9. **Sanitise and validate**: free text is scrubbed and links are filtered. Every document
    is parsed with the strict schemas (allowlist), then the serialised JSON goes through the
    credential gate. Any failure stops the run before anything is written.
-9. **Append and diff**: the previous history is loaded (see below), the current run is
-   appended with retention, and the diff against the previous baseline is computed.
-10. **Write** `public/data/index.json`, `projects/<id>.json`, `history.json`,
+10. **Append and diff**: the previous history is loaded (see below), the current run is
+    appended with retention, and the diff against the previous baseline is computed.
+11. **Write** `public/data/index.json`, `projects/<id>.json`, `history.json`,
     `changes.json`, `collection-report.json` and `collection-report.md`.
-11. **Build** the site. The pages load and re-validate the snapshots at build time, and
-    write the three CSV exports. An unsupported `schemaVersion` renders a controlled error
+12. **Build** the site. The pages load and re-validate the snapshots at build time, and
+    write the four CSV exports. An unsupported `schemaVersion` renders a controlled error
     page. A missing or invalid `history.json` or `changes.json` never fails the build.
-12. **Scan the output** (`dist/`, `public/data/`) for credential patterns and for the
+13. **Scan the output** (`dist/`, `public/data/`) for credential patterns and for the
     values of credentials in the environment, then publish.
 
 **History, in CI:** restore → collect → append → diff → publish. Before step 1 the
@@ -126,6 +142,9 @@ never restores: it starts from `fixtures/history/history.json`.
 | GitHub API → collector                 | Read-only credentials. Only allow-listed DTO fields are mapped. Raw payloads never leave the provider.                                                                                                                                                                                                                                                                               |
 | Collector → snapshots                  | Strict Zod schemas (unknown keys rejected), text scrubbing, URL host allowlist, credential gate.                                                                                                                                                                                                                                                                                     |
 | CI artifact → collector                | Only the `hub-quality-summary` artifact of a default-branch run from the same repository is read: zip ≤ 64 KB, one file, strict schema, `repository` must match. Failure means `invalid` and nothing is published.                                                                                                                                                                   |
+| CI artifact → collector (supply chain) | `hub-supply-chain-summary` follows the same rules (default branch, same repository, zip ≤ 64 KB, one file, strict schema). It carries counts and verification results only; the hub never upgrades presence to verification itself.                                                                                                                                                  |
+| GitHub SBOM export → collector         | Opt-in only (`supplyChain.sbom.dependencyGraph`). The redirect is followed only to an `https` host in a code allowlist, without the Authorization header, with a streamed size cap; the document is reduced to counts in memory and dropped.                                                                                                                                         |
+| External providers → collector         | Off unless enabled. One client: `https`, the exact host of the configured `baseUrl`, fixed path templates with encoded parameters, redirects refused, 1 MiB cap, timeout, no logging. Responses are reduced to strict projections; base URLs and credentials are never published.                                                                                                    |
 | Actions artifact → collector (history) | Only the hub's own `hub-history` artifact of a default-branch run of the deploy or collect workflow, not from a fork, not the current run, at most 5 MiB. The collector then parses it strictly (8 MiB cap), re-sanitises links and text, and rewrites it. Failure starts history fresh, never fails the run.                                                                        |
 | Workflow files → collector             | Untrusted input. Read through the Contents API, bounded (262 144 bytes per file, 200 references per file, 1 000 per repository, 30 files by default), parsed in memory with an alias limit, reduced to validated `uses:` references. Workflow text, step names, `run:`, `with:` and `env:` never leave the parser and are never published; `target` is rebuilt from validated parts. |
 | Exceptions file → collector            | Reviewed configuration, not monitored data: strict schema, text scrubbed before publication, ticket host allowlist, expiry mandatory and capped. For a non-public repository under a public audience, the rule or advisory, tool, reason and ticket are published as `null`. Nothing is ever written to GitHub.                                                                      |
@@ -147,7 +166,7 @@ never restores: it starts from `fixtures/history/history.json`.
   critical workflows, error counts, unresolved submodules and the project `score`.
 
 `history.json` (`kind: hub-history`) and `changes.json` (`kind: hub-changes`) are versioned
-separately (history `1.2`, changes `1.0`) from the snapshot (`1.7`), so history survives a snapshot schema
+separately (history `1.2`, changes `1.0`) from the snapshot (`1.8`), so history survives a snapshot schema
 bump and an existing `public/data` stays readable. `history.json` has one compact point per
 project and collection plus the baseline of the latest run; `changes.json` is the diff
 the site renders. Unknown is never 0: a null score is a gap.
@@ -185,7 +204,7 @@ Normalised enums:
 | Error class      | `not-found`, `not-authorised`, `not-configured`, `rate-limited`, `invalid-data`, `error`                                                 |
 
 Generated JSON Schemas are in `config/schema/`. The site supports the snapshot versions
-listed in `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS` (currently `1.7`).
+listed in `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS` (currently `1.8`).
 
 ## Health rules (MVP policies)
 
@@ -275,6 +294,10 @@ cases pin the decisions ([ADR 0008](architecture/adr/0008-risk-governance-policy
 - [ADR 0006: History persisted through the hub's own Actions artifacts](architecture/adr/0006-history-persisted-through-own-actions-artifacts.md)
 - [ADR 0007: Repository controls from workflow files and the rules API, informative by default](architecture/adr/0007-repository-controls-informative-by-default.md)
 - [ADR 0008: Risk governance as typed policy-as-code: exceptions in reviewed config, never GitHub dismissals, no OPA](architecture/adr/0008-risk-governance-policy-as-code.md)
+- [ADR 0009: GitHub Primer as the design system (tokens and Octicons, no React, never passing as GitHub)](architecture/adr/0009-primer-design-system.md)
+- [ADR 0010: Per-team views without per-person access control on static hosting](architecture/adr/0010-per-team-views-without-access-control.md)
+- [ADR 0011: Supply-chain evidence from GitHub-native sources and CI summaries](architecture/adr/0011-supply-chain-evidence-github-native-and-ci-summaries.md)
+- [ADR 0012: Optional read-only external providers behind one audited HTTP client](architecture/adr/0012-optional-external-read-only-providers.md)
 
 Further decisions:
 
@@ -284,9 +307,9 @@ Further decisions:
 - i18n uses `[...lang]` routes: EN at `/`, IT at `/it/`. The typed dictionaries must have
   identical keys, which is enforced by `Dict` and tested. Snapshots stay language-neutral:
   reasons are codes plus parameters.
-- Native CSS design tokens ("Warm Graphite", light and dark themes, WCAG AA contrast checked
-  by a unit test), described in [`DESIGN.md`](../DESIGN.md). The UI was validated with
-  hi-fi mockups before implementation. Fonts are self-hosted IBM Plex Sans and IBM Plex
-  Mono (OFL) via `@fontsource`.
+- GitHub Primer functional tokens and Octicons, rendered at build time, light and dark themes
+  with WCAG AA contrast checked by a unit test, system fonts
+  ([ADR 0009](architecture/adr/0009-primer-design-system.md)), described in
+  [`DESIGN.md`](../DESIGN.md). The UI is validated with hi-fi mockups before implementation.
 - TypeScript is pinned to 6.0 for tooling compatibility (typescript-eslint,
   `@astrojs/check`).

@@ -19,6 +19,9 @@
 #   1. GitHub App — GH_APP_ID, GH_APP_PRIVATE_KEY, GH_APP_INSTALLATION_ID
 #   2. Fine-grained read-only PAT — GH_READ_TOKEN
 #   3. The workflow GITHUB_TOKEN (contents: read on this repository only)
+#   4. Optional external providers (config/providers.yaml, all off by default), each
+#      read-only: SONARQUBE_TOKEN, HARBOR_ROBOT_NAME + HARBOR_ROBOT_SECRET, ARGOCD_TOKEN.
+#      Set only for a provider you enabled in providers.yaml; never printed.
 #   Secrets are passed via env ONLY to the "Collect" step and never printed.
 #
 # History: the previous history.json is restored from this repository's OWN newest
@@ -63,6 +66,18 @@ on:
         required: false
       GH_READ_TOKEN:
         description: 'Fallback fine-grained PAT (read-only)'
+        required: false
+      SONARQUBE_TOKEN:
+        description: 'Optional SonarQube user token (Browse only), for config/providers.yaml'
+        required: false
+      HARBOR_ROBOT_NAME:
+        description: 'Optional Harbor robot account name (read-only), for config/providers.yaml'
+        required: false
+      HARBOR_ROBOT_SECRET:
+        description: 'Optional Harbor robot account secret'
+        required: false
+      ARGOCD_TOKEN:
+        description: 'Optional Argo CD apiKey token (applications, get only), for config/providers.yaml'
         required: false
     outputs:
       artifact-name:
@@ -183,6 +198,11 @@ jobs:
           GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
           GH_APP_INSTALLATION_ID: ${{ secrets.GH_APP_INSTALLATION_ID }}
           GH_READ_TOKEN: ${{ secrets.GH_READ_TOKEN }}
+          # Optional external providers: only read when enabled in config/providers.yaml.
+          SONARQUBE_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
+          HARBOR_ROBOT_NAME: ${{ secrets.HARBOR_ROBOT_NAME }}
+          HARBOR_ROBOT_SECRET: ${{ secrets.HARBOR_ROBOT_SECRET }}
+          ARGOCD_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
           HISTORY_FROM: .history-restore
           HISTORY_RESTORE_STATE: ${{ steps.history.outputs.state || steps.fresh.outputs.state }}

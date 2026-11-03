@@ -20,7 +20,13 @@
     "name": "v1.2.0",
     "publishedAt": "@now-9d",
     "prerelease": false,
-    "htmlUrl": "https://github.com/example-org/project-alpha-worker/releases/tag/v1.2.0"
+    "htmlUrl": "https://github.com/example-org/project-alpha-worker/releases/tag/v1.2.0",
+    "assets": [
+      {
+        "name": "worker-1.2.0.tar.gz",
+        "digest": null
+      }
+    ]
   },
   "files": {
     ".github/workflows/ci-main.yml": "name: CI\non: push\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@0123456789abcdef0123456789abcdef01234567\n      - uses: actions/setup-go@0123456789abcdef0123456789abcdef01234567\n      - uses: actions/upload-artifact@0123456789abcdef0123456789abcdef01234567\n",
@@ -87,17 +93,42 @@
       "generatedAt": "@now-2d",
       "tool": "pytest-cov",
       "format": "cobertura",
-      "lines": { "covered": 1720, "valid": 2000 }
+      "lines": {
+        "covered": 1720,
+        "valid": 2000
+      }
     },
     "createdAt": "@now-2d",
     "runId": 9008
   },
   "codeQualityFindings": [],
-  "directories": { ".github/workflows": [{ "name": "ci-main.yml", "type": "file" }] },
+  "directories": {
+    ".github/workflows": [
+      {
+        "name": "ci-main.yml",
+        "type": "file"
+      }
+    ]
+  },
   "branchRules": [
-    { "type": "pull_request", "requiredApprovals": 1 },
-    { "type": "required_status_checks", "requiredApprovals": null },
-    { "type": "non_fast_forward", "requiredApprovals": null },
-    { "type": "deletion", "requiredApprovals": null }
-  ]
+    {
+      "type": "pull_request",
+      "requiredApprovals": 1
+    },
+    {
+      "type": "required_status_checks",
+      "requiredApprovals": null
+    },
+    {
+      "type": "non_fast_forward",
+      "requiredApprovals": null
+    },
+    {
+      "type": "deletion",
+      "requiredApprovals": null
+    }
+  ],
+  "dependencySbom": {
+    "pending": true
+  }
 }
