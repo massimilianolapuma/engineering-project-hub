@@ -8,22 +8,25 @@ const isoDate = z.iso.datetime({ offset: true });
 const ACCEPT_VULNERABILITIES =
   'application/vnd.security.vulnerability.report; version=1.1, application/vnd.scanner.adapter.vuln.report.harbor+json; version=1.0';
 
-/** Only what the hub reads. The scanner, the vulnerability list, tags and labels are ignored. */
+/**
+ * Only what the hub reads. The scanner, the vulnerability list, tags and labels are ignored.
+ * Harbor (Go) serialises empty slices and maps as JSON null: every field is nullish.
+ */
 const ScanOverviewSchema = z.object({
-  scan_status: z.string().optional(),
-  end_time: z.string().optional(),
+  scan_status: z.string().nullish(),
+  end_time: z.string().nullish(),
   summary: z
     .object({
-      total: z.number().optional(),
-      fixable: z.number().optional(),
-      summary: z.record(z.string(), z.number()).optional(),
+      total: z.number().nullish(),
+      fixable: z.number().nullish(),
+      summary: z.record(z.string(), z.number().nullish()).nullish(),
     })
-    .optional(),
+    .nullish(),
 });
 const ArtifactSchema = z.object({
-  digest: z.string().optional(),
-  scan_overview: z.record(z.string(), ScanOverviewSchema).optional(),
-  accessories: z.array(z.object({ type: z.string().optional() })).optional(),
+  digest: z.string().nullish(),
+  scan_overview: z.record(z.string(), ScanOverviewSchema).nullish(),
+  accessories: z.array(z.object({ type: z.string().nullish() })).nullish(),
 });
 
 const SCAN_STATUS: Record<string, 'success' | 'error' | 'running' | 'pending'> = {
@@ -34,11 +37,11 @@ const SCAN_STATUS: Record<string, 'success' | 'error' | 'running' | 'pending'> =
   Scheduled: 'pending',
 };
 
-const count = (n: number | undefined): number | null =>
-  n !== undefined && Number.isInteger(n) && n >= 0 ? n : null;
+const count = (n: number | null | undefined): number | null =>
+  typeof n === 'number' && Number.isInteger(n) && n >= 0 ? n : null;
 
 function toScan(
-  overview: z.infer<typeof ScanOverviewSchema> | undefined,
+  overview: z.infer<typeof ScanOverviewSchema> | null | undefined,
 ): NonNullable<HarborArtifactDTO['scan']> {
   const nulls = {
     critical: null,

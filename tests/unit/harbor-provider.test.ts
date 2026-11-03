@@ -133,6 +133,34 @@ describe('Harbor provider', () => {
     });
   });
 
+  it('I-4: JSON null for accessories, scan_overview, summary and severities is read as absent, never invalid', async () => {
+    const none = await provider({
+      digest: DIGEST,
+      scan_overview: null,
+      accessories: null,
+    }).harbor.getArtifact('a', 'r', 't');
+    expect(none).toMatchObject({
+      ok: true,
+      data: { scan: { status: 'not-scanned' }, signatures: { cosign: false, notation: false } },
+    });
+    const bare = await provider({
+      digest: DIGEST,
+      accessories: null,
+      scan_overview: { [REPORT]: { scan_status: 'Success', end_time: null, summary: null } },
+    }).harbor.getArtifact('a', 'r', 't');
+    expect(bare).toMatchObject({ ok: true, data: { scan: { status: 'success', critical: null } } });
+    const inner = await provider({
+      digest: DIGEST,
+      scan_overview: {
+        [REPORT]: {
+          scan_status: 'Success',
+          summary: { total: null, fixable: null, summary: null },
+        },
+      },
+    }).harbor.getArtifact('a', 'r', 't');
+    expect(inner).toMatchObject({ ok: true, data: { scan: { status: 'success', high: null } } });
+  });
+
   it('a digest that is not sha256 is null', async () => {
     expect(await provider({ digest: 'md5:zz' }).harbor.getArtifact('a', 'r', 't')).toMatchObject({
       data: { digest: null },
