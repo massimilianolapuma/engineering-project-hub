@@ -1,0 +1,103 @@
+---
+/**
+ * Versions page, second line of an environment: where its version comes from (Argo CD or the
+ * release manifest) and what Argo CD reports (Sync and Health), the declared version when it
+ * differs from the deployed one, and the deployed images in a disclosure. Argo CD that cannot
+ * be read is a dashed "unknown" label, never "not deployed".
+ */
+import type { EnvironmentSnapshot } from '@model/index';
+import type { I18n } from '../i18n';
+import EvidenceLabel from './EvidenceLabel.astro';
+import Octicon from './Octicon.astro';
+import Pill from './Pill.astro';
+interface Props {
+  e: EnvironmentSnapshot;
+  i18n: I18n;
+  /** Component display names, by id. */
+  names: Record<string, string>;
+}
+const { e, i18n, names } = Astro.props;
+const { f } = i18n;
+const t = i18n.d.sources;
+const dep = e.deployment;
+const showArgoTag = dep !== null && dep.state === 'available' && e.source !== 'argocd';
+const declaredDiffers =
+  e.declaredVersion !== null && e.version !== null && e.declaredVersion !== e.version;
+---
+
+<span class="vdeploy">
+  {e.source !== 'unknown' && (
+    <span class:list={['srcl', { 'srcl--accent': e.source === 'argocd' }]}>{t.env[e.source]}</span>
+  )}
+  {showArgoTag && <span class="srcl srcl--accent">{t.env.argocd}</span>}
+  {dep && dep.state === 'available' && (
+    <>
+      {dep.sync === 'synced' ? (
+        <Pill tone="green" label={t.sync.synced} />
+      ) : dep.sync === 'out-of-sync' ? (
+        <Pill tone="amber" label={t.sync['out-of-sync']} />
+      ) : (
+        <EvidenceLabel level="unknown" text={t.sync.unknown} i18n={i18n} />
+      )}
+      {dep.health === 'healthy' ? (
+        <span class="ev ev--present">
+          <Octicon name="heart" size={12} />
+          {t.health.healthy}
+        </span>
+      ) : dep.health === 'progressing' ? (
+        <span class="ev">
+          <Octicon name="sync" size={12} />
+          {t.health.progressing}
+        </span>
+      ) : dep.health === 'degraded' || dep.health === 'missing' ? (
+        <Pill tone="red" label={t.health[dep.health]} />
+      ) : dep.health === 'suspended' ? (
+        <Pill tone="amber" label={t.health.suspended} />
+      ) : (
+        <EvidenceLabel level="unknown" text={t.health.unknown} i18n={i18n} />
+      )}
+    </>
+  )}
+  {dep && dep.state !== 'available' && (
+    <EvidenceLabel level="unknown" text={t.deployState[dep.state]} i18n={i18n} />
+  )}
+</span>
+{declaredDiffers && <span class="via">{f(t.declared, { v: e.declaredVersion ?? '' })}</span>}
+{dep && dep.images.length > 0 && (
+  <details class="vimgs">
+    <summary>
+      {dep.images.length === 1
+        ? t.imagesDeployedOne
+        : f(t.imagesDeployed, { n: dep.images.length })}
+    </summary>
+    <ul>
+      {dep.images.map((img) => (
+        <li>
+          {names[img.componentId] ?? img.componentId}{' '}
+          <span class="mono">{img.version ?? i18n.d.common.unknownValue}</span>
+        </li>
+      ))}
+    </ul>
+  </details>
+)}
+
+<style>
+  .vdeploy {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--base-size-4);
+    align-items: center;
+    margin-top: 2px;
+  }
+  .vimgs {
+    font-size: var(--text-body-size-small);
+  }
+  .vimgs summary {
+    cursor: pointer;
+    color: var(--fgColor-accent);
+  }
+  .vimgs ul {
+    margin: var(--base-size-4) 0 0;
+    padding-left: var(--base-size-16);
+  }
+</style>

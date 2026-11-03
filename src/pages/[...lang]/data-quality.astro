@@ -252,6 +252,25 @@ const capabilities = index
       .sort((x, y) => AVAIL_RANK[x.a] - AVAIL_RANK[y.a] || x.order - y.order)
   : [];
 
+/* Optional providers (SonarQube, Harbor, Argo CD): run-level state and counts only. */
+const pv = d.providers;
+const PROVIDER_IDS = ['sonarqube', 'harbor', 'argocd'] as const;
+const providerTone = (st: string): Tone =>
+  st === 'available' ? 'green' : st === 'partial' ? 'amber' : st === 'off' ? 'muted' : 'grey';
+const providers = index
+  ? PROVIDER_IDS.map((id) => ({ id, p: index.run.providers[id] ?? null }))
+  : [];
+const anyProvider = providers.some(({ p }) => p?.enabled);
+/* Repositories whose SBOM should exist but could not be read (never shown as 0 packages). */
+const SBOM_BLIND = ['pending', 'not-authorised', 'unknown', 'invalid', 'too-large'] as const;
+const sbomBlind = (data.ok ? data.data.projects : []).flatMap((p) =>
+  p.supplyChain.enabled
+    ? p.supplyChain.repositories
+        .filter((r) => (SBOM_BLIND as readonly string[]).includes(r.sbom.state))
+        .map((r) => ({ repository: r.repository, state: r.sbom.state }))
+    : [],
+);
+
 /* History: how the previous collections were restored, and what is kept. */
 const history = loadHistory();
 const hq = q.history;
@@ -560,6 +579,72 @@ const lead = [
         )}
       </section>
 
+      <section class="card dq-card" aria-labelledby="h-providers">
+        <h2 id="h-providers">{pv.title}</h2>
+        <p class="muted dq-providers__lead">{pv.lead}</p>
+        {anyProvider ? (
+          <ul class="dq-prov">
+            {providers.map(({ id, p }) => {
+              const st = p?.enabled ? p.state : 'off';
+              return (
+                <li data-provider={id}>
+                  <span class="dq-prov__head">
+                    <span>{d.errorSource[id]}</span>
+                    <Pill tone={providerTone(st)} label={pv.state[st]} />
+                  </span>
+                  <span class="dq-prov__meta">
+                    {pv.purpose[id]}
+                    {p?.enabled &&
+                      ` · ${
+                        p.errors > 0
+                          ? f(pv.counts, {
+                              items: i18n.number(p.items),
+                              errors: i18n.number(p.errors),
+                            })
+                          : f(pv.countsClean, { items: i18n.number(p.items) })
+                      }`}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p class="muted">{pv.none}</p>
+        )}
+        <h3 class="h3">{pv.sbomTitle}</h3>
+        {sbomBlind.length === 0 ? (
+          <p class="muted">{pv.sbomNone}</p>
+        ) : (
+          <div class="table-wrap">
+            <table role="table" class="table sc-table">
+              <caption class="visually-hidden">{pv.sbomTitle}</caption>
+              <thead role="rowgroup">
+                <tr role="row">
+                  <th role="columnheader" scope="col">
+                    {pv.sbomRepository}
+                  </th>
+                  <th role="columnheader" scope="col">
+                    {pv.sbomWhy}
+                  </th>
+                </tr>
+              </thead>
+              <tbody role="rowgroup">
+                {sbomBlind.map((r) => (
+                  <tr role="row">
+                    <th role="rowheader" scope="row">
+                      <code>{repoName(r.repository)}</code>
+                    </th>
+                    <td role="cell" data-label={pv.sbomWhy}>
+                      <Pill tone="grey" label={d.supplyChain.sbomState[r.state]} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
       <section class="card dq-card" aria-labelledby="h-cap">
         <h2 id="h-cap">{q.capabilities}</h2>
         <ul class="dq-caps">
@@ -764,6 +849,37 @@ const lead = [
   }
   .dq-fix {
     font-size: var(--text-body-size-small);
+  }
+  .dq-providers__lead {
+    margin: 0;
+    font-size: var(--text-body-size-medium);
+  }
+  .dq-prov {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--base-size-12);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .dq-prov li {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: var(--base-size-12) var(--base-size-16);
+    border: 1px solid var(--borderColor-default);
+    border-radius: var(--borderRadius-medium);
+  }
+  .dq-prov__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--base-size-8);
+    font-weight: 600;
+  }
+  .dq-prov__meta {
+    font-size: var(--text-body-size-small);
+    color: var(--fgColor-muted);
   }
   .dq-caps {
     display: flex;

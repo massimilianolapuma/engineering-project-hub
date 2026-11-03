@@ -20,6 +20,7 @@ import Legend from '../../../components/Legend.astro';
 import Pill from '../../../components/Pill.astro';
 import QualitySection from '../../../components/QualitySection.astro';
 import RepositoryControlsSection from '../../../components/RepositoryControlsSection.astro';
+import SupplyChainSection from '../../../components/SupplyChainSection.astro';
 import RelTime from '../../../components/RelTime.astro';
 import RiskPanel from '../../../components/RiskPanel.astro';
 import ScoreBadge from '../../../components/ScoreBadge.astro';
@@ -108,6 +109,44 @@ const showCause =
 const allUnknown = showCause && dims.every(({ health }) => health.status === 'grey');
 const whyShown = allUnknown ? [] : issues.slice(0, WHY_LIMIT);
 const whyHidden = issues.slice(whyShown.length);
+
+/**
+ * "via …" under each control in Controls coverage: the distinct winning sources (and tools) of
+ * that control across the project's repositories, e.g. "via Harbor, trivy (status file)".
+ */
+const sourceName = (source: string, tool: string | null): string => {
+  const sc = d.supplyChain.source;
+  const base =
+    source === 'github'
+      ? sc.github
+      : source === 'dependency-graph'
+        ? sc.dependencyGraph
+        : source === 'supply-chain-summary'
+          ? sc.summary
+          : source === 'harbor'
+            ? sc.harbor
+            : source === 'attestations'
+              ? sc.attestations
+              : source === 'code-scanning'
+                ? sc.codeScanning
+                : sc.statusFile;
+  if (!tool || tool.toLowerCase() === base.toLowerCase()) return base;
+  return source === 'code-scanning' || source === 'status-file'
+    ? `${tool} (${base})`
+    : `${base} (${tool})`;
+};
+const controlVia = (control: string): string | null => {
+  if (!s) return null;
+  const names = new Set<string>();
+  for (const rc of s.securityControls)
+    for (const x of rc.controls)
+      if (x.control === control && x.source) names.add(sourceName(x.source, x.tool));
+  return names.size ? f(d.supplyChain.via, { source: [...names].join(', ') }) : null;
+};
+/** Fold hint: totals, with "unknown" for counts that could not be read (never 0). */
+const scTotals = s?.supplyChain.totals;
+const scKnown = (n: number | null | undefined) =>
+  n === null || n === undefined ? d.supplyChain.summaryUnknown : i18n.number(n);
 
 /** One-line summary on a dimension card. */
 const topReason = (h: HealthResult) =>
@@ -830,6 +869,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
                     {x.required ? d.securityPage.required : d.securityPage.optional} ·{' '}
                     {d.controlState[x.state]}
                   </span>
+                  {controlVia(x.control) && <span class="via">{controlVia(x.control)}</span>}
                 </li>
               ))}
             </ul>
@@ -857,6 +897,25 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
           </summary>
           <div class="fold__body">
             <RepositoryControlsSection s={s} i18n={i18n} />
+          </div>
+        </details>
+
+        <details id="supply-chain" class="fold disclosure">
+          <summary>
+            <span class="fold__title">{d.supplyChain.title}</span>
+            <span class="fold__hint">
+              {s.supplyChain.enabled && scTotals
+                ? f(d.supplyChain.summary, {
+                    n: scKnown(scTotals.sbomAvailable),
+                    m: scKnown(scTotals.repositories),
+                    k: scKnown(scTotals.unsignedImages),
+                    f: scKnown(scTotals.flagged),
+                  })
+                : d.supplyChain.off}
+            </span>
+          </summary>
+          <div class="fold__body">
+            <SupplyChainSection s={s} i18n={i18n} />
           </div>
         </details>
 
@@ -1230,6 +1289,9 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
     flex-wrap: wrap;
     align-items: center;
     gap: var(--base-size-4) var(--base-size-12);
+  }
+  .ctrls__item .via {
+    flex-basis: 100%;
   }
   .stale li {
     overflow-wrap: anywhere;

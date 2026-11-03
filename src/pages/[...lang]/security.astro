@@ -9,6 +9,7 @@ import {
 } from '@model/index';
 import ControlSymbol from '../../components/ControlSymbol.astro';
 import ErrorState from '../../components/ErrorState.astro';
+import EvidenceLabel from '../../components/EvidenceLabel.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import Legend from '../../components/Legend.astro';
 import Pill from '../../components/Pill.astro';
@@ -70,6 +71,22 @@ const lead = f(t.lead, {
         }),
   blind: blindCount === 0 ? t.leadBlindNone : plural(blindCount, t.leadBlindOne, t.leadBlindOther),
 });
+
+/** Supply chain: projects whose collection is on, the portfolio totals (known counts only). */
+const sct = d.supplyChain;
+const scProjects = projects.filter((p) => p.supplyChain.enabled);
+const scSum = (k: keyof ProjectSnapshot['supplyChain']['totals']) =>
+  scProjects.reduce((n, p) => n + (p.supplyChain.totals[k] ?? 0), 0);
+const scHint = f(sct.portfolioHint, {
+  n: i18n.number(scSum('sbomAvailable')),
+  m: i18n.number(scSum('repositories')),
+  k: i18n.number(scSum('unsignedImages')),
+  f: i18n.number(scSum('flagged')),
+});
+const unsignedText = (n: number) =>
+  n === 1 ? sct.unsignedImagesOne : f(sct.unsignedImages, { n: i18n.number(n) });
+const flaggedText = (n: number) =>
+  n === 1 ? sct.flaggedLicensesOne : f(sct.flaggedLicenses, { n: i18n.number(n) });
 
 /** Collection error source that feeds each control (for the HTTP status of a blind spot). */
 const SOURCE: Partial<Record<ControlId, CollectionError['source']>> = {
@@ -181,6 +198,9 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
         <p class="page-export">
           <a class="btn btn--ghost" href={exportHref('findings-summary.csv')} download>
             {d.exports.findings}
+          </a>{' '}
+          <a class="btn btn--ghost" href={exportHref('supply-chain.csv')} download>
+            {d.exports.supplyChain}
           </a>
         </p>
       </header>
@@ -322,6 +342,53 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
                       ))}
                   </ul>
 
+                  {p.supplyChain.enabled && (
+                    <p class="sec-sc" data-supply-chain-line>
+                      <a href={`${projectHref}#supply-chain`}>{sct.title}</a>
+                      <span>
+                        {p.supplyChain.totals.sbomAvailable === null ? (
+                          <>
+                            {sct.col.sbom} <EvidenceLabel level="unknown" i18n={i18n} />
+                          </>
+                        ) : (
+                          f(sct.cardSbom, {
+                            n: i18n.number(p.supplyChain.totals.sbomAvailable),
+                            m: i18n.number(p.supplyChain.totals.repositories ?? 0),
+                          })
+                        )}
+                        {' · '}
+                        {p.supplyChain.totals.unsignedImages === null ? (
+                          <>
+                            {sct.portfolioCol.unsigned}{' '}
+                            <EvidenceLabel level="unknown" i18n={i18n} />
+                          </>
+                        ) : p.supplyChain.totals.unsignedImages > 0 ? (
+                          <EvidenceLabel
+                            level="missing"
+                            text={unsignedText(p.supplyChain.totals.unsignedImages)}
+                            i18n={i18n}
+                          />
+                        ) : (
+                          unsignedText(0)
+                        )}
+                        {' · '}
+                        {p.supplyChain.totals.flagged === null ? (
+                          <>
+                            {sct.licensesUnknown} <EvidenceLabel level="unknown" i18n={i18n} />
+                          </>
+                        ) : p.supplyChain.totals.flagged > 0 ? (
+                          <EvidenceLabel
+                            level="missing"
+                            text={flaggedText(p.supplyChain.totals.flagged)}
+                            i18n={i18n}
+                          />
+                        ) : (
+                          flaggedText(0)
+                        )}
+                      </span>
+                    </p>
+                  )}
+
                   <p class="sec-risk" data-risk-line>
                     <a href={`${projectHref}#exceptions`}>
                       {f(d.risk.securityCardLine, {
@@ -392,6 +459,110 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
           );
         })}
       </section>
+
+      {scProjects.length > 0 && (
+        <details id="supply-chain" class="sec-supply disclosure">
+          <summary>
+            <span class="sec-supply__title">{sct.title}</span>
+            <span class="sec-supply__hint">{scHint}</span>
+          </summary>
+          <div class="sec-supply__body">
+            <div class="sc-legend" role="note">
+              <EvidenceLabel level="verified" i18n={i18n} />
+              <EvidenceLabel level="present" i18n={i18n} />
+              <EvidenceLabel level="missing" i18n={i18n} />
+              <EvidenceLabel level="unknown" i18n={i18n} />
+              <span>
+                <EvidenceLabel level="na" i18n={i18n} /> {sct.evidence.notApplicable}
+              </span>
+              <p>{sct.legend}</p>
+            </div>
+            <div class="table-wrap">
+              <table role="table" class="table">
+                <caption class="visually-hidden">{sct.portfolioCaption}</caption>
+                <thead role="rowgroup">
+                  <tr role="row">
+                    <th role="columnheader" scope="col">
+                      {sct.portfolioCol.project}
+                    </th>
+                    <th role="columnheader" scope="col">
+                      {sct.portfolioCol.sbom}
+                    </th>
+                    <th role="columnheader" scope="col">
+                      {sct.portfolioCol.unsigned}
+                    </th>
+                    <th role="columnheader" scope="col">
+                      {sct.portfolioCol.attested}
+                    </th>
+                    <th role="columnheader" scope="col">
+                      {sct.portfolioCol.flagged}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody role="rowgroup">
+                  {scProjects.map((p) => {
+                    const tt = p.supplyChain.totals;
+                    return (
+                      <tr role="row" data-sc-project={p.project.id}>
+                        <th role="rowheader" scope="row">
+                          <a href={`${href(locale, `projects/${p.project.id}`)}#supply-chain`}>
+                            {p.project.name}
+                          </a>
+                        </th>
+                        <td role="cell" data-label={sct.portfolioCol.sbom}>
+                          {tt.sbomAvailable === null ? (
+                            <EvidenceLabel level="unknown" i18n={i18n} />
+                          ) : (
+                            f(sct.ofN, {
+                              n: i18n.number(tt.sbomAvailable),
+                              m: i18n.number(tt.repositories ?? 0),
+                            })
+                          )}
+                        </td>
+                        <td role="cell" data-label={sct.portfolioCol.unsigned}>
+                          {tt.unsignedImages === null ? (
+                            <EvidenceLabel level="unknown" i18n={i18n} />
+                          ) : tt.unsignedImages > 0 ? (
+                            <EvidenceLabel
+                              level="missing"
+                              text={i18n.number(tt.unsignedImages)}
+                              i18n={i18n}
+                            />
+                          ) : (
+                            '0'
+                          )}
+                        </td>
+                        <td role="cell" data-label={sct.portfolioCol.attested}>
+                          {tt.attestedAssets === null ? (
+                            <EvidenceLabel level="unknown" i18n={i18n} />
+                          ) : tt.attestedAssets === 1 ? (
+                            sct.assetsOne
+                          ) : (
+                            f(sct.assets, { n: i18n.number(tt.attestedAssets) })
+                          )}
+                        </td>
+                        <td role="cell" data-label={sct.portfolioCol.flagged}>
+                          {tt.flagged === null ? (
+                            <EvidenceLabel level="unknown" i18n={i18n} />
+                          ) : tt.flagged > 0 ? (
+                            <EvidenceLabel
+                              level="missing"
+                              text={i18n.number(tt.flagged)}
+                              i18n={i18n}
+                            />
+                          ) : (
+                            '0'
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+      )}
 
       <details class="sec-queue disclosure" open>
         <summary>
@@ -713,12 +884,14 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
     margin: 0;
   }
   .sec-queue,
+  .sec-supply,
   .sec-matrix {
     background: var(--bgColor-default);
     border: 1px solid var(--borderColor-default);
     border-radius: var(--borderRadius-medium);
   }
   .sec-queue > summary,
+  .sec-supply > summary,
   .sec-matrix > summary {
     display: flex;
     align-items: center;
@@ -727,19 +900,33 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
     font-weight: 600;
     cursor: pointer;
   }
-  .sec-queue > summary {
+  .sec-queue > summary,
+  .sec-supply > summary {
     flex-wrap: wrap;
     gap: var(--base-size-4) var(--base-size-12);
   }
-  .sec-queue__title {
+  .sec-sc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--base-size-4) var(--base-size-12);
+    align-items: center;
+    margin: 0;
+  }
+  .sec-sc > a {
     font-weight: 600;
   }
-  .sec-queue__hint {
+  .sec-queue__title,
+  .sec-supply__title {
+    font-weight: 600;
+  }
+  .sec-queue__hint,
+  .sec-supply__hint {
     color: var(--fgColor-muted);
     font-size: var(--text-body-size-small);
     font-weight: 400;
   }
   .sec-queue__body,
+  .sec-supply__body,
   .sec-matrix__body {
     display: flex;
     flex-direction: column;

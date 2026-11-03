@@ -43,6 +43,11 @@ export const OCTICON_NAMES = [
   'git-pull-request',
   'people',
   'triangle-down',
+  // supply chain evidence and deployed environments
+  'verified',
+  'unverified',
+  'heart',
+  'sync',
 ] as const;
 export type OcticonName = (typeof OCTICON_NAMES)[number];
 

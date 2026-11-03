@@ -1,0 +1,45 @@
+---
+/**
+ * Supply-chain evidence as a Primer Label that always carries its word: Verified (CI verified
+ * it), Present (it exists in GitHub or the registry, nobody verified it here), Missing / Not
+ * verified / Failed, Unknown (dashed: we could not read it, never "unsigned") and "–" for not
+ * applicable, with visually hidden text. Never colour alone.
+ */
+import type { I18n } from '../i18n';
+import type { OcticonName } from '../lib/octicon';
+import Octicon from './Octicon.astro';
+
+export type EvidenceLevel =
+  'verified' | 'present' | 'missing' | 'not-verified' | 'failed' | 'unknown' | 'na';
+interface Props {
+  level: EvidenceLevel;
+  i18n: I18n;
+  /** What the evidence is about ("Signature", "Provenance"), shown muted before the word. */
+  kind?: string;
+  /** Replaces the level word (e.g. "Argo CD not authorised" on an unknown label). */
+  text?: string;
+}
+const { level, i18n, kind, text } = Astro.props;
+const e = i18n.d.supplyChain.evidence;
+const ICON: Record<Exclude<EvidenceLevel, 'na'>, OcticonName> = {
+  verified: 'verified',
+  present: 'check',
+  missing: 'x',
+  'not-verified': 'unverified',
+  failed: 'x',
+  unknown: 'question',
+};
+---
+
+{level === 'na' ? (
+  <span class="ev ev--na" title={e.notApplicable}>
+    –<span class="visually-hidden">{e.notApplicable}</span>
+  </span>
+) : (
+  <span class={`ev ev--${level}`}>
+    <Octicon name={ICON[level]} size={12} />
+    {kind && <span class="ev__k">{kind}</span>}
+    {kind ? ' ' : ''}
+    {text ?? e[level]}
+  </span>
+)}
