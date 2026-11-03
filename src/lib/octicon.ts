@@ -41,6 +41,8 @@ export const OCTICON_NAMES = [
   'trash',
   'download',
   'git-pull-request',
+  'people',
+  'triangle-down',
 ] as const;
 export type OcticonName = (typeof OCTICON_NAMES)[number];
 

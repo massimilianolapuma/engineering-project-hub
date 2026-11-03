@@ -1335,3 +1335,170 @@ a.btn--primary:hover {
 .ce-legacy .note {
   margin: var(--base-size-4) 0 var(--base-size-12);
 }
+
+/* ── Teams (v0.11.0): Portfolio team filter, row and header Labels, catalog editor field ──
+   Approved mockups: "Team dashboards" rows of the Primer mockup canvas. */
+.teamlabel {
+  color: var(--fgColor-muted);
+  font-weight: 400;
+}
+.teamlabel[hidden],
+.teamchips[hidden] {
+  display: none;
+}
+.teamlabel--match {
+  background: var(--bgColor-accent-muted);
+  color: var(--fgColor-accent);
+  border-color: var(--borderColor-accent-muted);
+  font-weight: 500;
+}
+a.teamlabel {
+  text-decoration: none;
+}
+a.teamlabel:hover {
+  color: var(--fgColor-accent);
+  border-color: var(--borderColor-accent-emphasis);
+}
+.teamsel-field {
+  position: relative;
+}
+.teamsel-field__label {
+  font-weight: 600;
+  color: var(--fgColor-default);
+}
+.teamsel > summary {
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--base-size-8);
+  white-space: nowrap;
+}
+.teamsel > summary::-webkit-details-marker {
+  display: none;
+}
+.teamsel .Counter {
+  display: inline-block;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: var(--borderRadius-full);
+  background: var(--bgColor-neutral-muted);
+  font-size: var(--text-body-size-small);
+  line-height: 18px;
+  text-align: center;
+}
+.teamsel .Counter[hidden] {
+  display: none;
+}
+.teamsel__panel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  max-height: 380px;
+  overflow: auto;
+  padding: 4px 0 8px;
+  background: var(--overlay-bgColor);
+  border: 1px solid var(--borderColor-default);
+  border-radius: var(--borderRadius-large);
+  box-shadow: var(--shadow-floating-small);
+  color: var(--fgColor-default);
+}
+.teamsel__head {
+  margin: 0;
+  padding: 10px 16px 8px;
+  font-size: var(--text-body-size-medium);
+  font-weight: 600;
+  border-bottom: 1px solid var(--borderColor-muted);
+}
+.teamsel__panel fieldset {
+  margin: 0;
+  padding: 4px 0 0;
+  border: 0;
+  min-width: 0;
+}
+.teamsel__panel legend {
+  padding: 8px 16px 4px;
+  font-size: var(--text-body-size-small);
+  font-weight: 600;
+  color: var(--fgColor-muted);
+}
+.teamsel__opt {
+  display: flex;
+  align-items: center;
+  gap: var(--base-size-8);
+  min-height: 36px;
+  padding: 0 16px;
+  font-size: var(--text-body-size-medium);
+  font-weight: 400;
+  cursor: pointer;
+}
+.teamsel__opt:hover {
+  background: var(--control-transparent-bgColor-hover);
+}
+.teamsel__opt input {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--bgColor-accent-emphasis);
+}
+.teamsel__slug {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.teamsel__n {
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small);
+  font-variant-numeric: tabular-nums;
+}
+.teamchips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--base-size-8);
+  flex-basis: 100%;
+  min-width: 0;
+}
+.teamchip {
+  min-height: 28px;
+  max-width: 100%;
+  gap: 6px;
+  padding: 0 4px 0 10px;
+  font: inherit;
+  font-size: var(--text-body-size-small);
+  font-weight: 500;
+  background: var(--bgColor-accent-muted);
+  color: var(--fgColor-accent);
+  border-color: var(--borderColor-accent-muted);
+  cursor: pointer;
+}
+.teamchip > .teamchip__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.teamchip > svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  padding: 2px;
+  border-radius: var(--borderRadius-small);
+}
+.teamchip:hover > svg {
+  background: var(--control-transparent-bgColor-hover);
+}
+.teamchip--unknown {
+  background: transparent;
+  color: var(--fgColor-muted);
+  border: 1.5px dashed var(--borderColor-emphasis);
+}
+.teamchip__note {
+  font-weight: 400;
+}
+@media (max-width: 720px) {
+  .teamsel-field {
+    flex-basis: 100%;
+  }
+}
