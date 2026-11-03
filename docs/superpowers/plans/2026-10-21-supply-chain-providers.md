@@ -1,5 +1,7 @@
 # Supply chain providers (v0.10.0) Implementation Plan
 
+> **Update 2026-11-03 (rebased on `main` after v0.10.0 and team dashboards):** this work now takes snapshot schema **1.8**, ADRs **0011** (supply-chain evidence) and **0012** (external providers), and release **v0.11.0** together with team dashboards. Wherever this plan says 1.7 / ADR 0009 / ADR 0010 / v0.10.0, read 1.8 / 0011 / 0012 / v0.11.0. The site now uses GitHub Primer (ADR 0009), not Warm Graphite: Task 9 starts with mockups in Claude Design (Primer Hub), approved by the owner, before any UI code.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Give the five non-native security controls (`containerScanning`, `iacScanning`, `dast`, `sbom`, `artifactSignature`) real sources and add three optional, read-only external providers:

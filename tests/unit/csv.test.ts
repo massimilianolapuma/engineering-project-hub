@@ -272,7 +272,7 @@ describe('export rows (golden data)', () => {
   });
 });
 
-describe('versions and supply chain CSV (schema 1.7)', () => {
+describe('versions and supply chain CSV (schema 1.8)', () => {
   it('versions.csv ends with the Argo CD columns, n/a outside environment rows', () => {
     expect(VERSIONS_HEADERS.slice(-4)).toEqual([
       'environment_source',

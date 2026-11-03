@@ -636,7 +636,7 @@ export const ComponentSnapshotSchema = z
 export type ComponentSnapshot = z.infer<typeof ComponentSnapshotSchema>;
 
 /*
- * Supply chain schemas (schema 1.7). Standalone for now: they are attached to the project
+ * Supply chain schemas (schema 1.8). Standalone for now: they are attached to the project
  * snapshot, the environments and the run metadata when the collector produces them.
  */
 
