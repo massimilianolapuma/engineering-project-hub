@@ -79,6 +79,9 @@ const editorStrings = jsonForScript({
         <template data-icon="x">
           <Octicon name="x" />
         </template>
+        <template data-icon="link-external">
+          <Octicon name="link-external" size={12} />
+        </template>
         <div class="ce__side">
           <section class="card ce-panel ce-panel--projects" aria-labelledby="ce-h-projects">
             <h2 id="ce-h-projects" class="ce-panel__title">
@@ -627,6 +630,9 @@ const editorStrings = jsonForScript({
     display: inline-flex;
     margin-right: var(--base-size-4);
     vertical-align: text-bottom;
+  }
+  .ce :global(.ce-icon--link-external) {
+    margin: 0 0 0 var(--base-size-4);
   }
   .ce :global(.ce-summary) {
     display: inline-flex;

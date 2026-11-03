@@ -35,6 +35,7 @@ export const OCTICON_NAMES = [
   'chevron-right',
   'info',
   'link-external',
+  'shield-check',
   'eye-closed',
   'plus',
   'trash',

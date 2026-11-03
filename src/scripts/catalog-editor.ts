@@ -177,9 +177,9 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
   }
 
   /** Decorative Octicon, cloned from the build-time <template data-icon> in the page. */
-  function icon(name: 'check' | 'x'): HTMLElement {
+  function icon(name: 'check' | 'x' | 'link-external'): HTMLElement {
     const t = root.querySelector<HTMLTemplateElement>(`template[data-icon="${name}"]`);
-    const span = h('span', { class: 'ce-icon', 'aria-hidden': 'true' });
+    const span = h('span', { class: `ce-icon ce-icon--${name}`, 'aria-hidden': 'true' });
     if (t) span.append(t.content.cloneNode(true));
     return span;
   }
@@ -361,7 +361,7 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
         'aria-describedby': opts.describedBy,
       },
       label,
-      h('span', { 'aria-hidden': 'true', class: 'extlink__arrow' }, ' ↗'),
+      icon('link-external'),
       h('span', { class: 'visually-hidden' }, ` ${S.opensNewTab}`),
     );
     if (opts.onClick) a.addEventListener('click', opts.onClick);
@@ -1299,7 +1299,7 @@ function start(root: HTMLElement, data: EditorData, S: Strings) {
               rel: 'noopener noreferrer external',
             },
             pr.repository,
-            h('span', { 'aria-hidden': 'true', class: 'extlink__arrow' }, ' ↗'),
+            icon('link-external'),
             h('span', { class: 'visually-hidden' }, ` ${S.opensNewTab}`),
           )
         : h('code', { class: 'ce-proposal__repo', id: repoId }, pr.repository),

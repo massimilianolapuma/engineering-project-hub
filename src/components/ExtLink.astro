@@ -1,6 +1,7 @@
 ---
 /** Link to the original GitHub resource; GitHub applies its own authorisation. */
 import type { I18n } from '../i18n';
+import Octicon from './Octicon.astro';
 interface Props {
   href: string | null | undefined;
   i18n: I18n;
@@ -13,9 +14,7 @@ const { href, i18n, label, class: className } = Astro.props;
 {href ? (
   <a class:list={['extlink', className]} href={href} rel="noopener noreferrer external">
     <slot>{label ?? i18n.d.common.openInGitHub}</slot>
-    <span aria-hidden="true" class="extlink__arrow">
-      ↗
-    </span>
+    <Octicon name="link-external" size={12} class="extlink__arrow" />
     <span class="visually-hidden"> {i18n.d.common.opensNewTab}</span>
   </a>
 ) : (
