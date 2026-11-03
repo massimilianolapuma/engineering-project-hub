@@ -9,6 +9,9 @@ name: Project Beta
 description: Synthetic logistics platform with a failing pipeline and restricted security data.
 businessUnit: Logistics
 lifecycle: production
+# GitHub teams (SYNTHETIC): a Portfolio view filter (?team=<slug>), not access control.
+teams:
+  - example-org/pay-project-beta-dev
 
 coordinator:
   repository: example-org/project-beta-coordinator

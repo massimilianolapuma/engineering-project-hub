@@ -1,5 +1,6 @@
 export * from './enums';
 export * from './catalog';
+export * from './teams';
 export * from './exceptions';
 export * from './findings';
 export * from './policies';

@@ -22,3 +22,15 @@ discovery:
     typeProperty: hub-component-type # property → component type
     projectTopicPrefix: project- # topic "project-tools" → project "tools"
     typeTopicPrefix: type- # topic "type-worker" → type worker
+
+# GitHub teams: projects list theirs in `teams:`; the Portfolio filters by them (?team=<slug>).
+# Team discovery reads organisation teams (Members: read) and proposes them in the catalog
+# editor. It is forced off while publication.audience is "public", as in this demo.
+teams:
+  discovery: true
+  naming:
+    pattern: '{line}-{project}-{role}' # pay-project-alpha-dev → line pay, project project-alpha, role dev
+    roles: [dev, ops]
+    lines:
+      pay: Payments # SYNTHETIC business line key → business unit
+  maxTeams: 300

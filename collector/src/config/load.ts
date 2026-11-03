@@ -123,6 +123,7 @@ export async function loadCatalog(configDir = 'config'): Promise<Catalog> {
 
   const merged = CatalogSchema.safeParse({
     discovery: settings?.discovery ?? legacyDiscovery,
+    teams: settings?.teams,
     projects,
   });
   if (!merged.success) {

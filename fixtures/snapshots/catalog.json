@@ -21,6 +21,20 @@
         "typeTopicPrefix": "type-"
       }
     },
+    "teams": {
+      "discovery": true,
+      "naming": {
+        "pattern": "{line}-{project}-{role}",
+        "roles": [
+          "dev",
+          "ops"
+        ],
+        "lines": {
+          "pay": "Payments"
+        }
+      },
+      "maxTeams": 300
+    },
     "projects": [
       {
         "id": "platform",
@@ -126,7 +140,11 @@
             "required": false
           }
         },
-        "securityStatusPath": ".security/project-security-status.json"
+        "securityStatusPath": ".security/project-security-status.json",
+        "teams": [
+          "example-org/platform",
+          "example-org/security"
+        ]
       },
       {
         "id": "project-alpha",
@@ -269,7 +287,11 @@
             "required": false
           }
         },
-        "securityStatusPath": ".security/project-security-status.json"
+        "securityStatusPath": ".security/project-security-status.json",
+        "teams": [
+          "example-org/pay-project-alpha-dev",
+          "example-org/platform"
+        ]
       },
       {
         "id": "project-beta",
@@ -395,7 +417,10 @@
             "required": false
           }
         },
-        "securityStatusPath": ".security/project-security-status.json"
+        "securityStatusPath": ".security/project-security-status.json",
+        "teams": [
+          "example-org/pay-project-beta-dev"
+        ]
       },
       {
         "id": "project-gamma",
@@ -460,7 +485,8 @@
             "required": false
           }
         },
-        "securityStatusPath": ".security/project-security-status.json"
+        "securityStatusPath": ".security/project-security-status.json",
+        "teams": []
       }
     ]
   },
@@ -586,7 +612,8 @@
               "required": false
             }
           },
-          "securityStatusPath": ".security/project-security-status.json"
+          "securityStatusPath": ".security/project-security-status.json",
+          "teams": []
         }
       },
       {
@@ -662,7 +689,8 @@
               "required": false
             }
           },
-          "securityStatusPath": ".security/project-security-status.json"
+          "securityStatusPath": ".security/project-security-status.json",
+          "teams": []
         }
       },
       {
@@ -780,7 +808,8 @@
               "required": false
             }
           },
-          "securityStatusPath": ".security/project-security-status.json"
+          "securityStatusPath": ".security/project-security-status.json",
+          "teams": []
         }
       },
       {
@@ -862,7 +891,8 @@
               "required": false
             }
           },
-          "securityStatusPath": ".security/project-security-status.json"
+          "securityStatusPath": ".security/project-security-status.json",
+          "teams": []
         }
       },
       {
@@ -934,7 +964,8 @@
               "required": false
             }
           },
-          "securityStatusPath": ".security/project-security-status.json"
+          "securityStatusPath": ".security/project-security-status.json",
+          "teams": []
         }
       }
     ],

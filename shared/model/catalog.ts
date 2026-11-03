@@ -6,6 +6,7 @@ import {
   RepositoryCheckIdSchema,
   type ControlId,
 } from './enums';
+import { TeamRefSchema, TeamsConfigSchema, teamSlug } from './teams';
 
 export const VersionSourceSchema = z.enum(['auto', 'submodule', 'manifest', 'release']);
 export type VersionSource = z.infer<typeof VersionSourceSchema>;
@@ -131,10 +132,22 @@ export const ProjectConfigSchema = z
     trackedWorkflows: z.array(TrackedWorkflowConfigSchema).default([]),
     securityControls: SecurityControlsConfigSchema,
     securityStatusPath: relativePath.default('.security/project-security-status.json'),
+    /** GitHub teams working on the project ("<org>/<team-slug>"): a view filter, not access control. */
+    teams: z.array(TeamRefSchema).max(50).default([]),
   })
   .strict()
   .superRefine((p, ctx) => {
     const dup = (values: string[]) => values.filter((v, i) => values.indexOf(v) !== i);
+    const teams = p.teams.map((t) => t.toLowerCase());
+    teams.forEach((t, i) => {
+      if (teams.indexOf(t) !== i) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['teams', i],
+          message: `duplicate team "${p.teams[i]}"`,
+        });
+      }
+    });
     for (const id of dup(p.components.map((c) => c.id))) {
       ctx.addIssue({
         code: 'custom',
@@ -248,7 +261,7 @@ export type DiscoveryConfig = z.infer<typeof DiscoveryConfigSchema>;
 
 /** config/catalog.yaml: catalog-wide settings (projects live in config/projects/*.yaml). */
 export const CatalogSettingsSchema = z
-  .object({ discovery: DiscoveryConfigSchema.optional() })
+  .object({ discovery: DiscoveryConfigSchema.optional(), teams: TeamsConfigSchema.optional() })
   .strict();
 
 export const CatalogSchema = z
@@ -270,11 +283,29 @@ export const CatalogSchema = z
         typeTopicPrefix: 'type-',
       },
     }),
+    teams: TeamsConfigSchema.default({ discovery: false, maxTeams: 300 }),
     /** May be empty when discovery is used to bootstrap the catalog. */
     projects: z.array(ProjectConfigSchema).default([]),
   })
   .strict()
   .superRefine((c, ctx) => {
+    // `?team=` links carry the slug only, so one slug must not name teams in two orgs.
+    const orgOf = new Map<string, string>();
+    c.projects.forEach((p, i) =>
+      p.teams.forEach((ref, j) => {
+        const slug = teamSlug(ref);
+        const org = ref.slice(0, ref.indexOf('/')).toLowerCase();
+        const seen = orgOf.get(slug);
+        if (seen === undefined) orgOf.set(slug, org);
+        else if (seen !== org) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['projects', i, 'teams', j],
+            message: `same team slug "${slug}" in ${seen} and ${org}: team links use the slug only`,
+          });
+        }
+      }),
+    );
     const ids = c.projects.map((p) => p.id);
     ids.forEach((id, i) => {
       if (ids.indexOf(id) !== i) {

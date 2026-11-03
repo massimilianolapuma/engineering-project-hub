@@ -77,6 +77,57 @@
         }
       },
       "additionalProperties": false
+    },
+    "teams": {
+      "type": "object",
+      "properties": {
+        "discovery": {
+          "default": false,
+          "type": "boolean"
+        },
+        "naming": {
+          "type": "object",
+          "properties": {
+            "pattern": {
+              "type": "string"
+            },
+            "roles": {
+              "minItems": 1,
+              "maxItems": 50,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]{0,49}$"
+              }
+            },
+            "lines": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]{0,49}$"
+              },
+              "additionalProperties": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              }
+            }
+          },
+          "required": [
+            "pattern",
+            "roles",
+            "lines"
+          ],
+          "additionalProperties": false
+        },
+        "maxTeams": {
+          "default": 300,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false
