@@ -49,6 +49,12 @@ describe('loadSitePolicies', () => {
     expect(policies.freshness.workflowRunStaleDays).toBe(14);
   });
 
+  it('exposes the outputs block (executive page on by default)', () => {
+    const { policies } = loadSitePolicies();
+    expect(policies.outputs.executive.enabled).toBe(true);
+    expect(policies.outputs.metrics.enabled).toBe(true);
+  });
+
   it('exposes the history retention defaults (120, 90) when the file omits the block', async () => {
     const file = join(dir, 'policies.yaml');
     await writeFile(file, minimal());

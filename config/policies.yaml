@@ -144,6 +144,17 @@ overall:
 #   caps: { red: 49, amber: 89, grey: 89 } # overall red ≤ 49; amber / grey ≤ 89
 #   minMeasuredRatio: 0.5
 
+# Read-only outputs built from the published data (docs/outputs.md). Optional: these are the
+# defaults applied when the block is omitted.
+outputs:
+  metrics:
+    enabled: true # false = no data/metrics/hub.prom (Prometheus text format)
+    maxBytes: 4194304 # 65536–16777216; over the cap the file drops detail, never fails the run
+  executive:
+    enabled: true # false = no executive summary page and no navigation entry
+    topRisks: 5 # 1–10 projects listed under "Top risks"
+    trendDays: 7 # 1–90; age of the comparison column of the trend table
+
 publication:
   # public: titles and rule ids of findings in private/internal repositories are withheld.
   # restricted: use only when the site is served behind access control.

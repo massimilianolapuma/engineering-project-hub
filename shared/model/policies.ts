@@ -380,6 +380,35 @@ export const PoliciesSchema = z
       })
       .strict()
       .prefault({}),
+    /**
+     * Read-only outputs built from the published data: the Prometheus metrics file and the
+     * executive summary page. Optional block.
+     */
+    outputs: z
+      .object({
+        metrics: z
+          .object({
+            /** false = no metrics/hub.prom. */
+            enabled: z.boolean().default(true),
+            /** Over the cap the file degrades (drops per-dimension, then per-project series). */
+            maxBytes: z.number().int().min(65_536).max(16_777_216).default(4_194_304),
+          })
+          .strict()
+          .prefault({}),
+        executive: z
+          .object({
+            /** false = no executive page and no navigation entry. */
+            enabled: z.boolean().default(true),
+            /** Projects listed under "Top risks". */
+            topRisks: z.number().int().min(1).max(10).default(5),
+            /** Age in days of the comparison column of the trend table. */
+            trendDays: z.number().int().min(1).max(90).default(7),
+          })
+          .strict()
+          .prefault({}),
+      })
+      .strict()
+      .prefault({}),
     publication: z
       .object({
         /**
