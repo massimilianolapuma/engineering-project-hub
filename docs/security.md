@@ -40,6 +40,7 @@
 - History and changes: `history.json` keeps, per project and collection, the statuses, score, open counts and error counts, plus the open critical/high alerts of the latest run (id, severity, component, repository, link), the monitored repositories and the versions. `changes.json` lists new alerts (with the same title the snapshot publishes), resolved alerts (id and link only), status changes, version moves and error keys. Both are strict, sanitised and gated like the snapshot.
 - Repository controls: per repository, the state of six checks (pass, fail, unknown, not applicable), the counts of workflow references (total, pinned, unpinned, unknown), the unpinned references (workflow file name, a `target` rebuilt from validated parts, and the `ref`, at most 20)\*, the reusable workflows with their referenced ref, the latest tag and a status (at most 20)\*, a summary of the branch rules (source, rule type names, required approvals) and an OpenSSF Scorecard summary (last analysis date, open alert count, names of the checks below the policy minimum)\*. Nothing else.
 - Discovery hints: only the three configured custom property keys and the matching topics, as short slug values, in the proposals of `catalog.json`.
+- Teams: the `org/slug` teams listed in the catalog (project snapshots, index, CSV). With team discovery (restricted audience only), `catalog.json` adds suggested team slugs with repository counts, the organisations read, the number of teams read and of secret teams skipped, and listed teams GitHub did not return.
 - CSV exports (`exports/*.csv`): statuses, counts, versions and ids built from the same validated data. No titles, rule ids, paths or links.
 
 \* Withheld for non-public repositories when `audience: public` (for the Scorecard summary only the check names; their count stays).
@@ -52,6 +53,8 @@ traces, environment variables, tokens, the App private key, workflow actors (not
 collected), and anything outside the snapshot schemas.
 
 For repository controls: workflow text, step names, `run:`, `with:` and `env:` values, expressions, raw rules payloads and every custom property other than the three configured keys (for example a property such as `cost-center` never reaches the output). Workflow files are untrusted input: they are read in memory, bounded (262 144 bytes per file, 200 references per file, 1 000 per repository, 30 files by default), parsed with an alias limit (a file that reuses an anchor more than about 100 times is unparsable, so its repository's pinning is unknown) and without printing YAML warnings, which would quote the source in the log, and reduced to validated references before anything else happens. An identifier longer than its published bound (a `target` over 200 characters; a `ref`, tag or workflow file name over 100) is dropped as unknown and never truncated, so a single hostile workflow file or tag cannot stop a publication.
+
+For teams: team names, descriptions, members, member counts, parent teams, and anything about a secret team except that it was counted.
 
 For history and exports: no titles of resolved alerts, no raw payloads, no secret values and
 no project that is no longer in the catalog (entries are pruned to the current catalog).
@@ -112,6 +115,18 @@ only chooses what to count.
   | OpenSSF Scorecard analyses                                | code scanning analyses (tool `Scorecard`)                | **Code scanning alerts: read**                                     |
   | Classic branch protection (optional)                      | `GET /repos/{owner}/{repo}/branches/{branch}/protection` | **Administration: read**, off by default (`readClassicProtection`) |
   - The organisation-wide property endpoint (`GET /orgs/{org}/properties/values`) needs the organisation permission **Custom properties: read**, so it is **not used**.
+
+- **Team discovery** (optional, `teams.discovery`; off for `audience: public`). Checked on
+  2026-11-03 on GitHub's
+  [permissions-required-for-github-apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps)
+  page:
+
+  | Data                           | Endpoint                                  | Permission                     |
+  | ------------------------------ | ----------------------------------------- | ------------------------------ |
+  | Teams of an organisation       | `GET /orgs/{org}/teams`                   | organisation **Members: read** |
+  | Repositories a team can access | `GET /orgs/{org}/teams/{team_slug}/repos` | organisation **Members: read** |
+  - Members: read also allows listing team members; the hub never calls those endpoints. The team's access level comes from `role_name`, else from the `permissions` object of the repository list; without either it is unknown and never counts as write.
+  - Without the permission, team discovery reports `not-authorised` and the run goes on.
   - The hub never calls a write endpoint, and never calls the classic protection endpoint unless `readClassicProtection: true`.
   - Observed meaning of `protected` on the branch call: GitHub documents it as "protected by branch protections or rulesets" for List branches; it was not verified against a live repository. A rule that the rules API does not report while `protected` is `true` is therefore `unknown`, never a fail and never a pass.
   - A 403 is `not-authorised`; an ambiguous 404 is `unknown`; a 404 on `.github/workflows` means no workflows. Referenced repositories that are not public are treated as not visible (and never published) unless `publication.audience: restricted`.
@@ -223,6 +238,11 @@ repository is private. Private (access-controlled) Pages need GitHub Enterprise 
 | Some monitored repositories are private, Page public | Keep `audience: public` (details withheld). Remember that repository names, counts, states and versions are still published. If even that is confidential, do not use a public Page. |
 | Real data behind a login (recommended)               | Cloudflare Pages + Access with a private deploy repository: [protected-hosting.md](protected-hosting.md). `audience: restricted`; HTTP security headers from `public/_headers`.      |
 | Page access-controlled (private Pages)               | `audience: restricted` is acceptable. Everyone who can open the site sees every project's details, so the portal applies **no per-project or per-alert authorisation**.              |
+
+**Teams are not access control.** The Portfolio team filter (`?team=`) and the teams on a
+project only change what a person looks at. Anyone who can open the site sees every project,
+whatever team they belong to. Hiding projects per person would need a server component that
+knows who the viewer is (see ADR 0010).
 
 **Restricted portal and sanitised view.** A restricted portal shows full sanitised detail
 to an audience that is entitled to all monitored projects. A sanitised public or executive

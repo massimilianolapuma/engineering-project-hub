@@ -72,6 +72,52 @@ and shown in the catalog editor (`/catalog/`):
   directory listings, the workspace manifests and the workflows list. No new GitHub App
   permission is needed (Metadata, Contents, Actions).
 
+### `config/catalog.yaml`: teams
+
+```yaml
+teams:
+  discovery: true # read organisation teams (Members: read); forced off for a public audience
+  naming: # optional: how project teams are named
+    pattern: '{line}-{project}-{role}' # {line}, {project}, {role} once each, separated by "-"
+    roles: [dev, ops] # known role suffixes
+    lines:
+      pay: Payments # business line key → business unit shown in the hub
+  maxTeams: 300 # API budget: teams read per run, across organisations
+```
+
+A project lists its GitHub teams in `teams` (see the next section). The Portfolio then
+filters by team, so each lead can bookmark their own view:
+
+- `/?team=pay-project-alpha-dev&team=platform` shows the projects of **either** team (OR); the
+  team filter combines with the other filters (AND), and the link can be shared.
+- The link carries the team **slug** only, so one slug must not name teams in two
+  organisations: the catalog check fails on `same team slug "<slug>" in <org> and <org>`.
+- The Team control groups teams by business line when `naming` parses them (`pay-project-alpha-dev` →
+  line `pay`, project `project-alpha`, role `dev`); the other teams are **cross teams**. A name
+  that only half matches (unknown line or role, no project left) is a cross team.
+- A link value that no project uses shows as a "not in the catalog" Label and matches
+  nothing. Projects without teams never match a team filter; the results line says how many
+  it hid.
+- **The team filter is a view, not access control:** everyone who can open the site sees every
+  project. See [security.md](security.md).
+
+**Team discovery** (`teams.discovery: true`) reads, once per run, the teams of every
+organisation that owns a catalog repository (plus `discovery.owners` when repository discovery
+is on), and the repositories each team can access. It works whether repository discovery is on
+or off. It only proposes, in the catalog editor:
+
+- **By access:** a team with write, maintain or admin access to at least one of the project's
+  repositories. Read and triage access do not count.
+- **By name:** a team whose name parses to the project id, when it has no write access.
+- Teams already listed are never proposed. A listed team that a fully read organisation does not
+  return is flagged as **not found**.
+- **Secret teams are skipped** before anything is stored and only counted. Only team slugs,
+  repository counts and the access level are used; team names, descriptions and members are
+  never stored.
+- A missing permission gives `not-authorised` and a limit hit or a failed call gives `partial`;
+  neither fails the run. With `publication.audience: public` team discovery is off and
+  `catalog.json` has `teams: null`.
+
 ### `config/projects/<id>.yaml`: one project
 
 ```yaml
@@ -80,6 +126,7 @@ name: Project Alpha
 description: Free text (≤ 500 chars)
 businessUnit: Payments
 lifecycle: production # experimental | development | production | maintenance | deprecated
+teams: [example-org/pay-project-alpha-dev, example-org/platform] # optional: GitHub teams "<org>/<team-slug>" (a view filter)
 
 coordinator:
   repository: example-org/project-alpha-coordinator # owner/name
@@ -294,6 +341,12 @@ Two panels start from the last collector run:
 - **Suggestions** lists the coordinator submodules that no component links to; _Add as
   component_ creates a component linked by its configured `submodulePath`, with the
   repository prefilled when known.
+
+The project form has a **Teams** field: the current teams as removable Labels, an input for
+`org/team-slug`, and the team discovery suggestions with their evidence ("Write access to 1 of
+5 repositories of this project", or the team name) and an _Add_ button. One line says why
+there are no suggestions: discovery off, not authorised, partially read, or a listed team
+GitHub did not return.
 
 The page stays static and read-only: it is built from `public/data/catalog.json` (written
 by the collector, it never reads `config/` directly) and validates live in the browser with
@@ -759,6 +812,10 @@ to compare for the checks.
 From v0.9.0 the history schema is `1.2` (`1.0` and `1.1` are still read) and the snapshot schema
 is `1.6`. A history point may carry `risk` (`overdue` and `accepted` counts); a point without it
 was written by an older collector and the trend table says "not tracked", never 0.
+
+From v0.11.0 the snapshot schema is `1.7`: project snapshots and index entries carry `teams`,
+`catalog.json` carries the catalog's `teams` settings and a `teams` result (null when team
+discovery is off), and `portfolio.csv` ends with a `teams` column.
 `changes.json` keeps schema `1.0` and gains the optional lists `newlyOverdue` (counted critical
 and high alerts whose SLA fell due since the previous collection) and `expiredExceptions`
 (exceptions whose last day ended since then), with totals; both are empty when the basis is not a
@@ -798,7 +855,7 @@ row. A text cell that starts with `=`, `+`, `-`, `@`, TAB or CR gets a leading `
 spreadsheet never runs it as a formula. Numbers are never prefixed. Excel with a `;` list
 separator: use Data, From Text/CSV.
 
-- `portfolio.csv`: `project_id, project_name, business_unit, lifecycle, overall, score, score_measured, score_required, delivery, version, security, controls_coverage, controls_coverage_percent, governance, quality, quality_percent, open_critical, open_high, open_medium, open_low, counts_complete, open_secret_alerts, failed_critical_workflows, collection_errors, collected_at, previous_overall, previous_score, previous_collected_at, controls_passed, controls_failed, controls_unknown, overdue, overdue_critical_high, accepted, exception_issues`. The `previous_*` columns are `n/a` when there is no previous collection.
+- `portfolio.csv`: `project_id, project_name, business_unit, lifecycle, overall, score, score_measured, score_required, delivery, version, security, controls_coverage, controls_coverage_percent, governance, quality, quality_percent, open_critical, open_high, open_medium, open_low, counts_complete, open_secret_alerts, failed_critical_workflows, collection_errors, collected_at, previous_overall, previous_score, previous_collected_at, controls_passed, controls_failed, controls_unknown, overdue, overdue_critical_high, accepted, exception_issues, teams`. The `previous_*` columns are `n/a` when there is no previous collection. `teams` lists the project's teams (`org/slug`) joined with `;`, empty when it has none.
 - `findings-summary.csv`: `project_id, component_id, repository, open_critical, open_high, open_medium, open_low, open_informational, open_unknown, sources_complete, overdue, accepted`. `overdue` and `accepted` count that repository's findings (`unknown` when SLAs are off or no alert source was readable). All counts are `unknown` when no alert source was readable; when only some were, the counts are a lower bound and `sources_complete` is `false`.
 - `versions.csv`: `row_type (coordinator|component|environment), project_id, item_id, item_name, repository, version, version_source, declared_version, latest_release, drift, manifest_consistency, pin_status, environment_status`.
 

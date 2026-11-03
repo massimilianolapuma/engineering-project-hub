@@ -147,7 +147,7 @@ never restores: it starts from `fixtures/history/history.json`.
   critical workflows, error counts, unresolved submodules and the project `score`.
 
 `history.json` (`kind: hub-history`) and `changes.json` (`kind: hub-changes`) are versioned
-separately (history `1.2`, changes `1.0`) from the snapshot (`1.6`), so history survives a snapshot schema
+separately (history `1.2`, changes `1.0`) from the snapshot (`1.7`), so history survives a snapshot schema
 bump and an existing `public/data` stays readable. `history.json` has one compact point per
 project and collection plus the baseline of the latest run; `changes.json` is the diff
 the site renders. Unknown is never 0: a null score is a gap.
@@ -185,7 +185,7 @@ Normalised enums:
 | Error class      | `not-found`, `not-authorised`, `not-configured`, `rate-limited`, `invalid-data`, `error`                                                 |
 
 Generated JSON Schemas are in `config/schema/`. The site supports the snapshot versions
-listed in `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS` (currently `1.6`).
+listed in `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS` (currently `1.7`).
 
 ## Health rules (MVP policies)
 

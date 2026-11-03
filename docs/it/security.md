@@ -42,6 +42,7 @@
 - Storico e cambiamenti: `history.json` conserva, per progetto e raccolta, stati, punteggio, conteggi aperti e conteggi di errori, più gli alert critici/alti aperti dell'ultima esecuzione (id, severità, componente, repository, link), i repository monitorati e le versioni. `changes.json` elenca gli alert nuovi (con lo stesso titolo pubblicato dallo snapshot), gli alert risolti (solo id e link), i cambi di stato, le versioni cambiate e le chiavi degli errori. Entrambi sono strict, sanitizzati e controllati dal gate come lo snapshot.
 - Controlli repository: per repository, lo stato di sei controlli (superato, fallito, sconosciuto, non applicabile), i conteggi dei riferimenti nei workflow (totale, fissati, non fissati, sconosciuti), i riferimenti non fissati (nome del file di workflow, una `target` ricostruita da parti validate e il `ref`, al massimo 20)\*, i workflow riutilizzabili con il ref referenziato, l'ultimo tag e uno stato (al massimo 20)\*, un riepilogo delle regole del branch (origine, nomi dei tipi di regola, approvazioni richieste) e un riepilogo OpenSSF Scorecard (data dell'ultima analisi, numero di alert aperti, nomi dei check sotto il minimo della policy)\*. Nient'altro.
 - Suggerimenti di scoperta: solo le tre chiavi di custom property configurate e i topic corrispondenti, come brevi valori slug, nelle proposte di `catalog.json`.
+- Team: i team `org/slug` elencati nel catalogo (snapshot di progetto, indice, CSV). Con la discovery dei team (solo pubblico riservato), `catalog.json` aggiunge gli slug dei team suggeriti con i conteggi dei repository, le organizzazioni lette, il numero di team letti e di team segreti ignorati, e i team elencati che GitHub non ha restituito.
 - Esportazioni CSV (`exports/*.csv`): stati, conteggi, versioni e id costruiti dagli stessi dati validati. Nessun titolo, id di regola, path o link.
 
 \* Omessi per i repository non pubblici quando `audience: public` (per il riepilogo Scorecard solo i nomi dei check; il loro numero resta).
@@ -54,6 +55,8 @@ grezzi, stack trace, variabili d'ambiente, token, la chiave privata della App, g
 dei workflow (non raccolti) e tutto ciò che è al di fuori degli schemi degli snapshot.
 
 Per i controlli repository: testo dei workflow, nomi degli step, valori di `run:`, `with:` ed `env:`, espressioni, payload grezzi delle regole e ogni custom property diversa dalle tre chiavi configurate (per esempio una property come `cost-center` non arriva mai all'output). I file dei workflow sono input non attendibile: vengono letti in memoria, limitati (262 144 byte per file, 200 riferimenti per file, 1 000 per repository, 30 file per impostazione predefinita), analizzati con un limite sugli alias (un file che riusa un'ancora più di circa 100 volte non è analizzabile, quindi il pinning del suo repository è sconosciuto) e senza stampare gli avvisi YAML, che citerebbero il sorgente nel log, e ridotti a riferimenti validati prima di qualsiasi altra operazione. Un identificativo più lungo del suo limite pubblicato (un `target` oltre 200 caratteri; un `ref`, un tag o un nome di file di workflow oltre 100) si scarta come sconosciuto e non viene mai troncato, così un solo file di workflow o tag ostile non può fermare una pubblicazione.
+
+Per i team: nomi, descrizioni, membri, numero di membri e team padre dei team, e nulla di un team segreto tranne il fatto che è stato contato.
 
 Per storico ed esportazioni: nessun titolo degli alert risolti, nessun payload grezzo, nessun
 valore di secret e nessun progetto che non è più nel catalogo (le voci vengono ridotte al
@@ -114,6 +117,17 @@ l'hub sceglie solo cosa contare.
   | Analisi OpenSSF Scorecard                                        | analisi di code scanning (tool `Scorecard`)              | **Code scanning alerts: read**                                                          |
   | Protezione classica dei branch (opzionale)                       | `GET /repos/{owner}/{repo}/branches/{branch}/protection` | **Administration: read**, spenta per impostazione predefinita (`readClassicProtection`) |
   - L'endpoint delle property a livello di organizzazione (`GET /orgs/{org}/properties/values`) richiede il permesso di organizzazione **Custom properties: read**, quindi **non viene usato**.
+
+- **Discovery dei team** (opzionale, `teams.discovery`; disattivata con `audience: public`).
+  Verificato il 2026-11-03 sulla pagina GitHub
+  [permissions-required-for-github-apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps):
+
+  | Dato                            | Endpoint                                  | Permesso                            |
+  | ------------------------------- | ----------------------------------------- | ----------------------------------- |
+  | Team di un'organizzazione       | `GET /orgs/{org}/teams`                   | di organizzazione **Members: read** |
+  | Repository a cui un team accede | `GET /orgs/{org}/teams/{team_slug}/repos` | di organizzazione **Members: read** |
+  - Members: read permette anche di elencare i membri dei team; l'hub non chiama mai quegli endpoint. Il livello di accesso del team viene da `role_name`, altrimenti dall'oggetto `permissions` dell'elenco dei repository; senza nessuno dei due è sconosciuto e non conta mai come scrittura.
+  - Senza il permesso, la discovery dei team segnala `not-authorised` e l'esecuzione prosegue.
   - L'hub non chiama mai un endpoint di scrittura e non chiama mai l'endpoint di protezione classica se non con `readClassicProtection: true`.
   - Significato osservato di `protected` nella chiamata del branch: GitHub lo documenta come "protetto da branch protection o ruleset" per List branches; non è stato verificato su un repository reale. Una regola che l'API non riporta mentre `protected` è `true` è quindi `unknown`, mai fallita e mai superata.
   - Un 403 è `not-authorised`; un 404 ambiguo è `unknown`; un 404 su `.github/workflows` significa nessun workflow. I repository referenziati non pubblici sono trattati come non visibili (e mai pubblicati) salvo `publication.audience: restricted`.
@@ -230,6 +244,11 @@ accessi) richiedono GitHub Enterprise Cloud. **Verifica il tuo piano effettivo.*
 | Alcuni repository monitorati sono privati, la Page è pubblica | Mantieni `audience: public` (dettagli omessi). Ricorda che nomi dei repository, conteggi, stati e versioni vengono comunque pubblicati. Se anche questo è riservato, non usare una Page pubblica. |
 | Dati reali dietro login (consigliato)                         | Cloudflare Pages + Access con un repository di deploy privato: [protected-hosting.md](protected-hosting.md). `audience: restricted`; header HTTP di sicurezza da `public/_headers`.               |
 | Page con controllo degli accessi (Pages private)              | `audience: restricted` è accettabile. Chiunque possa aprire il sito vede i dettagli di tutti i progetti, quindi il portale **non applica alcuna autorizzazione per progetto o per alert**.        |
+
+**I team non sono un controllo degli accessi.** Il filtro team del Portfolio (`?team=`) e i team di
+un progetto cambiano solo ciò che una persona guarda. Chiunque può aprire il sito vede tutti i
+progetti, a qualunque team appartenga. Nascondere progetti per persona richiederebbe un componente
+server che sa chi sta guardando (vedi ADR 0010).
 
 **Portale riservato e vista sanitizzata.** Un portale riservato mostra il dettaglio
 sanitizzato completo a un pubblico autorizzato su tutti i progetti monitorati. Una vista
