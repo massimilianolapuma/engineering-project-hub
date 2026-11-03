@@ -45,7 +45,22 @@
 
 ## Mockup decisions
 
-_Filled in at the end of Task 0 with every approved deviation from this plan (icon names, layout of the environments path, score badge look, nav icons, brand mark). Later tasks read this section first._
+Approved by the owner on 2026-11-03 (12 artboards: the 9 pages in light, Portfolio and Project in dark, Portfolio at 390px). Later tasks read this section first; it wins over the defaults below.
+
+- **Brand mark:** Octicon `stack` at 24px next to the app name (overrides the default `project`); the favicon uses the same path.
+- **Header:** one light band on `--bgColor-muted` holding brand row and UnderlineNav (as on a current github.com repository page), not a dark `AppHeader`. Tools on the right: "How to read" as an invisible button with `question`, theme button with `sun` and its label, EN/IT as a two-button segmented control.
+- **UnderlineNav:** icons per `NAV_ICON` unchanged (`apps`, `history`, `shield`, `tag`, `workflow`, `database`, `book`); active item is semibold with a 2px `--underlineNav-borderColor-active` underline. No Counters in the nav.
+- **Run bar:** under the nav, 12px muted text: source as a `Label` (attention tone for mock data), last run, authentication.
+- **Status icons:** `check-circle-fill`, `alert-fill`, `x-circle-fill` in the state's `fgColor`; unknown is `question` in `--fgColor-muted`.
+- **Control symbols:** `SYMBOL_ICON` unchanged. Each symbol is a 24×24 chip with radius 3px: tone background `bgColor-*-muted` and tone `fgColor-*`; `blind` has no fill and a 1.5px dashed `--borderColor-emphasis` outline; `na` is muted with no fill.
+- **Dimension bars:** 10px wide, 4px gap, bottom-aligned; critical 20px, attention 13px, healthy 7px, unknown 20px dashed outline with no fill (the v0.9.0 height rule, critical tallest).
+- **Score badge:** value at `--text-title-size-medium` semibold with tabular numbers, "/100" small and muted; 32px on the Project page with "measured n of 6" under it; no score → `Label` unknown "— insufficient data".
+- **Environments path:** bordered steps (name, mono version, state) joined by `arrow-right`; a behind step uses attention muted background and border with `alert` + "behind"; an unknown step is dashed.
+- **Containers:** lists and sections are Primer `Box` (muted header, rows split by `--borderColor-muted`); an unknown project's box is dashed (`Box--unknown`); secondary sections are `<details>` with a Box header summary, `chevron-right` and a `Counter`.
+- **Portfolio filters:** status filter is a segmented control with a `Counter` per state; search input and sort button on the right.
+- **Primary action:** only the Catalog editor's "Propose on GitHub" is a green `button-primary` (with `git-pull-request`); every other button is default or invisible.
+- **Charts:** score sparklines (What changed) use a muted line, the last point coloured by state, and gaps for unmeasured collections, never 0.
+- **Footer:** app name and tagline left, "Not affiliated with GitHub · built with Primer" right.
 
 ---
 
