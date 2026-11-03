@@ -10,6 +10,8 @@ import {
   type VersionSource,
 } from '@model/catalog';
 import { CONTROL_IDS, type ControlId, type RepositoryCheckId } from '@model/enums';
+import type { TeamsResult } from '@model/snapshot';
+import { TEAM_REF } from '@model/teams';
 
 /*
  * Pure logic of the catalog editor (no DOM): editable draft model, conversion to the compact
@@ -56,6 +58,8 @@ export interface DraftProject {
   description: string;
   businessUnit: string;
   lifecycle: string;
+  /** GitHub teams as "<org>/<team-slug>" refs. */
+  teams: string[];
   coordinator: {
     repository: string;
     defaultBranch: string;
@@ -92,6 +96,7 @@ export function projectToDraft(p: ProjectConfig): DraftProject {
     description: p.description,
     businessUnit: p.businessUnit,
     lifecycle: p.lifecycle,
+    teams: [...p.teams],
     coordinator: {
       repository: p.coordinator.repository,
       defaultBranch: orEmpty(p.coordinator.defaultBranch),
@@ -169,6 +174,7 @@ export function toProjectInput(p: DraftProject): Record<string, unknown> {
     description: opt(p.description),
     businessUnit: t(p.businessUnit),
     lifecycle: p.lifecycle,
+    teams: optList(p.teams.map(t)),
     coordinator: compact({
       repository: t(p.coordinator.repository),
       defaultBranch: opt(p.coordinator.defaultBranch),
@@ -370,6 +376,7 @@ export function emptyProject(taken: Iterable<string> = []): DraftProject {
     description: '',
     businessUnit: '',
     lifecycle: 'development',
+    teams: [],
     coordinator: {
       repository: '',
       defaultBranch: '',
@@ -386,6 +393,67 @@ export function emptyProject(taken: Iterable<string> = []): DraftProject {
     ) as Record<ControlId, boolean>,
     securityStatusPath: '',
   };
+}
+
+const TEAM_REF_MESSAGE = 'must be "org/team-slug" (the slug in lowercase)';
+
+/**
+ * Adds a GitHub team ("org/team-slug") to the project. Returns an issue on `teams` for a value
+ * that is not a team reference; a team already listed (any case) is ignored.
+ */
+export function addTeam(project: DraftProject, ref: string): EditorIssue | null {
+  const value = ref.trim();
+  if (!TEAM_REF.test(value)) {
+    return {
+      path: ['teams'],
+      key: 'teams',
+      message: TEAM_REF_MESSAGE,
+      text: `teams: ${TEAM_REF_MESSAGE}`,
+    };
+  }
+  if (!project.teams.some((t) => t.toLowerCase() === value.toLowerCase()))
+    project.teams.push(value);
+  return null;
+}
+
+export function removeTeam(project: DraftProject, ref: string): void {
+  project.teams = project.teams.filter((t) => t !== ref);
+}
+
+/** Team discovery suggestions for one project, without the teams the draft already lists. */
+export function teamSuggestions(
+  result: TeamsResult | null,
+  projectId: string,
+  project: DraftProject,
+): TeamsResult['suggestions'] {
+  const present = new Set(project.teams.map((t) => t.toLowerCase()));
+  return (result?.suggestions ?? []).filter(
+    (s) => s.projectId === projectId && !present.has(s.team.toLowerCase()),
+  );
+}
+
+/** One line of the Teams field explaining the team discovery result for a project. */
+export type TeamStatusLine =
+  { kind: 'off' | 'notAuthorised' | 'limit' | 'partial' } | { kind: 'notFound'; team: string };
+
+/**
+ * Why suggestions may be missing or incomplete: discovery off (null), not authorised, the
+ * maxTeams limit, a failed call, and each listed team GitHub did not return.
+ */
+export function teamStatus(
+  result: TeamsResult | null,
+  projectId: string,
+  teams: string[],
+): TeamStatusLine[] {
+  if (!result) return [{ kind: 'off' }];
+  if (result.status === 'not-authorised') return [{ kind: 'notAuthorised' }];
+  const lines: TeamStatusLine[] = [];
+  if (result.limitReached) lines.push({ kind: 'limit' });
+  if (result.errors.length > 0) lines.push({ kind: 'partial' });
+  for (const n of result.notFound)
+    if (n.projectId === projectId && teams.includes(n.team))
+      lines.push({ kind: 'notFound', team: n.team });
+  return lines;
 }
 
 /** True when a component of the project already points at this submodule path. */

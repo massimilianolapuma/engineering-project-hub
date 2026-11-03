@@ -9,6 +9,10 @@ name: Project Alpha
 description: Synthetic multi-repository payments platform used for the demo.
 businessUnit: Payments
 lifecycle: production
+# GitHub teams (SYNTHETIC): a Portfolio view filter (?team=<slug>), not access control.
+teams:
+  - example-org/pay-project-alpha-dev
+  - example-org/platform
 
 coordinator:
   repository: example-org/project-alpha-coordinator

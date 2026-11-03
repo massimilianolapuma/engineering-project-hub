@@ -265,6 +265,7 @@ function baseProject(
       notApplicableChecks: [],
     },
     environments: [],
+    teams: [],
     securityControls: {
       codeScanning: { required: true },
       secretScanning: { required: true },

@@ -109,6 +109,7 @@ describe('export rows (golden data)', () => {
       'overdue_critical_high',
       'accepted',
       'exception_issues',
+      'teams',
     ]);
     expect(FINDINGS_HEADERS).toEqual([
       'project_id',
@@ -149,7 +150,7 @@ describe('export rows (golden data)', () => {
   });
 
   it('portfolio CSV carries the repository control counts before the risk columns: beta 5, 7, 8', () => {
-    expect(PORTFOLIO_HEADERS.slice(-7, -4)).toEqual([
+    expect(PORTFOLIO_HEADERS.slice(-8, -5)).toEqual([
       'controls_passed',
       'controls_failed',
       'controls_unknown',
@@ -159,8 +160,17 @@ describe('export rows (golden data)', () => {
     expect([beta.controls_passed, beta.controls_failed, beta.controls_unknown]).toEqual([5, 7, 8]);
   });
 
-  it('portfolio CSV ends with the risk columns: platform 1,1,1,1 and gamma unknown,unknown,unknown,0', () => {
-    expect(PORTFOLIO_HEADERS.slice(-4)).toEqual([
+  it('portfolio CSV ends with teams, joined with ";": alpha pay-project-alpha-dev;platform, gamma empty', () => {
+    expect(PORTFOLIO_HEADERS.at(-1)).toBe('teams');
+    const rows = asObjects(PORTFOLIO_HEADERS, portfolioRows(golden(), history()));
+    expect(rows.find((r) => r.project_id === 'project-alpha')!.teams).toBe(
+      'example-org/pay-project-alpha-dev;example-org/platform',
+    );
+    expect(rows.find((r) => r.project_id === 'project-gamma')!.teams).toBe('');
+  });
+
+  it('portfolio CSV has the risk columns before teams: platform 1,1,1,1 and gamma unknown,unknown,unknown,0', () => {
+    expect(PORTFOLIO_HEADERS.slice(-5, -1)).toEqual([
       'overdue',
       'overdue_critical_high',
       'accepted',
@@ -169,9 +179,13 @@ describe('export rows (golden data)', () => {
     const csv = toCsv(PORTFOLIO_HEADERS, portfolioRows(golden(), history()))
       .replace('\uFEFF', '')
       .split('\r\n');
-    expect(csv.find((l) => l.startsWith('platform,'))!.endsWith(',1,1,1,1')).toBe(true);
     expect(
-      csv.find((l) => l.startsWith('project-gamma,'))!.endsWith(',unknown,unknown,unknown,0'),
+      csv
+        .find((l) => l.startsWith('platform,'))!
+        .endsWith(',1,1,1,1,example-org/platform;example-org/security'),
+    ).toBe(true);
+    expect(
+      csv.find((l) => l.startsWith('project-gamma,'))!.endsWith(',unknown,unknown,unknown,0,'),
     ).toBe(true);
   });
 

@@ -34,6 +34,7 @@ import { displayVersion } from '../../../lib/format';
 import { pageContext } from '../../../lib/page';
 import { loadSitePolicies } from '../../../lib/policies';
 import { riskLine, sumKnown } from '../../../lib/risk-line';
+import { teamSlug } from '@model/teams';
 import { href, localeParams } from '../../../lib/routes';
 import { driftTone, severityTone, workflowTone, type Tone } from '../../../lib/tones';
 
@@ -334,6 +335,22 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
             <ExtLink href={coordRepo.url} i18n={i18n}>
               <code>{coordRepo.name}</code>
             </ExtLink>
+            {s.project.teams.length > 0 && (
+              <>
+                {' '}
+                · {d.project.teams}{' '}
+                <span class="phead__teams">
+                  {[...new Set(s.project.teams.map(teamSlug))].sort().map((slug) => (
+                    <a
+                      class="pill teamlabel"
+                      href={`${href(locale, 'portfolio')}?team=${encodeURIComponent(slug)}`}
+                    >
+                      {slug}
+                    </a>
+                  ))}
+                </span>
+              </>
+            )}
           </p>
           <p class="phead__desc">{s.project.description}</p>
         </div>
@@ -924,6 +941,12 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
     margin: 0;
     color: var(--fgColor-muted);
     overflow-wrap: anywhere;
+  }
+  .phead__teams {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--base-size-4);
+    vertical-align: middle;
   }
   .phead__score {
     display: flex;

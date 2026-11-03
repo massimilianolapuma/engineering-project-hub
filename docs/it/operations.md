@@ -78,6 +78,16 @@ validate:snapshots`.
 | `invalid-data`   | Manifest o file di stato malformato, oppure che fa riferimento a un altro repository            | Correggi il file nel repository monitorato.                                       |
 | `error`          | 5xx o rete                                                                                      | Di solito transitorio. L'esecuzione successiva ritenta.                           |
 
+La **discovery dei team** ha un suo stato in `catalog.json` (`teams.status`) e nel log del collector
+(`Teams: <stato>, <n> read, <n> suggestion(s), <n> not found`):
+
+| Stato            | Significato                                                                   | Azione                                                                                                    |
+| ---------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `ok`             | Tutte le organizzazioni e i team sono stati letti.                            | Nessuna.                                                                                                  |
+| `partial`        | Una chiamata di team o organizzazione è fallita, o si è raggiunto `maxTeams`. | Controlla `teams.errors`; alza `maxTeams` se serve. Con il limite raggiunto "non trovato" non si calcola. |
+| `not-authorised` | Non è stato possibile leggere i team di nessuna organizzazione.               | Concedi all'App il permesso di organizzazione **Members: read**, oppure imposta `teams.discovery: false`. |
+| `teams: null`    | Discovery dei team disattivata, o pubblico esterno.                           | Atteso per un sito pubblico.                                                                              |
+
 ## Rollback
 
 - **Sito**: riesegui una precedente esecuzione riuscita di `deploy-pages` (Actions → run →

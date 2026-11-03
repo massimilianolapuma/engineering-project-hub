@@ -73,6 +73,53 @@ in `catalog.json` e mostrati nell'editor del catalogo (`/it/catalog/`):
   delle cartelle di workspace, manifest di workspace ed elenco dei workflow. Non serve
   nessun nuovo permesso della GitHub App (Metadata, Contents, Actions).
 
+### `config/catalog.yaml`: team
+
+```yaml
+teams:
+  discovery: true # legge i team delle organizzazioni (Members: read); disattivata con pubblico esterno
+  naming: # opzionale: come si chiamano i team di progetto
+    pattern: '{line}-{project}-{role}' # {line}, {project}, {role} una volta ciascuno, separati da "-"
+    roles: [dev, ops] # suffissi di ruolo noti
+    lines:
+      pay: Payments # chiave della linea di business → business unit mostrata nell'hub
+  maxTeams: 300 # budget API: team letti per esecuzione, su tutte le organizzazioni
+```
+
+Un progetto elenca i suoi team GitHub in `teams` (vedi la sezione successiva). Il Portfolio filtra
+poi per team, così ogni responsabile può salvare nei preferiti la propria vista:
+
+- `/?team=pay-project-alpha-dev&team=platform` mostra i progetti di **uno qualsiasi** dei team (OR);
+  il filtro team si combina con gli altri filtri (AND) e il link si può condividere.
+- Il link porta solo lo **slug** del team, quindi uno slug non può indicare team di due
+  organizzazioni: il controllo del catalogo fallisce con `same team slug "<slug>" in <org> and <org>`.
+- Il controllo Team raggruppa i team per linea di business quando `naming` li riconosce
+  (`pay-project-alpha-dev` → linea `pay`, progetto `project-alpha`, ruolo `dev`); gli altri sono
+  **team trasversali**. Un nome che corrisponde solo in parte (linea o ruolo sconosciuti, nessun
+  progetto) è un team trasversale.
+- Un valore del link che nessun progetto usa appare come Label "non nel catalogo" e non
+  corrisponde a nulla. I progetti senza team non corrispondono mai a un filtro team; la riga dei
+  risultati dice quanti ne ha nascosti.
+- **Il filtro team è una vista, non un controllo degli accessi:** chiunque può aprire il sito vede
+  tutti i progetti. Vedi [security.md](security.md).
+
+La **discovery dei team** (`teams.discovery: true`) legge, una volta per esecuzione, i team di ogni
+organizzazione che possiede un repository del catalogo (più `discovery.owners` quando la discovery
+dei repository è attiva) e i repository a cui ogni team accede. Funziona con la discovery dei
+repository attiva o no. Si limita a proporre, nell'editor del catalogo:
+
+- **Per accesso:** un team con accesso write, maintain o admin ad almeno un repository del progetto.
+  Gli accessi read e triage non contano.
+- **Per nome:** un team il cui nome indica l'id del progetto, quando non ha accesso in scrittura.
+- I team già elencati non vengono mai proposti. Un team elencato che un'organizzazione letta per
+  intero non restituisce viene segnalato come **non trovato**.
+- **I team segreti vengono ignorati** prima di salvare qualsiasi cosa e solo contati. Si usano solo
+  slug dei team, conteggi dei repository e livello di accesso; nomi, descrizioni e membri dei team
+  non vengono mai salvati.
+- Un permesso mancante dà `not-authorised`, un limite raggiunto o una chiamata fallita danno
+  `partial`; nessuno dei due fa fallire l'esecuzione. Con `publication.audience: public` la
+  discovery dei team è disattivata e `catalog.json` ha `teams: null`.
+
 ### `config/projects/<id>.yaml`: un progetto
 
 ```yaml
@@ -81,6 +128,7 @@ name: Project Alpha
 description: Free text (≤ 500 chars)
 businessUnit: Payments
 lifecycle: production # experimental | development | production | maintenance | deprecated
+teams: [example-org/pay-project-alpha-dev, example-org/platform] # opzionale: team GitHub "<org>/<team-slug>" (un filtro di vista)
 
 coordinator:
   repository: example-org/project-alpha-coordinator # owner/name
@@ -293,6 +341,12 @@ Due pannelli partono dall'ultima esecuzione del collector:
 - **Suggerimenti** elenca i submodule del coordinator non collegati ad alcun componente;
   _Aggiungi come componente_ crea un componente collegato tramite il suo `submodulePath`
   configurato, con il repository precompilato quando noto.
+
+Il modulo del progetto ha un campo **Team**: i team attuali come Label rimovibili, un campo per
+`org/team-slug` e i suggerimenti della discovery dei team con la loro evidenza ("Accesso in
+scrittura a 1 di 5 repository del progetto", oppure il nome del team) e un pulsante _Aggiungi_. Una
+riga dice perché non ci sono suggerimenti: discovery disattivata, non autorizzata, letta in parte,
+oppure un team elencato che GitHub non ha restituito.
 
 La pagina resta statica e in sola lettura: è generata da `public/data/catalog.json` (scritto
 dal collector, non legge mai direttamente `config/`) e valida in tempo reale nel browser con
@@ -777,6 +831,10 @@ critici e alti contati il cui SLA è scaduto dalla raccolta precedente) ed `expi
 è un vero confronto. Un'eccezione non crea mai alert "nuovi" o "risolti" in "Cosa è cambiato": un
 alert accettato è ancora aperto su GitHub e la baseline dello storico lo vede ancora come aperto.
 
+Dalla v0.11.0 lo schema dello snapshot è `1.7`: gli snapshot di progetto e le voci dell'indice hanno
+`teams`, `catalog.json` ha le impostazioni `teams` del catalogo e un risultato `teams` (null quando la
+discovery dei team è disattivata) e `portfolio.csv` termina con una colonna `teams`.
+
 | File                           | Contenuto                                                                                                                                                             |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `history.json`                 | `kind: hub-history`, schema `1.2` (`1.0` e `1.1` vengono ancora letti): un punto compatto per progetto e raccolta, più la base per calcolare il confronto successivo. |
@@ -811,7 +869,7 @@ colonna non si applica alla riga. Una cella di testo che inizia con `=`, `+`, `-
 o CR riceve un `'` iniziale, così un foglio di calcolo non la esegue mai come formula. I
 numeri non hanno mai prefissi. Excel con separatore di elenco `;`: usa Dati, Da testo/CSV.
 
-- `portfolio.csv`: `project_id, project_name, business_unit, lifecycle, overall, score, score_measured, score_required, delivery, version, security, controls_coverage, controls_coverage_percent, governance, quality, quality_percent, open_critical, open_high, open_medium, open_low, counts_complete, open_secret_alerts, failed_critical_workflows, collection_errors, collected_at, previous_overall, previous_score, previous_collected_at, controls_passed, controls_failed, controls_unknown, overdue, overdue_critical_high, accepted, exception_issues`. Le colonne `previous_*` sono `n/a` quando non c'è una raccolta precedente.
+- `portfolio.csv`: `project_id, project_name, business_unit, lifecycle, overall, score, score_measured, score_required, delivery, version, security, controls_coverage, controls_coverage_percent, governance, quality, quality_percent, open_critical, open_high, open_medium, open_low, counts_complete, open_secret_alerts, failed_critical_workflows, collection_errors, collected_at, previous_overall, previous_score, previous_collected_at, controls_passed, controls_failed, controls_unknown, overdue, overdue_critical_high, accepted, exception_issues, teams`. Le colonne `previous_*` sono `n/a` quando non c'è una raccolta precedente. `teams` elenca i team del progetto (`org/slug`) uniti da `;`, vuota quando non ne ha.
 - `findings-summary.csv`: `project_id, component_id, repository, open_critical, open_high, open_medium, open_low, open_informational, open_unknown, sources_complete, overdue, accepted`. `overdue` e `accepted` contano i finding di quel repository (`unknown` quando gli SLA sono spenti o nessuna fonte di alert era leggibile). Tutti i conteggi sono `unknown` quando nessuna fonte di alert era leggibile; quando solo alcune lo erano, i conteggi sono un limite inferiore e `sources_complete` è `false`.
 - `versions.csv`: `row_type (coordinator|component|environment), project_id, item_id, item_name, repository, version, version_source, declared_version, latest_release, drift, manifest_consistency, pin_status, environment_status`.
 

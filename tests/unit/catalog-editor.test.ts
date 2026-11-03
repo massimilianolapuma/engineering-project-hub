@@ -5,6 +5,10 @@ import { CatalogSchema, CatalogSnapshotSchema, ProjectConfigSchema } from '@mode
 import {
   MAX_GITHUB_URL_LENGTH,
   addSuggestedComponent,
+  addTeam,
+  removeTeam,
+  teamStatus,
+  teamSuggestions,
   catalogRepository,
   catalogToYaml,
   emptyComponent,
@@ -97,6 +101,14 @@ describe('catalog editor: per-project YAML', () => {
       expect(doc).not.toHaveProperty('projects');
       expect(ProjectConfigSchema.parse(doc)).toEqual(published);
     }
+  });
+
+  it('writes a teams list after lifecycle, and omits the key when empty', () => {
+    const yaml = projectToYaml(project('project-alpha'));
+    expect(yaml).toContain(
+      'lifecycle: production\nteams: [example-org/pay-project-alpha-dev, example-org/platform]\n',
+    );
+    expect(projectToYaml(project('project-gamma'))).not.toContain('teams:');
   });
 
   it('starts with a header comment like the files in config/projects/', () => {
@@ -519,5 +531,109 @@ describe('catalog editor: v0.8.0 override fields survive a round trip', () => {
     expect(out.coordinator.testCoverage).toEqual(parsed.coordinator.testCoverage);
     expect(out.components[0]!.notApplicableChecks).toEqual(['actions-pinned']);
     expect(out.components[0]!.testCoverage).toEqual(parsed.components[0]!.testCoverage);
+  });
+});
+
+describe('catalog editor: teams', () => {
+  it('addTeam trims, rejects refs that are not org/team-slug and ignores duplicates', () => {
+    const p = project('project-gamma');
+    expect(addTeam(p, 'pay-team')).toMatchObject({ path: ['teams'], key: 'teams' });
+    expect(addTeam(p, 'example-org/Pay')).toMatchObject({ path: ['teams'] });
+    expect(p.teams).toEqual([]);
+    expect(addTeam(p, ' example-org/pay-project-gamma-dev ')).toBeNull();
+    expect(addTeam(p, 'Example-Org/pay-project-gamma-dev')).toBeNull();
+    expect(p.teams).toEqual(['example-org/pay-project-gamma-dev']);
+    removeTeam(p, 'example-org/pay-project-gamma-dev');
+    expect(p.teams).toEqual([]);
+  });
+
+  it("teamSuggestions lists a project's suggestions without the teams already in the draft", () => {
+    const result = {
+      status: 'ok' as const,
+      orgs: ['example-org'],
+      teamsRead: 7,
+      secretSkipped: 1,
+      limitReached: false,
+      suggestions: [
+        {
+          projectId: 'project-alpha',
+          team: 'example-org/pay-project-alpha-ops',
+          reason: 'access' as const,
+          writeRepositories: 1,
+          totalRepositories: 5,
+        },
+        {
+          projectId: 'project-alpha',
+          team: 'example-org/platform',
+          reason: 'access' as const,
+          writeRepositories: 1,
+          totalRepositories: 5,
+        },
+        {
+          projectId: 'project-beta',
+          team: 'example-org/readers',
+          reason: 'access' as const,
+          writeRepositories: 2,
+          totalRepositories: 4,
+        },
+      ],
+      notFound: [],
+      errors: [],
+    };
+    const alpha = project('project-alpha');
+    expect(teamSuggestions(result, 'project-alpha', alpha).map((s) => s.team)).toEqual([
+      'example-org/pay-project-alpha-ops',
+    ]);
+    expect(teamSuggestions(null, 'project-alpha', alpha)).toEqual([]);
+  });
+
+  it('a draft with an added team is a pending change of that project', () => {
+    const d = draft();
+    addTeam(project('project-gamma', d), 'example-org/pay-project-gamma-dev');
+    const changes = pendingChanges(toDraft(snapshot.catalog), d);
+    expect(changes.map((c) => [c.id, c.kind])).toEqual([['project-gamma', 'modified']]);
+  });
+});
+
+describe('catalog editor: team discovery status lines', () => {
+  const base = {
+    status: 'ok' as const,
+    orgs: ['example-org'],
+    teamsRead: 2,
+    secretSkipped: 0,
+    limitReached: false,
+    suggestions: [],
+    notFound: [],
+    errors: [],
+  };
+  it('off, not authorised, limit, partial and not found, in that order', () => {
+    expect(teamStatus(null, 'p', [])).toEqual([{ kind: 'off' }]);
+    expect(teamStatus({ ...base, status: 'not-authorised' }, 'p', [])).toEqual([
+      { kind: 'notAuthorised' },
+    ]);
+    expect(teamStatus({ ...base, status: 'partial', limitReached: true }, 'p', [])).toEqual([
+      { kind: 'limit' },
+    ]);
+    expect(
+      teamStatus(
+        {
+          ...base,
+          status: 'partial',
+          limitReached: true,
+          errors: [{ target: 'example-org/x', classification: 'error' }],
+        },
+        'p',
+        [],
+      ),
+    ).toEqual([{ kind: 'limit' }, { kind: 'partial' }]);
+    expect(
+      teamStatus({ ...base, notFound: [{ projectId: 'p', team: 'example-org/gone' }] }, 'p', [
+        'example-org/gone',
+      ]),
+    ).toEqual([{ kind: 'notFound', team: 'example-org/gone' }]);
+    // A team already removed from the draft is no longer reported.
+    expect(
+      teamStatus({ ...base, notFound: [{ projectId: 'p', team: 'example-org/gone' }] }, 'p', []),
+    ).toEqual([]);
   });
 });

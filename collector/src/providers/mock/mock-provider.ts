@@ -26,6 +26,9 @@ import {
   type SourceProvider,
   type SubmoduleRefDTO,
   type TagDTO,
+  type TeamDTO,
+  type TeamPermission,
+  type TeamRepositoryDTO,
   type WorkflowRunDTO,
 } from '../types';
 
@@ -65,6 +68,17 @@ export interface RepoFixture {
   qualitySummary?:
     { summary: unknown; createdAt: string; expired?: boolean; runId: number } | ErrorFixture;
   codeQualityFindings?: CodeQualityFindingDTO[] | ErrorFixture;
+}
+
+interface TeamFixture {
+  slug: string;
+  name: string;
+  privacy: 'closed' | 'secret';
+  /** Present only to prove it is dropped. */
+  description?: string;
+  repos: { fullName: string; permission: TeamPermission | null }[];
+  /** Makes listTeamRepositories fail for this team. */
+  $error?: ProviderError;
 }
 
 interface ErrorFixture {
@@ -153,6 +167,36 @@ export class MockProvider implements SourceProvider {
       if (out.length >= opts.max) break;
     }
     return ok(out);
+  }
+
+  /** fixtures/github/_orgs/<org>.teams.json: [{ slug, name, privacy, description, repos }]. */
+  private async teamsFixture(org: string): Promise<TeamFixture[] | null> {
+    try {
+      const text = await readFile(join(this.fixturesDir, '_orgs', `${org}.teams.json`), 'utf8');
+      return JSON.parse(text) as TeamFixture[];
+    } catch {
+      return null;
+    }
+  }
+
+  async listOrgTeams(
+    org: string,
+    opts: { max: number },
+  ): Promise<ProviderResult<{ teams: TeamDTO[]; limitReached: boolean }>> {
+    const f = await this.teamsFixture(org);
+    if (!f) return fail(NOT_FOUND);
+    const teams = f.map((t) => ({ org, slug: t.slug, name: t.name, privacy: t.privacy }));
+    return ok({ teams: teams.slice(0, opts.max), limitReached: teams.length > opts.max });
+  }
+
+  async listTeamRepositories(
+    org: string,
+    teamSlug: string,
+  ): Promise<ProviderResult<TeamRepositoryDTO[]>> {
+    const team = (await this.teamsFixture(org))?.find((t) => t.slug === teamSlug);
+    if (!team) return fail(NOT_FOUND);
+    if (team.$error) return fail(team.$error);
+    return ok(team.repos.map((r) => ({ fullName: r.fullName, permission: r.permission })));
   }
 
   listDirectory(repo: string, path: string, _ref?: string) {

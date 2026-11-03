@@ -366,3 +366,44 @@ describe('discovery hints', () => {
     expect(new Set(kinds)).toEqual(new Set(order));
   });
 });
+
+describe('MockProvider: organisation teams fixture', () => {
+  const mock = new MockProvider('fixtures/github', fixedClock('2026-01-15T12:00:00.000Z'));
+  it('lists the fixture teams with privacy kept and descriptions dropped', async () => {
+    const r = await mock.listOrgTeams('example-org', { max: 100 });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.data.limitReached).toBe(false);
+    expect(r.data.teams.map((t) => t.slug)).toEqual([
+      'pay-project-alpha-dev',
+      'pay-project-alpha-ops',
+      'platform',
+      'readers',
+      'secret-audit',
+      'pay-project-beta-dev',
+      'pay-tools-dev',
+    ]);
+    expect(r.data.teams.find((t) => t.slug === 'secret-audit')!.privacy).toBe('secret');
+    expect(JSON.stringify(r)).not.toContain('description');
+    const capped = await mock.listOrgTeams('example-org', { max: 2 });
+    expect(capped.ok && capped.data).toMatchObject({ limitReached: true });
+  });
+
+  it("lists a team's repositories with its permission", async () => {
+    expect(await mock.listTeamRepositories('example-org', 'pay-project-alpha-ops')).toEqual({
+      ok: true,
+      data: [{ fullName: 'example-org/project-alpha-helm', permission: 'maintain' }],
+    });
+  });
+
+  it('fails with not-found for an org without a fixture and for an unknown team', async () => {
+    expect(await mock.listOrgTeams('example-shared', { max: 10 })).toMatchObject({
+      ok: false,
+      error: { classification: 'not-found' },
+    });
+    expect(await mock.listTeamRepositories('example-org', 'nope')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-found' },
+    });
+  });
+});

@@ -805,3 +805,91 @@ describe('MockProvider repository controls calls', () => {
     expect(await p.listDirectory('o/a', '.github/workflows', 'main')).toMatchObject({ ok: true });
   });
 });
+
+describe('GitHubProvider: organisation teams (Members: read)', () => {
+  const team = (slug: string, privacy = 'closed') => ({
+    id: 1,
+    slug,
+    name: slug.toUpperCase(),
+    privacy,
+    description: 'never kept',
+    members_url: 'https://api.github.com/x',
+  });
+
+  it('lists teams with slug, name and privacy only', async () => {
+    const p = provider({
+      '/orgs/example-org/teams': {
+        status: 200,
+        body: [team('platform'), team('secret-audit', 'secret')],
+      },
+    });
+    const r = await p.listOrgTeams('example-org', { max: 10 });
+    expect(r).toEqual({
+      ok: true,
+      data: {
+        teams: [
+          { org: 'example-org', slug: 'platform', name: 'PLATFORM', privacy: 'closed' },
+          { org: 'example-org', slug: 'secret-audit', name: 'SECRET-AUDIT', privacy: 'secret' },
+        ],
+        limitReached: false,
+      },
+    });
+    expect(JSON.stringify(r)).not.toContain('never kept');
+    expect(JSON.stringify(r)).not.toContain('members_url');
+  });
+
+  it('stops at max with limitReached', async () => {
+    const p = provider({
+      '/orgs/example-org/teams': { status: 200, body: [team('a'), team('b'), team('c')] },
+    });
+    const r = await p.listOrgTeams('example-org', { max: 2 });
+    expect(r.ok && r.data.teams.map((t) => t.slug)).toEqual(['a', 'b']);
+    expect(r.ok && r.data.limitReached).toBe(true);
+  });
+
+  it('classifies 403 as not-authorised and 404 as not-found', async () => {
+    const p = provider({
+      '/orgs/example-org/teams': {
+        status: 403,
+        body: { message: 'Resource not accessible by integration' },
+      },
+    });
+    expect(await p.listOrgTeams('example-org', { max: 10 })).toMatchObject({
+      ok: false,
+      error: { classification: 'not-authorised' },
+    });
+    expect(await provider({}).listOrgTeams('some-user', { max: 10 })).toMatchObject({
+      ok: false,
+      error: { classification: 'not-found' },
+    });
+  });
+
+  it('maps team repository permissions: role_name first, then the highest permissions key', async () => {
+    const repo = (name: string, extra: Record<string, unknown>) => ({
+      full_name: `example-org/${name}`,
+      description: 'never kept',
+      ...extra,
+    });
+    const p = provider({
+      '/orgs/example-org/teams/dev/repos': {
+        status: 200,
+        body: [
+          repo('a', { role_name: 'push' }),
+          repo('b', { permissions: { admin: false, maintain: true, push: true, pull: true } }),
+          repo('c', { role_name: 'pull' }),
+          repo('d', {}),
+        ],
+      },
+    });
+    const r = await p.listTeamRepositories('example-org', 'dev');
+    expect(r).toEqual({
+      ok: true,
+      data: [
+        { fullName: 'example-org/a', permission: 'write' },
+        { fullName: 'example-org/b', permission: 'maintain' },
+        { fullName: 'example-org/c', permission: 'read' },
+        { fullName: 'example-org/d', permission: null },
+      ],
+    });
+  });
+});

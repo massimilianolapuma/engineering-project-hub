@@ -108,6 +108,16 @@ e [ADR 0005](docs/it/architecture/adr/0005-test-coverage-from-ci-summary-artifac
 componente senza report leggibile è "non visibile", mai 0%. La vecchia dimensione Copertura
 (quota dei controlli di sicurezza obbligatori attivi) ora si chiama "Copertura controlli".
 
+**I miei progetti.** Ogni progetto può elencare i team GitHub che ci lavorano
+(`teams: [example-org/pay-project-alpha-dev]`). Il Portfolio filtra per team e il link conserva un
+`team` per ogni team selezionato (`/?team=pay-project-alpha-dev&team=platform`), così ogni
+responsabile salva nei preferiti la propria vista. I team sono raggruppati per linea di business
+quando seguono una regola di nome, e la pagina del progetto elenca i suoi team. Con il permesso di
+organizzazione **Members: read**, il collector propone i team di ogni progetto nell'editor del
+catalogo. È una **vista, non un controllo degli accessi**: chiunque può aprire il sito vede tutti i
+progetti ([ADR 0010](docs/it/architecture/adr/0010-per-team-views-without-access-control.md),
+[Configurazione](docs/it/configuration.md#configcatalogyaml-team)).
+
 Il **punteggio** (0–100) è calcolato dal collector sulle dimensioni misurate (pesi e punti
 in `config/policies.yaml`) ed è limitato dallo stato, così un progetto critico è sempre
 sotto uno in attenzione. Le dimensioni che non è stato possibile leggere sono escluse, mai

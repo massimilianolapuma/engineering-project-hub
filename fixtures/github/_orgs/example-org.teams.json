@@ -1,0 +1,166 @@
+[
+  {
+    "slug": "pay-project-alpha-dev",
+    "name": "pay-project-alpha-dev",
+    "privacy": "closed",
+    "description": "SYNTHETIC: never kept by the hub",
+    "repos": [
+      {
+        "fullName": "example-org/project-alpha-backend",
+        "permission": "write"
+      },
+      {
+        "fullName": "example-org/project-alpha-frontend",
+        "permission": "write"
+      },
+      {
+        "fullName": "example-org/project-alpha-helm",
+        "permission": "write"
+      }
+    ]
+  },
+  {
+    "slug": "pay-project-alpha-ops",
+    "name": "pay-project-alpha-ops",
+    "privacy": "closed",
+    "description": "SYNTHETIC: never kept by the hub",
+    "repos": [
+      {
+        "fullName": "example-org/project-alpha-helm",
+        "permission": "maintain"
+      }
+    ]
+  },
+  {
+    "slug": "platform",
+    "name": "Platform",
+    "privacy": "closed",
+    "description": "SYNTHETIC: never kept by the hub",
+    "repos": [
+      {
+        "fullName": "example-org/project-alpha-coordinator",
+        "permission": "admin"
+      },
+      {
+        "fullName": "example-org/platform-mono",
+        "permission": "admin"
+      }
+    ]
+  },
+  {
+    "slug": "readers",
+    "name": "Readers",
+    "privacy": "closed",
+    "description": "SYNTHETIC: never kept by the hub",
+    "repos": [
+      {
+        "fullName": "example-org/docs-site",
+        "permission": "read"
+      },
+      {
+        "fullName": "example-org/platform-mono",
+        "permission": "read"
+      },
+      {
+        "fullName": "example-org/project-alpha-backend",
+        "permission": "read"
+      },
+      {
+        "fullName": "example-org/project-alpha-coordinator",
+        "permission": "read"
+      },
+      {
+        "fullName": "example-org/project-alpha-frontend",
+        "permission": "read"
+      },
+      {
+        "fullName": "example-org/project-alpha-helm",
+        "permission": "read"
+      },
+      {
+        "fullName": "example-org/project-alpha-worker",
+        "permission": "read"
+      },
+      {
+        "fullName": "example-org/project-beta-api",
+        "permission": "read"
+      },
+      {
+        "fullName": "example-org/project-beta-coordinator",
+        "permission": "read"
+      },
+      {
+        "fullName": "example-org/project-beta-helm",
+        "permission": "read"
+      },
+      {
+        "fullName": "example-org/project-beta-web",
+        "permission": "read"
+      },
+      {
+        "fullName": "example-org/project-gamma-coordinator",
+        "permission": "read"
+      },
+      {
+        "fullName": "example-org/project-gamma-service",
+        "permission": "read"
+      },
+      {
+        "fullName": "example-org/tools-api",
+        "permission": "read"
+      },
+      {
+        "fullName": "example-org/tools-cli",
+        "permission": "read"
+      }
+    ]
+  },
+  {
+    "slug": "secret-audit",
+    "name": "Secret audit",
+    "privacy": "secret",
+    "description": "SYNTHETIC: never kept by the hub",
+    "repos": [
+      {
+        "fullName": "example-org/platform-mono",
+        "permission": "write"
+      }
+    ]
+  },
+  {
+    "slug": "pay-project-beta-dev",
+    "name": "pay-project-beta-dev",
+    "privacy": "closed",
+    "description": "SYNTHETIC: never kept by the hub",
+    "repos": [
+      {
+        "fullName": "example-org/project-beta-coordinator",
+        "permission": "write"
+      },
+      {
+        "fullName": "example-org/project-beta-api",
+        "permission": "write"
+      },
+      {
+        "fullName": "example-org/project-beta-helm",
+        "permission": "write"
+      },
+      {
+        "fullName": "example-org/project-beta-web",
+        "permission": "write"
+      }
+    ]
+  },
+  {
+    "slug": "pay-tools-dev",
+    "name": "pay-tools-dev",
+    "privacy": "closed",
+    "description": "SYNTHETIC: never kept by the hub",
+    "repos": [
+      {
+        "fullName": "example-org/tools-api",
+        "permission": "write"
+      }
+    ]
+  }
+]

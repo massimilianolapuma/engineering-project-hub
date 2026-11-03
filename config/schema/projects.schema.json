@@ -95,6 +95,61 @@
       },
       "additionalProperties": false
     },
+    "teams": {
+      "default": {
+        "discovery": false,
+        "maxTeams": 300
+      },
+      "type": "object",
+      "properties": {
+        "discovery": {
+          "default": false,
+          "type": "boolean"
+        },
+        "naming": {
+          "type": "object",
+          "properties": {
+            "pattern": {
+              "type": "string"
+            },
+            "roles": {
+              "minItems": 1,
+              "maxItems": 50,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]{0,49}$"
+              }
+            },
+            "lines": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]{0,49}$"
+              },
+              "additionalProperties": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              }
+            }
+          },
+          "required": [
+            "pattern",
+            "roles",
+            "lines"
+          ],
+          "additionalProperties": false
+        },
+        "maxTeams": {
+          "default": 300,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        }
+      },
+      "additionalProperties": false
+    },
     "projects": {
       "default": [],
       "type": "array",
@@ -482,6 +537,16 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 255
+          },
+          "teams": {
+            "default": [],
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 141,
+              "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})\\/[a-z0-9][a-z0-9_-]{0,99}$"
+            }
           }
         },
         "required": [

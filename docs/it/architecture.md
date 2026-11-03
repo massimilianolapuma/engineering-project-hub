@@ -155,7 +155,7 @@ prossimo artifact `hub-history` (90 giorni). Un'esecuzione mock non ripristina m
   conteggi degli errori, i submodule non risolti e lo `score` del progetto.
 
 `history.json` (`kind: hub-history`) e `changes.json` (`kind: hub-changes`) hanno una versione
-separata (storico `1.2`, changes `1.0`) da quella dello snapshot (`1.6`), così lo storico sopravvive a un
+separata (storico `1.2`, changes `1.0`) da quella dello snapshot (`1.7`), così lo storico sopravvive a un
 cambio di schema dello snapshot e un `public/data` esistente resta leggibile. `history.json`
 ha un punto compatto per progetto e raccolta più la base dell'ultima esecuzione;
 `changes.json` è il confronto che il sito mostra. Sconosciuto non è mai 0: un punteggio null
@@ -196,7 +196,7 @@ Enum normalizzati:
 | Classe di errore      | `not-found`, `not-authorised`, `not-configured`, `rate-limited`, `invalid-data`, `error`                                                 |
 
 Gli JSON Schema generati si trovano in `config/schema/`. Il sito supporta le versioni di
-snapshot elencate in `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS` (attualmente `1.6`).
+snapshot elencate in `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS` (attualmente `1.7`).
 
 ## Regole di salute (policy dell'MVP)
 

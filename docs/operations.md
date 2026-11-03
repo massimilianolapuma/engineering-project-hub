@@ -74,6 +74,16 @@ validate:snapshots`.
 | `invalid-data`   | Malformed manifest or status file, or one naming another repository              | Fix the file in the monitored repository.                        |
 | `error`          | 5xx or network                                                                   | Usually transient. The next run retries.                         |
 
+**Team discovery** has its own state in `catalog.json` (`teams.status`) and in the collector log
+(`Teams: <status>, <n> read, <n> suggestion(s), <n> not found`):
+
+| State            | Meaning                                                        | Action                                                                                           |
+| ---------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `ok`             | Every organisation and team was read.                          | None.                                                                                            |
+| `partial`        | A team or organisation call failed, or `maxTeams` was reached. | Check `teams.errors`; raise `maxTeams` if needed. "Not found" is not computed on a limit.        |
+| `not-authorised` | No organisation's teams could be read.                         | Grant the organisation permission **Members: read** to the App, or set `teams.discovery: false`. |
+| `teams: null`    | Team discovery is off, or the audience is public.              | Expected for a public site.                                                                      |
+
 ## Rollback
 
 - **Site**: re-run a previous successful `deploy-pages` run (Actions → run → _Re-run all

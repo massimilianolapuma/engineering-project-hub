@@ -104,6 +104,15 @@ and [ADR 0005](docs/architecture/adr/0005-test-coverage-from-ci-summary-artifact
 component without a readable report is "not visible", never 0%. The older Coverage dimension
 (share of required security controls enabled) is now labelled "Controls coverage".
 
+**My projects.** Each project can list the GitHub teams that work on it
+(`teams: [example-org/pay-project-alpha-dev]`). The Portfolio filters by team, and the link keeps
+one `team` per selected team (`/?team=pay-project-alpha-dev&team=platform`), so each lead bookmarks
+their own view. Teams are grouped by business line when they follow a naming rule, and the project
+page lists its teams. With the organisation permission **Members: read**, the collector proposes
+teams for each project in the catalog editor. This is a **view, not access control**: everyone who
+can open the site sees every project ([ADR 0010](docs/architecture/adr/0010-per-team-views-without-access-control.md),
+[Configuration](docs/configuration.md#configcatalogyaml-teams)).
+
 The **score** (0–100) is computed by the collector from the measured dimensions (weights
 and points in `config/policies.yaml`) and capped by the status, so a critical project
 always ranks below an attention one. Dimensions that could not be read are excluded, never

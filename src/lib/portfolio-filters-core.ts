@@ -25,9 +25,31 @@ export function severityMatch(filter: string, critical: number, high: number): S
   return 'match';
 }
 
+/** Longest team slug kept from a link (GitHub slugs are at most 100 characters here). */
+const MAX_TEAM_SLUG = 100;
+
+/**
+ * `team` values from the link: trimmed, lowercased, without empties or repeats, in first-seen
+ * order and at most 100 characters each. The values are only ever shown as text.
+ */
+export function normalizeTeams(values: string[]): string[] {
+  const out: string[] = [];
+  for (const v of values) {
+    const slug = v.trim().toLowerCase().slice(0, MAX_TEAM_SLUG);
+    if (slug && !out.includes(slug)) out.push(slug);
+  }
+  return out;
+}
+
+/** A project passes the team filter when nothing is selected or it has a selected team (OR). */
+export function teamMatch(selected: string[], projectTeamSlugs: string[]): boolean {
+  return selected.length === 0 || projectTeamSlugs.some((s) => selected.includes(s));
+}
+
 /**
  * Results line: "{shown} of {total} projects", plus "· N project(s) with unknown counts not
- * shown" when the open-alerts filter hid projects whose counts could not be read.
+ * shown" when the open-alerts filter hid projects whose counts could not be read, and "· N
+ * project(s) without teams not shown" when the team filter hid projects that list no team.
  */
 export function resultsLine(
   template: string,
@@ -35,7 +57,11 @@ export function resultsLine(
   total: number,
   unknownHidden: number,
   unknownForms: { one: string; other: string },
+  noTeamsHidden = 0,
+  noTeamsForms?: { one: string; other: string },
 ): string {
-  const base = template.replace('{shown}', String(shown)).replace('{total}', String(total));
-  return unknownHidden > 0 ? `${base} · ${plural(unknownHidden, unknownForms)}` : base;
+  let line = template.replace('{shown}', String(shown)).replace('{total}', String(total));
+  if (unknownHidden > 0) line += ` · ${plural(unknownHidden, unknownForms)}`;
+  if (noTeamsHidden > 0 && noTeamsForms) line += ` · ${plural(noTeamsHidden, noTeamsForms)}`;
+  return line;
 }

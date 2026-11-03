@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Team dashboards.** Projects list their GitHub teams (`teams: ["<org>/<team-slug>"]` in
+  `config/projects/<id>.yaml`). The Portfolio has a Team filter (several teams, grouped by business
+  line from an optional naming rule, cross teams last) whose link keeps one `team` per selected team,
+  so each lead can bookmark their own view. Selected teams show as removable Labels; a link value no
+  project uses shows as "not in the catalog" and matches nothing; the results line counts the
+  projects without teams it hid. Rows show up to three team Labels, and the project header links
+  each team to the filtered Portfolio. EN and IT.
+- Team discovery (`teams` block in `config/catalog.yaml`, organisation permission **Members: read**):
+  the collector proposes teams for each project by write access to its repositories or by name,
+  flags listed teams GitHub does not return, skips secret teams and reports `not-authorised` or
+  `partial` without failing the run. Off for a public audience.
+- Catalog editor: a Teams field with the suggestions and their evidence.
+- `portfolio.csv` ends with a `teams` column (`org/slug` joined with `;`).
+
+### Changed
+
+- Snapshot schema `1.7`: `teams` on project snapshots and index entries, and a `teams` result in
+  `catalog.json`. A site built from this version reads only `1.7` snapshots; run the collector once
+  after upgrading.
+
 ## [0.10.0] - 2026-11-03
 
 ### Changed

@@ -7,6 +7,7 @@ import {
   type Catalog,
   type CollectionError,
   type DiscoveryResult,
+  type TeamsResult,
   type Policies,
   type PortfolioIndex,
   type ProjectSnapshot,
@@ -16,6 +17,7 @@ import { buildProjectSnapshot, toProjectSummary } from './build-snapshot';
 import type { LoadedExceptions } from './config/load';
 import { orphanedExceptionIds } from './policy/exceptions';
 import { discover } from './discovery/discover';
+import { discoverTeams } from './discovery/teams';
 import {
   collectProject,
   collectReusableTargets,
@@ -54,6 +56,8 @@ export interface RunResult {
   projects: ProjectSnapshot[];
   /** Discovery proposals (null when discovery is disabled). */
   discovery: DiscoveryResult | null;
+  /** Team suggestions (null when team discovery is off or the audience is public). */
+  teams: TeamsResult | null;
 }
 
 /** Aggregates per-call outcomes into one availability value per capability. */
@@ -116,7 +120,12 @@ export async function runCollection(opts: RunOptions): Promise<RunResult> {
 
   // One project failing unexpectedly must not stop the others.
   const raws = await Promise.all(catalog.projects.map((p) => collectProject(ctx, p)));
-  const discovery = await discover(ctx, catalog, policies);
+  const { teams, discovery } = await discoverTeams(
+    ctx,
+    catalog,
+    policies,
+    await discover(ctx, catalog, policies),
+  );
   const now = clock();
   // Reusable workflows: latest release / tag of the referenced repositories, once per run.
   const referenced = referencedRepositories(raws.flatMap((raw) => raw.repos));
@@ -194,5 +203,5 @@ export async function runCollection(opts: RunOptions): Promise<RunResult> {
     run,
     projects: projects.map(toProjectSummary),
   };
-  return { index, projects, discovery };
+  return { index, projects, discovery, teams };
 }

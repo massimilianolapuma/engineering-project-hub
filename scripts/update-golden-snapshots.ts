@@ -45,5 +45,6 @@ await writeSnapshots(
   catalog,
   result.discovery,
   buildHistoryExtras(previous, result.index, result.projects, catalog, policies, now),
+  result.teams,
 );
 console.log('✔ fixtures/snapshots regenerated');

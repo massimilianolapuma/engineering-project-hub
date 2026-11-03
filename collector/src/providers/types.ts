@@ -10,6 +10,21 @@ export const MAX_WORKFLOW_FILE_NAME = 100;
  * (allowlist): raw payloads never leave the provider layer.
  */
 
+/** A team's access level on a repository (GitHub role names, pull → read, push → write). */
+export type TeamPermission = 'read' | 'triage' | 'write' | 'maintain' | 'admin';
+/** An organisation team: slug, name and privacy only (never description or members). */
+export interface TeamDTO {
+  org: string;
+  slug: string;
+  name: string;
+  privacy: 'closed' | 'secret';
+}
+/** A repository a team can access; permission null when GitHub does not say. */
+export interface TeamRepositoryDTO {
+  fullName: string;
+  permission: TeamPermission | null;
+}
+
 export interface RepositoryDTO {
   owner: string;
   name: string;
@@ -213,6 +228,13 @@ export interface SourceProvider {
     owner: string,
     opts: { includePrivate: boolean; max: number },
   ): Promise<ProviderResult<RepositoryDTO[]>>;
+  /** Team discovery (Members: read): an organisation's teams, at most `max`. 404 = not an organisation. */
+  listOrgTeams(
+    org: string,
+    opts: { max: number },
+  ): Promise<ProviderResult<{ teams: TeamDTO[]; limitReached: boolean }>>;
+  /** Team discovery: the repositories a team can access, with the team's permission. */
+  listTeamRepositories(org: string, teamSlug: string): Promise<ProviderResult<TeamRepositoryDTO[]>>;
   /** Discovery: entries of a directory ("" = repository root) at an optional ref. Names only, never contents. */
   listDirectory(
     repo: string,

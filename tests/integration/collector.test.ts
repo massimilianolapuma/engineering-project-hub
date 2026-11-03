@@ -128,6 +128,52 @@ describe('mock collection', () => {
     }
   });
 
+  it('restricted audience: team suggestions reach catalog.json; public gives teams null', async () => {
+    const { catalog, policies, exceptions } = await loadMockConfig();
+    const clock = fixedClock(GOLDEN_NOW);
+    const restricted = structuredClone(policies);
+    restricted.publication.audience = 'restricted';
+    const result = await runCollection({
+      catalog,
+      policies: restricted,
+      provider: new MockProvider('fixtures/github', clock),
+      clock,
+      exceptions,
+    });
+    expect(result.teams?.status).toBe('ok');
+    const files = serialise(
+      result.index,
+      result.projects,
+      catalog,
+      result.discovery,
+      undefined,
+      result.teams,
+    );
+    const written = JSON.parse(files.get('catalog.json')!);
+    expect(written.teams.suggestions).toContainEqual(
+      expect.objectContaining({
+        projectId: 'project-alpha',
+        team: 'example-org/pay-project-alpha-ops',
+      }),
+    );
+    expect(files.get('catalog.json')).not.toContain('never kept');
+    expect((await mockRun()).teams).toBeNull();
+  });
+
+  it('carries project teams into project snapshots and the index; gamma has none', async () => {
+    const { index, projects } = await mockRun();
+    const alpha = projects.find((p) => p.project.id === 'project-alpha')!;
+    expect(alpha.project.teams).toEqual([
+      'example-org/pay-project-alpha-dev',
+      'example-org/platform',
+    ]);
+    expect(index.projects.find((p) => p.id === 'project-alpha')!.teams).toEqual(
+      alpha.project.teams,
+    );
+    expect(projects.find((p) => p.project.id === 'project-gamma')!.project.teams).toEqual([]);
+    expect(index.projects.find((p) => p.id === 'project-gamma')!.teams).toEqual([]);
+  });
+
   it('produces schema-valid snapshots with the intended demo scenarios', async () => {
     const { index, projects } = await mockRun();
     expect(PortfolioIndexSchema.safeParse(index).success).toBe(true);
@@ -856,6 +902,8 @@ describe('sanitisation end to end', () => {
             }),
     getSubmoduleRef: async () => fail({ classification: 'not-found' }),
     listTags: async () => ok([{ name: poison, sha: 'e'.repeat(40) }]),
+    listOrgTeams: async () => fail({ classification: 'not-authorised' }),
+    listTeamRepositories: async () => fail({ classification: 'not-authorised' }),
     listOwnerRepositories: async () =>
       ok([
         {
@@ -1008,7 +1056,7 @@ describe('sanitisation end to end', () => {
 describe('snapshot schema versions', () => {
   it('fails in a controlled way on an unsupported schemaVersion', async () => {
     const text = (await readFile('fixtures/snapshots/index.json', 'utf8')).replace(
-      '"schemaVersion": "1.6"',
+      '"schemaVersion": "1.7"',
       '"schemaVersion": "9.0"',
     );
     const r = validatePortfolio(text);
@@ -1082,10 +1130,10 @@ describe('repository controls (mock run)', () => {
     p.repositoryControls.repositories.find((r) => r.repository === `example-org/${name}`)!;
   const states = (p: ProjectSnapshot, name: string) => repoOf(p, name).checks.map((c) => c.state);
 
-  it('writes snapshot schema 1.6', async () => {
+  it('writes snapshot schema 1.7', async () => {
     const { index, projects } = await byId();
-    expect(index.schemaVersion).toBe('1.6');
-    for (const p of Object.values(projects)) expect(p.schemaVersion).toBe('1.6');
+    expect(index.schemaVersion).toBe('1.7');
+    for (const p of Object.values(projects)) expect(p.schemaVersion).toBe('1.7');
   });
 
   it('counts the checks per project over unique repositories', async () => {
@@ -1446,12 +1494,12 @@ describe('risk governance (mock run)', () => {
   const finding = (p: ProjectSnapshot, id: string) =>
     p.securityFindings.find((f) => f.id === `${id}`)!;
 
-  it('schemaVersion is "1.6" in index, projects and catalog', async () => {
+  it('schemaVersion is "1.7" in index, projects and catalog', async () => {
     const { index, projects } = await mockRun();
-    expect(index.schemaVersion).toBe('1.6');
-    for (const p of projects) expect(p.schemaVersion).toBe('1.6');
+    expect(index.schemaVersion).toBe('1.7');
+    for (const p of projects) expect(p.schemaVersion).toBe('1.7');
     const catalog = JSON.parse(await readFile('fixtures/snapshots/catalog.json', 'utf8'));
-    expect(catalog.schemaVersion).toBe('1.6');
+    expect(catalog.schemaVersion).toBe('1.7');
   });
 
   it('index.run.exceptions equals { source: "fixture", total: 7, orphaned: ["EXC-LEGACY-001"] }', async () => {

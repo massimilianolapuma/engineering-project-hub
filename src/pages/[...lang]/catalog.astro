@@ -43,6 +43,7 @@ const editorData = catalog.ok
       catalog: catalog.data.catalog,
       suggestions: catalog.data.suggestions,
       discovery: catalog.data.discovery,
+      teams: catalog.data.teams,
       githubRepo,
     })
   : '';
@@ -81,6 +82,15 @@ const editorStrings = jsonForScript({
         </template>
         <template data-icon="git-pull-request">
           <Octicon name="git-pull-request" />
+        </template>
+        <template data-icon="people">
+          <Octicon name="people" />
+        </template>
+        <template data-icon="alert">
+          <Octicon name="alert" />
+        </template>
+        <template data-icon="info">
+          <Octicon name="info" />
         </template>
         <template data-icon="link-external">
           <Octicon name="link-external" size={12} />
