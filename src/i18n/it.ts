@@ -360,6 +360,10 @@ export const it: Dict = {
       one: '{n} progetto con conteggi sconosciuti non mostrato',
       other: '{n} progetti con conteggi sconosciuti non mostrati',
     },
+    noTeamsHidden: {
+      one: '{n} progetto senza team non mostrato',
+      other: '{n} progetti senza team non mostrati',
+    },
     countsLabel: 'Filtra per stato complessivo',
     collected: 'Rilevato',
     collectedAt: 'Raccolto il {date}',

@@ -358,6 +358,10 @@ export const en = {
       one: '{n} project with unknown counts not shown',
       other: '{n} projects with unknown counts not shown',
     },
+    noTeamsHidden: {
+      one: '{n} project without teams not shown',
+      other: '{n} projects without teams not shown',
+    },
     countsLabel: 'Filter by overall status',
     collected: 'Collected',
     collectedAt: 'Collected {date}',
