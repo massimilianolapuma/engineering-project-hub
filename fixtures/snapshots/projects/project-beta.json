@@ -1353,7 +1353,7 @@
         "code": "supply-chain-unsigned-artifact",
         "level": "info",
         "params": {
-          "count": 2,
+          "count": 1,
           "repositories": "example-org/project-beta-api"
         }
       },
@@ -2028,7 +2028,7 @@
       "repositories": 4,
       "sbomAvailable": 0,
       "signedImages": 0,
-      "unsignedImages": 2,
+      "unsignedImages": 1,
       "attestedAssets": null,
       "flagged": null
     },

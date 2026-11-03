@@ -8,3 +8,4 @@ export * from './providers';
 export * from './contracts';
 export * from './snapshot';
 export * from './history';
+export * from './images';

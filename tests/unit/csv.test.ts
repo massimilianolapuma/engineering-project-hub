@@ -322,8 +322,9 @@ describe('versions and supply chain CSV (schema 1.8)', () => {
     expect(frontend.sbom_source).toBe('supply-chain-summary');
     expect(frontend.dast_source).toBe('code-scanning');
     expect(rows.find((r) => String(r.repository).endsWith('alpha-backend'))!).toMatchObject({
-      images: 2,
-      images_signed: 2,
+      // I-3: the CI summary and Harbor report the same digest: one image.
+      images: 1,
+      images_signed: 1,
       images_unsigned: 0,
       container_scanning_source: 'harbor',
     });

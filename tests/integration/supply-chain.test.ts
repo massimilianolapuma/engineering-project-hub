@@ -239,7 +239,7 @@ describe('supply chain providers: golden story', () => {
     expect(p['project-alpha']!.supplyChain.totals).toEqual({
       repositories: 5,
       sbomAvailable: 3,
-      signedImages: 3,
+      signedImages: 2, // backend and frontend: the CI summary and Harbor report one digest each
       unsignedImages: 0,
       attestedAssets: 1,
       flagged: 0,
@@ -248,7 +248,7 @@ describe('supply chain providers: golden story', () => {
       repositories: 4,
       sbomAvailable: 0,
       signedImages: 0,
-      unsignedImages: 2,
+      unsignedImages: 1, // beta-api: one digest, reported by the CI summary and Harbor
       attestedAssets: null,
       flagged: null,
     });

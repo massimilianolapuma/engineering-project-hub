@@ -21,6 +21,7 @@ import type {
   SupplyChain,
   WorkflowStatus,
 } from '@model/index';
+import { tallyImages } from '@model/index';
 import { SLA_CLASSES } from '../policy/sla';
 import { ageMs, MINUTE_MS } from '../util/clock';
 
@@ -420,10 +421,7 @@ function supplyChainReasons(sc: SupplyChain | null | undefined, policies: Polici
   const out: Reason[] = [];
   const names = (repos: string[]) => idList([...new Set(repos)]);
   const unsigned = sc.repositories.map((r) => {
-    const images = r.images.filter(
-      (i) =>
-        i.signature === 'missing' || i.signature === 'not-verified' || i.signature === 'failed',
-    ).length;
+    const images = tallyImages(r.images).unsigned;
     const a = r.attestations;
     const assets =
       (a.state === 'available' || a.state === 'none') && a.withProvenance !== null

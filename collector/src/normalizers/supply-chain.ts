@@ -4,6 +4,7 @@ import {
   type RepositoryControls,
   type SeverityCounts,
   type SupplyChain,
+  tallyImages,
 } from '@model/index';
 import { scrubIdentifier } from '../sanitizers/sanitize';
 import {
@@ -340,13 +341,10 @@ export function buildSupplyChain(input: SupplyChainInput, ctx: BuildContext): Su
   const sboms = repositories.map((r) => r.sbom);
   const available = sboms.filter((s) => s.state === 'available' || s.state === 'partial');
   const allUnknown = sboms.length > 0 && sboms.every((s) => UNKNOWN_SBOM.has(s.state));
-  const images = repositories.flatMap((r) => r.images);
-  const signedImages = images.filter(
-    (i) => i.signature === 'verified' || i.signature === 'present',
-  ).length;
-  const unsignedImages = images.filter(
-    (i) => i.signature === 'missing' || i.signature === 'not-verified' || i.signature === 'failed',
-  ).length;
+  // Per repository: the same digest in another repository is a different deployable.
+  const tallies = repositories.map((r) => tallyImages(r.images));
+  const signedImages = tallies.reduce((sum, t) => sum + t.signed, 0);
+  const unsignedImages = tallies.reduce((sum, t) => sum + t.unsigned, 0);
   const attestations = repositories.map((r) => r.attestations);
   const attested = attestations.filter((a) => a.state === 'available');
   const attestationUnknown = attestations.some(

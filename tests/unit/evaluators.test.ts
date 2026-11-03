@@ -724,6 +724,22 @@ describe('security: supply chain reasons', () => {
     });
   });
 
+  it('I-3: the same digest from two sources is one unsigned artifact', () => {
+    const digest = `sha256:${'e'.repeat(64)}`;
+    const twice = chain([
+      entry({
+        images: [
+          { ...unsignedImage, digest },
+          { ...unsignedImage, source: 'harbor' as const, digest },
+        ],
+      }),
+    ]);
+    const r = evaluateSecurity(inputs({ supplyChain: twice }), counts({}), 0, P);
+    expect(
+      r.reasons.find((x) => x.code === 'supply-chain-unsigned-artifact')?.params,
+    ).toMatchObject({ count: 1 });
+  });
+
   it('release assets checked without provenance count as unsigned too', () => {
     const assets = chain([
       entry({

@@ -5,6 +5,7 @@ import {
   type ProjectSnapshot,
   type ProjectSummary,
   type SeverityCounts,
+  tallyImages,
 } from '@model/index';
 import { NA, toCsv, type CsvValue } from './csv';
 import type { SiteData } from './data';
@@ -316,12 +317,9 @@ function projectSupplyChainRows(p: ProjectSnapshot): CsvValue[][] {
     r.attestations.state,
     r.attestations.checked,
     r.attestations.withProvenance,
-    r.images.length,
-    r.images.filter((i) => i.signature === 'verified' || i.signature === 'present').length,
-    r.images.filter(
-      (i) =>
-        i.signature === 'missing' || i.signature === 'not-verified' || i.signature === 'failed',
-    ).length,
+    tallyImages(r.images).images,
+    tallyImages(r.images).signed,
+    tallyImages(r.images).unsigned,
     sourceOf(r.repository, 'containerScanning'),
     sourceOf(r.repository, 'iacScanning'),
     sourceOf(r.repository, 'dast'),

@@ -1847,7 +1847,7 @@ describe('static site', () => {
       const fold = byId(html, 'details', 'supply-chain');
       expect(textOf(row(fold, '>Project Alpha<'))).toMatch(/3 of 5/);
       const beta = html.slice(html.indexOf('id="project-beta"'));
-      expect(textOf(beta.slice(0, beta.indexOf('</article>')))).toContain('2 unsigned images');
+      expect(textOf(beta.slice(0, beta.indexOf('</article>')))).toMatch(/\b1 unsigned image(?!s)/);
     });
 
     it('data quality has a Providers card with each provider state', async () => {

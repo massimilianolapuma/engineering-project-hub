@@ -156,7 +156,7 @@ describe('buildSupplyChain', () => {
     expect(SupplyChainSchema.safeParse(sc).success).toBe(true);
   });
 
-  it('totals for an alpha-like input: repositories 5, sbomAvailable 3, signedImages 3, unsignedImages 0, attestedAssets 1, flagged 0', () => {
+  it('totals for an alpha-like input: repositories 5, sbomAvailable 3, signedImages 2 (one per digest), unsignedImages 0, attestedAssets 1, flagged 0', () => {
     const harbor = (componentId: string, cosign: boolean, found = true) => ({
       componentId,
       project: 'alpha',
@@ -237,7 +237,7 @@ describe('buildSupplyChain', () => {
     expect(sc.totals).toEqual({
       repositories: 5,
       sbomAvailable: 3,
-      signedImages: 3,
+      signedImages: 2,
       unsignedImages: 0,
       attestedAssets: 1,
       flagged: 0,
@@ -314,7 +314,53 @@ describe('buildSupplyChain', () => {
     expect(sc.repositories[0]!.images[0]!.scan).toMatchObject({ state: 'scanned', counts: null });
   });
 
-  it('beta-like: not configured everywhere → sbomAvailable 0; two unsigned image rows; attestedAssets and flagged null', () => {
+  it('I-3: one image reported by the CI summary and by Harbor (same digest) counts once', () => {
+    const sc = build([
+      repoInput({
+        summary: summaryWith({
+          images: [{ name: 'example-org/api', digest: DIGEST, signature: unsigned }],
+        }),
+        harbor: [
+          {
+            componentId: 'a',
+            project: 'beta',
+            repository: 'api',
+            reference: '3.1.0',
+            result: ok({
+              digest: DIGEST,
+              scan: null,
+              signatures: { cosign: false, notation: false },
+            }),
+          },
+        ],
+      }),
+      repoInput({
+        repository: 'o/b',
+        summary: summaryWith({
+          images: [
+            { name: 'example-org/b', digest: `sha256:${'c'.repeat(64)}`, signature: signed },
+          ],
+        }),
+        harbor: [
+          {
+            componentId: 'a',
+            project: 'beta',
+            repository: 'b',
+            reference: '1.0.0',
+            result: ok({
+              digest: `sha256:${'c'.repeat(64)}`,
+              scan: null,
+              signatures: { cosign: true, notation: false },
+            }),
+          },
+        ],
+      }),
+    ]);
+    expect(sc.repositories[0]!.images).toHaveLength(2); // both sources stay visible
+    expect(sc.totals).toMatchObject({ unsignedImages: 1, signedImages: 1 });
+  });
+
+  it('beta-like: not configured everywhere → sbomAvailable 0; one unsigned image (two rows, same digest); attestedAssets and flagged null', () => {
     const sc = build([
       repoInput({ sbomDependencyGraph: { state: 'not-configured' } }),
       repoInput({
@@ -342,7 +388,7 @@ describe('buildSupplyChain', () => {
     expect(sc.totals).toMatchObject({
       sbomAvailable: 0,
       signedImages: 0,
-      unsignedImages: 2,
+      unsignedImages: 1,
       attestedAssets: null,
       flagged: null,
     });

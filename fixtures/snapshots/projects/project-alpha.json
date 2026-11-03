@@ -2300,7 +2300,7 @@
     "totals": {
       "repositories": 5,
       "sbomAvailable": 3,
-      "signedImages": 3,
+      "signedImages": 2,
       "unsignedImages": 0,
       "attestedAssets": 1,
       "flagged": 0

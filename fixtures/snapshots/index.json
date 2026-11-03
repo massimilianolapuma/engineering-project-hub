@@ -286,7 +286,7 @@
       "supplyChain": {
         "repositories": 4,
         "sbomAvailable": 0,
-        "unsignedImages": 2,
+        "unsignedImages": 1,
         "flagged": null
       },
       "freshness": "amber",
