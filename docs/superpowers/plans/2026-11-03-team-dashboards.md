@@ -56,7 +56,14 @@
 
 ## Mockup decisions
 
-Empty until Task 0 Step 4. Later UI tasks read this section first; it wins over the defaults below.
+Approved by the owner on 2026-11-03 (canvas "Hub Primer Mockups", rows "Team dashboards"). They win over the defaults in Tasks 6–7.
+
+- **Team control:** a field labelled "Team" after "Business unit"; a `<details>` whose summary is a `.btn` with the people Octicon, the text "Team", a Counter with the number of selected teams and a caret. The panel (320px, overlay background, floating shadow, large radius) has the heading "Filter by team", then one `<fieldset>` per group (legend = business unit, then "Cross teams"), one checkbox row (36px) per team with the number of projects using it on the right.
+- **Chips:** a full-width row after the filters, `button.pill.teamchip` in the accent tone with an `x` Octicon; a link value no project uses is `teamchip--unknown` (dashed, muted) with "· not in the catalog".
+- **Rows:** team Labels under the business unit (`.plist__teams`); teams matching the filter first and in the accent tone (`teamlabel--match`), the others muted; at most 3, then "+N".
+- **Project header:** "· Teams" in `.phead__meta` followed by Labels that link to `/?team=<slug>` (language-aware base).
+- **Catalog editor:** a wide "Teams (optional)" field in General, after Description: removable Labels, an input with an "Add team" button, the hint "org/team-slug, as in the team's GitHub address. Teams only filter the Portfolio: they do not restrict who can see a project.", a status line (muted for off, attention for not authorised / partial / not found), and a "Suggested from GitHub" box listing ref, evidence and an Add button, with "read N teams in <orgs> · N secret teams skipped" in its header.
+- **Styles:** the mockup CSS (`teams-mock.css` on the canvas) is the reference for spacing and tokens.
 
 ---
 
