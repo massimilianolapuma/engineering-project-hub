@@ -168,9 +168,8 @@ components:
     rounded: '{rounded.full}'
     padding: '0 10px 0 8px'
     height: '24px'
-  status-dot:
-    size: '10px'
-    rounded: '{rounded.full}'
+  status-icon:
+    size: '16px'
   control-symbol:
     size: '24px'
     rounded: '{rounded.small}'
@@ -221,7 +220,7 @@ components:
 
 The hub is a reading instrument for a weekly portfolio review, dressed in GitHub Primer (`@primer/primitives` 11.10.0, `@primer/octicons`) so it feels like one more tab of a GitHub organisation. Each page says one thing first (a single sentence such as "3 of 4 projects need attention"), then shows the list sorted worst first, and keeps the detail one click away. Character comes from Primer's restraint: white or near-black page, hairline Box borders, one muted header band, Labels for state, Octicons for every symbol, and status colour only where a status is.
 
-Status is a small, exact mark rather than a painted area: a 10px dot, six 32px dimension bars whose height repeats the state, a Primer Label with an Octicon, a 24px control symbol. Primer's `success`, `attention`, `severe` and `danger` families colour those marks. Unknown is never a fill and never calm: no fill, a 1.5px dashed `--borderColor-emphasis` outline and `--fgColor-muted` text, with the cause named in words, never shown as zero. A project score (0–100) sits next to the status with its confidence ("measured 4 of 6") always visible; with insufficient data there is an em dash, never a 0.
+Status is a small, exact mark rather than a painted area: a 16px status Octicon, six 32px dimension bars whose height repeats the state, a Primer Label with an Octicon, a 24px control symbol. Primer's `success`, `attention`, `severe` and `danger` families colour those marks. Unknown is never a fill and never calm: no fill, a 1.5px dashed `--borderColor-emphasis` outline and `--fgColor-muted` text, with the cause named in words, never shown as zero. A project score (0–100) sits next to the status with its confidence ("measured 4 of 6") always visible; with insufficient data there is an em dash, never a 0.
 
 Components use Primer functional tokens directly (`--fgColor-*`, `--bgColor-*`, `--borderColor-*`, `--button-*`, `--base-size-*`, `--borderRadius-*`, `--text-*`, `--fontStack-*`); `src/styles/tokens.css` only imports them and adds one hub token, `--status-col`. Shared base styles live in `src/styles/global.css`, page styles in each page's scoped `<style>`. The hub's earlier "Warm Graphite" system was retired in v0.10.0.
 
@@ -229,7 +228,7 @@ Components use Primer functional tokens directly (`--fgColor-*`, `--bgColor-*`, 
 
 - One dominant sentence per page, then the list worst first, detail on demand.
 - Primer functional tokens only; light and dark through Primer colour modes.
-- Status as small exact marks (dot, dimension bars, Label, control symbol), always with an Octicon, a word or an accessible name.
+- Status as small exact marks (status icon, dimension bars, Label, control symbol), always with an Octicon, a word or an accessible name.
 - Unknown is a dashed outline with the cause in words: never a fill, never zero, never calmer than a gap.
 - System font stack, no web fonts; monospace only for code, repositories, SHAs and versions.
 - Flat Boxes with 1px borders and 6px corners; Labels fully rounded.
@@ -306,7 +305,7 @@ The header is one `--bgColor-muted` band with a bottom border: the brand row (Oc
 
 Every page follows the same order: title, one lead sentence, then the list worst first, then secondary or collapsed sections, then a one-line legend linking to "How to read".
 
-- **Portfolio:** title and lead on the left, status count filters on the right; one inline filter row with more filters in a disclosure; then one Box holding the project list: status dot, project, score with confidence, trend sparkline, six dimension bars (short labels once in the header), main reason.
+- **Portfolio:** title and lead on the left, status count filters on the right; one inline filter row with more filters in a disclosure; then one Box holding the project list: status icon, project, score with confidence, trend sparkline, six dimension bars (short labels once in the header), main reason.
 - **Project:** breadcrumb; header with name, status Label, score and confidence; the reasons box, red first; dimension cards; environments as a DEV → UAT → PROD path; a components table; collapsible Workflows, Security, Controls coverage, Repository controls, Code quality and Collection errors.
 - **Security, Versions, Workflows, What changed:** one Box per project, worst first, showing only what needs attention.
 - **Data quality** and **Catalog** keep the same list and form structure in Box and FormControl looks.
@@ -342,9 +341,9 @@ Icons are Octicons rendered to inline SVG at build time (`src/lib/octicon.ts`, 1
 
 ## Components
 
-### Status dot
+### Status icon
 
-A 10px circle filled with `--fgColor-danger`, `--fgColor-attention` or `--fgColor-success`, or a hollow 2px `--borderColor-emphasis` ring for unknown. Kept from before Primer because the "How to read" copy names the dot. It has an accessible name and always sits next to text. In forced-colours mode it gets a `CanvasText` border.
+The 16px Octicon the status Labels use, in the state's `fgColor`: `x-circle-fill` (critical, `--fgColor-danger`), `alert-fill` (attention, `--fgColor-attention`), `check-circle-fill` (healthy, `--fgColor-success`) and the outline `question` for unknown (`--fgColor-muted`, never a fill). Each state has its own shape, so status never relies on colour. It replaced the 10px status dot on 2026-11-03 (owner decision). It has an accessible name and always sits next to text; in forced-colours mode the icon keeps its shape in `CanvasText`.
 
 ### Primer Label (status pill, badge, severity)
 
@@ -384,7 +383,7 @@ Primer FormControl look: label 12px semibold in `--fgColor-default` above the fi
 
 ### Count filters
 
-The status counts in the Portfolio title line are the status filter: default-surface buttons with a 1px border, 6px corners, at least 40px: dot, 700 tabular value, label. Hover moves the border to `--borderColor-emphasis`; pressed (`aria-pressed=true`) uses an ink border, `--bgColor-muted` and the inset ink ring. Pressing the active count clears the filter.
+The status counts in the Portfolio title line are the status filter: default-surface buttons with a 1px border, 6px corners, at least 40px: status icon, 700 tabular value, label. Hover moves the border to `--borderColor-emphasis`; pressed (`aria-pressed=true`) uses an ink border, `--bgColor-muted` and the inset ink ring. Pressing the active count clears the filter.
 
 ### Navigation
 
@@ -420,7 +419,7 @@ On Data quality: a Box with one bordered tile per provider (SonarQube, Harbor, A
 
 ### Legend
 
-One 12px muted line under each list: the four status dots (or the six control-symbol Octicons) with their names, and a link to "How to read".
+One 12px muted line under each list: the four status icons (or the six control-symbol Octicons) with their names, and a link to "How to read".
 
 ## Do's and Don'ts
 

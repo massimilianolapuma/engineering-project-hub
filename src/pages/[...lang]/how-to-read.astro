@@ -207,7 +207,7 @@ const SECTIONS = [
       {STATES.map((s) => (
         <li class="htr-row" data-state-row={s}>
           <span class="htr-key">
-            <span aria-hidden="true" class="htr-dot">
+            <span aria-hidden="true" class="htr-icon">
               <StatusDot status={s} label={i18n.status(s)} />
             </span>
             <strong>{i18n.status(s)}</strong>
@@ -343,7 +343,7 @@ const SECTIONS = [
                 <tr role="row">
                   <th role="rowheader" scope="row">
                     <span class="htr-key htr-key--inline">
-                      <span aria-hidden="true" class="htr-dot">
+                      <span aria-hidden="true" class="htr-icon">
                         <StatusDot status={s} label={i18n.status(s)} />
                       </span>
                       {i18n.status(s)}
@@ -357,7 +357,7 @@ const SECTIONS = [
               <tr role="row">
                 <th role="rowheader" scope="row">
                   <span class="htr-key htr-key--inline">
-                    <span aria-hidden="true" class="htr-dot">
+                    <span aria-hidden="true" class="htr-icon">
                       <StatusDot status="grey" label={i18n.status('grey')} />
                     </span>
                     {i18n.status('grey')}
@@ -391,7 +391,7 @@ const SECTIONS = [
                 <tr role="row">
                   <th role="rowheader" scope="row">
                     <span class="htr-key htr-key--inline">
-                      <span aria-hidden="true" class="htr-dot">
+                      <span aria-hidden="true" class="htr-icon">
                         <StatusDot status={s} label={i18n.status(s)} />
                       </span>
                       {i18n.status(s)}
@@ -676,7 +676,7 @@ const SECTIONS = [
   .htr-key--inline {
     font-weight: 600;
   }
-  .htr-dot {
+  .htr-icon {
     display: inline-flex;
     justify-content: center;
     width: 24px;

@@ -8,6 +8,7 @@ import ScoreBadge from '../../components/ScoreBadge.astro';
 import StatusBadge from '../../components/StatusBadge.astro';
 import Sparkline from '../../components/Sparkline.astro';
 import StatusDot from '../../components/StatusDot.astro';
+import StatusIcon from '../../components/StatusIcon.astro';
 import Base from '../../layouts/Base.astro';
 import { teamSlug } from '@model/teams';
 import { loadCatalogSnapshot, loadHistory } from '../../lib/data';
@@ -150,7 +151,7 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
         <div class="counts" role="group" aria-label={d.portfolio.countsLabel}>
           {(['red', 'amber', 'green', 'grey'] as const).map((s) => (
             <button type="button" class="count-btn" data-health-filter={s} aria-pressed="false">
-              <span class={`count-btn__dot count-btn__dot--${s}`} aria-hidden="true" />
+              <StatusIcon tone={s} />
               <span class="count-btn__value">{tally(s)}</span>
               <span>{i18n.status(s)}</span>
             </button>
@@ -566,24 +567,6 @@ const collectedAt = index ? i18n.date(index.generatedAt) : null;
     line-height: 18px;
     text-align: center;
     font-variant-numeric: tabular-nums;
-  }
-  .count-btn__dot {
-    flex: none;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-  }
-  .count-btn__dot--red {
-    background: var(--fgColor-danger);
-  }
-  .count-btn__dot--amber {
-    background: var(--fgColor-attention);
-  }
-  .count-btn__dot--green {
-    background: var(--fgColor-success);
-  }
-  .count-btn__dot--grey {
-    border: 2px solid var(--borderColor-emphasis);
   }
 
   /* Filters: one inline row; lifecycle and severity under "More filters". */

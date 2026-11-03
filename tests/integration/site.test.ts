@@ -67,6 +67,53 @@ describe('static site', () => {
     expect(html).not.toMatch(/>(undefined|NaN|null|\[object Object\])</);
   });
 
+  describe('status icons (no status dots)', () => {
+    const STATUS_ICON = {
+      red: 'x-circle-fill',
+      amber: 'alert-fill',
+      green: 'check-circle-fill',
+      grey: 'question',
+    } as const;
+
+    it.each(VIEWS.flatMap((v) => [v, `it/${v}`.replace(/\/$/, '')]))(
+      'no empty colour-circle status dot is left on /%s',
+      async (v) => {
+        const html = await page(v);
+        expect(html).not.toMatch(
+          /class="(?:dot|legend__dot|count-btn__dot|quality__dot|dimcard__dot)[\s"]/,
+        );
+      },
+    );
+
+    it('each portfolio row shows its status as the matching Octicon, named "Overall: …"', async () => {
+      const html = await page('');
+      const rows = html.split('<tr').filter((r) => r.includes('data-project'));
+      expect(rows.length).toBeGreaterThan(0);
+      for (const row of rows) {
+        const status = row.match(/data-health="(red|amber|green|grey)"/)?.[1] as
+          keyof typeof STATUS_ICON | undefined;
+        expect(status, row.slice(0, 200)).toBeDefined();
+        expect(row).toMatch(
+          new RegExp(
+            `role="img"[^>]*aria-label="Overall: [^"]+"[^>]*>\\s*<svg[^>]*octicon-${STATUS_ICON[status!]}`,
+          ),
+        );
+      }
+    });
+
+    it('the status legend says "question mark or dashed" (EN + IT)', async () => {
+      expect(textOf(await page(''))).toContain('Question mark or dashed: unknown, never zero');
+      expect(textOf(await page('it'))).toContain(
+        'Punto interrogativo o tratteggiato: sconosciuto, mai zero',
+      );
+    });
+
+    it('how to read no longer talks about a status dot (EN + IT)', async () => {
+      expect(textOf(await page('how-to-read'))).not.toMatch(/status dot|next to its dot/);
+      expect(textOf(await page('it/how-to-read'))).not.toMatch(/pallino/);
+    });
+  });
+
   it('shows separate health dimensions on the portfolio, with text + shape, not colour only', async () => {
     const html = await page('');
     for (const label of ['Delivery', 'Version', 'Security risk', 'Controls coverage', 'Quality'])
@@ -1563,9 +1610,11 @@ describe('static site', () => {
     const policies = PoliciesSchema.parse(parse(readFileSync('config/policies.yaml', 'utf8')));
     const h = d.howToRead;
     expect(html).toMatch(new RegExp(`<h1[^>]*>${esc(h.title)}</h1>`));
-    // Four states, each a dot with its label (text + shape, never colour alone).
+    // Four states, each an icon with its label (text + shape, never colour alone).
     for (const s of ['red', 'amber', 'green', 'grey'] as const) {
-      expect(html).toMatch(new RegExp(`data-state-row="${s}"[\\s\\S]*?class="dot dot--${s}"`));
+      expect(html).toMatch(
+        new RegExp(`data-state-row="${s}"[\\s\\S]*?class="status-icon status-icon--${s}"`),
+      );
       expect(html).toContain(esc(d.status[s]));
     }
     // Six control symbols with their meanings.

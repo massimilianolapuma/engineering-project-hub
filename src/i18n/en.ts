@@ -75,7 +75,7 @@ export const en = {
   },
   legend: {
     title: 'Legend',
-    unknownDashed: 'Hollow or dashed: unknown, never zero',
+    unknownDashed: 'Question mark or dashed: unknown, never zero',
     howToRead: 'How to read',
     scoreHow: 'How the score is computed',
   },
@@ -1291,7 +1291,7 @@ export const en = {
     onThisPage: 'On this page',
     statesTitle: 'Health states',
     statesIntro:
-      'Every project and every dimension has one of four states. The state is always written next to its dot: colour is never the only sign.',
+      'Every project and every dimension has one of four states. The state is always written next to its icon, and each state has its own shape: colour is never the only sign.',
     barsNote:
       'On the Portfolio, each project has six dimension bars. Their height repeats the state, so colour is never the only sign: critical is a full-height bar, attention two thirds, healthy one third; unknown is a full-height dashed outline with no fill.',
     states: {
@@ -1299,7 +1299,7 @@ export const en = {
       amber:
         'Issues that need follow-up but do not block, for example a component behind its latest release.',
       green: 'Every required dimension is healthy under the configured policies.',
-      grey: 'We could not read enough data to decide. Drawn as a dashed outline (a hollow ring for the small status dot): never as zero, never as healthy.',
+      grey: 'We could not read enough data to decide. Drawn as a dashed outline or a question mark: never as zero, never as healthy.',
     },
     criticalDimensions:
       'Critical in {dimensions} makes the whole project critical; critical elsewhere counts as attention.',

@@ -9,6 +9,7 @@
  * it. Statuses and reason levels are the collector's; the thresholds (tick and legend) come from
  * the policies read at build time, like on "How to read".
  */
+import StatusIcon from './StatusIcon.astro';
 import type { Policies, ProjectSnapshot, QualityReportState } from '@model/index';
 import type { I18n } from '../i18n';
 import { shortSha } from '../lib/format';
@@ -62,7 +63,7 @@ const findings = qh.findings;
 
 <section id="quality" class="card quality" aria-labelledby="h-quality" data-status={qh.status}>
   <div class="quality__head">
-    <span class={`quality__dot quality__dot--${qh.status}`} aria-hidden="true"></span>
+    <StatusIcon tone={qh.status} />
     <h2 id="h-quality">{q.title}</h2>
     <Pill tone={qh.status} label={i18n.status(qh.status)} />
   </div>
@@ -376,24 +377,6 @@ const findings = qh.findings;
     line-height: 22px;
     font-weight: 600;
   }
-  .quality__dot {
-    flex: none;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-  }
-  .quality__dot--red {
-    background: var(--fgColor-danger);
-  }
-  .quality__dot--amber {
-    background: var(--fgColor-attention);
-  }
-  .quality__dot--green {
-    background: var(--fgColor-success);
-  }
-  .quality__dot--grey {
-    border: 2px solid var(--borderColor-emphasis);
-  }
 
   .quality__tiles {
     display: grid;
@@ -537,9 +520,6 @@ const findings = qh.findings;
     }
     .qsym--unknown {
       border-style: dashed;
-    }
-    .quality__dot {
-      border: 1.5px solid CanvasText;
     }
   }
 </style>
