@@ -50,21 +50,21 @@ const hasValue = score.value !== null;
   }
   .score__value {
     font-weight: 700;
-    color: var(--text);
+    color: var(--fgColor-default);
   }
   .score__value--none {
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
   }
   .score__out,
   .score__conf {
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
   }
   .score--row .score__value {
-    font-size: var(--fs-lg);
+    font-size: var(--text-title-size-small);
     line-height: 24px;
   }
   .score--row .score__conf {
-    font-size: var(--fs-xs);
+    font-size: var(--text-body-size-small);
     line-height: 16px;
   }
   .score__conf-line {
@@ -76,10 +76,10 @@ const hasValue = score.value !== null;
     text-align: right;
   }
   .score--header .score__value {
-    font-size: var(--fs-score);
+    font-size: var(--text-title-size-large);
     line-height: 34px;
   }
   .score--header .score__conf {
-    font-size: var(--fs-sm);
+    font-size: var(--text-body-size-small);
   }
 </style>

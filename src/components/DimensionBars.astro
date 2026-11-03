@@ -87,7 +87,7 @@ const HEIGHT: Record<HealthStatus, 1 | 2 | 3> = { red: 3, amber: 2, green: 1, gr
     flex: none;
     width: 32px;
     height: 12px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--borderRadius-small);
   }
   .dimbars__bar--h2 {
     height: 8px;
@@ -96,26 +96,26 @@ const HEIGHT: Record<HealthStatus, 1 | 2 | 3> = { red: 3, amber: 2, green: 1, gr
     height: 4px;
   }
   .dimbars__bar--red {
-    background: var(--red);
+    background: var(--fgColor-danger);
   }
   .dimbars__bar--amber {
-    background: var(--amber);
+    background: var(--fgColor-attention);
   }
   .dimbars__bar--green {
-    background: var(--green);
+    background: var(--fgColor-success);
   }
   .dimbars__bar--grey {
     background: transparent;
-    border: 1.5px dashed var(--unknown);
+    border: 1.5px dashed var(--borderColor-emphasis);
   }
   .dimbars__label {
     width: 32px;
     flex: none;
     text-align: center;
     text-decoration: none;
-    font-size: var(--fs-xs);
+    font-size: var(--text-body-size-small);
     font-weight: 600;
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
     cursor: help;
   }
   /* Forced colours drop the fills: keep the bars solid so their heights still read. */

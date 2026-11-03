@@ -168,6 +168,14 @@ describe('static site', () => {
     expect(html).toContain('Legenda');
   });
 
+  it('server-renders the Primer colour mode attributes on <html>', async () => {
+    for (const p of ['', 'it']) {
+      expect(await page(p)).toMatch(
+        /<html[^>]*data-color-mode="auto"[^>]*data-light-theme="light"[^>]*data-dark-theme="dark"/,
+      );
+    }
+  });
+
   it('links to the original GitHub resources', async () => {
     const html = await page('projects/project-alpha');
     expect(html).toContain('href="https://github.com/example-org/project-alpha-coordinator"');

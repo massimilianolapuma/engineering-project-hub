@@ -50,18 +50,18 @@ const glyphs: ControlGlyph[] = ['✓', '!', '⧖', '✕', '?', '–'];
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2) var(--space-4);
+    gap: var(--base-size-8) var(--base-size-16);
     margin: 0;
     padding: 0;
     border: 0;
     background: none;
-    color: var(--text-muted);
-    font-size: var(--fs-sm);
+    color: var(--fgColor-muted);
+    font-size: var(--text-body-size-small);
   }
   .legend__items {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2) var(--space-4);
+    gap: var(--base-size-8) var(--base-size-16);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -79,21 +79,21 @@ const glyphs: ControlGlyph[] = ['✓', '!', '⧖', '✕', '?', '–'];
     border-radius: 50%;
   }
   .legend__dot--red {
-    background: var(--red);
+    background: var(--fgColor-danger);
   }
   .legend__dot--amber {
-    background: var(--amber);
+    background: var(--fgColor-attention);
   }
   .legend__dot--green {
-    background: var(--green);
+    background: var(--fgColor-success);
   }
   .legend__dot--grey {
-    border: 2px solid var(--unknown);
+    border: 2px solid var(--borderColor-emphasis);
   }
   .legend__glyph {
     min-width: 1ch;
     font-weight: 700;
-    color: var(--text);
+    color: var(--fgColor-default);
     text-align: center;
   }
   .legend__link {

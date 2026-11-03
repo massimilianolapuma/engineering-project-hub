@@ -553,29 +553,29 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
   .sec {
     display: flex;
     flex-direction: column;
-    gap: var(--space-5);
+    gap: var(--base-size-24);
   }
   .sec-head h1 {
     margin: 0;
   }
   .sec-lead {
     margin: 6px 0 0;
-    font-size: var(--fs-lead);
+    font-size: var(--text-body-size-large);
     line-height: 24px;
     font-weight: 600;
   }
   .sec-summary {
-    margin: var(--space-1) 0 0;
+    margin: var(--base-size-4) 0 0;
   }
   .sec-totals {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--base-size-8);
   }
   .sec-totals__grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
-    gap: var(--space-3);
+    gap: var(--base-size-12);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -584,19 +584,19 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
     display: flex;
     flex-direction: column;
     margin: 0;
-    padding: var(--space-4);
+    padding: var(--base-size-16);
   }
   .sec-total__num {
-    font-size: var(--fs-score);
+    font-size: var(--text-title-size-large);
     line-height: 34px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
   }
   .sec-total__num--critical {
-    color: var(--red-text);
+    color: var(--fgColor-danger);
   }
   .sec-total__num--unknown {
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
   }
   .sec-note {
     margin: 0;
@@ -604,19 +604,19 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
   .sec-projects {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--base-size-12);
   }
   .sec-card {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--base-size-12);
     margin: 0;
-    padding: var(--space-4);
+    padding: var(--base-size-16);
   }
   .card--unknown {
     border-style: dashed;
-    border-color: var(--unknown);
-    gap: var(--space-2);
+    border-color: var(--borderColor-emphasis);
+    gap: var(--base-size-8);
   }
   .sec-card__head {
     display: flex;
@@ -626,12 +626,12 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
   }
   .sec-card__title {
     margin: 0;
-    font-size: var(--fs-card);
+    font-size: var(--text-body-size-large);
     line-height: 22px;
     font-weight: 600;
   }
   .sec-card__title a {
-    color: var(--text);
+    color: var(--fgColor-default);
   }
   .sec-card__coverage {
     margin-left: auto;
@@ -642,7 +642,7 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
   .sec-card__links {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-1) var(--space-4);
+    gap: var(--base-size-4) var(--base-size-16);
   }
   .sec-card__links :global(a) {
     display: inline-flex;
@@ -653,28 +653,28 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2) 18px;
+    gap: var(--base-size-8) 18px;
     margin: 0;
     padding: 0;
     list-style: none;
   }
   .sec-sev__num {
-    font-size: var(--fs-count);
+    font-size: var(--text-body-size-large);
     font-variant-numeric: tabular-nums;
   }
   .sec-sev__num--critical {
-    color: var(--red-text);
+    color: var(--fgColor-danger);
   }
   .sec-crit__title {
-    margin: 0 0 var(--space-1);
-    font-size: var(--fs-sm);
+    margin: 0 0 var(--base-size-4);
+    font-size: var(--text-body-size-small);
     font-weight: 600;
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
   }
   .sec-crit__list {
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
+    gap: var(--base-size-4);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -683,19 +683,19 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-1) var(--space-3);
+    gap: var(--base-size-4) var(--base-size-12);
   }
   .sec-crit__text {
     flex: 1 1 16rem;
     min-width: 0;
   }
   .sec-crit__repo {
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
   }
   .sec-ctl {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2) 14px;
+    gap: var(--base-size-8) 14px;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -706,48 +706,48 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
     align-items: center;
   }
   .sec-ctl__scan {
-    margin-left: var(--space-1);
-    color: var(--text-muted);
+    margin-left: var(--base-size-4);
+    color: var(--fgColor-muted);
   }
   .sec-risk {
     margin: 0;
   }
   .sec-queue,
   .sec-matrix {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    background: var(--bgColor-default);
+    border: 1px solid var(--borderColor-default);
+    border-radius: var(--borderRadius-medium);
   }
   .sec-queue > summary,
   .sec-matrix > summary {
     display: flex;
     align-items: center;
     min-height: 44px;
-    padding: 0 var(--space-4);
+    padding: 0 var(--base-size-16);
     font-weight: 600;
     cursor: pointer;
   }
   .sec-queue > summary {
     flex-wrap: wrap;
-    gap: var(--space-1) var(--space-3);
+    gap: var(--base-size-4) var(--base-size-12);
   }
   .sec-queue__title {
     font-weight: 600;
   }
   .sec-queue__hint {
-    color: var(--text-muted);
-    font-size: var(--fs-sm);
+    color: var(--fgColor-muted);
+    font-size: var(--text-body-size-small);
     font-weight: 400;
   }
   .sec-queue__body,
   .sec-matrix__body {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
-    padding: 0 var(--space-4) var(--space-4);
+    gap: var(--base-size-16);
+    padding: 0 var(--base-size-16) var(--base-size-16);
   }
   .sec-matrix__project h3 {
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--base-size-8);
   }
   @media (max-width: 640px) {
     .sec-card__coverage {

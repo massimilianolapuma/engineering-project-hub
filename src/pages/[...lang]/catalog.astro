@@ -218,33 +218,33 @@ const editorStrings = jsonForScript({
    * "Propose on GitHub" (one per pending change); every other action is secondary.
    */
   .ce-head {
-    margin-bottom: var(--space-5);
+    margin-bottom: var(--base-size-24);
   }
   .ce-head h1 {
     margin: 0;
-    font-size: var(--fs-xl);
+    font-size: var(--text-title-size-medium);
     line-height: 28px;
     font-weight: 600;
   }
   .ce-headline {
     margin: 6px 0 0;
     max-width: 70ch;
-    font-size: var(--fs-lead);
+    font-size: var(--text-body-size-large);
     line-height: 24px;
     font-weight: 600;
-    color: var(--text);
+    color: var(--fgColor-default);
   }
   .ce-readonly {
-    margin: var(--space-1) 0 0;
+    margin: var(--base-size-4) 0 0;
     max-width: 75ch;
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
   }
 
   /* Layout: side list + main column (form, then the proposal box). One column on phones. */
   .ce {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-5);
+    gap: var(--base-size-24);
     align-items: start;
   }
   @media (min-width: 900px) {
@@ -257,33 +257,33 @@ const editorStrings = jsonForScript({
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: var(--base-size-16);
   }
   .ce-panel {
     margin: 0;
-    padding: var(--space-4);
+    padding: var(--base-size-16);
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--base-size-8);
   }
   .ce-panel .note {
     margin: 0;
   }
   .ce-panel--projects {
-    padding: var(--space-3);
-    gap: var(--space-1);
+    padding: var(--base-size-12);
+    gap: var(--base-size-4);
   }
   .ce-panel__title {
     margin: 0;
-    font-size: var(--fs-card);
+    font-size: var(--text-body-size-large);
     line-height: 22px;
     font-weight: 600;
   }
   .ce-panel--projects .ce-panel__title {
-    padding: var(--space-1) var(--space-3) var(--space-2);
+    padding: var(--base-size-4) var(--base-size-12) var(--base-size-8);
   }
   .ce-new {
-    margin-top: var(--space-2);
+    margin-top: var(--base-size-8);
   }
 
   /* Projects: name + id, pending badge on the right. */
@@ -294,15 +294,15 @@ const editorStrings = jsonForScript({
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-2);
+    gap: var(--base-size-8);
     min-height: 44px;
-    padding: var(--space-2) var(--space-3);
+    padding: var(--base-size-8) var(--base-size-12);
     border: 1px solid transparent;
-    border-radius: var(--radius-md);
+    border-radius: var(--borderRadius-medium);
   }
   .ce :global(.ce-project[aria-current='true']) {
-    background: var(--surface-2);
-    border-color: var(--border-strong);
+    background: var(--bgColor-muted);
+    border-color: var(--borderColor-emphasis);
   }
   .ce :global(.ce-project[aria-current='true'] .ce-project__name) {
     font-weight: 700;
@@ -313,7 +313,7 @@ const editorStrings = jsonForScript({
     min-width: 0;
   }
   .ce :global(.ce-project__name) {
-    font-size: var(--fs-md);
+    font-size: var(--text-body-size-medium);
     font-weight: 500;
     overflow-wrap: anywhere;
   }
@@ -326,54 +326,54 @@ const editorStrings = jsonForScript({
   .ce-form-body {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: var(--base-size-16);
     min-width: 0;
   }
   .ce__title {
     margin: 0;
-    font-size: var(--fs-lead);
+    font-size: var(--text-body-size-large);
     line-height: 24px;
     font-weight: 600;
   }
   .ce :global(.ce-section),
   .ce-kind {
     margin: 0;
-    padding: 14px var(--space-4);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    padding: 14px var(--base-size-16);
+    background: var(--bgColor-default);
+    border: 1px solid var(--borderColor-default);
+    border-radius: var(--borderRadius-medium);
   }
   .ce :global(.ce-section > h3) {
-    margin: 0 0 var(--space-3);
-    font-size: var(--fs-card);
+    margin: 0 0 var(--base-size-12);
+    font-size: var(--text-body-size-large);
     line-height: 22px;
     font-weight: 600;
   }
   .ce :global(.ce-section > .note) {
-    margin: 0 0 var(--space-3);
+    margin: 0 0 var(--base-size-12);
   }
   .ce :global(.ce-field > label) {
-    font-size: var(--fs-xs);
-    color: var(--text-muted);
+    font-size: var(--text-body-size-small);
+    color: var(--fgColor-muted);
   }
   .ce :global(.ce-hint) {
-    font-size: var(--fs-sm);
+    font-size: var(--text-body-size-small);
   }
 
   /* Components, environments, workflows: rows separated by a rule, not nested boxes. */
   .ce :global(.ce-row) {
     margin: 0;
-    padding: var(--space-3) 0;
+    padding: var(--base-size-12) 0;
     border: 0;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--borderColor-default);
     border-radius: 0;
   }
   .ce :global(.ce-row > legend) {
     float: left;
     width: 100%;
-    margin: 0 0 var(--space-2);
+    margin: 0 0 var(--base-size-8);
     padding: 0;
-    font-size: var(--fs-sm);
+    font-size: var(--text-body-size-small);
     font-weight: 600;
   }
   .ce :global(.ce-row > legend + *) {
@@ -385,14 +385,14 @@ const editorStrings = jsonForScript({
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: var(--space-3);
-    font-size: var(--fs-md);
+    gap: var(--base-size-12);
+    font-size: var(--text-body-size-medium);
   }
   .ce-kind[hidden] {
     display: none;
   }
   .ce :global(.ce-kind__label) {
-    font-size: var(--fs-card);
+    font-size: var(--text-body-size-large);
     line-height: 22px;
     font-weight: 600;
   }
@@ -402,23 +402,23 @@ const editorStrings = jsonForScript({
     padding: 0;
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2);
+    gap: var(--base-size-8);
   }
   .ce :global(.ce-seg > li) {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--base-size-8);
     min-height: 40px;
     padding: 0 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    color: var(--text-muted);
+    border: 1px solid var(--borderColor-default);
+    border-radius: var(--borderRadius-medium);
+    color: var(--fgColor-muted);
     font-weight: 500;
   }
   .ce :global(.ce-seg > li[aria-current='true']) {
-    border-color: var(--text);
-    box-shadow: inset 0 0 0 1px var(--text);
-    color: var(--text);
+    border-color: var(--fgColor-default);
+    box-shadow: inset 0 0 0 1px var(--fgColor-default);
+    color: var(--fgColor-default);
     font-weight: 600;
   }
   /* Radio-like mark: a ring, filled with a dot for the current type (shape, not colour). */
@@ -427,23 +427,23 @@ const editorStrings = jsonForScript({
     width: 14px;
     height: 14px;
     flex: none;
-    border: 1.5px solid var(--border-strong);
+    border: 1.5px solid var(--borderColor-emphasis);
     border-radius: 50%;
   }
   .ce :global([aria-current='true'] > .ce-seg__dot) {
-    border-color: var(--text);
+    border-color: var(--fgColor-default);
   }
   .ce :global([aria-current='true'] > .ce-seg__dot::after) {
     content: '';
     position: absolute;
     inset: 2.5px;
     border-radius: 50%;
-    background: var(--text);
+    background: var(--fgColor-default);
   }
   .ce :global(.ce-kind__help) {
     margin: 0;
-    font-size: var(--fs-sm);
-    color: var(--text-muted);
+    font-size: var(--text-body-size-small);
+    color: var(--fgColor-muted);
   }
 
   /* Actions: secondary by default, ≥40px; the accent primary (Propose on GitHub) is ≥44px. */
@@ -451,49 +451,49 @@ const editorStrings = jsonForScript({
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-1);
+    gap: var(--base-size-4);
     min-height: 40px;
-    padding: 6px var(--space-4);
-    font-size: var(--fs-md);
-    color: var(--text);
-    background: var(--surface);
-    border-color: var(--border-strong);
-    border-radius: var(--radius-md);
+    padding: 6px var(--base-size-16);
+    font-size: var(--text-body-size-medium);
+    color: var(--fgColor-default);
+    background: var(--bgColor-default);
+    border-color: var(--borderColor-emphasis);
+    border-radius: var(--borderRadius-medium);
   }
   .ce :global(.btn:hover) {
-    background: var(--surface-2);
-    border-color: var(--text);
+    background: var(--bgColor-muted);
+    border-color: var(--fgColor-default);
   }
   .ce :global(.btn--primary),
   .ce :global(.btn--primary:hover) {
     min-height: 44px;
     padding: 6px 18px;
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--on-accent);
+    background: var(--button-primary-bgColor-rest);
+    border-color: var(--button-primary-borderColor-rest);
+    color: var(--button-primary-fgColor-rest);
   }
   .ce :global(.btn--ghost) {
     background: transparent;
   }
   .ce :global(.btn--danger) {
-    color: var(--red-text);
-    border-color: var(--red);
+    color: var(--fgColor-danger);
+    border-color: var(--fgColor-danger);
   }
   .ce :global(.btn--sm) {
     min-height: 40px;
-    padding: 6px var(--space-3);
-    font-size: var(--fs-sm);
+    padding: 6px var(--base-size-12);
+    font-size: var(--text-body-size-small);
   }
   .ce :global(.ce-actions) {
-    gap: var(--space-2);
+    gap: var(--base-size-8);
   }
 
   /* Discovered repositories and suggestions: compact rows, no tinted boxes. */
   .ce :global(.ce-group) {
-    margin: var(--space-2) 0 0;
-    font-size: var(--fs-sm);
+    margin: var(--base-size-8) 0 0;
+    font-size: var(--text-body-size-small);
     font-weight: 600;
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
   }
   .ce :global(.ce-proposals),
   .ce :global(.ce-suggestions) {
@@ -502,10 +502,10 @@ const editorStrings = jsonForScript({
   }
   .ce :global(.ce-proposal),
   .ce :global(.ce-suggestion) {
-    gap: var(--space-1);
-    padding: var(--space-2) 0;
+    gap: var(--base-size-4);
+    padding: var(--base-size-8) 0;
     border: 0;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--borderColor-default);
     border-radius: 0;
     background: transparent;
   }
@@ -514,37 +514,37 @@ const editorStrings = jsonForScript({
     border-top: 0;
   }
   .ce :global(.ce-proposal__status) {
-    font-size: var(--fs-sm);
+    font-size: var(--text-body-size-small);
   }
   .ce :global(.ce-kind__pill) {
-    background: var(--surface-2);
-    border-color: var(--border);
-    color: var(--text);
+    background: var(--bgColor-muted);
+    border-color: var(--borderColor-default);
+    color: var(--fgColor-default);
   }
   .ce :global(.ce-merge) {
-    border-color: var(--border-strong);
+    border-color: var(--borderColor-emphasis);
   }
 
   /* Proposal dock: one line, sticky at the bottom of the form column on wide screens. */
   .ce-dock {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
-    margin: var(--space-4) 0;
-    padding: var(--space-2) var(--space-4);
-    background: var(--surface);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-lg);
+    gap: var(--base-size-8);
+    margin: var(--base-size-16) 0;
+    padding: var(--base-size-8) var(--base-size-16);
+    background: var(--bgColor-default);
+    border: 1px solid var(--borderColor-emphasis);
+    border-radius: var(--borderRadius-medium);
     z-index: 2;
   }
   .ce-dock:has(.ce-dock__undo:not([hidden])) {
     position: sticky;
-    bottom: var(--space-3);
+    bottom: var(--base-size-12);
   }
   @media (min-width: 1024px) {
     .ce-dock {
       position: sticky;
-      bottom: var(--space-3);
+      bottom: var(--base-size-12);
     }
   }
   .ce-dock__undo,
@@ -552,18 +552,18 @@ const editorStrings = jsonForScript({
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2) var(--space-3);
+    gap: var(--base-size-8) var(--base-size-12);
   }
   .ce-dock__undo[hidden] {
     display: none;
   }
   .ce-dock__undo {
-    padding-bottom: var(--space-2);
-    border-bottom: 1px solid var(--border);
+    padding-bottom: var(--base-size-8);
+    border-bottom: 1px solid var(--borderColor-default);
     font-weight: 500;
   }
   .ce-dock__count {
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
     font-variant-numeric: tabular-nums;
   }
   .ce-dock__go {
@@ -576,63 +576,63 @@ const editorStrings = jsonForScript({
   /* Proposal box: validation pill, pending changes with their GitHub action, generated file. */
   .ce-proposal-box {
     margin: 0;
-    padding: var(--space-4) 20px;
+    padding: var(--base-size-16) 20px;
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: var(--base-size-16);
   }
   .ce-proposal-box__head {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: var(--space-1) var(--space-3);
+    gap: var(--base-size-4) var(--base-size-12);
   }
   .ce-proposal-box__head h2 {
     margin: 0;
-    font-size: var(--fs-lead);
+    font-size: var(--text-body-size-large);
     line-height: 24px;
     font-weight: 600;
   }
   .ce-proposal-box__summary {
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
     font-variant-numeric: tabular-nums;
   }
   .ce-part {
     min-width: 0;
-    padding-top: var(--space-4);
-    border-top: 1px solid var(--border);
+    padding-top: var(--base-size-16);
+    border-top: 1px solid var(--borderColor-default);
   }
   .ce-part--validation {
     padding-top: 0;
     border-top: 0;
   }
   .ce-part__title {
-    margin: 0 0 var(--space-2);
-    font-size: var(--fs-card);
+    margin: 0 0 var(--base-size-8);
+    font-size: var(--text-body-size-large);
     line-height: 22px;
     font-weight: 600;
   }
   .ce-part .note {
-    margin: 0 0 var(--space-3);
+    margin: 0 0 var(--base-size-12);
   }
   .ce :global(.ce-summary) {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    margin: 0 0 var(--space-2);
+    margin: 0 0 var(--base-size-8);
     padding: 4px 10px;
-    border-radius: var(--radius-pill);
-    font-size: var(--fs-xs);
+    border-radius: var(--borderRadius-full);
+    font-size: var(--text-body-size-small);
     line-height: 16px;
     font-weight: 600;
   }
   .ce :global(.ce-summary--ok) {
-    background: var(--green-tint);
-    color: var(--green-text);
+    background: var(--bgColor-success-muted);
+    color: var(--fgColor-success);
   }
   .ce :global(.ce-summary--bad) {
-    background: var(--red-tint);
-    color: var(--red-text);
+    background: var(--bgColor-danger-muted);
+    color: var(--fgColor-danger);
   }
   .ce :global(.ce-issue) {
     border-color: transparent;
@@ -641,10 +641,10 @@ const editorStrings = jsonForScript({
     gap: 0;
   }
   .ce :global(.ce-change) {
-    gap: var(--space-2);
-    padding: var(--space-3) 0;
+    gap: var(--base-size-8);
+    padding: var(--base-size-12) 0;
     border: 0;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--borderColor-default);
     border-radius: 0;
     background: transparent;
   }
@@ -658,19 +658,19 @@ const editorStrings = jsonForScript({
     width: var(--status-col);
   }
   .ce :global(.ce-change__name) {
-    font-size: var(--fs-md);
+    font-size: var(--text-body-size-medium);
   }
   .ce-yaml {
     min-height: 200px;
   }
   .ce-legacy {
-    margin-top: var(--space-3);
-    padding-top: var(--space-3);
-    border-top: 1px solid var(--border);
+    margin-top: var(--base-size-12);
+    padding-top: var(--base-size-12);
+    border-top: 1px solid var(--borderColor-default);
   }
   .ce-howto {
-    border-top: 1px solid var(--border);
-    padding-top: var(--space-2);
+    border-top: 1px solid var(--borderColor-default);
+    padding-top: var(--base-size-8);
   }
   .ce-howto > summary {
     min-height: 40px;
@@ -681,10 +681,10 @@ const editorStrings = jsonForScript({
     font-weight: 600;
   }
   .ce-howto[open] > summary {
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--base-size-8);
   }
   .ce-howto .note {
-    margin: 0 0 var(--space-3);
+    margin: 0 0 var(--base-size-12);
     max-width: 75ch;
   }
 </style>

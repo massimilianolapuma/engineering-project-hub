@@ -1,122 +1,21 @@
 /*
- * Design tokens — "Warm Graphite": warm neutral greys, one teal accent for links, focus and the
- * primary action (never status), vermilion / ochre / emerald for status fills with darker
- * *-text variants for text on their fixed tints. Unknown has no fill: a dashed --unknown outline.
- * IBM Plex Sans for everything, IBM Plex Mono only for code, repository names and versions.
- * Every text and graphic pair is checked for WCAG AA in tests/unit/tokens-contrast.test.ts.
- * Theme: follows prefers-color-scheme, overridable with [data-theme] (theme toggle).
+ * Design tokens: GitHub Primer (@primer/primitives 11.10.0), since v0.10.0.
+ *
+ * Components use Primer functional tokens directly (--fgColor-*, --bgColor-*, --borderColor-*,
+ * --base-size-*, --borderRadius-*, --text-*, --fontStack-*). Themes follow Primer's colour
+ * modes: <html data-color-mode="auto|light|dark" data-light-theme="light" data-dark-theme="dark">.
+ * The system font stack needs no web font download. --status-col is the only hub token.
  */
-@import '@fontsource/ibm-plex-sans/latin-400.css';
-@import '@fontsource/ibm-plex-sans/latin-500.css';
-@import '@fontsource/ibm-plex-sans/latin-600.css';
-@import '@fontsource/ibm-plex-sans/latin-700.css';
-@import '@fontsource/ibm-plex-mono/latin-400.css';
-@import '@fontsource/ibm-plex-mono/latin-500.css';
+@import '@primer/primitives/dist/css/base/size/size.css';
+@import '@primer/primitives/dist/css/base/typography/typography.css';
+@import '@primer/primitives/dist/css/functional/size/size.css';
+@import '@primer/primitives/dist/css/functional/size/radius.css';
+@import '@primer/primitives/dist/css/functional/size/border.css';
+@import '@primer/primitives/dist/css/functional/typography/typography.css';
+@import '@primer/primitives/dist/css/functional/themes/light.css';
+@import '@primer/primitives/dist/css/functional/themes/dark.css';
 
 :root {
-  color-scheme: light;
-  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
-
-  /* Neutrals */
-  --bg: #f6f5f3;
-  --surface: #fffefc;
-  --surface-2: #f6f5f3;
-  --border: #e7e5e1;
-  --border-strong: #928d86;
-  --text: #1c1917;
-  --text-muted: #57534e;
-  --unknown: #8f8a83;
-
-  /* Accent: links, focus, primary action only */
-  --accent: oklch(0.52 0.09 195);
-  --on-accent: #ffffff;
-  --accent-tint: oklch(0.95 0.03 195);
-
-  /* Status: fills (dots, bars, graphics) / text on tints / fixed pill tints */
-  --red: oklch(0.6 0.19 35);
-  --red-text: oklch(0.48 0.16 35);
-  --red-tint: oklch(0.95 0.03 35);
-  --amber: oklch(0.66 0.15 72);
-  --amber-text: oklch(0.47 0.1 65);
-  --amber-tint: oklch(0.95 0.05 85);
-  --green: oklch(0.6 0.12 165);
-  --green-text: oklch(0.45 0.1 165);
-  --green-tint: oklch(0.95 0.03 165);
-
-  /* Shape and space */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 10px;
-  --radius-pill: 999px;
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 24px;
-  --space-6: 32px;
-  --space-7: 40px;
-  --space-8: 48px;
-
-  /* Type scale (body 14px, smallest label 12px) */
-  --fs-xs: 0.75rem;
-  --fs-sm: 0.8125rem;
-  --fs-md: 0.875rem;
-  --fs-card: 0.9375rem; /* card, row and form-group titles (15px) */
-  --fs-count: 1rem; /* count values in the status shortcuts (16px) */
-  --fs-lead: 1.0625rem; /* the one-sentence lead under a page title (17px) */
-  --fs-lg: 1.125rem;
-  --fs-xl: 1.375rem;
-  --fs-score: 1.75rem; /* the score in the project header and the large summary numbers (28px) */
+  /* Width of the status column in project lists. */
   --status-col: 112px;
-}
-
-/* Dark: same hues, lifted for a warm near-black ground. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    color-scheme: dark;
-    --bg: #151311;
-    --surface: #1c1a17;
-    --surface-2: #181614;
-    --border: #2c2925;
-    --border-strong: #746e66;
-    --text: #ece9e4;
-    --text-muted: #a8a29e;
-    --unknown: #7f786f;
-    --accent: oklch(0.74 0.1 195);
-    --on-accent: #151311;
-    --accent-tint: oklch(0.27 0.04 195);
-    --red: oklch(0.7 0.17 35);
-    --red-text: oklch(0.82 0.11 35);
-    --red-tint: oklch(0.27 0.05 35);
-    --amber: oklch(0.8 0.14 80);
-    --amber-text: oklch(0.86 0.1 82);
-    --amber-tint: oklch(0.29 0.05 80);
-    --green: oklch(0.72 0.12 165);
-    --green-text: oklch(0.82 0.09 165);
-    --green-tint: oklch(0.27 0.04 165);
-  }
-}
-:root[data-theme='dark'] {
-  color-scheme: dark;
-  --bg: #151311;
-  --surface: #1c1a17;
-  --surface-2: #181614;
-  --border: #2c2925;
-  --border-strong: #746e66;
-  --text: #ece9e4;
-  --text-muted: #a8a29e;
-  --unknown: #7f786f;
-  --accent: oklch(0.74 0.1 195);
-  --on-accent: #151311;
-  --accent-tint: oklch(0.27 0.04 195);
-  --red: oklch(0.7 0.17 35);
-  --red-text: oklch(0.82 0.11 35);
-  --red-tint: oklch(0.27 0.05 35);
-  --amber: oklch(0.8 0.14 80);
-  --amber-text: oklch(0.86 0.1 82);
-  --amber-tint: oklch(0.29 0.05 80);
-  --green: oklch(0.72 0.12 165);
-  --green-text: oklch(0.82 0.09 165);
-  --green-tint: oklch(0.27 0.04 165);
 }

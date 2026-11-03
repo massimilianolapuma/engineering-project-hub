@@ -28,13 +28,13 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 ---
 
 <!doctype html>
-<html lang={locale}>
+<html lang={locale} data-color-mode="auto" data-light-theme="light" data-dark-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#f6f5f3" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#151311" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)" />
     <meta name="robots" content="noindex, nofollow" />
     <meta name="referrer" content="no-referrer" />
     <!-- frame-ancestors is ignored in a <meta> CSP: it is sent as a header (public/_headers). -->
@@ -176,8 +176,8 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
       order: 3;
       flex: 1 1 100%;
       min-width: 0;
-      margin: 0 calc(-1 * var(--space-1));
-      padding: var(--space-1);
+      margin: 0 calc(-1 * var(--base-size-4));
+      padding: var(--base-size-4);
       overflow-x: auto;
       scrollbar-width: none;
     }
@@ -186,14 +186,14 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
     display: inline-flex;
     align-items: center;
     min-height: 40px;
-    padding: 0 var(--space-2);
-    border-radius: var(--radius-md);
-    font-size: var(--fs-sm);
+    padding: 0 var(--base-size-8);
+    border-radius: var(--borderRadius-medium);
+    font-size: var(--text-body-size-small);
     font-weight: 500;
   }
   .utility-link[aria-current='page'] {
-    color: var(--text);
-    background: var(--surface-2);
+    color: var(--fgColor-default);
+    background: var(--bgColor-muted);
     text-decoration: none;
   }
 </style>

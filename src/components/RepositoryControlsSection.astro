@@ -406,40 +406,40 @@ const reusableTone = (status: string) =>
   .rc-tiles {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
-    gap: var(--space-3);
+    gap: var(--base-size-12);
   }
   .rc-tile {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--base-size-8);
     min-width: 0;
-    padding: var(--space-4);
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    padding: var(--base-size-16);
+    background: var(--bgColor-muted);
+    border: 1px solid var(--borderColor-default);
+    border-radius: var(--borderRadius-medium);
     overflow-wrap: anywhere;
   }
   /* Something we cannot see: dashed, like every unknown on the site. */
   .rc-tile--unknown {
-    border: 1.5px dashed var(--unknown);
+    border: 1.5px dashed var(--borderColor-emphasis);
   }
   .rc-tile__label {
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
   }
   .rc-tile__value {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2) var(--space-3);
+    gap: var(--base-size-8) var(--base-size-12);
   }
   .rc-tile__big {
-    font-size: var(--fs-score);
+    font-size: var(--text-title-size-large);
     line-height: 1.2;
     font-weight: 700;
   }
   .rc-tile__foot {
-    color: var(--text-muted);
-    font-size: var(--fs-sm);
+    color: var(--fgColor-muted);
+    font-size: var(--text-body-size-small);
   }
 
   /* The matrix scrolls inside its own box; the page never scrolls sideways. */
@@ -452,21 +452,21 @@ const reusableTone = (status: string) =>
     width: 100%;
     min-width: 640px;
     border-collapse: collapse;
-    font-size: var(--fs-md);
+    font-size: var(--text-body-size-medium);
   }
   .rc-table--list {
     min-width: 480px;
   }
   .rc-table th,
   .rc-table td {
-    padding: var(--space-2) var(--space-3);
+    padding: var(--base-size-8) var(--base-size-12);
     text-align: left;
     vertical-align: top;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--borderColor-default);
   }
   .rc-table thead th {
-    font-size: var(--fs-sm);
-    color: var(--text-muted);
+    font-size: var(--text-body-size-small);
+    color: var(--fgColor-muted);
     font-weight: 600;
   }
   .rc-table tbody th {
@@ -477,7 +477,7 @@ const reusableTone = (status: string) =>
   }
   .rc-th__tag {
     margin-left: 0;
-    margin-top: var(--space-1);
+    margin-top: var(--base-size-4);
   }
   .rc-repo,
   .rc-comps {
@@ -499,43 +499,43 @@ const reusableTone = (status: string) =>
     justify-content: center;
     width: 24px;
     height: 24px;
-    border-radius: var(--radius-sm);
-    font-size: var(--fs-sm);
+    border-radius: var(--borderRadius-small);
+    font-size: var(--text-body-size-small);
     font-weight: 700;
     line-height: 1;
   }
   .rc-sym--pass {
-    background: var(--green-tint);
-    color: var(--green-text);
+    background: var(--bgColor-success-muted);
+    color: var(--fgColor-success);
   }
   .rc-sym--fail {
-    background: var(--red-tint);
-    color: var(--red-text);
+    background: var(--bgColor-danger-muted);
+    color: var(--fgColor-danger);
   }
   .rc-sym--unknown {
-    color: var(--text-muted);
-    border: 1.5px dashed var(--unknown);
+    color: var(--fgColor-muted);
+    border: 1.5px dashed var(--borderColor-emphasis);
   }
   .rc-sym--not-applicable,
   .rc-sym--na {
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
   }
   .rc-status {
     font-weight: 600;
   }
   .rc-status--ok {
-    color: var(--green-text);
+    color: var(--fgColor-success);
   }
   .rc-status--bad {
-    color: var(--red-text);
+    color: var(--fgColor-danger);
   }
   .rc-status--unk {
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
   }
 
   .rc-detail {
-    border-top: 1px solid var(--border);
-    padding-top: var(--space-2);
+    border-top: 1px solid var(--borderColor-default);
+    padding-top: var(--base-size-8);
   }
   .rc-detail > summary {
     min-height: 44px;
@@ -546,8 +546,8 @@ const reusableTone = (status: string) =>
   .rc-block {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
-    margin-top: var(--space-2);
+    gap: var(--base-size-8);
+    margin-top: var(--base-size-8);
   }
   .rc-block__head {
     margin: 0;
@@ -555,8 +555,8 @@ const reusableTone = (status: string) =>
   .rc-list {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
-    margin: var(--space-2) 0 0;
+    gap: var(--base-size-12);
+    margin: var(--base-size-8) 0 0;
     padding: 0;
     list-style: none;
     overflow-wrap: anywhere;
@@ -564,15 +564,15 @@ const reusableTone = (status: string) =>
   .rc-tokens {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-1) var(--space-2);
-    margin-top: var(--space-1);
+    gap: var(--base-size-4) var(--base-size-8);
+    margin-top: var(--base-size-4);
   }
   .rc-token {
     padding: 1px 8px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
-    background: var(--surface-2);
-    font-size: var(--fs-xs);
+    border: 1px solid var(--borderColor-default);
+    border-radius: var(--borderRadius-full);
+    background: var(--bgColor-muted);
+    font-size: var(--text-body-size-small);
   }
   @media (forced-colors: active) {
     .rc-sym {

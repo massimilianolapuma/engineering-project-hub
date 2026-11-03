@@ -305,20 +305,20 @@ const findings = qh.findings;
   .quality {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: var(--base-size-16);
     margin: 0;
-    scroll-margin-top: var(--space-4);
+    scroll-margin-top: var(--base-size-16);
     min-width: 0;
   }
   .quality__head {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2) 10px;
+    gap: var(--base-size-8) 10px;
   }
   .quality__head h2 {
     margin: 0;
-    font-size: var(--fs-card);
+    font-size: var(--text-body-size-large);
     line-height: 22px;
     font-weight: 600;
   }
@@ -329,46 +329,46 @@ const findings = qh.findings;
     border-radius: 50%;
   }
   .quality__dot--red {
-    background: var(--red);
+    background: var(--fgColor-danger);
   }
   .quality__dot--amber {
-    background: var(--amber);
+    background: var(--fgColor-attention);
   }
   .quality__dot--green {
-    background: var(--green);
+    background: var(--fgColor-success);
   }
   .quality__dot--grey {
-    border: 2px solid var(--unknown);
+    border: 2px solid var(--borderColor-emphasis);
   }
 
   .quality__tiles {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-    gap: var(--space-3);
+    gap: var(--base-size-12);
   }
   .qtile {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--base-size-8);
     min-width: 0;
-    padding: var(--space-4);
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    padding: var(--base-size-16);
+    background: var(--bgColor-muted);
+    border: 1px solid var(--borderColor-default);
+    border-radius: var(--borderRadius-medium);
     overflow-wrap: anywhere;
   }
   /* Something we cannot see: dashed, like every unknown on the site. */
   .qtile--unknown {
-    border: 1.5px dashed var(--unknown);
+    border: 1.5px dashed var(--borderColor-emphasis);
   }
   .qtile__label {
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
   }
   .qtile__value {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2) var(--space-3);
+    gap: var(--base-size-8) var(--base-size-12);
   }
   /* Symbol and sentence stay side by side; the sentence wraps beside the symbol. */
   .qtile__value--message {
@@ -376,7 +376,7 @@ const findings = qh.findings;
     align-items: flex-start;
   }
   .qtile__big {
-    font-size: var(--fs-score);
+    font-size: var(--text-title-size-large);
     line-height: 34px;
     font-weight: 700;
   }
@@ -384,26 +384,26 @@ const findings = qh.findings;
     font-weight: 600;
   }
   .qtile__foot {
-    color: var(--text-muted);
-    font-size: var(--fs-sm);
+    color: var(--fgColor-muted);
+    font-size: var(--text-body-size-small);
   }
   .qtile__stale {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--base-size-8);
   }
   .qtile__counts {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2) 18px;
+    gap: var(--base-size-8) 18px;
   }
   .qtile__count {
-    font-size: var(--fs-count);
+    font-size: var(--text-body-size-large);
   }
   .qtile__list {
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
+    gap: var(--base-size-4);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -430,7 +430,7 @@ const findings = qh.findings;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2) var(--space-3);
+    gap: var(--base-size-8) var(--base-size-12);
     min-width: 0;
   }
   .qcov__value.tabular {
@@ -453,8 +453,8 @@ const findings = qh.findings;
     justify-content: center;
     width: 24px;
     height: 24px;
-    border-radius: var(--radius-sm);
-    font-size: var(--fs-sm);
+    border-radius: var(--borderRadius-small);
+    font-size: var(--text-body-size-small);
     font-weight: 700;
     line-height: 1;
     cursor: default;
@@ -462,19 +462,19 @@ const findings = qh.findings;
   .qsym--inline {
     width: 20px;
     height: 20px;
-    margin-right: var(--space-1);
+    margin-right: var(--base-size-4);
     vertical-align: middle;
   }
   .qsym--unknown {
-    color: var(--text-muted);
-    border: 1.5px dashed var(--unknown);
+    color: var(--fgColor-muted);
+    border: 1.5px dashed var(--borderColor-emphasis);
   }
   .qsym--stale {
-    background: var(--amber-tint);
-    color: var(--amber-text);
+    background: var(--bgColor-attention-muted);
+    color: var(--fgColor-attention);
   }
   .qsym--na {
-    color: var(--text-muted);
+    color: var(--fgColor-muted);
   }
   .quality__legend {
     margin: 0;

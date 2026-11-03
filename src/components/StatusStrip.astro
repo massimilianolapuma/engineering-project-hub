@@ -53,17 +53,17 @@ const cell = (status: HealthStatus) => {
     height: 24px;
   }
   .strip__cell--red {
-    fill: var(--red);
+    fill: var(--fgColor-danger);
   }
   .strip__cell--amber {
-    fill: var(--amber);
+    fill: var(--fgColor-attention);
   }
   .strip__cell--green {
-    fill: var(--green);
+    fill: var(--fgColor-success);
   }
   .strip__cell--grey {
     fill: none;
-    stroke: var(--unknown);
+    stroke: var(--borderColor-emphasis);
     stroke-width: 1.5;
     stroke-dasharray: 2 2;
     vector-effect: non-scaling-stroke;

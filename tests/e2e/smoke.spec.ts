@@ -106,14 +106,26 @@ test('the chosen theme survives navigation', async ({ page }) => {
   const toggle = page.locator('[data-theme-toggle]');
   await toggle.click(); // Auto → Light
   await toggle.click(); // Light → Dark
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('html')).toHaveAttribute('data-color-mode', 'dark');
   await page
     .getByRole('navigation', { name: 'Main navigation' })
     .getByRole('link', { name: 'Security' })
     .click();
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('html')).toHaveAttribute('data-color-mode', 'dark');
   await expect(toggle).toHaveText('Dark');
+});
+
+test('a legacy stored theme still applies', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('eph-theme', 'dark'));
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-color-mode', 'dark');
+});
+
+test('an unknown stored theme falls back to auto', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('eph-theme', 'purple'));
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-color-mode', 'auto');
 });
 
 test('navigates the main views in both languages', async ({ page }) => {
