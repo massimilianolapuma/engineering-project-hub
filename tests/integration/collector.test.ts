@@ -870,6 +870,8 @@ describe('sanitisation end to end', () => {
             }),
     getSubmoduleRef: async () => fail({ classification: 'not-found' }),
     listTags: async () => ok([{ name: poison, sha: 'e'.repeat(40) }]),
+    listOrgTeams: async () => fail({ classification: 'not-authorised' }),
+    listTeamRepositories: async () => fail({ classification: 'not-authorised' }),
     listOwnerRepositories: async () =>
       ok([
         {

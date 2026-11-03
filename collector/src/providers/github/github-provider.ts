@@ -20,6 +20,9 @@ import {
   type DependabotAlertDTO,
   type FileDTO,
   type ProviderResult,
+  type TeamDTO,
+  type TeamPermission,
+  type TeamRepositoryDTO,
   type QualitySummaryArtifactDTO,
   type ReleaseDTO,
   type RepositoryDTO,
@@ -114,6 +117,33 @@ async function guard<T>(
   }
 }
 
+const ROLE_NAMES: Record<string, TeamPermission> = {
+  pull: 'read',
+  read: 'read',
+  triage: 'triage',
+  push: 'write',
+  write: 'write',
+  maintain: 'maintain',
+  admin: 'admin',
+};
+
+/** A team's permission: role_name when present, else the highest true `permissions` key. */
+function teamPermission(r: {
+  role_name?: string;
+  permissions?: Partial<Record<'admin' | 'maintain' | 'push' | 'triage' | 'pull', boolean>>;
+}): TeamPermission | null {
+  const byRole = r.role_name ? ROLE_NAMES[r.role_name] : undefined;
+  if (byRole) return byRole;
+  const p = r.permissions;
+  if (!p) return null;
+  if (p.admin) return 'admin';
+  if (p.maintain) return 'maintain';
+  if (p.push) return 'write';
+  if (p.triage) return 'triage';
+  if (p.pull) return 'read';
+  return null;
+}
+
 class InvalidData extends Error {
   override readonly name = 'InvalidData';
   readonly status = 0;
@@ -193,6 +223,52 @@ export class GitHubProvider implements SourceProvider {
       }
       return out;
     });
+  }
+
+  listOrgTeams(
+    org: string,
+    opts: { max: number },
+  ): Promise<ProviderResult<{ teams: TeamDTO[]; limitReached: boolean }>> {
+    type Team = { slug: string; name: string; privacy?: string };
+    return guard(async () => {
+      const teams: TeamDTO[] = [];
+      const iterator = this.client.paginate.iterator as (
+        m: unknown,
+        p: unknown,
+      ) => AsyncIterable<{ data: unknown }>;
+      for await (const page of iterator(this.client.rest.teams.list, { org, per_page: 100 })) {
+        for (const t of page.data as Team[]) {
+          // One more team than allowed: the list is cut, never silently complete.
+          if (teams.length >= opts.max) return { teams, limitReached: true };
+          teams.push({
+            org,
+            slug: t.slug,
+            name: t.name,
+            privacy: t.privacy === 'secret' ? 'secret' : 'closed',
+          });
+        }
+      }
+      return { teams, limitReached: false };
+    });
+  }
+
+  listTeamRepositories(
+    org: string,
+    teamSlug: string,
+  ): Promise<ProviderResult<TeamRepositoryDTO[]>> {
+    type Repo = {
+      full_name: string;
+      role_name?: string;
+      permissions?: Partial<Record<'admin' | 'maintain' | 'push' | 'triage' | 'pull', boolean>>;
+    };
+    return guard(async () =>
+      this.paginate<Repo, TeamRepositoryDTO>(
+        this.client.rest.teams.listReposInOrg,
+        { org, team_slug: teamSlug },
+        (r) => ({ fullName: r.full_name, permission: teamPermission(r) }),
+        { failWhenCapped: true },
+      ),
+    );
   }
 
   listDirectory(
