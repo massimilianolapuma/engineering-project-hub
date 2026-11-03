@@ -22,7 +22,12 @@ function apiMessage(e: ErrorLike): string {
 }
 
 const NOT_CONFIGURED =
-  /(not enabled|is disabled|are disabled|must be enabled|advanced security|no analysis found|not available for this repository|dependency graph)/i;
+  /(not enabled|is disabled|are disabled|must be enabled|advanced security|no analysis found|not available for this repository)/i;
+
+/** Extra "feature not set up" wording that only one call may honour (e.g. the SBOM export). */
+export interface ClassifyOptions {
+  notConfigured?: RegExp;
+}
 
 /**
  * Classifies a GitHub API error without ever reading request data (which holds the
@@ -33,7 +38,7 @@ const NOT_CONFIGURED =
  * - other 404 → not-found (ambiguous for security endpoints: the collector shows "unknown")
  * - status 0 (InvalidData) → invalid-data; everything else (5xx, network) → error
  */
-export function classifyGitHubError(err: unknown): ProviderError {
+export function classifyGitHubError(err: unknown, opts: ClassifyOptions = {}): ProviderError {
   const e = (err ?? {}) as ErrorLike;
   const status = typeof e.status === 'number' ? e.status : undefined;
   const headers = e.response?.headers ?? {};
@@ -50,7 +55,10 @@ export function classifyGitHubError(err: unknown): ProviderError {
   ) {
     return { classification: 'rate-limited', ...base };
   }
-  if ((status === 403 || status === 404) && NOT_CONFIGURED.test(message))
+  if (
+    (status === 403 || status === 404) &&
+    (NOT_CONFIGURED.test(message) || (opts.notConfigured?.test(message) ?? false))
+  )
     return { classification: 'not-configured', ...base };
   if (status === 401 || status === 403) return { classification: 'not-authorised', ...base };
   if (status === 404 || status === 410) return { classification: 'not-found', ...base };
