@@ -82,6 +82,7 @@ const SC_KEYS = ['sbomAvailable', 'unsignedImages', 'flagged'] as const;
 const scUnknown = scProjects.filter((p) =>
   SC_KEYS.some((k) => p.supplyChain.totals[k] === null),
 ).length;
+const reposText = (n: number) => (n === 1 ? sct.reposOne : f(sct.reposMany, { n: i18n.number(n) }));
 const unsignedText = (n: number) =>
   n === 1 ? sct.unsignedImagesOne : f(sct.unsignedImages, { n: i18n.number(n) });
 const flaggedText = (n: number) =>
@@ -89,7 +90,7 @@ const flaggedText = (n: number) =>
 const scHint = [
   f(sct.portfolioHint, {
     n: i18n.number(scSum('sbomAvailable')),
-    m: i18n.number(scSum('repositories')),
+    m: reposText(scSum('repositories')),
     k: unsignedText(scSum('unsignedImages')),
     f: flaggedText(scSum('flagged')),
   }),
@@ -367,7 +368,7 @@ const componentName = (p: ProjectSnapshot, cid: string) =>
                         ) : (
                           f(sct.cardSbom, {
                             n: i18n.number(p.supplyChain.totals.sbomAvailable),
-                            m: i18n.number(p.supplyChain.totals.repositories ?? 0),
+                            m: reposText(p.supplyChain.totals.repositories ?? 0),
                           })
                         )}
                         {' · '}

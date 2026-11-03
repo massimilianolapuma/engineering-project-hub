@@ -910,7 +910,11 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
               {s.supplyChain.enabled && scTotals
                 ? f(d.supplyChain.summary, {
                     n: scKnown(scTotals.sbomAvailable),
-                    m: scKnown(scTotals.repositories),
+                    m: scPhrase(
+                      scTotals.repositories,
+                      d.supplyChain.reposOne,
+                      d.supplyChain.reposMany,
+                    ),
                     k: scPhrase(
                       scTotals.unsignedImages,
                       d.supplyChain.unsignedImagesOne,

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Supply chain lines on the Project and Security pages say "1 of 1 repository" for a
+  one-repository project.
+
 ## [0.12.1] - 2026-11-03
 
 ### Fixed
