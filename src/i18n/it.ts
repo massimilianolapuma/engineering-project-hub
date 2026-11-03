@@ -428,6 +428,8 @@ export const it: Dict = {
     licensesUnknown: 'licenze',
     portfolioHint:
       'SBOM su {n} di {m} repository · {k} immagini non firmate · {f} licenze segnalate',
+    portfolioUnknown: '{n} progetti con valori sconosciuti',
+    portfolioUnknownOne: '1 progetto con valori sconosciuti',
     portfolioCaption: 'Catena di fornitura per progetto',
     portfolioCol: {
       project: 'Progetto',

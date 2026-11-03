@@ -356,6 +356,26 @@ describe('buildSupplyChain', () => {
     expect(sc.repositories[0]!.images[0]!.scan).toMatchObject({ state: 'scanned', counts: null });
   });
 
+  it('M-3: a repository whose CI summary cannot be read makes the image totals unknown, never 0', () => {
+    for (const state of ['not-authorised', 'unknown', 'invalid', 'expired'] as const) {
+      const sc = build([
+        repoInput({
+          summary: summaryWith({
+            images: [{ name: 'example-org/a', digest: DIGEST, signature: signed }],
+          }),
+        }),
+        repoInput({ repository: 'o/b', summary: { ...NO_SUMMARY, state } }),
+      ]);
+      expect(sc.totals.signedImages, state).toBeNull();
+      expect(sc.totals.unsignedImages, state).toBeNull();
+    }
+    // No summary published at all (missing) or collection off: nothing unreadable, counts stay known.
+    for (const state of ['missing', 'off'] as const) {
+      const sc = build([repoInput({ summary: { ...NO_SUMMARY, state } })]);
+      expect(sc.totals.unsignedImages, state).toBe(0);
+    }
+  });
+
   it('I-3: one image reported by the CI summary and by Harbor (same digest) counts once', () => {
     const sc = build([
       repoInput({

@@ -77,12 +77,26 @@ const sct = d.supplyChain;
 const scProjects = projects.filter((p) => p.supplyChain.enabled);
 const scSum = (k: keyof ProjectSnapshot['supplyChain']['totals']) =>
   scProjects.reduce((n, p) => n + (p.supplyChain.totals[k] ?? 0), 0);
-const scHint = f(sct.portfolioHint, {
-  n: i18n.number(scSum('sbomAvailable')),
-  m: i18n.number(scSum('repositories')),
-  k: i18n.number(scSum('unsignedImages')),
-  f: i18n.number(scSum('flagged')),
-});
+// Known counts only, so the projects with an unknown value are named rather than counted as 0.
+const SC_KEYS = ['sbomAvailable', 'unsignedImages', 'flagged'] as const;
+const scUnknown = scProjects.filter((p) =>
+  SC_KEYS.some((k) => p.supplyChain.totals[k] === null),
+).length;
+const scHint = [
+  f(sct.portfolioHint, {
+    n: i18n.number(scSum('sbomAvailable')),
+    m: i18n.number(scSum('repositories')),
+    k: i18n.number(scSum('unsignedImages')),
+    f: i18n.number(scSum('flagged')),
+  }),
+  ...(scUnknown === 0
+    ? []
+    : [
+        scUnknown === 1
+          ? sct.portfolioUnknownOne
+          : f(sct.portfolioUnknown, { n: i18n.number(scUnknown) }),
+      ]),
+].join(' · ');
 const unsignedText = (n: number) =>
   n === 1 ? sct.unsignedImagesOne : f(sct.unsignedImages, { n: i18n.number(n) });
 const flaggedText = (n: number) =>

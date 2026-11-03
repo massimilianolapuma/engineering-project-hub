@@ -1850,6 +1850,16 @@ describe('static site', () => {
       expect(textOf(beta.slice(0, beta.indexOf('</article>')))).toMatch(/\b1 unsigned image(?!s)/);
     });
 
+    it('M-3: the portfolio Supply chain hint names the projects with unknown values (EN + IT)', async () => {
+      const hint = (html: string) => {
+        const i = html.indexOf('class="sec-supply__hint"');
+        return textOf(html.slice(i, html.indexOf('</span>', i)));
+      };
+      // Beta (flagged licenses) and Gamma (SBOM, images, licenses) are not fully readable.
+      expect(hint(await page('security'))).toContain('2 projects with unknown values');
+      expect(hint(await page('it/security'))).toContain('2 progetti con valori sconosciuti');
+    });
+
     it('data quality has a Providers card with each provider state', async () => {
       const html = await page('data-quality');
       const i = html.indexOf('id="h-providers"');

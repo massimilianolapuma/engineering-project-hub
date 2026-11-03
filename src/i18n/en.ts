@@ -424,6 +424,8 @@ export const en = {
     flaggedLicensesOne: '1 flagged license',
     licensesUnknown: 'licenses',
     portfolioHint: 'SBOM on {n} of {m} repositories · {k} unsigned images · {f} flagged licenses',
+    portfolioUnknown: '{n} projects with unknown values',
+    portfolioUnknownOne: '1 project with unknown values',
     portfolioCaption: 'Supply chain per project',
     portfolioCol: {
       project: 'Project',
