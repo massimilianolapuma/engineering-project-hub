@@ -28,3 +28,13 @@ btn?.addEventListener('click', () => {
   render(next);
 });
 render(current());
+
+// Printing always uses the light tokens (black on white), whatever mode is on screen.
+let screenMode: string | undefined;
+window.addEventListener('beforeprint', () => {
+  screenMode = document.documentElement.dataset.colorMode;
+  document.documentElement.dataset.colorMode = 'light';
+});
+window.addEventListener('afterprint', () => {
+  if (screenMode !== undefined) document.documentElement.dataset.colorMode = screenMode;
+});

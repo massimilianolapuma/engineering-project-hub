@@ -4,6 +4,7 @@ import type { OcticonName } from './octicon';
 export type PageKey =
   | 'portfolio'
   | 'changes'
+  | 'executive'
   | 'workflows'
   | 'versions'
   | 'security'
@@ -14,6 +15,7 @@ export type PageKey =
 const PATHS: Record<PageKey, string> = {
   portfolio: '',
   changes: 'changes/',
+  executive: 'executive/',
   workflows: 'workflows/',
   versions: 'versions/',
   security: 'security/',
@@ -26,6 +28,7 @@ const PATHS: Record<PageKey, string> = {
 export const NAV: readonly PageKey[] = [
   'portfolio',
   'changes',
+  'executive',
   'security',
   'versions',
   'workflows',
@@ -37,6 +40,7 @@ export const NAV: readonly PageKey[] = [
 export const NAV_ICON: Record<PageKey, OcticonName> = {
   portfolio: 'apps',
   changes: 'history',
+  executive: 'briefcase',
   security: 'shield',
   versions: 'tag',
   workflows: 'workflow',
@@ -44,6 +48,11 @@ export const NAV_ICON: Record<PageKey, OcticonName> = {
   catalog: 'book',
   howToRead: 'question',
 };
+
+/** Main navigation for this build: the executive summary only when outputs.executive is on. */
+export function navFor(executiveEnabled: boolean): readonly PageKey[] {
+  return executiveEnabled ? NAV : NAV.filter((k) => k !== 'executive');
+}
 
 const base = () => {
   const b = import.meta.env.BASE_URL ?? '/';

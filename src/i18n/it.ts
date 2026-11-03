@@ -1016,6 +1016,8 @@ export const it: Dict = {
     started: 'Avvio',
     duration: 'Durata',
     collectorVersion: 'Versione collector',
+    metrics: 'Metriche per Prometheus',
+    metricsOff: 'Disattivate',
     config: 'Configurazione',
     configValid: 'Catalogo e policy validi',
     configInvalid: 'Catalogo o policy non validi',
@@ -1431,6 +1433,19 @@ export const it: Dict = {
       'Cosa è cambiato confronta solo le fonti di alert monitorate e leggibili in entrambe le raccolte: una fonte illeggibile o rimossa non risulta mai risolta e una appena leggibile o appena aggiunta non risulta mai nuova.',
     trendsCsv:
       'I file CSV sono UTF-8 con BOM, separati da virgole. "unknown" significa non leggibile e non è mai 0; "n/a" significa non applicabile; un apostrofo iniziale protegge il testo che inizia con =, +, - o @.',
+    execTitle: 'Sintesi direzionale',
+    execPoint:
+      "Una vista di una pagina da condividere: progetti per stato, l'andamento, i rischi principali in parole semplici, le scadenze di rimedio e la catena di fornitura.",
+    execTrend:
+      "La tabella dell'andamento confronta il momento attuale con la raccolta più recente di almeno {days} giorni fa e con la più vecchia conservata. Un progetto aggiunto dopo non è contato nelle colonne più vecchie.",
+    execRisks:
+      'I rischi principali elencano prima i progetti critici, poi quelli non visibili, poi quelli che richiedono attenzione; dentro ogni gruppo vengono prima quelli con più alert critici e alti aperti.',
+    execUnknown:
+      'Un conteggio sconosciuto non è mai mostrato come 0: la pagina dice "non misurato", oppure "≥ n" quando solo alcuni progetti sono stati letti.',
+    execRedaction:
+      'La pagina non mostra mai nomi di repository, titoli di alert o link ai sistemi sorgente, così si può stampare o inoltrare. I nomi dei progetti restano: non inoltrarla se sono riservati.',
+    execTeams:
+      "Aggiungendo ?team= all'indirizzo (come nel Portfolio) si vedono solo i progetti di quei team. Filtra ciò che si vede; non limita chi può vedere la pagina.",
     repoTitle: 'Controlli repository',
     repoIntro:
       'Sei controlli di sola lettura per repository, dai file dei workflow e dalle regole del branch. Sono informativi per impostazione predefinita: non cambiano mai uno stato finché il proprietario non li rende vincolanti nelle policy.',

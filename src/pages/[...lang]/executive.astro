@@ -1,0 +1,335 @@
+---
+/*
+ * Executive summary (spec §5.6): one printable page to share. It never shows repository names,
+ * alert titles or links to source systems, in either audience, and every unknown count reads
+ * "not measured" or "≥ n", never 0. With ?team= in the address a small script re-runs the same
+ * pure model on the team's projects (src/scripts/executive-team.ts); the team is never printed.
+ */
+import type { HealthStatus } from '@model/index';
+import ErrorState from '../../components/ErrorState.astro';
+import StatusDot from '../../components/StatusDot.astro';
+import Base from '../../layouts/Base.astro';
+import { loadChanges, loadHistory } from '../../lib/data';
+import { EXEC_STATUSES, buildExecutiveView, toExecInput, type ExecView } from '../../lib/executive';
+import { execDateFormatter, executiveText } from '../../lib/executive-text';
+import { pageContext } from '../../lib/page';
+import { loadSitePolicies } from '../../lib/policies';
+import { href, localeParams } from '../../lib/routes';
+
+export const getStaticPaths = () =>
+  loadSitePolicies().policies.outputs.executive.enabled ? localeParams() : [];
+
+const { locale } = Astro.props;
+const { i18n, data, index, alternates } = pageContext(locale, 'executive');
+const { d, f } = i18n;
+const x = d.executive;
+const { policies } = loadSitePolicies();
+const history = loadHistory();
+const changes = loadChanges();
+const date = execDateFormatter(locale);
+
+const input = index
+  ? toExecInput(
+      index,
+      history.ok ? history.data : null,
+      policies.history.enabled,
+      changes.ok ? changes.data : null,
+      policies.outputs.executive,
+      new Date(index.generatedAt),
+    )
+  : null;
+// Every candidate is rendered; those beyond topRisks start hidden (the team filter shows them).
+const all = input ? buildExecutiveView({ ...input, topRisks: input.projects.length }) : null;
+const view = input ? buildExecutiveView(input) : null;
+const text = view ? executiveText(view, x, date) : null;
+const allText = all ? executiveText(all, x, date) : null;
+const sentencesOf = (id: string) => allText?.risks.find((r) => r.id === id)?.sentences ?? [];
+
+const statusWord = (s: HealthStatus) => (s === 'grey' ? x.notVisible : i18n.status(s));
+const ROWS = [...EXEC_STATUSES, 'projects'] as const;
+type Col = 'now' | 'compare' | 'start';
+const cell = (v: ExecView, row: (typeof ROWS)[number], col: Col) => {
+  const n = v.trend.rows[row][col];
+  return n === null ? x.trend.notEnough : String(n);
+};
+const colHead = (v: ExecView, col: Col) => {
+  const t = v.trend;
+  if (col === 'now') return f(x.trend.now, { date: date(t.now!) });
+  if (col === 'start') return f(x.trend.start, { date: date(t.start!) });
+  const one = t.trendDays === 1;
+  return t.compare === null
+    ? f(one ? x.trend.compareNoneOne : x.trend.compareNone, { n: t.trendDays })
+    : f(one ? x.trend.compareOne : x.trend.compare, { n: t.trendDays, date: date(t.compare) });
+};
+const withTeams = input?.projects.some((p) => p.teamSlugs.length > 0) ?? false;
+/** JSON inside <script type="application/json">: "<" escaped so nothing can close the tag. */
+const json = (v: unknown) => JSON.stringify(v).replace(/</g, '\\u003c');
+const source = index?.run.dataSource === 'mock' ? d.common.sourceMock : d.common.sourceGithub;
+---
+
+<Base i18n={i18n} title={x.title} page="executive" alternates={alternates} index={index}>
+  {!data.ok && <ErrorState error={data.error} i18n={i18n} />}
+  {data.ok && view && all && text && input && (
+    <article class="exec" data-exec>
+      <header class="page-head">
+        <h1>{x.title}</h1>
+        <p class="exec__lede" data-slot="lede">
+          {text.lede}
+        </p>
+        <p class="muted">{x.redaction}</p>
+        {input.dataSource === 'mock' && <p class="muted">{x.demo}</p>}
+        <p class="exec__filter" data-exec-filter hidden>
+          <span data-slot="filtered" />
+          <span class="exec__filter-link">
+            {' · '}
+            <a href={href(locale, 'executive')}>{x.showAll}</a>
+          </span>
+        </p>
+      </header>
+
+      <section class="card exec__section" aria-labelledby="exec-tiles">
+        <h2 id="exec-tiles" class="h3">
+          {x.tiles.title}
+        </h2>
+        <ul class="exec-tiles" aria-label={x.tiles.caption}>
+          {(['red', 'amber', 'green', 'grey'] as const).map((s) => (
+            <li class={`exec-tile exec-tile--${s}`}>
+              <span class="exec-tile__label">
+                <StatusDot status={s} label={statusWord(s)} />
+                <span>{statusWord(s)}</span>
+              </span>
+              <span class="exec-tile__count" data-slot={`tiles.${s}`}>
+                {view.tiles[s]}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="card exec__section" aria-labelledby="exec-trend">
+        <h2 id="exec-trend" class="h3">
+          {x.trend.title}
+        </h2>
+        {view.trend.state === 'ok' && (
+          <div class="table-wrap">
+            <table class="table exec-trend">
+              <caption>{f(x.trend.caption, { n: view.trend.trendDays })}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{x.trend.status}</th>
+                  {(['now', 'compare', 'start'] as const).map((c) => (
+                    <th scope="col" class="num">
+                      {colHead(view, c)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {ROWS.map((r) => (
+                  <tr>
+                    <th scope="row">
+                      {r === 'projects' ? (
+                        x.trend.projects
+                      ) : (
+                        <span class="exec-trend__status">
+                          <StatusDot status={r} label={statusWord(r)} />
+                          {statusWord(r)}
+                        </span>
+                      )}
+                    </th>
+                    {(['now', 'compare', 'start'] as const).map((c) => (
+                      <td class="num" data-slot={`trend.${r}.${c}`} data-label={colHead(view, c)}>
+                        {cell(view, r, c)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <p class="exec__sentence" data-slot="trendSentence">
+          {text.trendSentence}
+        </p>
+      </section>
+
+      <section class="card exec__section" aria-labelledby="exec-risks">
+        <h2 id="exec-risks" class="h3">
+          {x.risks.title}
+        </h2>
+        <ol class="exec-risks">
+          {all.risks.map((r, i) => (
+            <li class="exec-risk" data-risk={r.id} hidden={i >= input.topRisks}>
+              <div class="exec-risk__head">
+                <StatusDot status={r.overall} label={statusWord(r.overall)} />
+                <a class="exec-risk__name" href={href(locale, `projects/${r.id}`)}>
+                  {r.name}
+                </a>
+                <span class="muted">{statusWord(r.overall)}</span>
+                {r.direction && (
+                  <span class={`exec-risk__dir exec-risk__dir--${r.direction}`}>
+                    {r.direction === 'worse' ? x.risks.worse : x.risks.better}
+                  </span>
+                )}
+              </div>
+              <ul class="exec-risk__why">
+                {sentencesOf(r.id).map((s) => (
+                  <li>{s}</li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ol>
+        <p class="muted" data-risks-none hidden={view.risks.length > 0}>
+          {x.risks.none}
+        </p>
+      </section>
+
+      <section class="card exec__section" aria-labelledby="exec-remediation">
+        <h2 id="exec-remediation" class="h3">
+          {x.overdue.title}
+        </h2>
+        <p data-slot="remediation">{text.remediation}</p>
+        <p data-slot="exceptions">{text.exceptions}</p>
+      </section>
+
+      <section class="card exec__section" aria-labelledby="exec-supply">
+        <h2 id="exec-supply" class="h3">
+          {x.supplyChain.title}
+        </h2>
+        <p data-slot="supplyChain">{text.supplyChain}</p>
+      </section>
+
+      <p class="exec__footer muted">
+        {f(x.footer, { date: date(input.generatedAt), source })}
+        <span class="exec__footer-link">
+          {' · '}
+          <a href={`${href(locale, 'howToRead')}#executive`}>{x.howToRead}</a>
+        </span>
+      </p>
+
+      {withTeams && (
+        <>
+          <script type="application/json" id="exec-input" is:inline set:html={json(input)} />
+          <script type="application/json" id="exec-strings" is:inline set:html={json(x)} />
+        </>
+      )}
+    </article>
+  )}
+</Base>
+
+<style>
+  .exec__lede {
+    font-size: var(--text-title-size-small);
+    margin: 0 0 var(--base-size-8);
+  }
+  .exec__filter {
+    margin: var(--base-size-8) 0 0;
+    padding: var(--base-size-8) var(--base-size-12);
+    border: 1px solid var(--borderColor-accent-muted);
+    border-radius: var(--borderRadius-medium);
+    background: var(--bgColor-accent-muted);
+  }
+  .exec__section h2 {
+    margin: 0 0 var(--base-size-12);
+  }
+  .exec__section p {
+    margin: var(--base-size-8) 0 0;
+  }
+  .exec-tiles {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--base-size-12);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .exec-tile {
+    display: flex;
+    flex-direction: column;
+    gap: var(--base-size-4);
+    padding: var(--base-size-12) var(--base-size-16);
+    border: 1px solid var(--borderColor-default);
+    border-radius: var(--borderRadius-medium);
+    background: var(--bgColor-muted);
+  }
+  .exec-tile__label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--base-size-6, 6px);
+    color: var(--fgColor-muted);
+    font-size: var(--text-body-size-small);
+    font-weight: 500;
+  }
+  .exec-tile__count {
+    font-size: var(--text-title-size-large);
+    font-weight: 600;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+  }
+  .exec-trend__status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--base-size-6, 6px);
+  }
+  .exec-risks {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .exec-risk {
+    padding: var(--base-size-12) 0;
+    border-top: 1px solid var(--borderColor-muted);
+  }
+  .exec-risk:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .exec-risk__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--base-size-4) var(--base-size-8);
+  }
+  .exec-risk__name {
+    font-weight: 600;
+  }
+  .exec-risk__dir {
+    font-size: var(--text-body-size-small);
+    padding: 0 var(--base-size-8);
+    border-radius: var(--borderRadius-full);
+    border: 1px solid var(--borderColor-default);
+  }
+  .exec-risk__dir--worse {
+    color: var(--fgColor-danger);
+    border-color: var(--borderColor-danger-muted);
+  }
+  .exec-risk__dir--better {
+    color: var(--fgColor-success);
+    border-color: var(--borderColor-success-muted);
+  }
+  .exec-risk__why {
+    margin: var(--base-size-4) 0 0;
+    padding-left: var(--base-size-24);
+  }
+  .exec__footer {
+    font-size: var(--text-body-size-small);
+  }
+  .exec-trend caption {
+    text-align: left;
+    padding-bottom: var(--base-size-8);
+    color: var(--fgColor-muted);
+    font-size: var(--text-body-size-small);
+  }
+  @media (max-width: 720px) {
+    .exec-trend caption {
+      display: block;
+      width: 100%;
+    }
+  }
+  @media (max-width: 543.98px) {
+    .exec-tiles {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

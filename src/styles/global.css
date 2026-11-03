@@ -1794,3 +1794,41 @@ a.teamlabel:hover {
     min-width: 0;
   }
 }
+
+/* Print (made for the executive summary; every page benefits): content only, A4, no URL
+   expansion. The light tokens are forced by the theme script on beforeprint. */
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+  .skip-link,
+  .topbar__tools,
+  .mainnav,
+  .runbar,
+  .footer,
+  .exec__filter-link,
+  .exec__footer-link {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+    color: #000;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  a[href]::after {
+    content: none !important;
+  }
+  .card,
+  .exec-tile,
+  .exec-risk {
+    break-inside: avoid;
+  }
+  .table th,
+  .table td {
+    border: 1px solid var(--borderColor-default);
+  }
+}

@@ -583,6 +583,20 @@ const SECTIONS = [
     </ul>
   </section>
 
+  {policies.outputs.executive.enabled && (
+    <section class="card htr-section" id="executive" aria-labelledby="executive-title">
+      <h2 id="executive-title">{h.execTitle}</h2>
+      <ul class="htr-points">
+        <li>{h.execPoint}</li>
+        <li>{f(h.execTrend, { days: policies.outputs.executive.trendDays })}</li>
+        <li>{h.execRisks}</li>
+        <li>{h.execUnknown}</li>
+        <li>{h.execRedaction}</li>
+        <li>{h.execTeams}</li>
+      </ul>
+    </section>
+  )}
+
   <section class="htr-docs" aria-labelledby="docs-title">
     <h2 id="docs-title">{h.docsTitle}</h2>
     <p>

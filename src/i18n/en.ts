@@ -1003,6 +1003,8 @@ export const en = {
     started: 'Started',
     duration: 'Duration',
     collectorVersion: 'Collector version',
+    metrics: 'Metrics for Prometheus',
+    metricsOff: 'Off',
     config: 'Configuration',
     configValid: 'Catalog and policies valid',
     configInvalid: 'Catalog or policies invalid',
@@ -1415,6 +1417,19 @@ export const en = {
       'What changed compares only alert sources that were monitored and readable in both collections, so an unreadable or removed source never shows as resolved and a newly readable or newly added one never shows as new.',
     trendsCsv:
       'CSV files are UTF-8 with a BOM, comma-separated. "unknown" means not readable and is never 0; "n/a" means not applicable; a leading apostrophe protects text that starts with =, +, - or @.',
+    execTitle: 'Executive summary',
+    execPoint:
+      'A one-page view to share: project counts per status, the trend, the top risks in plain words, remediation deadlines and the supply chain.',
+    execTrend:
+      'The trend table compares now with the newest collection at least {days} days old and with the oldest one kept. A project added later is not counted in older columns.',
+    execRisks:
+      'Top risks lists critical projects first, then those not visible, then those needing attention; inside each group, more open critical and high alerts come first.',
+    execUnknown:
+      'An unknown count is never shown as 0: the page says "not measured", or "≥ n" when only some projects could be read.',
+    execRedaction:
+      'The page never shows repository names, alert titles or links to source systems, so it can be printed or forwarded. Project names stay: do not forward it if they are confidential.',
+    execTeams:
+      "Adding ?team= to the address (as on the Portfolio) shows only those teams' projects. It filters what is shown; it does not restrict who can see the page.",
     repoTitle: 'Repository controls',
     repoIntro:
       'Six read-only checks per repository, from its workflow files and its branch rules. They are informative by default: they never change a status until the owner enforces them in the policies.',
