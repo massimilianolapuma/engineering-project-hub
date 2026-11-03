@@ -844,7 +844,7 @@ export class GitHubProvider implements SourceProvider {
   }
 
   requestDependencySbom(repo: string): Promise<ProviderResult<SbomRequestDTO>> {
-    // Gate of the single "compute" call (ADR 0009): without the owner's opt-in nothing is sent.
+    // Gate of the single "compute" call (ADR 0011): without the owner's opt-in nothing is sent.
     if (!this.dependencyGraphExport)
       return Promise.resolve(
         fail({

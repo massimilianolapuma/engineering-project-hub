@@ -7,6 +7,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Supply chain.** Container scanning, IaC scanning, DAST, SBOM and artifact signature are
+  resolved from an ordered list of sources (`policies.supplyChain.precedence`): code scanning by
+  tool name (Trivy, Checkov and ZAP by default, `supplyChain.toolControls`), GitHub's
+  dependency-graph SBOM export (opt-in, `supplyChain.sbom.dependencyGraph`), attestations of the
+  latest release's assets, the new `hub-supply-chain-summary` CI artifact
+  (`supply-chain-summary.json`, contract 1.0, `config/schema/supply-chain-summary.schema.json`),
+  Harbor and the status file. Each control records its source and its evidence: **verified** (CI
+  verified it), **present** (it exists) or **reported**. The hub never verifies signatures itself.
+- A Supply chain section on each project: SBOM with package, license and ecosystem counts (custom
+  licenses grouped as `LicenseRef-*`), release attestations, image signature and provenance per
+  source, CI summary state. The Security page adds a supply-chain line per project, a portfolio
+  Supply chain section and `exports/supply-chain.csv`. Controls coverage names each control's
+  source ("via Harbor"). EN and IT.
+- Optional read-only providers in `config/providers.yaml` (off by default, never published),
+  behind one audited HTTP client: **SonarQube** as a Quality source
+  (`policies.quality.sources`, quality gate and new-code coverage), **Harbor** for image scans and
+  signatures, **Argo CD** for the deployed version, sync and health of each environment. Mappings
+  in the project files: `sonarProjectKey`, `sonarBranch`, `containerImages`,
+  `argocdApplication`. `--providers <file>` on the collector; the mock source reads
+  `fixtures/providers/providers.yaml`.
+- Data quality: a Providers card (state and items read per provider) and the repositories whose
+  SBOM is not readable. Versions: each environment shows its source (Argo CD or Manifest), sync,
+  health and deployed images. How to read: a Supply chain section.
+- Policies: `freshness.supplyChainSummaryStaleDays` (14), `quality.sources`,
+  `quality.qualityGateFailed` (info), `version.environmentOutOfSync` and
+  `version.environmentDegraded` (info), `supplyChain.*` (levels informative by default).
+- ADR 0011 (supply-chain evidence from GitHub-native sources and CI summaries) and ADR 0012
+  (optional read-only external providers), EN and IT.
+
+### Changed
+
+- Snapshot schema `1.8`: controls carry `source` and `evidence`, projects a `supplyChain`
+  section, Quality components their source, gate and new-code coverage, environments the
+  declared and deployed versions with sync and health, the index the provider states. A site
+  built from this version reads only `1.8` snapshots: run the collector once after upgrading.
+- Alerts of a mapped Trivy, Checkov or ZAP analysis get the category `container`, `iac` or
+  `dast` (still ordinary findings, never counted twice).
+- An environment's version is the deployed one when Argo CD reports it, else the declared one.
+- `versions.csv` ends with `environment_source`, `environment_declared_version`, `sync_status`
+  and `health_status`.
+
+### Security
+
+- New GitHub permission **Attestations: read** (GitHub App and fine-grained token). Contents,
+  Actions and Code scanning alerts, already granted, cover the SBOM export, the supply-chain
+  summary and the analyses by tool.
+- The SBOM export (`generate-report`) is the only request that asks GitHub to run a job: off by
+  default; its download follows the redirect only to an allow-listed `https` host, without the
+  Authorization header, with a size cap.
+- New optional secrets `SONARQUBE_TOKEN`, `HARBOR_ROBOT_NAME` + `HARBOR_ROBOT_SECRET` and
+  `ARGOCD_TOKEN`, mapped only into the Collect step and checked by the output scanner. The
+  provider client pins the configured host, refuses redirects, caps responses at 1 MiB and never
+  logs.
+
 ## [0.11.0] - 2026-11-03
 
 ### Added

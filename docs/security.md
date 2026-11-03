@@ -18,6 +18,9 @@
 | T10 | A forged, oversized or misleading quality summary                                             | Only artifacts of runs on the default branch that come from the same repository are read (a fork pull request run is ignored). The zip is capped at 64 KB and only `quality-summary.json` is read. The summary is validated by a strict schema and must name the repository being read, otherwise it is `invalid` and nothing of it is published. Counts and percentages are recomputed from `lines` only.                                                                                                                   |
 | T11 | A planted or tampered history artifact (a pull request or a fork writes a fake `hub-history`) | The restore step reads only the hub's own artifacts of the default branch from a different run, never a fork (`head_repository_id` must equal the repository id), at most 5 MiB, and only from a run of the deploy or collect workflow on an allowed event. The file is then parsed with a strict schema (8 MiB cap), every link is re-checked against the current host allowlist, text is re-scrubbed and the output passes the credential gate. Any failure starts history fresh and never fails or blocks the collection. |
 | T12 | A formula injected through exported text (CSV injection)                                      | A text cell that starts with `=`, `+`, `-`, `@`, TAB or CR gets a leading `'`. The exports carry only statuses, counts, versions and ids, no titles. `scan:output` scans `.csv` files.                                                                                                                                                                                                                                                                                                                                       |
+| T13 | A provider is pointed at another host (SSRF through mapped names or response data)            | One shared client for SonarQube, Harbor and Argo CD: `https` only, the URL is built from a fixed path template with every parameter encoded, and its host must equal the configured `baseUrl` host before any request. Redirects are refused, responses are capped at 1 MiB and read as a stream, requests time out. The SBOM download follows GitHub's redirect only to an `https` host in a code allowlist, without the Authorization header.                                                                              |
+| T14 | Secrets or internal data leak from external APIs into the site                                | Each response is reduced to a strict projection (only the fields the hub needs) and the rest is dropped in memory. Text is scrubbed, base URLs are never published, errors carry a fixed message per class (never the body or the URL) and the client never logs. `SONARQUBE_TOKEN`, `HARBOR_ROBOT_NAME`, `HARBOR_ROBOT_SECRET` and `ARGOCD_TOKEN` are in the list of values `scan:output` and the publication gate search for.                                                                                              |
+| T15 | Presence of a signature or attestation mistaken for verification                              | Evidence has three levels: `present` (it exists in GitHub or the registry), `verified` (CI verified it and reported it in `hub-supply-chain-summary`) and `reported` (scan results). The hub never verifies signatures itself and never upgrades `present` to `verified`. Unknown is never shown as unsigned. See [ADR 0011](architecture/adr/0011-supply-chain-evidence-github-native-and-ci-summaries.md).                                                                                                                 |
 
 ## Data published
 
@@ -41,6 +44,8 @@
 - Repository controls: per repository, the state of six checks (pass, fail, unknown, not applicable), the counts of workflow references (total, pinned, unpinned, unknown), the unpinned references (workflow file name, a `target` rebuilt from validated parts, and the `ref`, at most 20)\*, the reusable workflows with their referenced ref, the latest tag and a status (at most 20)\*, a summary of the branch rules (source, rule type names, required approvals) and an OpenSSF Scorecard summary (last analysis date, open alert count, names of the checks below the policy minimum)\*. Nothing else.
 - Discovery hints: only the three configured custom property keys and the matching topics, as short slug values, in the proposals of `catalog.json`.
 - Teams: the `org/slug` teams listed in the catalog (project snapshots, index, CSV). With team discovery (restricted audience only), `catalog.json` adds suggested team slugs with repository counts, the organisations read, the number of teams read and of secret teams skipped, and listed teams GitHub did not return.
+- Supply chain: per repository, SBOM state, source, format and version, package count, packages without license, flagged count, the top license expressions with counts (custom licenses grouped as `LicenseRef-*`) and ecosystems with counts; for the latest release, the number of assets checked and how many have provenance or SBOM attestations; per image, the repository path without registry host, tag, digest, signature and provenance evidence and Harbor scan counts by severity; the CI summary state, date, commit SHA and run link; mapped code-scanning tool names and the names of other tools seen (at most 10).
+- Providers: per provider, whether it is enabled and its run-level state; per Quality component, the source (`ci-summary` or `sonarqube`), quality gate and new-code coverage; per environment, the declared and deployed versions, Argo CD sync and health, a short revision and the deployed image versions per component. The provider mappings (`sonarProjectKey`, `containerImages`, `argocdApplication`) are part of the published catalog.
 - CSV exports (`exports/*.csv`): statuses, counts, versions and ids built from the same validated data. No titles, rule ids, paths or links.
 
 \* Withheld for non-public repositories when `audience: public` (for the Scorecard summary only the check names; their count stays).
@@ -55,6 +60,8 @@ collected), and anything outside the snapshot schemas.
 For repository controls: workflow text, step names, `run:`, `with:` and `env:` values, expressions, raw rules payloads and every custom property other than the three configured keys (for example a property such as `cost-center` never reaches the output). Workflow files are untrusted input: they are read in memory, bounded (262 144 bytes per file, 200 references per file, 1 000 per repository, 30 files by default), parsed with an alias limit (a file that reuses an anchor more than about 100 times is unparsable, so its repository's pinning is unknown) and without printing YAML warnings, which would quote the source in the log, and reduced to validated references before anything else happens. An identifier longer than its published bound (a `target` over 200 characters; a `ref`, tag or workflow file name over 100) is dropped as unknown and never truncated, so a single hostile workflow file or tag cannot stop a publication.
 
 For teams: team names, descriptions, members, member counts, parent teams, and anything about a secret team except that it was counted.
+
+For the supply chain and the external providers: package names, license texts, `LicenseRef` names, attestation bundles and certificates, SBOM documents, ZAP request and response data, SonarQube issues, Harbor vulnerability lists and scanner names, Argo CD `repoURL`, destination and resources, the providers' base URLs and their credentials.
 
 For history and exports: no titles of resolved alerts, no raw payloads, no secret values and
 no project that is no longer in the catalog (entries are pruned to the current catalog).
@@ -157,12 +164,54 @@ only chooses what to count.
     `partial` when only some are, `not-authorised` when none is and at least one answers
     403, and `unknown` when none is and none answers 403 (for example network errors
     only). Code Quality findings are informative: they never change the Quality status.
+- **Supply chain sources.** Checked on 2026-10-21 on GitHub's
+  [permissions-required-for-github-apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps)
+  page:
+
+  | Data                                   | Endpoint                                                                                               | Permission                               |
+  | -------------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
+  | SBOM export (opt-in)                   | `GET /repos/{owner}/{repo}/dependency-graph/sbom/generate-report`, then `.../sbom/fetch-report/{uuid}` | **Contents: read**                       |
+  | Attestations of release-asset digests  | `GET /repos/{owner}/{repo}/attestations/{subject_digest}`                                              | **Attestations: read** (new)             |
+  | Trivy, Checkov, ZAP and other analyses | `GET /repos/{owner}/{repo}/code-scanning/analyses?tool_name=…`                                         | **Code scanning alerts: read** (granted) |
+  | `hub-supply-chain-summary` artifact    | artifacts list and download                                                                            | **Actions: read** (granted)              |
+  - **Attestations: read** is new for the GitHub App and the fine-grained token. Without it,
+    attestations are `not-authorised` and the run goes on.
+  - **The SBOM export is the single "compute" call** ([ADR 0011](architecture/adr/0011-supply-chain-evidence-github-native-and-ci-summaries.md)):
+    `generate-report` asks GitHub to build the report. It changes nothing in the repository, but
+    it is not a plain read, so it is **off by default** and only sent when
+    `supplyChain.sbom.dependencyGraph: true`. Without it the SBOM comes from the CI summary (or
+    the status file), otherwise it is unknown.
+  - **SBOM download host.** `fetch-report` answers with a redirect. The collector follows it only
+    to an `https` host ending in `githubusercontent.com` or equal to `github.com`
+    (`SBOM_DOWNLOAD_HOST_SUFFIXES`), without the Authorization header. Observed host: not yet
+    observed; the allowlist fails closed.
+
 - **Fallback (MVP only): a fine-grained PAT** in `GH_READ_TOKEN`. Limit it to the monitored
   repositories, give it the same read-only permissions, and use a short expiry. It is tied
   to a person, so prefer the App.
 - **`GITHUB_TOKEN`**: last resort. It can only read the current repository.
 - There is no silent fallback between modes. The mode used is recorded in every snapshot
   (`run.authenticationMode`) and shown on the Data quality page.
+
+### External providers
+
+Optional ([ADR 0012](architecture/adr/0012-optional-external-read-only-providers.md)); each is
+off until enabled in `config/providers.yaml`. Use a credential that can only read, for this hub
+only:
+
+| Variable                                   | Credential                                                                                                                                                                                                                                                    |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SONARQUBE_TOKEN`                          | User token of a dedicated SonarQube user with **Browse** on the mapped projects only. No Execute Analysis, no Administer.                                                                                                                                     |
+| `HARBOR_ROBOT_NAME`, `HARBOR_ROBOT_SECRET` | A project robot account with **Read Artifact**, **Read Scan** and **List Accessory** only. Set an expiry.                                                                                                                                                     |
+| `ARGOCD_TOKEN`                             | A local account with only `apiKey`, RBAC `p, role:hub-reader, applications, get, <project>/*, allow`, and a token with an expiry: `argocd account generate-token --account hub-reader --expires-in 2160h` (verify the flag on the installed Argo CD version). |
+
+- Store them as repository or environment secrets. `collect-data.yml` maps them only into the
+  Collect step's `env`, like the GitHub credentials; the build and deploy jobs never see them.
+- Rotate them like the GitHub credentials (see [Credential rotation](#credential-rotation)): create
+  the new one, update the secret, run the collection, revoke the old one.
+- Calls are GETs only: SonarQube `/api/measures/component` and `/api/project_analyses/search`,
+  Harbor `/api/v2.0/projects/{project}/repositories/{repository}/artifacts/{reference}`, Argo CD
+  `/api/v1/applications/{name}`. The hub never starts a scan, an analysis or a sync.
 
 ## Least privilege in workflows
 

@@ -398,6 +398,26 @@ Primer UnderlineNav inside the header band: icon plus label, 14px `--fgColor-def
 
 Optional, off by default: enabled at build time with `PUBLIC_IDENTITY_SOURCE=cloudflare-access`. A fixed 32px slot at the end of the header tools shows the signed-in user's initials in a full-radius `--bgColor-neutral-muted` circle, with the full name only as visually hidden text and tooltip. No avatar image. If Access is absent or the call fails, the slot stays hidden and nothing shifts.
 
+### Evidence Label (supply chain)
+
+A Primer Label (20px, 12px weight 500, full radius) that always carries its word, with a 12px Octicon before it: **Verified** (`verified`, success muted tint and `fgColor`: CI verified it), **Present** (`check` in success colour on a neutral Label: it exists in GitHub or the registry, nobody verified it here), **Missing**, **Not verified** and **Failed** (`x` / `unverified`, attention muted tint), **Unknown** (`question`, no fill, 1.5px dashed `--borderColor-emphasis`, muted text: never "unsigned") and a muted "–" with visually hidden "Not applicable". An optional muted prefix names what it is about ("Signature", "Provenance"). A one-line legend in a `--bgColor-muted` box opens every supply-chain table.
+
+### Source tag
+
+A 20px tag with `--borderRadius-small` on `--bgColor-neutral-muted` with muted 12px text naming where a value comes from ("Dependency graph", "CI summary", "Harbor", "Manifest"); the accent variant (`--bgColor-accent-muted`, `--fgColor-accent`) marks a live external source (SonarQube, Argo CD). In Controls coverage the source is a muted "via …" line under the state.
+
+### Supply chain fold
+
+A `<details>` section like the others, after Repository controls and before Code quality. The summary hint is one sentence ("SBOM on 3 of 5 repositories · 0 unsigned images · 0 flagged licenses"). The body is the legend and one table row per repository: SBOM (bold tabular package count, source tag), license counts (name and right-aligned tabular count, custom licenses as "Custom *" with a footnote), release attestations (Evidence Labels plus "v1.4.0 · 1 of 1 asset"), images (one bordered 6px card per image and source with the path in monospace, the source tag and its Evidence Labels) and the CI summary state. At 720px and below rows stack as cards with the column name above each value. The Security page repeats it as one row per project.
+
+### Environment cell (Versions)
+
+Each environment step keeps its version and status Label, then a 12px line with the source tag (Argo CD in accent, Manifest neutral) and, with Argo CD, Sync (Synced success, Out of sync attention) and Health (Healthy and Progressing neutral, Degraded and Missing danger, Suspended attention) Labels. "Argo CD not authorised" is a dashed Unknown Label. "declared {version}" appears only when the declared and deployed versions differ; deployed images sit in a small disclosure.
+
+### Providers card
+
+On Data quality: a Box with one bordered tile per provider (SonarQube, Harbor, Argo CD) in an auto-fit grid, the name and its state Label (Available success, Partial attention, Not authorised and Unknown dashed, Off neutral) on one line and a muted "{purpose} · {n} read · {m} not readable" line under it. A small table lists repositories whose SBOM is not readable, with the reason as a dashed Label.
+
 ### Legend
 
 One 12px muted line under each list: the four status dots (or the six control-symbol Octicons) with their names, and a link to "How to read".

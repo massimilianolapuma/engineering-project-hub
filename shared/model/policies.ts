@@ -214,7 +214,7 @@ export const PoliciesSchema = z
         enabled: z.boolean().default(true),
         sbom: z
           .object({
-            /** true = GET .../dependency-graph/sbom/generate-report (ADR 0009). Off by default. */
+            /** true = GET .../dependency-graph/sbom/generate-report (ADR 0011). Off by default. */
             dependencyGraph: z.boolean().default(false),
             maxBytes: z.number().int().min(1024).max(67108864).default(16777216),
             pollAttempts: z.number().int().min(1).max(10).default(3),

@@ -345,7 +345,7 @@ export interface SourceProvider {
   ): Promise<ProviderResult<SupplyChainSummaryArtifactDTO>>;
   /**
    * Asks GitHub to generate the dependency-graph SBOM (GET .../sbom/generate-report): the single
-   * call that makes GitHub run a job (ADR 0009). Only called when the owner opted in.
+   * call that makes GitHub run a job (ADR 0011). Only called when the owner opted in.
    */
   requestDependencySbom(repo: string): Promise<ProviderResult<SbomRequestDTO>>;
   /** Polls the report: 202 → pending; 302 → the SPDX text, downloaded from an allow-listed host. */

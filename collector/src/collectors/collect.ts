@@ -233,7 +233,7 @@ export async function collectRepository(
   }
   const branch = configuredDefaultBranch ?? repo.data.defaultBranch;
   const sc = ctx.policies.supplyChain;
-  // The SBOM export is the one call that makes GitHub run a job (ADR 0009): only when the
+  // The SBOM export is the one call that makes GitHub run a job (ADR 0011): only when the
   // supply chain is on and the provider may use it (the real one follows the owner's opt-in).
   // Issued first, so GitHub works while the other calls of the repository run.
   const sbomRequestPending =

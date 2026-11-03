@@ -65,7 +65,7 @@ supplyChain:
   # enabled: true # false = no supply-chain evidence collected
   sbom:
     # The SBOM export asks GitHub to run a job (GET .../dependency-graph/sbom/generate-report): the
-    # single exception to "read-only, GET only" (ADR 0009). It is OFF by default and stays off here:
+    # single exception to "read-only, GET only" (ADR 0011). It is OFF by default and stays off here:
     # a real collection with this config never requests it (the mock source serves fixture SBOMs
     # whatever this switch says). Set true only if you accept that exception.
     dependencyGraph: false

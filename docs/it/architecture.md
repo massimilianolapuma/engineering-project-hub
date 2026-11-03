@@ -27,6 +27,8 @@ flowchart TB
     COMP --- API
   end
 
+  EXT["Provider facoltativi<br/>SonarQube · Harbor · Argo CD"]
+
   subgraph Collect["GitHub Actions · job collect (unico job con credenziali)"]
     CFG["config/catalog.yaml<br/>config/projects/*.yaml<br/>config/policies.yaml"] --> VAL["Validazione Zod"]
     VAL --> PROV["Provider<br/>GitHub (Octokit) | Mock (fixtures)"]
@@ -46,6 +48,7 @@ flowchart TB
   end
 
   API -- token in sola lettura / GitHub App --> PROV
+  EXT -- "client HTTP verificato · credenziali da env · spenti di default" --> PROV
   USER["Browser"] -- HTML + JSON statici --> PAGES
   USER -. "Open in GitHub ↗ (GitHub applica l'autenticazione)" .-> Sources
 ```
@@ -67,9 +70,9 @@ flowchart TB
 
 ## Flusso dei dati
 
-1. **Caricamento e validazione** del catalogo (`config/catalog.yaml`, `config/projects/*.yaml`)
-   e di `config/policies.yaml`. Una
-   config non valida interrompe l'esecuzione.
+1. **Caricamento e validazione** del catalogo (`config/catalog.yaml`, `config/projects/*.yaml`),
+   di `config/policies.yaml` e del facoltativo `config/providers.yaml`. Una config non valida
+   interrompe l'esecuzione.
 2. **Risoluzione delle credenziali** in quest'ordine: GitHub App, `GH_READ_TOKEN`,
    `GITHUB_TOKEN`, poi mock solo se selezionato esplicitamente.
 3. **Raccolta per repository**: metadati, poi head del branch, ultima release (con
@@ -82,8 +85,17 @@ flowchart TB
    memoria in riferimenti `uses:` validati), l'ultima analisi OpenSSF Scorecard e, solo se
    attivata, la protezione classica dei branch. L'ultima release o tag di ogni repository di
    workflow riutilizzabili referenziato è risolta una volta per esecuzione (al massimo 50
-   repository). Se la chiamata dei metadati fallisce, le chiamate dipendenti vengono saltate
-   ed ereditano il suo errore classificato.
+   repository). La **supply chain** aggiunge, per repository unico: l'artifact
+   `hub-supply-chain-summary` (stesse regole del riepilogo di qualità), le analisi di code
+   scanning degli strumenti associati (Trivy, Checkov, ZAP), le attestazioni dei digest degli
+   asset dell'ultima release e, solo se il proprietario lo attiva, l'esportazione SBOM del grafo
+   delle dipendenze (richiesta subito, letta dopo le altre chiamate, scaricata da un host in
+   allowlist e ridotta a conteggi). Se la chiamata dei metadati fallisce, le chiamate dipendenti
+   vengono saltate ed ereditano il suo errore classificato.
+   **Provider esterni** (solo se attivati in `providers.yaml`): le misure SonarQube di ogni
+   project key associata, l'artefatto Harbor di ogni riferimento d'immagine associato e
+   l'applicazione Argo CD di ogni ambiente associato, tramite un unico client HTTP verificato
+   (concorrenza 2 per provider, `maxItems` per esecuzione).
 4. **Raccolta per progetto**: il release manifest e `.gitmodules` dal coordinator, gli SHA
    dei submodule e le esecuzioni dei workflow monitorati (le ultime 20 sul branch
    predefinito), più i nomi del job e dello step falliti nell'ultima esecuzione fallita. Ogni
@@ -99,22 +111,26 @@ flowchart TB
    remediation sono calcolati dalla data di creazione di ogni alert, poi gira il valutatore di
    Sicurezza. Un finding con eccezione mantiene `status: open`; un solo helper, `countsAsOpen`,
    decide cosa viene contato.
-7. **Valutazione**: delivery, versioni, rischio sicurezza, copertura (controlli),
+7. **Risoluzione delle fonti**: ogni controllo di pipeline prende la prima risposta definitiva
+   in `policies.supplyChain.precedence`, con `source` ed `evidence`; la Qualità prende il report
+   migliore in `policies.quality.sources`; la versione di un ambiente è quella rilasciata quando
+   Argo CD la riporta, altrimenti quella dichiarata.
+8. **Valutazione**: delivery, versioni, rischio sicurezza, copertura (controlli),
    governance (con i sei controlli repository, informativi se non resi vincolanti), qualità
    (copertura dei test), aggiornamento dei dati e stato complessivo.
-8. **Sanitizzazione e validazione**: il testo libero viene ripulito e i link vengono
+9. **Sanitizzazione e validazione**: il testo libero viene ripulito e i link vengono
    filtrati. Ogni documento è sottoposto a parsing con gli schemi strict (allowlist), poi il
    JSON serializzato passa per il gate delle credenziali. Qualsiasi errore interrompe
    l'esecuzione prima che venga scritto qualcosa.
-9. **Aggiunta e confronto**: si carica lo storico precedente (vedi sotto), si aggiunge
-   l'esecuzione corrente con la retention e si calcola il confronto con la base precedente.
-10. **Scrittura** di `public/data/index.json`, `projects/<id>.json`, `history.json`,
+10. **Aggiunta e confronto**: si carica lo storico precedente (vedi sotto), si aggiunge
+    l'esecuzione corrente con la retention e si calcola il confronto con la base precedente.
+11. **Scrittura** di `public/data/index.json`, `projects/<id>.json`, `history.json`,
     `changes.json`, `collection-report.json` e `collection-report.md`.
-11. **Build** del sito. Le pagine caricano e rivalidano gli snapshot in fase di build e
-    scrivono i tre export CSV. Uno `schemaVersion` non supportato produce una pagina di
+12. **Build** del sito. Le pagine caricano e rivalidano gli snapshot in fase di build e
+    scrivono i quattro export CSV. Uno `schemaVersion` non supportato produce una pagina di
     errore controllata. Un `history.json` o `changes.json` mancante o non valido non fa mai
     fallire la build.
-12. **Scansione dell'output** (`dist/`, `public/data/`) alla ricerca di pattern di
+13. **Scansione dell'output** (`dist/`, `public/data/`) alla ricerca di pattern di
     credenziali e dei valori delle credenziali presenti nell'ambiente, quindi
     pubblicazione.
 
@@ -133,6 +149,9 @@ prossimo artifact `hub-history` (90 giorni). Un'esecuzione mock non ripristina m
 | API GitHub → collector                 | Credenziali in sola lettura. Vengono mappati solo i campi DTO in allowlist. I payload grezzi non escono mai dal provider.                                                                                                                                                                                                                                                                                                               |
 | Collector → snapshot                   | Schemi Zod strict (chiavi sconosciute rifiutate), pulizia del testo, allowlist degli host URL, gate delle credenziali.                                                                                                                                                                                                                                                                                                                  |
 | Artifact CI → collector                | Viene letto solo l'artifact `hub-quality-summary` di un'esecuzione sul branch predefinito dello stesso repository: zip ≤ 64 KB, un solo file, schema strict, `repository` deve coincidere. Un errore significa `invalid` e nulla viene pubblicato.                                                                                                                                                                                      |
+| Artifact CI → collector (supply chain) | `hub-supply-chain-summary` segue le stesse regole (branch predefinito, stesso repository, zip ≤ 64 KB, un solo file, schema strict). Porta solo conteggi e risultati di verifica; l'hub non trasforma mai da solo una presenza in una verifica.                                                                                                                                                                                         |
+| Esportazione SBOM GitHub → collector   | Solo su richiesta (`supplyChain.sbom.dependencyGraph`). Il redirect viene seguito solo verso un host `https` in una allowlist nel codice, senza header Authorization, con un limite di dimensione in streaming; il documento è ridotto a conteggi in memoria e scartato.                                                                                                                                                                |
+| Provider esterni → collector           | Spenti se non attivati. Un unico client: `https`, l'host esatto del `baseUrl` configurato, modelli di percorso fissi con parametri codificati, redirect rifiutati, limite di 1 MiB, timeout, nessun log. Le risposte sono ridotte a proiezioni rigide; URL di base e credenziali non vengono mai pubblicati.                                                                                                                            |
 | Artifact Actions → collector (storico) | Solo l'artifact `hub-history` del proprio repository, di un'esecuzione sul branch predefinito del workflow di deploy o di raccolta, non da un fork, non l'esecuzione corrente, al massimo 5 MiB. Il collector lo legge poi in modo strict (limite 8 MiB), ripulisce di nuovo link e testo e lo riscrive. Un errore fa ripartire lo storico da zero, non fa mai fallire l'esecuzione.                                                    |
 | File dei workflow → collector          | Input non attendibile. Letti tramite l'API Contents, limitati (262 144 byte per file, 200 riferimenti per file, 1 000 per repository, 30 file per impostazione predefinita), analizzati in memoria con un limite sugli alias e ridotti a riferimenti `uses:` validati. Testo dei workflow, nomi degli step, `run:`, `with:` ed `env:` non escono mai dal parser e non vengono mai pubblicati; `target` è ricostruita da parti validate. |
 | File delle eccezioni → collector       | Configurazione rivista, non dati monitorati: schema strict, testo ripulito prima della pubblicazione, allowlist degli host dei ticket, scadenza obbligatoria e limitata. Per un repository non pubblico con audience pubblica, regola o advisory, tool, motivo e ticket sono pubblicati come `null`. Non si scrive mai nulla su GitHub.                                                                                                 |
@@ -155,7 +174,7 @@ prossimo artifact `hub-history` (90 giorni). Un'esecuzione mock non ripristina m
   conteggi degli errori, i submodule non risolti e lo `score` del progetto.
 
 `history.json` (`kind: hub-history`) e `changes.json` (`kind: hub-changes`) hanno una versione
-separata (storico `1.2`, changes `1.0`) da quella dello snapshot (`1.7`), così lo storico sopravvive a un
+separata (storico `1.2`, changes `1.0`) da quella dello snapshot (`1.8`), così lo storico sopravvive a un
 cambio di schema dello snapshot e un `public/data` esistente resta leggibile. `history.json`
 ha un punto compatto per progetto e raccolta più la base dell'ultima esecuzione;
 `changes.json` è il confronto che il sito mostra. Sconosciuto non è mai 0: un punteggio null
@@ -196,7 +215,7 @@ Enum normalizzati:
 | Classe di errore      | `not-found`, `not-authorised`, `not-configured`, `rate-limited`, `invalid-data`, `error`                                                 |
 
 Gli JSON Schema generati si trovano in `config/schema/`. Il sito supporta le versioni di
-snapshot elencate in `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS` (attualmente `1.7`).
+snapshot elencate in `SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS` (attualmente `1.8`).
 
 ## Regole di salute (policy dell'MVP)
 
@@ -292,6 +311,10 @@ casi bloccano le decisioni ([ADR 0008](architecture/adr/0008-risk-governance-pol
 - [ADR 0006: Storico conservato tramite gli artifact Actions del repository stesso](architecture/adr/0006-history-persisted-through-own-actions-artifacts.md)
 - [ADR 0007: Controlli repository da file dei workflow e API delle regole, informativi per impostazione predefinita](architecture/adr/0007-repository-controls-informative-by-default.md)
 - [ADR 0008: Risk governance come policy-as-code tipizzata: eccezioni in configurazione rivista, mai dismiss su GitHub, niente OPA](architecture/adr/0008-risk-governance-policy-as-code.md)
+- [ADR 0009: GitHub Primer come design system (token e Octicons, senza React, senza mai spacciarsi per GitHub)](architecture/adr/0009-primer-design-system.md)
+- [ADR 0010: Viste per team senza controllo degli accessi per persona su hosting statico](architecture/adr/0010-per-team-views-without-access-control.md)
+- [ADR 0011: Evidenze della supply chain da fonti native GitHub e riepiloghi CI](architecture/adr/0011-supply-chain-evidence-github-native-and-ci-summaries.md)
+- [ADR 0012: Provider esterni facoltativi in sola lettura dietro un unico client HTTP verificato](architecture/adr/0012-optional-external-read-only-providers.md)
 
 Altre decisioni:
 
@@ -301,9 +324,10 @@ Altre decisioni:
 - L'i18n usa le route `[...lang]`: EN su `/`, IT su `/it/`. I dizionari tipizzati devono
   avere chiavi identiche, vincolo imposto da `Dict` e verificato dai test. Gli snapshot
   restano indipendenti dalla lingua: i motivi sono codici più parametri.
-- Design token in CSS nativo ("Warm Graphite", tema chiaro e scuro, contrasto WCAG AA
-  verificato da un test unitario), descritti in [`DESIGN.md`](../../DESIGN.md). La UI è
-  stata validata con mockup hi-fi prima dell'implementazione. I font sono IBM Plex Sans e
-  IBM Plex Mono self-hosted (OFL) tramite `@fontsource`.
+- Token funzionali di GitHub Primer e Octicons resi in fase di build, tema chiaro e scuro con
+  contrasto WCAG AA verificato da un test unitario, font di sistema
+  ([ADR 0009](architecture/adr/0009-primer-design-system.md)), descritti in
+  [`DESIGN.md`](../../DESIGN.md). La UI viene validata con mockup hi-fi prima
+  dell'implementazione.
 - TypeScript è fissato alla 6.0 per compatibilità con il tooling (typescript-eslint,
   `@astrojs/check`).
