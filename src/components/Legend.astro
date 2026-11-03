@@ -8,6 +8,7 @@ import type { I18n } from '../i18n';
 import { href } from '../lib/routes';
 import { SYMBOL_ICON, type SymbolKey } from '../lib/symbols';
 import Octicon from './Octicon.astro';
+import StatusIcon from './StatusIcon.astro';
 interface Props {
   i18n: I18n;
   kind?: 'status' | 'symbols';
@@ -27,7 +28,7 @@ const keys: SymbolKey[] = ['ok', 'gap', 'stale', 'failed', 'blind', 'na'];
     {kind === 'status'
       ? (['red', 'amber', 'green', 'grey'] as const).map((s) => (
           <li>
-            <span class={`legend__dot legend__dot--${s}`} aria-hidden="true" />
+            <StatusIcon tone={s} />
             {s === 'grey' ? l.unknownDashed : i18n.status(s)}
           </li>
         ))
@@ -70,25 +71,6 @@ const keys: SymbolKey[] = ['ok', 'gap', 'stale', 'failed', 'blind', 'na'];
     display: inline-flex;
     align-items: center;
     gap: 6px;
-  }
-  .legend__dot {
-    display: inline-block;
-    flex: none;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-  }
-  .legend__dot--red {
-    background: var(--fgColor-danger);
-  }
-  .legend__dot--amber {
-    background: var(--fgColor-attention);
-  }
-  .legend__dot--green {
-    background: var(--fgColor-success);
-  }
-  .legend__dot--grey {
-    border: 2px solid var(--borderColor-emphasis);
   }
   .legend__glyph {
     display: inline-flex;

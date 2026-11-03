@@ -77,7 +77,7 @@ export const it: Dict = {
   },
   legend: {
     title: 'Legenda',
-    unknownDashed: 'Vuoto o tratteggiato: sconosciuto, mai zero',
+    unknownDashed: 'Punto interrogativo o tratteggiato: sconosciuto, mai zero',
     howToRead: 'Come leggere',
     scoreHow: 'Come si calcola lo score',
   },
@@ -1306,7 +1306,7 @@ export const it: Dict = {
     onThisPage: 'In questa pagina',
     statesTitle: 'Stati di salute',
     statesIntro:
-      'Ogni progetto e ogni dimensione ha uno di quattro stati. Lo stato è sempre scritto accanto al suo pallino: il colore non è mai l’unico segnale.',
+      'Ogni progetto e ogni dimensione ha uno di quattro stati. Lo stato è sempre scritto accanto alla sua icona, e ogni stato ha una forma propria: il colore non è mai l’unico segnale.',
     barsNote:
       'Nel Portfolio ogni progetto ha sei barre, una per dimensione. L’altezza ripete lo stato, così il colore non è mai l’unico segnale: critico è una barra a tutta altezza, attenzione a due terzi, sano a un terzo; sconosciuto è un contorno tratteggiato a tutta altezza, senza riempimento.',
     states: {
@@ -1314,7 +1314,7 @@ export const it: Dict = {
       amber:
         'Problemi che richiedono un seguito ma non bloccano, per esempio un componente indietro rispetto all’ultima release.',
       green: 'Ogni dimensione richiesta è sana secondo le policy configurate.',
-      grey: 'Non abbiamo potuto leggere abbastanza dati per decidere. Disegnato con un contorno tratteggiato (un anello vuoto per il pallino di stato): mai come zero, mai come sano.',
+      grey: 'Non abbiamo potuto leggere abbastanza dati per decidere. Disegnato con un contorno tratteggiato o un punto interrogativo: mai come zero, mai come sano.',
     },
     criticalDimensions:
       'Critico in {dimensions} rende critico l’intero progetto; critico altrove vale come attenzione.',

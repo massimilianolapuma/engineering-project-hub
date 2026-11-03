@@ -153,7 +153,7 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
           const projectHref = href(locale, `projects/${s.project.id}`);
           const head = (
             <div class="vcard__head">
-              <span aria-hidden="true" class="vcard__dot">
+              <span aria-hidden="true" class="vcard__icon">
                 <StatusDot status={tone} label={statusLabel(s)} />
               </span>
               <h2 class="vcard__title" id={`v-${s.project.id}`}>
@@ -473,7 +473,7 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
     align-items: center;
     gap: var(--base-size-8) 10px;
   }
-  .vcard__dot {
+  .vcard__icon {
     display: inline-flex;
   }
   .vcard__title {

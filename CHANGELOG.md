@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Status dots are replaced by status icons, the same Octicons the status Labels use (x-circle
+  critical, alert attention, check-circle healthy, question unknown) in the Portfolio list and
+  status counts, Versions, Security, Workflows, the Quality header, the project dimension cards,
+  the legend and How to read. Each state has its own shape. The phone header keeps its two rows.
+
 ### Fixed
 
 - Supply chain lines on the Project and Security pages say "1 of 1 repository" for a
