@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Prometheus metrics: each collection writes `data/metrics/hub.prom` (text format 0.0.4, gauges
+  only, no timestamps). Project status and dimensions, score, open, overdue and accepted alerts,
+  repository controls, supply chain, provider states and collection errors. An unknown value is a
+  missing series plus `hub_project_measure_known 0`, never 0. No repository, component, team or URL
+  label. A size cap (`outputs.metrics.maxBytes`) drops detail instead of failing the run. The
+  collection report gains a Metrics line.
+- Grafana dashboard (`examples/grafana/`) and Prometheus examples (`examples/prometheus/`): scrape
+  the static host, scrape behind Cloudflare Access with a service token, or feed node_exporter's
+  textfile collector.
+- Executive summary page (`/executive/`): projects per status, the trend, the top risks in fixed
+  sentences, remediation and supply-chain totals. Redacted in both audiences (no repository names,
+  alert titles, team names or source-system links), printable on A4, and filtered by `?team=`
+  like the Portfolio without printing the teams.
+- Policies `outputs` block (`metrics`, `executive`), all optional.
+- Docs: [Outputs](docs/outputs.md).
+
+### Changed
+
+- Printing any page uses the light theme and hides the navigation and the run bar.
+
 ## [0.13.0] - 2026-11-03
 
 ### Changed

@@ -1812,8 +1812,8 @@ a.teamlabel:hover {
     display: none !important;
   }
   body {
-    background: #fff;
-    color: #000;
+    background: var(--bgColor-default);
+    color: var(--fgColor-default);
   }
   a {
     color: inherit;

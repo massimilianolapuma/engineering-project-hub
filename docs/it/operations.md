@@ -29,6 +29,8 @@ dato non aggiornato (`freshness.snapshotStaleHours`) superiore all'intervallo.
 - **Banner di dato non aggiornato**: il sito mostra un banner quando lo snapshot è più
   vecchio di `snapshotStaleHours`. Il calcolo avviene nel browser di chi consulta il sito,
   quindi anche un sito che ha smesso di aggiornarsi viene segnalato.
+- **Prometheus** (facoltativo): un alert su `time() - hub_collection_timestamp_seconds > 8 * 3600`
+  (due raccolte saltate) da `data/metrics/hub.prom`; vedi [Output](outputs.md#esempi-di-alert).
 - Tieni d'occhio le esecuzioni fallite di `deploy-pages`. I fallimenti sono strutturali,
   ad esempio config, credenziali, schema o sanitizzazione non validi, e richiedono un
   intervento. Gli errori sui singoli repository **non** fanno fallire l'esecuzione.
