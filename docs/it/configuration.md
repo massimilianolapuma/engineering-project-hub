@@ -336,6 +336,17 @@ escludere i controlli che non si applicano, con un motivo mostrato nella cella:
 `policies.yaml` sotto `controlMap` (`enabled`, `windows.frequencyDays` 30, `windows.trendDays` 90,
 `thresholds`). L'editor del catalogo conserva questi campi quando salva.
 
+### Segnale del registro dei deploy (`github-deployments`)
+
+`deploySignal: { type: github-deployments, repository: coordinator | <id componente> }` legge i
+deployment GitHub dell'ambiente (nome `environment` facoltativo, default `githubEnvironment ??
+id`; `tagPrefix`, default `v`; `sources` per contare solo alcuni scrittori). I sistemi esterni li
+scrivono tramite il [registro dei deploy](deployments-ledger.md): step push, bridge in lettura
+Azure DevOps (`config/deployments-bridge.yaml`, schema
+`config/schema/deployments-bridge.schema.json`) o record dichiarati
+(`config/deployments-declare.yaml`, schema `config/schema/deployments-declare.schema.json`), tutti
+nella repository di deploy chiamante.
+
 ### Aggiungere un progetto (senza modifiche al codice)
 
 Metodo consigliato: apri `/it/catalog/`, aggiungi una proposta scoperta (o crea un

@@ -107,11 +107,22 @@ l'hub sceglie solo cosa contare.
 - **Consigliata: GitHub App**, installata solo sui repository monitorati, con permessi di
   repository in sola lettura: **Metadata**, **Contents**, **Actions**, **Code scanning
   alerts** (`security_events`), **Dependabot alerts** (`vulnerability_alerts`) e **Secret
-  scanning alerts** (`secret_scanning_alerts`). Deployments ed Environments non sono
-  necessari all'MVP (per elencare gli ambienti serve Actions: read). I nomi dei permessi
+  scanning alerts** (`secret_scanning_alerts`). Aggiungere **Deployments: read** per
+  leggere il [registro dei deploy](deployments-ledger.md) (segnale `github-deployments`); per
+  elencare gli ambienti serve Actions: read. I nomi dei permessi
   sono stati verificati sulla pagina GitHub
   [permissions-required-for-github-apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps)
   il 2026-10-03.
+- **Registro dei deploy** ([ADR 0015](architecture/adr/0015-deployments-ledger.md),
+  [documentazione](deployments-ledger.md)). L'App dell'hub ha bisogno di **Deployments: read** per
+  leggere il registro. Gli scrittori usano una GitHub App separata con solo **Deployments: read and
+  write** (una chiave privata per linea o progetto esterno; token ristretti a una repository e a
+  `deployments: write`; qualunque chiave può agire su ogni repository dove l'App è installata,
+  limite accettato dal responsabile). Il job del bridge ha `contents: read` e `id-token: write`
+  (federazione Microsoft Entra per leggere Azure DevOps, nessun segreto salvato) e legge GitHub con
+  l'App di lettura dell'hub. Il job di dichiarazione gira nell'ambiente protetto
+  `deployments-declare`, i cui segreti di ambiente contengono le chiavi, e solo per i target di una
+  lista approvata. Entrambi scrivono solo con `mode: write` e `HUB_DEPLOYMENTS_BRIDGE=write`.
 - **Fonti della mappa dei controlli** (solo quando la [mappa dei controlli](control-map.md) è
   pubblicata). Tutte GET: ambienti GitHub della coordinatrice
   (`GET /repos/{owner}/{repo}/environments`), commit del percorso del file delle versioni, il file a

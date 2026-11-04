@@ -136,6 +136,12 @@ the related DORA and ISO 27001 references and a score. It is **not a compliance 
 governance is out of scope, and an unreadable source is "not visible", never 0
 ([Control map](docs/control-map.md), [ADR 0014](docs/architecture/adr/0014-control-map.md)).
 
+**Deployments ledger.** Environments deployed outside GitHub (for example from a customer's Azure
+DevOps after a mirror) are recorded as GitHub Deployments by a push step, a read-only Azure DevOps
+bridge or a reviewed declared record, so every environment of every repository shows its deploys
+and the hub measures delivery from them ([Deployments ledger](docs/deployments-ledger.md),
+[ADR 0015](docs/architecture/adr/0015-deployments-ledger.md)).
+
 **Teams notifications.** After each collection the hub can post one short digest of the projects
 that got worse to a Microsoft Teams channel: statuses, counts and a link to the hub, never
 repository names, alert titles or GitHub links. Off by default, then dry-run; it sends only with two

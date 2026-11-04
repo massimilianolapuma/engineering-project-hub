@@ -335,6 +335,16 @@ checks that do not apply, with a reason shown in the cell:
 `policies.yaml` under `controlMap` (`enabled`, `windows.frequencyDays` 30, `windows.trendDays` 90,
 `thresholds`). The catalog editor keeps these fields when it saves.
 
+### Deployments ledger signal (`github-deployments`)
+
+`deploySignal: { type: github-deployments, repository: coordinator | <component id> }` reads the
+GitHub deployments of the environment (optional `environment` name, default `githubEnvironment ??
+id`; `tagPrefix`, default `v`; `sources` to count only some writers). External systems write them
+through the [deployments ledger](deployments-ledger.md): push step, Azure DevOps pull bridge
+(`config/deployments-bridge.yaml`, schema `config/schema/deployments-bridge.schema.json`) or
+declared records (`config/deployments-declare.yaml`, schema
+`config/schema/deployments-declare.schema.json`), all in the calling deploy repository.
+
 ### Adding a project (no code change)
 
 Preferred: open `/catalog/`, add a discovered proposal (or create a project), then

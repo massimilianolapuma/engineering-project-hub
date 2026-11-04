@@ -317,6 +317,7 @@ casi bloccano le decisioni ([ADR 0008](architecture/adr/0008-risk-governance-pol
 - [ADR 0012: Provider esterni facoltativi in sola lettura dietro un unico client HTTP verificato](architecture/adr/0012-optional-external-read-only-providers.md)
 - [ADR 0013: Notifiche verso l'esterno da un job separato, dry-run di default, riepilogo senza dettagli dei repository](architecture/adr/0013-outward-notifications.md)
 - [ADR 0014: Mappa dei controlli tecnici con i riferimenti DORA e ISO 27001 collegati, mai un'affermazione di adeguatezza](architecture/adr/0014-control-map.md)
+- [ADR 0015: le GitHub Deployments come registro di ogni ambiente, scritto da fuori dell'hub](architecture/adr/0015-deployments-ledger.md)
 
 Altre decisioni:
 
