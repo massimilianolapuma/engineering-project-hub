@@ -2059,6 +2059,22 @@ describe('executive summary', () => {
     expect(await page('data-quality')).toMatch(/href="[^"]*data\/metrics\/hub\.prom"/);
   });
 
+  it('lists the Executive summary section in How to read "On this page"', async () => {
+    expect(await page('how-to-read')).toMatch(/<a href="#executive"/);
+  });
+
+  it('links the metrics file only when the published data has it', async () => {
+    const data = join(work, 'data-no-metrics');
+    await cp(join(process.cwd(), 'fixtures/snapshots'), data, { recursive: true });
+    await rm(join(data, 'metrics'), { recursive: true, force: true });
+    const out = join(work, 'dist-no-metrics');
+    await buildSite(data, out);
+    const html = await readFile(join(out, 'data-quality/index.html'), 'utf8');
+    const line = /data-metrics-line[\s\S]*?<\/div>/.exec(html)![0];
+    expect(line).not.toContain('hub.prom');
+    expect(textOf(line)).toContain('Not published');
+  }, 180_000);
+
   it('drops the navigation entry when outputs.executive.enabled is false', async () => {
     const policies = parse(readFileSync('config/policies.yaml', 'utf8'));
     policies.outputs = { executive: { enabled: false } };

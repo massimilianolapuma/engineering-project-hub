@@ -100,6 +100,8 @@ export function executiveText(
 ): ExecText {
   const r = view.remediation;
   const notMeasured = s.overdue.value;
+  // A team filter that matches no project: nothing was "not measured", there is nothing to show.
+  const empty = view.total === 0;
   const remediation =
     r.overdue === null
       ? s.overdue.notMeasured
@@ -123,12 +125,14 @@ export function executiveText(
       id: risk.id,
       sentences: risk.kinds.map((k) => riskSentence(s, k, risk.counts[k])),
     })),
-    remediation,
-    exceptions: fill(s.overdue.exceptions, {
-      a: r.accepted ? boundText(r.accepted) : notMeasured,
-      e: r.exceptionIssues,
-    }),
-    supplyChain: supplyChainLine(view, s),
+    remediation: empty ? s.emptySelection : remediation,
+    exceptions: empty
+      ? ''
+      : fill(s.overdue.exceptions, {
+          a: r.accepted ? boundText(r.accepted) : notMeasured,
+          e: r.exceptionIssues,
+        }),
+    supplyChain: empty ? s.emptySelection : supplyChainLine(view, s),
     filtered: (n, m) => fill(pick(m, s.filteredOne, s.filtered), { n, m }),
   };
 }
