@@ -27,6 +27,7 @@ type Card = {
     content: { type: string; version: string; body: Block[]; actions?: Block[] };
   }[];
 };
+const ADAPTIVE_CARD_SCHEMA = 'http://adaptivecards.io/schemas/adaptive-card.json';
 const texts = (blocks: Block[]): string[] =>
   blocks.flatMap((b) => [...(b.text ? [b.text] : []), ...texts(b.items ?? [])]);
 
@@ -58,9 +59,7 @@ describe('renderTeams', () => {
 
   it('has no link without siteUrl and only hub links with it', () => {
     // The card's $schema is the only URL allowed besides the hub link.
-    expect(
-      JSON.stringify(body).replace('http://adaptivecards.io/schemas/adaptive-card.json', ''),
-    ).not.toContain('http');
+    expect(JSON.stringify(body).replace(ADAPTIVE_CARD_SCHEMA, '')).not.toContain('http');
     expect(content.actions).toBeUndefined();
     const linked = renderTeams(digestWith({ siteUrl: 'https://hub.example.com/' }), en)
       .body as Card;
@@ -70,7 +69,8 @@ describe('renderTeams', () => {
       url: 'https://hub.example.com/changes/',
     });
     expect(
-      json.match(/https?:\/\/[^"\\]+/g)?.filter((u) => !u.includes('adaptivecards.io')),
+      // Every URL except the card's exact $schema is the hub link.
+      json.match(/https?:\/\/[^"\\]+/g)?.filter((u) => u !== ADAPTIVE_CARD_SCHEMA),
     ).toEqual(['https://hub.example.com/changes/']);
     const it = renderTeams(
       digestWith({ siteUrl: 'https://hub.example.com/', locale: 'it' }),
