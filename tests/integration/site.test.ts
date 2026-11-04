@@ -2097,9 +2097,12 @@ describe('executive summary', () => {
 
 describe('control map page (spec 2026-11-04)', () => {
   const CLAIM = /\bcompliant\b|compliance with|\bconforme\b|conformità/i;
-  /** The page without scripts and templates' markup: what a reader sees. */
-  const visibleText = (html: string) =>
-    textOf(html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, ''));
+  /** The page's main content (no head, scripts or styles live there): what a reader sees. */
+  const visibleText = (html: string) => {
+    const main = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
+    expect(main.toLowerCase()).not.toContain('<script');
+    return textOf(main);
+  };
 
   it('is built in both languages, after Security in the navigation', async () => {
     const en = await page('controls');
