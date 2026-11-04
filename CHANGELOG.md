@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-11-04
+
 ### Added
 
 - Deployments ledger ([ADR 0015](docs/architecture/adr/0015-deployments-ledger.md),
@@ -15,7 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Push step `scripts/report-deployment.sh` for external pipelines (Azure DevOps example).
   - Azure DevOps pull bridge `rw-deployments-bridge.yml` (`npm run deployments:bridge`): reads
     environment deployment records read-only (Microsoft Entra federation or PAT) and writes
-    idempotent ledger records; map `config/deployments-bridge.yaml`.
+    idempotent ledger records, one deploy per stage (failed if any job failed); errors are isolated
+    per environment; map `config/deployments-bridge.yaml`.
   - Declared records `rw-deployments-declare.yml` (`npm run deployments:declare`): protected
     environment with reviewers holds the keys; reviewed allowlist `config/deployments-declare.yaml`.
   - Writers use a separate GitHub App with only Deployments: read and write, tokens narrowed per
@@ -489,7 +492,8 @@ Tagged after the fact (2026-10-21) and not deployed on its own: its changes ship
 - Read-only by design: no write calls, alert dismissals or workflow triggers. Secret scanning alerts are fetched with `hide_secret=true` and only the secret type is kept.
 - The public demo publishes synthetic mock data only.
 
-[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.16.0...HEAD
+[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.17.0...HEAD
+[0.17.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.14.1...v0.15.0
 [0.14.1]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.14.0...v0.14.1
