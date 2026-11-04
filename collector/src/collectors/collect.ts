@@ -1,3 +1,4 @@
+import type { ControlMapRaw } from './collect-control-map';
 import {
   projectTargets,
   type Policies,
@@ -151,6 +152,8 @@ export interface RawProjectData {
   coordinatorTags?: ProviderResult<TagDTO[]> | null;
   /** Argo CD applications by environment id ('off' when Argo CD is off). */
   argocd?: Map<string, ProviderResult<ArgoApplicationDTO> | 'off'>;
+  /** Control map readings; absent when the map is not published for this audience. */
+  controlMap?: ControlMapRaw;
 }
 
 export interface CollectContext {
@@ -164,7 +167,7 @@ export interface CollectContext {
 }
 
 /** Runs a provider call through the limiter; unexpected exceptions become classified errors. */
-async function call<T>(
+export async function call<T>(
   ctx: CollectContext,
   key: string,
   task: () => Promise<ProviderResult<T>>,

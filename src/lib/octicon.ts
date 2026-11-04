@@ -49,6 +49,8 @@ export const OCTICON_NAMES = [
   'heart',
   'sync',
   'briefcase',
+  // control map
+  'checklist',
 ] as const;
 export type OcticonName = (typeof OCTICON_NAMES)[number];
 

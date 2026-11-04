@@ -19,6 +19,8 @@ import {
   type DirectoryEntryDTO,
   type WorkflowDTO,
   type DependabotAlertDTO,
+  type PathCommitDTO,
+  type EnvironmentDTO,
   type FileDTO,
   type ProviderResult,
   type TeamDTO,
@@ -128,6 +130,38 @@ const split = (repo: string) => {
   return { owner, repo: name };
 };
 
+/** Pages of 100 runs read for the control map delivery workflow (500 runs in the window). */
+export const MAX_DELIVERY_RUN_PAGES = 5;
+
+type RawRun = Awaited<
+  ReturnType<Client['rest']['actions']['listWorkflowRuns']>
+>['data']['workflow_runs'][number];
+
+const toRunDTO = (r: RawRun): WorkflowRunDTO => ({
+  id: r.id,
+  runNumber: r.run_number,
+  runAttempt: r.run_attempt ?? 1,
+  status: r.status ?? 'unknown',
+  conclusion: r.conclusion ?? null,
+  headBranch: r.head_branch ?? null,
+  event: r.event,
+  headSha: r.head_sha ?? null,
+  headCommitAt: r.head_commit?.timestamp ?? null,
+  createdAt: r.created_at,
+  updatedAt: r.updated_at,
+  htmlUrl: r.html_url,
+});
+
+/** security_and_analysis is only returned to callers allowed to see it: absent → null. */
+function pushProtectionOf(data: {
+  security_and_analysis?: {
+    secret_scanning_push_protection?: { status?: string } | null;
+  } | null;
+}): 'enabled' | 'disabled' | null {
+  const status = data.security_and_analysis?.secret_scanning_push_protection?.status;
+  return status === 'enabled' || status === 'disabled' ? status : null;
+}
+
 async function guard<T>(
   task: () => Promise<T>,
   notFoundAs?: () => ProviderResult<T>,
@@ -222,7 +256,24 @@ export class GitHubProvider implements SourceProvider {
         archived: data.archived,
         updatedAt: data.pushed_at ?? data.updated_at ?? null,
         topics: data.topics ?? [],
+        pushProtection: pushProtectionOf(data),
       };
+    });
+  }
+
+  listEnvironments(repo: string): Promise<ProviderResult<EnvironmentDTO[]>> {
+    return guard(async () => {
+      const { data } = await this.client.rest.repos.getAllEnvironments({
+        ...split(repo),
+        per_page: 100,
+      });
+      return (data.environments ?? []).map((e) => ({
+        name: e.name,
+        protected: (e.protection_rules ?? []).some(
+          (r) => r.type === 'required_reviewers' || r.type === 'wait_timer',
+        ),
+        branchPolicy: e.deployment_branch_policy != null,
+      }));
     });
   }
 
@@ -445,6 +496,43 @@ export class GitHubProvider implements SourceProvider {
     });
   }
 
+  listCommitsForPath(repo: string, path: string): Promise<ProviderResult<PathCommitDTO[]>> {
+    return guard(async () => {
+      const { data } = await this.client.rest.repos.listCommits({
+        ...split(repo),
+        path,
+        per_page: 100,
+      });
+      return data.map((c) => ({
+        sha: c.sha,
+        committedAt: c.commit.committer?.date ?? c.commit.author?.date ?? null,
+      }));
+    });
+  }
+
+  listReleases(repo: string): Promise<ProviderResult<ReleaseDTO[]>> {
+    return guard(async () => {
+      const { data } = await this.client.rest.repos.listReleases({ ...split(repo), per_page: 100 });
+      return data
+        .filter((r) => !r.draft)
+        .map((r) => ({
+          tagName: r.tag_name,
+          name: r.name ?? null,
+          publishedAt: r.published_at ?? null,
+          prerelease: r.prerelease,
+          htmlUrl: r.html_url,
+          assets: [],
+        }));
+    });
+  }
+
+  getCommitDate(repo: string, ref: string): Promise<ProviderResult<string | null>> {
+    return guard(async () => {
+      const { data } = await this.client.rest.repos.getCommit({ ...split(repo), ref });
+      return data.commit.committer?.date ?? data.commit.author?.date ?? null;
+    });
+  }
+
   getLatestTag(repo: string): Promise<ProviderResult<TagDTO>> {
     return guard(async () => {
       const { data } = await this.client.rest.repos.listTags({ ...split(repo), per_page: 1 });
@@ -523,19 +611,32 @@ export class GitHubProvider implements SourceProvider {
         per_page: 20,
         exclude_pull_requests: true,
       });
-      return data.workflow_runs.map((r) => ({
-        id: r.id,
-        runNumber: r.run_number,
-        runAttempt: r.run_attempt ?? 1,
-        status: r.status ?? 'unknown',
-        conclusion: r.conclusion ?? null,
-        headBranch: r.head_branch ?? null,
-        event: r.event,
-        headSha: r.head_sha ?? null,
-        createdAt: r.created_at,
-        updatedAt: r.updated_at,
-        htmlUrl: r.html_url,
-      }));
+      return data.workflow_runs.map(toRunDTO);
+    });
+  }
+
+  listWorkflowRunsSince(
+    repo: string,
+    workflowFile: string,
+    since: string,
+  ): Promise<ProviderResult<{ runs: WorkflowRunDTO[]; truncated: boolean }>> {
+    return guard(async () => {
+      const runs: WorkflowRunDTO[] = [];
+      let truncated = false;
+      for (let page = 1; page <= MAX_DELIVERY_RUN_PAGES; page++) {
+        const { data } = await this.client.rest.actions.listWorkflowRuns({
+          ...split(repo),
+          workflow_id: workflowFile,
+          created: `>=${since}`,
+          per_page: 100,
+          page,
+          exclude_pull_requests: true,
+        });
+        runs.push(...data.workflow_runs.map(toRunDTO));
+        if (data.workflow_runs.length < 100 || runs.length >= data.total_count) break;
+        if (page === MAX_DELIVERY_RUN_PAGES) truncated = true;
+      }
+      return { runs, truncated };
     });
   }
 
@@ -610,6 +711,7 @@ export class GitHubProvider implements SourceProvider {
           category: a.most_recent_instance?.category ?? null,
           createdAt: a.created_at,
           updatedAt: a.updated_at ?? null,
+          resolvedAt: a.fixed_at ?? a.dismissed_at ?? null,
           htmlUrl: a.html_url,
         }),
       ),
@@ -650,6 +752,7 @@ export class GitHubProvider implements SourceProvider {
           manifestPath: a.dependency.manifest_path ?? null,
           createdAt: a.created_at,
           updatedAt: a.updated_at,
+          resolvedAt: a.fixed_at ?? a.dismissed_at ?? a.auto_dismissed_at ?? null,
           htmlUrl: a.html_url,
         }),
       ),
@@ -672,6 +775,7 @@ export class GitHubProvider implements SourceProvider {
           secretTypeDisplayName: a.secret_type_display_name ?? null,
           createdAt: a.created_at ?? null,
           updatedAt: a.updated_at ?? null,
+          resolvedAt: a.resolved_at ?? null,
           htmlUrl: a.html_url ?? '',
         }),
       ),

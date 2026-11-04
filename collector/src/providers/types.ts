@@ -36,6 +36,17 @@ export interface RepositoryDTO {
   updatedAt: string | null;
   topics: string[];
   fork?: boolean;
+  /** security_and_analysis.secret_scanning_push_protection; null/absent when not visible. */
+  pushProtection?: 'enabled' | 'disabled' | null;
+}
+
+/** A GitHub deployment environment (names and protection only). */
+export interface EnvironmentDTO {
+  name: string;
+  /** Required reviewers or a wait timer. */
+  protected: boolean;
+  /** Deployments limited to protected branches or to a branch/tag policy. */
+  branchPolicy: boolean;
 }
 
 export interface DirectoryEntryDTO {
@@ -124,9 +135,17 @@ export interface WorkflowRunDTO {
   headBranch: string | null;
   event: string;
   headSha: string | null;
+  /** head_commit.timestamp: when the change was made (control map lead time). */
+  headCommitAt?: string | null;
   createdAt: string;
   updatedAt: string;
   htmlUrl: string;
+}
+
+/** A commit touching a path (control map: versions-file deploy signal). */
+export interface PathCommitDTO {
+  sha: string;
+  committedAt: string | null;
 }
 
 /** Name of the failed job / step of a run. Logs are never fetched. */
@@ -146,6 +165,8 @@ export interface CodeScanningAlertDTO {
   toolName: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+  /** fixed_at / dismissed_at / resolved_at of a closed alert. */
+  resolvedAt?: string | null;
   htmlUrl: string;
   /** File of the most recent instance; used only to attribute the alert to a monorepo component. */
   path?: string | null;
@@ -179,6 +200,8 @@ export interface DependabotAlertDTO {
   manifestPath?: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+  /** fixed_at / dismissed_at / resolved_at of a closed alert. */
+  resolvedAt?: string | null;
   htmlUrl: string;
 }
 
@@ -193,6 +216,8 @@ export interface SecretScanningAlertDTO {
   secretTypeDisplayName: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+  /** fixed_at / dismissed_at / resolved_at of a closed alert. */
+  resolvedAt?: string | null;
   htmlUrl: string;
 }
 
@@ -290,7 +315,7 @@ export interface SourceProvider {
   compareCommits(repo: string, base: string, head: string): Promise<ProviderResult<CompareDTO>>;
   /**
    * Only called with allow-listed paths (.gitmodules, release manifest, security status file,
-   * `.github/workflows/<name>` where `<name>` matches WORKFLOW_FILE).
+   * `.github/workflows/<name>` where `<name>` matches WORKFLOW_FILE, the catalog's versions file).
    */
   getFile(repo: string, path: string, ref?: string): Promise<ProviderResult<FileDTO>>;
   getSubmoduleRef(
@@ -321,6 +346,23 @@ export interface SourceProvider {
   getCustomPropertyValues(repo: string): Promise<ProviderResult<CustomPropertyDTO[]>>;
   listDependabotAlerts(repo: string): Promise<ProviderResult<DependabotAlertDTO[]>>;
   listSecretScanningAlerts(repo: string): Promise<ProviderResult<SecretScanningAlertDTO[]>>;
+  /** Deployment environments of a repository (control map). Optional: absent = not read. */
+  listEnvironments?(repo: string): Promise<ProviderResult<EnvironmentDTO[]>>;
+  /**
+   * Runs of a workflow created since `since` on every ref (control map delivery workflow), at most
+   * MAX_DELIVERY_RUN_PAGES pages of 100; `truncated` when more remain.
+   */
+  listWorkflowRunsSince?(
+    repo: string,
+    workflowFile: string,
+    since: string,
+  ): Promise<ProviderResult<{ runs: WorkflowRunDTO[]; truncated: boolean }>>;
+  /** Newest commits touching a catalog-configured path (first page of 100), newest first. */
+  listCommitsForPath?(repo: string, path: string): Promise<ProviderResult<PathCommitDTO[]>>;
+  /** Published releases, newest first (first page of 100). */
+  listReleases?(repo: string): Promise<ProviderResult<ReleaseDTO[]>>;
+  /** Committer date of a commit-ish (a tag name or a SHA). */
+  getCommitDate?(repo: string, ref: string): Promise<ProviderResult<string | null>>;
   /** Newest `hub-quality-summary` artifact of a branch, unzipped to the summary JSON text. */
   getQualitySummary(
     repo: string,

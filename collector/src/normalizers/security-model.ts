@@ -92,6 +92,7 @@ export function toFindings(
         title: reveal ? scrubText(a.ruleDescription, 160) : null,
         detectedAt: a.createdAt,
         updatedAt: a.updatedAt,
+        ...(a.resolvedAt ? { resolvedAt: a.resolvedAt } : {}),
         fixAvailable: null, // not declared by the code scanning API
         htmlUrl: link(ctx, a.htmlUrl),
         tool: scrubIdentifier(a.toolName, 50),
@@ -120,6 +121,7 @@ export function toFindings(
         title: reveal ? scrubText(title, 160) : null,
         detectedAt: a.createdAt,
         updatedAt: a.updatedAt,
+        ...(a.resolvedAt ? { resolvedAt: a.resolvedAt } : {}),
         fixAvailable: a.firstPatchedVersion !== null,
         htmlUrl: link(ctx, a.htmlUrl),
         tool: 'dependabot',
@@ -151,6 +153,7 @@ export function toFindings(
         title: reveal ? scrubText(a.secretTypeDisplayName, 100) : null,
         detectedAt: a.createdAt,
         updatedAt: a.updatedAt,
+        ...(a.resolvedAt ? { resolvedAt: a.resolvedAt } : {}),
         fixAvailable: null,
         htmlUrl: link(ctx, a.htmlUrl),
         tool: 'secret-scanning',

@@ -324,6 +324,17 @@ These are names, never hosts or credentials, and they are **published** with the
 `catalog.json` (so in the public demo they are synthetic). Base URLs and tokens live elsewhere:
 `config/providers.yaml` and the environment.
 
+### Control map fields (`deploySignal`, `delivery`, `githubEnvironment`, `controlMap`)
+
+For the [control map](control-map.md), each environment may declare how its deploys are observed
+(`deploySignal`: `workflow`, `versions-file`, `argocd`, `release` or `external`, the default),
+which environment the delivery metrics use (`delivery: true`, at most one; default the last), and
+the name of its GitHub environment (`githubEnvironment`, default its `id`). A project may exclude
+checks that do not apply, with a reason shown in the cell:
+`controlMap: { notApplicable: [{ check: dast, reason: ... }] }`. Thresholds and windows live in
+`policies.yaml` under `controlMap` (`enabled`, `windows.frequencyDays` 30, `windows.trendDays` 90,
+`thresholds`). The catalog editor keeps these fields when it saves.
+
 ### Adding a project (no code change)
 
 Preferred: open `/catalog/`, add a discovered proposal (or create a project), then
@@ -1085,6 +1096,7 @@ separator: use Data, From Text/CSV.
 - `findings-summary.csv`: `project_id, component_id, repository, open_critical, open_high, open_medium, open_low, open_informational, open_unknown, sources_complete, overdue, accepted`. `overdue` and `accepted` count that repository's findings (`unknown` when SLAs are off or no alert source was readable). All counts are `unknown` when no alert source was readable; when only some were, the counts are a lower bound and `sources_complete` is `false`.
 - `versions.csv`: `row_type (coordinator|component|environment), project_id, item_id, item_name, repository, version, version_source, declared_version, latest_release, drift, manifest_consistency, pin_status, environment_status, environment_source, environment_declared_version, sync_status, health_status`. The last four apply to environment rows (`n/a` elsewhere): `environment_source` is `argocd` or `manifest`, `environment_declared_version` the manifest's version of the environment, `sync_status` and `health_status` what Argo CD reported (`n/a` without Argo CD).
 - `supply-chain.csv`: `project_id, repository, component_ids, sbom_state, sbom_source, packages, without_license, flagged, attestation_state, assets_checked, assets_with_provenance, images, images_signed, images_unsigned, container_scanning_source, iac_scanning_source, dast_source, summary_state`. `component_ids` is joined with `;`. Counts are `unknown` when the source could not be read, never 0.
+- `control-map.csv` (only when the [control map](control-map.md) is published): `project_id, business_unit, check, area, level, state, value, unit, readable, reason, source_environment, signal, collected_at`. `level` and `value` are `n/a` when not measured, never 0; `readable` is `k/n` repositories read.
 
 If the snapshot data is missing or invalid, each CSV has its header and one row that starts with `data unavailable` and has `unknown` elsewhere. It is never a header-only file, which would read as "no projects".
 

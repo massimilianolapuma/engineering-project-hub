@@ -18,6 +18,7 @@ import {
   type RunProviders,
 } from '@model/index';
 import { buildProjectSnapshot, toProjectSummary } from './build-snapshot';
+import { collectControlMap, controlMapPublished } from './collectors/collect-control-map';
 import type { LoadedExceptions } from './config/load';
 import { orphanedExceptionIds } from './policy/exceptions';
 import { discover } from './discovery/discover';
@@ -192,6 +193,8 @@ export async function runCollection(opts: RunOptions): Promise<RunResult> {
   const reusable = await collectReusableTargets(ctx, referenced.targets, referenced.shaTargets);
   const exceptions = opts.exceptions ?? { source: 'none' as const, file: null, warnings: [] };
   const entries = exceptions.file?.exceptions ?? [];
+  // Control map readings (spec 2026-11-04): only when the map is published for this audience.
+  if (controlMapPublished(policies, provider.dataSource)) await collectControlMap(ctx, raws, now);
   const projects = raws.map((raw) => buildProjectSnapshot(raw, policies, now, reusable, entries));
   const finishedAt = clock();
 

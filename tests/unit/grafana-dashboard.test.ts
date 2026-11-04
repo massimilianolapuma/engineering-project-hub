@@ -17,7 +17,7 @@ const dash = JSON.parse(
 const DS = { type: 'prometheus', uid: '${DS_PROMETHEUS}' };
 
 describe('Grafana dashboard', () => {
-  it('has the fixed identity and ten panels', () => {
+  it('has the fixed identity and eleven panels', () => {
     expect(dash).toMatchObject({
       title: 'Engineering Project Hub',
       uid: 'engineering-project-hub',
@@ -26,7 +26,7 @@ describe('Grafana dashboard', () => {
     });
     expect(dash).not.toHaveProperty('version');
     expect(dash).not.toHaveProperty('__inputs');
-    expect(dash.panels).toHaveLength(10);
+    expect(dash.panels).toHaveLength(11);
   });
 
   it('chooses the data source through DS_PROMETHEUS and filters by project', () => {

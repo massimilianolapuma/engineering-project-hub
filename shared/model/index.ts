@@ -10,3 +10,4 @@ export * from './snapshot';
 export * from './history';
 export * from './images';
 export * from './notifications';
+export * from './control-map';

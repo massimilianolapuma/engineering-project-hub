@@ -79,6 +79,9 @@ export function createArgoCdProvider(client: ExternalClient): DeploymentProvider
           .filter((i) => i.length <= MAX_IMAGE_LENGTH)
           .slice(0, MAX_IMAGES),
         deployedAt: date(status?.operationState?.finishedAt) ?? date(history.at(-1)?.deployedAt),
+        deployHistory: history
+          .map((h) => date(h.deployedAt))
+          .filter((d): d is string => d !== null),
       });
     },
   };

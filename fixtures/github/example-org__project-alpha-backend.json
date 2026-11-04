@@ -129,7 +129,8 @@
       "toolName": "CodeQL",
       "createdAt": "@now-30d",
       "updatedAt": "@now-30d",
-      "htmlUrl": "https://github.com/example-org/project-alpha-backend/security/code-scanning/9"
+      "htmlUrl": "https://github.com/example-org/project-alpha-backend/security/code-scanning/9",
+      "resolvedAt": "@now-26d"
     }
   ],
   "codeScanningAnalysis": {

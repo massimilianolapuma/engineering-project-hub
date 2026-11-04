@@ -105,5 +105,12 @@
       "httpStatus": 403,
       "message": "Dependency graph is not enabled for this repository"
     }
+  },
+  "environments": {
+    "$error": {
+      "classification": "not-authorised",
+      "httpStatus": 403,
+      "message": "Resource not accessible by integration"
+    }
   }
 }

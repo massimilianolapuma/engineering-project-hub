@@ -56,6 +56,31 @@ describe('catalog editor: draft → catalog', () => {
     );
   });
 
+  it('keeps control map fields (deploy signals, delivery, exclusions) when a project is saved', () => {
+    const base = snapshot.catalog.projects[0]!;
+    const withMap = ProjectConfigSchema.parse({
+      ...base,
+      environments: [
+        {
+          id: 'prod',
+          name: 'PROD',
+          delivery: true,
+          githubEnvironment: 'production',
+          deploySignal: {
+            type: 'versions-file',
+            repository: 'coordinator',
+            path: 'environments/prod.yaml',
+            key: 'umbrella',
+          },
+        },
+      ],
+      controlMap: { notApplicable: [{ check: 'dast', reason: 'no web UI' }] },
+    });
+    const again = ProjectConfigSchema.parse(toProjectInput(projectToDraft(withMap)));
+    expect(again.environments).toEqual(withMap.environments);
+    expect(again.controlMap).toEqual(withMap.controlMap);
+  });
+
   it('keeps discovery settings out of the project files', () => {
     expect(toCatalogInput(draft())).not.toHaveProperty('discovery');
     expect(draft().discovery).toEqual(snapshot.catalog.discovery);

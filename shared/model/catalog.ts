@@ -8,6 +8,7 @@ import {
 } from './enums';
 import { ociRepository } from './contracts';
 import { TeamRefSchema, TeamsConfigSchema, teamSlug } from './teams';
+import { DeploySignalSchema, ProjectControlMapConfigSchema } from './control-map';
 
 export const VersionSourceSchema = z.enum(['auto', 'submodule', 'manifest', 'release']);
 export type VersionSource = z.infer<typeof VersionSourceSchema>;
@@ -152,6 +153,12 @@ export const EnvironmentConfigSchema = z
     name: z.string().min(1).max(50),
     /** Argo CD application that deploys this environment (read only when Argo CD is enabled). */
     argocdApplication: ArgocdApplicationSchema.optional(),
+    /** How deploys of this environment are observed (control map). Default: external (not visible). */
+    deploySignal: DeploySignalSchema.default({ type: 'external' }),
+    /** The environment the delivery metrics use (at most one per project; default: the last). */
+    delivery: z.boolean().optional(),
+    /** Name of the GitHub environment (default: the environment id). */
+    githubEnvironment: z.string().min(1).max(255).optional(),
   })
   .strict();
 
@@ -185,9 +192,36 @@ export const ProjectConfigSchema = z
     securityStatusPath: relativePath.default('.security/project-security-status.json'),
     /** GitHub teams working on the project ("<org>/<team-slug>"): a view filter, not access control. */
     teams: z.array(TeamRefSchema).max(50).default([]),
+    /** Control map: checks that do not apply to this project, with the reason shown in the cell. */
+    controlMap: ProjectControlMapConfigSchema.prefault({}),
   })
   .strict()
   .superRefine((p, ctx) => {
+    if (p.environments.filter((e) => e.delivery).length > 1)
+      ctx.addIssue({
+        code: 'custom',
+        path: ['environments'],
+        message: 'only one delivery environment',
+      });
+    p.environments.forEach((e, i) => {
+      const s = e.deploySignal;
+      if (s.type === 'workflow' && !p.trackedWorkflows.some((w) => w.id === s.workflow))
+        ctx.addIssue({
+          code: 'custom',
+          path: ['environments', i, 'deploySignal', 'workflow'],
+          message: `unknown tracked workflow "${s.workflow}"`,
+        });
+      if (
+        s.type === 'versions-file' &&
+        s.repository !== 'coordinator' &&
+        !p.components.some((c) => c.id === s.repository)
+      )
+        ctx.addIssue({
+          code: 'custom',
+          path: ['environments', i, 'deploySignal', 'repository'],
+          message: `unknown component "${s.repository}"`,
+        });
+    });
     const dup = (values: string[]) => values.filter((v, i) => values.indexOf(v) !== i);
     const teams = p.teams.map((t) => t.toLowerCase());
     teams.forEach((t, i) => {

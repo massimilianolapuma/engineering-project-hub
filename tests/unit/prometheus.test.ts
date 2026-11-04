@@ -154,8 +154,8 @@ describe('renderMetrics edge cases', () => {
     expect(lines(tiny.text)).toContain('hub_projects 4');
   });
 
-  it('lists the 25 families in emission order', () => {
-    expect(METRIC_FAMILIES).toHaveLength(25);
+  it('lists the 29 families in emission order', () => {
+    expect(METRIC_FAMILIES).toHaveLength(29);
     expect(METRIC_FAMILIES[0]).toBe('hub_info');
     expect(METRIC_FAMILIES.at(-1)).toBe('hub_metrics_truncated');
     const text = renderMetrics(golden(), DEFAULTS).text;

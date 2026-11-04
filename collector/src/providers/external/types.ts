@@ -41,6 +41,8 @@ export interface ArgoApplicationDTO {
   targetRevision: string | null;
   images: string[];
   deployedAt: string | null;
+  /** status.history[].deployedAt, oldest first (control map: deploy frequency). */
+  deployHistory?: string[];
 }
 
 /** Second Quality source: SonarQube measures of one project key (and optional branch). */

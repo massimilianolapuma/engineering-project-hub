@@ -17,7 +17,7 @@
     {
       "id": "project-beta",
       "overall": "red",
-      "errors": 7
+      "errors": 8
     },
     {
       "id": "project-gamma",
@@ -33,7 +33,7 @@
   },
   "errorsByClassification": {
     "not-found": 2,
-    "not-authorised": 9
+    "not-authorised": 10
   },
   "errors": [
     {
@@ -97,6 +97,14 @@
       "httpStatus": 403
     },
     {
+      "repository": "example-org/project-beta-coordinator",
+      "componentId": "coordinator",
+      "source": "github-environments",
+      "classification": "not-authorised",
+      "httpStatus": 403,
+      "detail": "Resource not accessible by integration"
+    },
+    {
       "repository": "example-org/project-gamma-coordinator",
       "componentId": "coordinator",
       "source": "repository",
@@ -157,8 +165,8 @@
   },
   "metrics": {
     "state": "written",
-    "series": 228,
-    "bytes": 20348,
+    "series": 298,
+    "bytes": 26007,
     "truncated": "none"
   }
 }

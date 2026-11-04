@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.8",
+  "schemaVersion": "1.9",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-gamma",
@@ -894,5 +894,405 @@
       "classification": "not-authorised",
       "httpStatus": 403
     }
-  ]
+  ],
+  "controlMap": {
+    "cells": [
+      {
+        "check": "sbom-coverage",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": {
+          "k": 0,
+          "n": 2
+        },
+        "reason": "too-few-readable",
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "image-signature",
+        "level": null,
+        "state": "not-applicable",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": null,
+        "reason": "no-object",
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "build-provenance",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": {
+          "k": 0,
+          "n": 2
+        },
+        "reason": "too-few-readable",
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "license-policy",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": null,
+        "reason": "source-unreadable",
+        "note": "no readable SBOM",
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "dependency-scanning",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": {
+          "k": 0,
+          "n": 2
+        },
+        "reason": "too-few-readable",
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "sast",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": {
+          "k": 0,
+          "n": 2
+        },
+        "reason": "too-few-readable",
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "container-scanning",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": {
+          "k": 0,
+          "n": 2
+        },
+        "reason": "too-few-readable",
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "iac-scanning",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": {
+          "k": 0,
+          "n": 2
+        },
+        "reason": "too-few-readable",
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "dast",
+        "level": null,
+        "state": "not-applicable",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": null,
+        "reason": "catalog-not-applicable",
+        "note": "internal service without a web interface",
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "vulnerability-age",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": null,
+        "reason": "source-unreadable",
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "security-mttr",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": null,
+        "reason": "source-unreadable",
+        "note": "no resolved critical or high alert dates",
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "secret-scanning",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": {
+          "k": 0,
+          "n": 2
+        },
+        "reason": "too-few-readable",
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "exposed-secrets",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": null,
+        "reason": "source-unreadable",
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "workload-identity",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": {
+          "k": 0,
+          "n": 2
+        },
+        "reason": "source-unreadable",
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "branch-protection",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": {
+          "k": 0,
+          "n": 2
+        },
+        "reason": "too-few-readable",
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "required-checks",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": {
+          "k": 0,
+          "n": 2
+        },
+        "reason": "too-few-readable",
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "pipeline-integrity",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": {
+          "k": 0,
+          "n": 2
+        },
+        "reason": "too-few-readable",
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "environment-separation",
+        "level": 1,
+        "state": "measured",
+        "value": 1,
+        "unit": "level",
+        "threshold": null,
+        "readable": null,
+        "reason": null,
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "config-drift",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": null,
+        "reason": "no-argocd",
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "deploy-frequency",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": null,
+        "reason": "external-pipelines",
+        "note": null,
+        "environment": "DEV",
+        "signal": "external"
+      },
+      {
+        "check": "lead-time",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": null,
+        "reason": "external-pipelines",
+        "note": null,
+        "environment": "DEV",
+        "signal": "external"
+      },
+      {
+        "check": "change-failure-rate",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": null,
+        "reason": "external-pipelines",
+        "note": null,
+        "environment": "DEV",
+        "signal": "external"
+      },
+      {
+        "check": "time-to-restore",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": null,
+        "reason": "external-pipelines",
+        "note": null,
+        "environment": "DEV",
+        "signal": "external"
+      },
+      {
+        "check": "test-coverage",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": null,
+        "reason": "source-unreadable",
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "evidence-freshness",
+        "level": null,
+        "state": "not-visible",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": {
+          "k": 0,
+          "n": 21
+        },
+        "reason": "source-unreadable",
+        "note": null,
+        "environment": null,
+        "signal": null
+      }
+    ],
+    "score": null,
+    "measured": 1,
+    "applicable": 23,
+    "areas": {
+      "supply-chain": {
+        "score": null,
+        "measured": 0,
+        "applicable": 4
+      },
+      "vulnerabilities": {
+        "score": null,
+        "measured": 0,
+        "applicable": 5
+      },
+      "secrets": {
+        "score": null,
+        "measured": 0,
+        "applicable": 3
+      },
+      "change-access": {
+        "score": null,
+        "measured": 1,
+        "applicable": 5
+      },
+      "delivery": {
+        "score": null,
+        "measured": 0,
+        "applicable": 5
+      },
+      "evidence": {
+        "score": null,
+        "measured": 0,
+        "applicable": 1
+      }
+    }
+  }
 }

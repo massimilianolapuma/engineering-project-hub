@@ -1,6 +1,6 @@
 # HELP hub_info Engineering Project Hub collection metadata; always 1.
 # TYPE hub_info gauge
-hub_info{collector_version="0.15.0",data_source="mock",schema_version="1.8"} 1
+hub_info{collector_version="0.15.0",data_source="mock",schema_version="1.9"} 1
 # HELP hub_collection_timestamp_seconds When the data was collected, as Unix seconds.
 # TYPE hub_collection_timestamp_seconds gauge
 hub_collection_timestamp_seconds 1768478400
@@ -237,7 +237,7 @@ hub_project_quality_coverage_ratio{project="project-beta"} 0.667
 # TYPE hub_project_collection_errors gauge
 hub_project_collection_errors{project="platform"} 0
 hub_project_collection_errors{project="project-alpha"} 1
-hub_project_collection_errors{project="project-beta"} 7
+hub_project_collection_errors{project="project-beta"} 8
 hub_project_collection_errors{project="project-gamma"} 3
 # HELP hub_project_measure_known 1 when the measure was known in the last collection, 0 when it was not (never read a missing series as 0).
 # TYPE hub_project_measure_known gauge
@@ -273,6 +273,84 @@ hub_project_measure_known{measure="unsigned_images",project="platform"} 1
 hub_project_measure_known{measure="unsigned_images",project="project-alpha"} 1
 hub_project_measure_known{measure="unsigned_images",project="project-beta"} 1
 hub_project_measure_known{measure="unsigned_images",project="project-gamma"} 0
+# HELP hub_project_control_score Control map score 0-100 (technical checks related to DORA and ISO 27001, not an assessment of either); absent when not measured or not published.
+# TYPE hub_project_control_score gauge
+hub_project_control_score{project="platform"} 63
+hub_project_control_score{project="project-alpha"} 78
+hub_project_control_score{project="project-beta"} 61
+# HELP hub_project_control_measured Control map checks measured, out of hub_project_control_applicable.
+# TYPE hub_project_control_measured gauge
+hub_project_control_measured{project="platform"} 20
+hub_project_control_measured{project="project-alpha"} 24
+hub_project_control_measured{project="project-beta"} 14
+hub_project_control_measured{project="project-gamma"} 1
+# HELP hub_project_control_applicable Control map checks that apply to the project.
+# TYPE hub_project_control_applicable gauge
+hub_project_control_applicable{project="platform"} 22
+hub_project_control_applicable{project="project-alpha"} 24
+hub_project_control_applicable{project="project-beta"} 24
+hub_project_control_applicable{project="project-gamma"} 23
+# HELP hub_project_control_level Control map level 0-5 per check; a check not measured or not applicable has no series.
+# TYPE hub_project_control_level gauge
+hub_project_control_level{check="branch-protection",project="platform"} 5
+hub_project_control_level{check="branch-protection",project="project-alpha"} 5
+hub_project_control_level{check="build-provenance",project="project-alpha"} 5
+hub_project_control_level{check="change-failure-rate",project="platform"} 3
+hub_project_control_level{check="change-failure-rate",project="project-alpha"} 2
+hub_project_control_level{check="config-drift",project="project-alpha"} 3
+hub_project_control_level{check="config-drift",project="project-beta"} 5
+hub_project_control_level{check="container-scanning",project="platform"} 5
+hub_project_control_level{check="container-scanning",project="project-alpha"} 3
+hub_project_control_level{check="container-scanning",project="project-beta"} 5
+hub_project_control_level{check="dast",project="platform"} 0
+hub_project_control_level{check="dast",project="project-alpha"} 1
+hub_project_control_level{check="dast",project="project-beta"} 0
+hub_project_control_level{check="dependency-scanning",project="platform"} 5
+hub_project_control_level{check="dependency-scanning",project="project-alpha"} 5
+hub_project_control_level{check="dependency-scanning",project="project-beta"} 5
+hub_project_control_level{check="deploy-frequency",project="platform"} 2
+hub_project_control_level{check="deploy-frequency",project="project-alpha"} 2
+hub_project_control_level{check="environment-separation",project="platform"} 4
+hub_project_control_level{check="environment-separation",project="project-alpha"} 5
+hub_project_control_level{check="environment-separation",project="project-gamma"} 1
+hub_project_control_level{check="evidence-freshness",project="platform"} 2
+hub_project_control_level{check="evidence-freshness",project="project-alpha"} 4
+hub_project_control_level{check="evidence-freshness",project="project-beta"} 4
+hub_project_control_level{check="exposed-secrets",project="platform"} 5
+hub_project_control_level{check="exposed-secrets",project="project-alpha"} 5
+hub_project_control_level{check="exposed-secrets",project="project-beta"} 5
+hub_project_control_level{check="iac-scanning",project="platform"} 0
+hub_project_control_level{check="iac-scanning",project="project-alpha"} 0
+hub_project_control_level{check="iac-scanning",project="project-beta"} 2
+hub_project_control_level{check="image-signature",project="project-alpha"} 5
+hub_project_control_level{check="image-signature",project="project-beta"} 0
+hub_project_control_level{check="lead-time",project="platform"} 4
+hub_project_control_level{check="lead-time",project="project-alpha"} 4
+hub_project_control_level{check="license-policy",project="platform"} 1
+hub_project_control_level{check="license-policy",project="project-alpha"} 5
+hub_project_control_level{check="pipeline-integrity",project="platform"} 0
+hub_project_control_level{check="pipeline-integrity",project="project-alpha"} 5
+hub_project_control_level{check="pipeline-integrity",project="project-beta"} 2
+hub_project_control_level{check="required-checks",project="platform"} 5
+hub_project_control_level{check="required-checks",project="project-alpha"} 5
+hub_project_control_level{check="required-checks",project="project-beta"} 3
+hub_project_control_level{check="sast",project="platform"} 5
+hub_project_control_level{check="sast",project="project-alpha"} 5
+hub_project_control_level{check="sast",project="project-beta"} 5
+hub_project_control_level{check="sbom-coverage",project="platform"} 5
+hub_project_control_level{check="sbom-coverage",project="project-alpha"} 3
+hub_project_control_level{check="sbom-coverage",project="project-beta"} 0
+hub_project_control_level{check="secret-scanning",project="platform"} 3
+hub_project_control_level{check="secret-scanning",project="project-alpha"} 5
+hub_project_control_level{check="security-mttr",project="project-alpha"} 4
+hub_project_control_level{check="test-coverage",project="platform"} 2
+hub_project_control_level{check="test-coverage",project="project-alpha"} 4
+hub_project_control_level{check="test-coverage",project="project-beta"} 3
+hub_project_control_level{check="time-to-restore",project="platform"} 4
+hub_project_control_level{check="time-to-restore",project="project-alpha"} 4
+hub_project_control_level{check="vulnerability-age",project="platform"} 3
+hub_project_control_level{check="vulnerability-age",project="project-alpha"} 5
+hub_project_control_level{check="vulnerability-age",project="project-beta"} 4
 # HELP hub_metrics_truncated 1 when the file was cut down to stay under outputs.metrics.maxBytes, else 0.
 # TYPE hub_metrics_truncated gauge
 hub_metrics_truncated 0

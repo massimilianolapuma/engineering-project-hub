@@ -113,6 +113,159 @@ const provider = (routes: Record<string, Route>, seen?: string[]) =>
   );
 
 describe('GitHubProvider', () => {
+  it('control map: reads path commits, releases and commit dates (GET only)', async () => {
+    const seen: string[] = [];
+    const p = provider(
+      {
+        '/repos/o/a/commits': {
+          status: 200,
+          body: [
+            { sha: 'b'.repeat(40), commit: { committer: { date: '2026-02-02T00:00:00Z' } } },
+            {
+              sha: 'a'.repeat(40),
+              commit: { committer: null, author: { date: '2026-02-01T00:00:00Z' } },
+            },
+          ],
+        },
+        '/repos/o/a/commits/v1.2.0': {
+          status: 200,
+          body: { sha: 'c'.repeat(40), commit: { committer: { date: '2026-01-31T00:00:00Z' } } },
+        },
+        '/repos/o/a/releases': {
+          status: 200,
+          body: [
+            {
+              tag_name: 'v1.2.0',
+              name: null,
+              published_at: '2026-02-03T00:00:00Z',
+              prerelease: false,
+              draft: false,
+              html_url: 'https://github.com/o/a/releases/1',
+              assets: [],
+            },
+            {
+              tag_name: 'v1.3.0',
+              name: null,
+              published_at: null,
+              prerelease: false,
+              draft: true,
+              html_url: 'https://github.com/o/a/releases/2',
+              assets: [],
+            },
+          ],
+        },
+      },
+      seen,
+    );
+    expect(await p.listCommitsForPath('o/a', 'environments/prod.yaml')).toEqual({
+      ok: true,
+      data: [
+        { sha: 'b'.repeat(40), committedAt: '2026-02-02T00:00:00Z' },
+        { sha: 'a'.repeat(40), committedAt: '2026-02-01T00:00:00Z' },
+      ],
+    });
+    expect(seen.some((u) => u.includes('path=environments%2Fprod.yaml'))).toBe(true);
+    expect(await p.getCommitDate('o/a', 'v1.2.0')).toEqual({
+      ok: true,
+      data: '2026-01-31T00:00:00Z',
+    });
+    expect(await p.listReleases('o/a')).toMatchObject({ ok: true, data: [{ tagName: 'v1.2.0' }] });
+  });
+
+  it('control map: maps push protection, environments and closed-alert dates', async () => {
+    const repo = (extra: Record<string, unknown>) => ({
+      owner: { login: 'o' },
+      name: 'a',
+      full_name: 'o/a',
+      html_url: 'https://github.com/o/a',
+      private: true,
+      visibility: 'private',
+      default_branch: 'main',
+      archived: false,
+      pushed_at: null,
+      updated_at: null,
+      topics: [],
+      ...extra,
+    });
+    const withPp = provider({
+      '/repos/o/a': {
+        status: 200,
+        body: repo({
+          security_and_analysis: { secret_scanning_push_protection: { status: 'enabled' } },
+        }),
+      },
+      '/repos/o/a/environments': {
+        status: 200,
+        body: {
+          total_count: 3,
+          environments: [
+            { name: 'dev', protection_rules: [], deployment_branch_policy: null },
+            {
+              name: 'staging',
+              protection_rules: [{ id: 1, type: 'wait_timer', wait_timer: 5 }],
+              deployment_branch_policy: null,
+            },
+            {
+              name: 'production',
+              protection_rules: [{ id: 2, type: 'required_reviewers', reviewers: [] }],
+              deployment_branch_policy: { protected_branches: true, custom_branch_policies: false },
+            },
+          ],
+        },
+      },
+      '/repos/o/a/dependabot/alerts': {
+        status: 200,
+        body: [
+          {
+            number: 4,
+            state: 'fixed',
+            dismissed_reason: null,
+            security_advisory: { ghsa_id: 'GHSA-xxxx-xxxx-xxxx', cve_id: null, severity: 'high' },
+            security_vulnerability: { severity: 'high', first_patched_version: null },
+            dependency: { package: { name: 'left-pad' }, manifest_path: 'package.json' },
+            created_at: '2026-01-01T00:00:00Z',
+            updated_at: '2026-01-05T00:00:00Z',
+            fixed_at: '2026-01-05T00:00:00Z',
+            dismissed_at: null,
+            html_url: 'https://github.com/o/a/security/dependabot/4',
+          },
+        ],
+      },
+    });
+    expect(await withPp.getRepository('o/a')).toMatchObject({
+      ok: true,
+      data: { pushProtection: 'enabled' },
+    });
+    expect(await withPp.listEnvironments('o/a')).toEqual({
+      ok: true,
+      data: [
+        { name: 'dev', protected: false, branchPolicy: false },
+        { name: 'staging', protected: true, branchPolicy: false },
+        { name: 'production', protected: true, branchPolicy: true },
+      ],
+    });
+    expect(await withPp.listDependabotAlerts('o/a')).toMatchObject({
+      ok: true,
+      data: [{ resolvedAt: '2026-01-05T00:00:00Z' }],
+    });
+
+    const hidden = provider({
+      '/repos/o/a': { status: 200, body: repo({}) },
+      '/repos/o/a/environments': {
+        status: 403,
+        body: { message: 'Resource not accessible by integration' },
+      },
+    });
+    expect(await hidden.getRepository('o/a')).toMatchObject({
+      ok: true,
+      data: { pushProtection: null },
+    });
+    expect(await hidden.listEnvironments('o/a')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-authorised' },
+    });
+  });
+
   it('maps repository metadata to the minimal DTO', async () => {
     const p = provider({
       '/repos/example-org/demo': {
@@ -145,6 +298,7 @@ describe('GitHubProvider', () => {
         archived: false,
         updatedAt: '2026-01-01T00:00:00Z',
         topics: ['x'],
+        pushProtection: null,
       },
     });
   });

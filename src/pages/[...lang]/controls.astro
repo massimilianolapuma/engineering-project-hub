@@ -1,0 +1,355 @@
+---
+/*
+ * Control map (spec 2026-11-04 §5.5, ADR 0014): technical checks evidenced from the collected
+ * data, levels 0–5 per project and check, grouped by business unit, with the related DORA and
+ * ISO 27001 references. Never a compliance claim. Built only when the published data carries the
+ * map (restricted audience or mock data). Cell details are pre-rendered <template>s that the
+ * script copies into one panel (no innerHTML, CSP script-src 'self').
+ */
+import { CONTROL_CHECKS, LEVELS, type ControlCell, type Level } from '@model/index';
+import ErrorState from '../../components/ErrorState.astro';
+import Octicon from '../../components/Octicon.astro';
+import Base from '../../layouts/Base.astro';
+import {
+  buildControlMapView,
+  controlMapAvailable,
+  evidenceAnchor,
+} from '../../lib/control-map-view';
+import { loadSiteData } from '../../lib/data';
+import { pageContext } from '../../lib/page';
+import { exportHref, href, localeParams } from '../../lib/routes';
+
+export const getStaticPaths = () => {
+  const site = loadSiteData();
+  return site.ok && controlMapAvailable(site.data.projects) ? localeParams() : [];
+};
+
+const { locale } = Astro.props;
+const { i18n, data, index, alternates } = pageContext(locale, 'controls');
+const { d, f } = i18n;
+const cm = d.controlMap;
+const view = data.ok ? buildControlMapView(data.data.projects) : null;
+const checks = view ? view.areas.flatMap((a) => a.checks) : [];
+const areaOf = new Map(CONTROL_CHECKS.map((c) => [c.id, c.area]));
+const nf = new Intl.NumberFormat(locale === 'it' ? 'it-IT' : 'en-GB', {
+  maximumFractionDigits: 2,
+});
+const df = new Intl.DateTimeFormat(locale === 'it' ? 'it-IT' : 'en-GB', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+  timeZone: 'UTC',
+});
+const units = [...new Set(view?.groups.map((g) => g.businessUnit) ?? [])];
+const withTeams = view?.groups.some((g) => g.projects.some((p) => p.teams.length > 0)) ?? false;
+
+const withUnit = (unit: ControlCell['unit'], v: number) => f(cm.units[unit], { v: nf.format(v) });
+const levelName = (l: Level) => cm.levels[String(l) as keyof typeof cm.levels].name;
+const cellText = (c: ControlCell) =>
+  c.level !== null ? String(c.level) : c.state === 'not-applicable' ? '' : '–';
+const cellKey = (c: { level: Level | null; state?: string }) =>
+  c.level !== null ? String(c.level) : c.state === 'not-applicable' ? 'na' : 'nv';
+const reasonText = (c: ControlCell) => (c.reason ? cm.reasons[c.reason] : cm.notVisible);
+const cellLabel = (project: string, c: ControlCell) => {
+  const check = cm.checks[c.check].name;
+  if (c.level !== null)
+    return f(cm.cellLabel, { project, check, level: c.level, name: levelName(c.level) });
+  return c.state === 'not-applicable'
+    ? f(cm.cellNotApplicable, { project, check })
+    : f(cm.cellNotVisible, { project, check, reason: reasonText(c) });
+};
+const projectHref = (id: string) => href(locale, `projects/${id}`);
+const howTo = `${href(locale, 'howToRead')}#control-map`;
+---
+
+<Base i18n={i18n} title={cm.title} page="controls" alternates={alternates} index={index}>
+  {!data.ok && <ErrorState error={data.error} i18n={i18n} />}
+  {data.ok && view && (
+    <article class="cm" data-cm>
+      <header class="page-head">
+        <h1>{cm.title}</h1>
+        <p class="cm__lede">{cm.lede}</p>
+        {index?.run.dataSource === 'mock' && <p class="muted">{cm.demo}</p>}
+        <p class="muted">
+          <a href={howTo}>{cm.howToRead}</a>
+        </p>
+      </header>
+
+      <form class="cm-filters" data-cm-filters aria-label={cm.filters}>
+        <label>
+          <span>{cm.filterUnit}</span>
+          <select name="bu" data-cm-filter="bu">
+            <option value="">{cm.filterAll}</option>
+            {units.map((u) => (
+              <option value={u}>{u}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>{cm.filterArea}</span>
+          <select name="area" data-cm-filter="area">
+            <option value="">{cm.filterAll}</option>
+            {view.areas.map((a) => (
+              <option value={a.area}>{cm.areas[a.area]}</option>
+            ))}
+          </select>
+        </label>
+        {withTeams && (
+          <p class="cm-filters__team" data-cm-team hidden>
+            <span>{cm.filteredTeam}: </span>
+            <strong data-cm-team-name />
+            <a href={href(locale, 'controls')}>{cm.showAll}</a>
+          </p>
+        )}
+        <a class="btn btn--ghost cm-filters__csv" href={exportHref('control-map.csv')} download>
+          <Octicon name="download" />
+          {cm.exportCsv}
+        </a>
+      </form>
+
+      <div class="cm-scroll" role="region" aria-labelledby="cm-caption" tabindex="0">
+        <table class="cm-table" data-cm-table>
+          <caption id="cm-caption">{cm.caption}</caption>
+          <thead>
+            <tr>
+              <th scope="col" rowspan="2" class="cm-table__name">
+                {cm.project}
+              </th>
+              <th scope="col" rowspan="2" class="cm-table__score">
+                {cm.score}
+              </th>
+              {view.areas.map((a) => (
+                <th scope="colgroup" colspan={a.checks.length} data-area={a.area}>
+                  {cm.areas[a.area]}
+                </th>
+              ))}
+            </tr>
+            <tr>
+              {checks.map((c) => (
+                <th scope="col" data-check={c.id} data-area={c.area} class="cm-table__check">
+                  <abbr title={cm.checks[c.id].name}>{cm.checks[c.id].short}</abbr>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          {view.groups.map((g) => (
+            <tbody data-cm-group data-bu={g.businessUnit}>
+              <tr class="cm-unit">
+                <th scope="rowgroup" class="cm-table__name">
+                  <span class="cm-unit__name">{g.businessUnit}</span>
+                  <span class="cm-unit__hint">
+                    {g.projects.length === 1
+                      ? cm.unitMedianOne
+                      : f(cm.unitMedian, { n: g.projects.length })}
+                  </span>
+                </th>
+                <td class="cm-table__score">{g.score ?? '–'}</td>
+                {g.median.map((l, i) => {
+                  const check = checks[i]!;
+                  const label =
+                    l === null
+                      ? f(cm.cellUnitNone, {
+                          unit: g.businessUnit,
+                          check: cm.checks[check.id].name,
+                        })
+                      : f(cm.cellUnit, {
+                          unit: g.businessUnit,
+                          check: cm.checks[check.id].name,
+                          level: l,
+                        });
+                  return (
+                    <td
+                      class="cm-cell"
+                      data-cm-level={l === null ? 'nv' : String(l)}
+                      data-area={check.area}
+                    >
+                      <span aria-hidden="true">{l ?? '–'}</span>
+                      <span class="visually-hidden">{label}</span>
+                    </td>
+                  );
+                })}
+              </tr>
+              {g.projects.map((p) => (
+                <tr
+                  id={`cm-${p.id}`}
+                  data-cm-row
+                  data-bu={g.businessUnit}
+                  data-teams={p.teams.join(' ')}
+                >
+                  <th scope="row" class="cm-table__name">
+                    <a href={projectHref(p.id)}>{p.name}</a>
+                  </th>
+                  <td class="cm-table__score">
+                    <span class="cm-score">{p.score ?? cm.scoreNone}</span>
+                    <span class="cm-score__measured">
+                      {f(cm.measured, { n: p.measured, m: p.applicable })}
+                    </span>
+                  </td>
+                  {p.cells.map((c) => (
+                    <td class="cm-cell" data-cm-level={cellKey(c)} data-area={areaOf.get(c.check)}>
+                      <button
+                        type="button"
+                        class="cm-cell__btn"
+                        data-cm-cell={`cm-d-${p.id}-${c.check}`}
+                        aria-controls="cm-detail"
+                        aria-label={cellLabel(p.name, c)}
+                      >
+                        {cellText(c)}
+                      </button>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          ))}
+        </table>
+      </div>
+      <p class="muted" data-cm-empty hidden>
+        {cm.emptySelection}
+      </p>
+
+      <section id="cm-detail" class="cm-detail" aria-labelledby="h-cm-detail" tabindex="-1">
+        <h2 id="h-cm-detail">{cm.detailTitle}</h2>
+        <div data-cm-detail-body>
+          <p class="muted">{cm.detailHint}</p>
+        </div>
+      </section>
+
+      {view.groups.flatMap((g) =>
+        g.projects.flatMap((p) =>
+          p.cells.map((c) => {
+            const def = CONTROL_CHECKS.find((x) => x.id === c.check)!;
+            return (
+              <template id={`cm-d-${p.id}-${c.check}`}>
+                <h3 class="cm-detail__title">
+                  {cm.checks[c.check].name} · {p.name}
+                </h3>
+                <dl class="cm-detail__list">
+                  <dt>{cm.detail.level}</dt>
+                  <dd>
+                    <span class="cm-swatch" data-cm-level={cellKey(c)}>
+                      {cellText(c)}
+                    </span>{' '}
+                    {c.level !== null
+                      ? `${levelName(c.level)}: ${cm.levels[String(c.level) as keyof typeof cm.levels].meaning}`
+                      : c.state === 'not-applicable'
+                        ? cm.notApplicable
+                        : `${cm.notVisible}: ${reasonText(c)}`}
+                  </dd>
+                  {c.value !== null && (
+                    <>
+                      <dt>{cm.detail.value}</dt>
+                      <dd>{withUnit(c.unit, c.value)}</dd>
+                    </>
+                  )}
+                  {c.threshold !== null && (
+                    <>
+                      <dt>{cm.detail.threshold}</dt>
+                      <dd>{withUnit(c.unit, c.threshold)}</dd>
+                    </>
+                  )}
+                  {c.readable && (
+                    <>
+                      <dt>{cm.detail.readable}</dt>
+                      <dd>{f(cm.detail.readableValue, { k: c.readable.k, n: c.readable.n })}</dd>
+                    </>
+                  )}
+                  {c.environment && (
+                    <>
+                      <dt>{cm.detail.environment}</dt>
+                      <dd>
+                        {c.environment}
+                        {c.signal && ` · ${cm.signals[c.signal]}`}
+                      </dd>
+                    </>
+                  )}
+                  {c.state === 'not-applicable' && c.reason && (
+                    <>
+                      <dt>{cm.detail.reason}</dt>
+                      <dd>{cm.reasons[c.reason]}</dd>
+                    </>
+                  )}
+                  {c.note && (
+                    <>
+                      <dt>{cm.detail.note}</dt>
+                      <dd>{c.note}</dd>
+                    </>
+                  )}
+                  <dt>{cm.detail.collected}</dt>
+                  <dd>{`${df.format(new Date(p.collectedAt))} UTC`}</dd>
+                  <dt>{cm.detail.dora}</dt>
+                  <dd>{def.dora.join(' · ')}</dd>
+                  <dt>{cm.detail.iso}</dt>
+                  <dd>{def.iso.join(' · ')}</dd>
+                </dl>
+                <p>
+                  <a href={`${projectHref(p.id)}#${evidenceAnchor(c.check)}`}>
+                    {cm.detail.evidence}
+                  </a>
+                </p>
+              </template>
+            );
+          }),
+        ),
+      )}
+
+      <section class="cm-legend block" aria-labelledby="h-cm-legend">
+        <h2 id="h-cm-legend">{cm.legendTitle}</h2>
+        <ul class="cm-legend__list">
+          {LEVELS.map((l) => (
+            <li>
+              <span class="cm-swatch" data-cm-level={String(l)}>
+                {l}
+              </span>
+              <span>
+                <strong>{cm.levels[String(l) as keyof typeof cm.levels].name}</strong>
+                {' — '}
+                {cm.levels[String(l) as keyof typeof cm.levels].meaning}
+              </span>
+            </li>
+          ))}
+          <li>
+            <span class="cm-swatch" data-cm-level="nv">
+              –
+            </span>
+            <span>{cm.legendNotVisible}</span>
+          </li>
+          <li>
+            <span class="cm-swatch" data-cm-level="na" />
+            <span>{cm.legendNotApplicable}</span>
+          </li>
+        </ul>
+      </section>
+
+      <section class="block" aria-labelledby="h-cm-refs">
+        <h2 id="h-cm-refs">{cm.referencesTitle}</h2>
+        <p class="muted">{cm.referencesHint}</p>
+        <div class="table-wrap">
+          <table class="table cm-refs" data-cm-references>
+            <thead>
+              <tr>
+                <th scope="col">{cm.referencesCheck}</th>
+                <th scope="col">{cm.referencesArea}</th>
+                <th scope="col">{cm.referencesDora}</th>
+                <th scope="col">{cm.referencesIso}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {CONTROL_CHECKS.map((c) => (
+                <tr>
+                  <th scope="row">{cm.checks[c.id].name}</th>
+                  <td>{cm.areas[c.area]}</td>
+                  <td>{c.dora.join(' · ')}</td>
+                  <td>{c.iso.join(' · ')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </article>
+  )}
+</Base>
+
+<script>
+  import '../../scripts/control-map';
+</script>

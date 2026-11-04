@@ -265,6 +265,35 @@ const FAMILIES: Family[] = [
       ),
   },
   {
+    name: 'hub_project_control_score',
+    help: 'Control map score 0-100 (technical checks related to DORA and ISO 27001, not an assessment of either); absent when not measured or not published.',
+    portfolio: false,
+    samples: (i) => perProject(i, (p) => p.controlMap?.score ?? null),
+  },
+  {
+    name: 'hub_project_control_measured',
+    help: 'Control map checks measured, out of hub_project_control_applicable.',
+    portfolio: false,
+    samples: (i) => perProject(i, (p) => p.controlMap?.measured ?? null),
+  },
+  {
+    name: 'hub_project_control_applicable',
+    help: 'Control map checks that apply to the project.',
+    portfolio: false,
+    samples: (i) => perProject(i, (p) => p.controlMap?.applicable ?? null),
+  },
+  {
+    name: 'hub_project_control_level',
+    help: 'Control map level 0-5 per check; a check not measured or not applicable has no series.',
+    portfolio: false,
+    samples: (i) =>
+      i.projects.flatMap((p) =>
+        Object.entries(p.controlMap?.levels ?? {}).flatMap(([check, level]) =>
+          typeof level === 'number' ? [{ labels: { check, project: p.id }, value: level }] : [],
+        ),
+      ),
+  },
+  {
     name: 'hub_metrics_truncated',
     help: '1 when the file was cut down to stay under outputs.metrics.maxBytes, else 0.',
     portfolio: true,
@@ -298,7 +327,8 @@ function render(index: PortfolioIndex, families: Family[], truncated: number) {
 }
 
 /**
- * Renders the metrics file. Over `maxBytes` it drops hub_project_dimension_status, then every
+ * Renders the metrics file. Over `maxBytes` it drops hub_project_dimension_status and
+ * hub_project_control_level, then every
  * per-project family (spec §5.3.4); it never throws for size.
  */
 export function renderMetrics(
@@ -309,7 +339,9 @@ export function renderMetrics(
   if (full.bytes <= metrics.maxBytes) return { ...full, truncated: 'none' };
   const noDims = render(
     index,
-    FAMILIES.filter((f) => f.name !== 'hub_project_dimension_status'),
+    FAMILIES.filter(
+      (f) => f.name !== 'hub_project_dimension_status' && f.name !== 'hub_project_control_level',
+    ),
     1,
   );
   if (noDims.bytes <= metrics.maxBytes) return { ...noDims, truncated: 'dimensions' };

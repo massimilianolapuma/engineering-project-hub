@@ -9,8 +9,9 @@ import { z } from 'zod';
 // 1.6: security exceptions, remediation SLAs (finding exception / sla, securityExceptions, summary risk, run exceptions).
 // 1.7: project teams (project.teams, summary.teams), catalog.json teams result and catalog teams settings.
 // 1.8: supply chain evidence, external providers, deployed environments.
-export const SNAPSHOT_SCHEMA_VERSION = '1.8';
-export const SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS = ['1.8'] as const;
+// 1.9: control map (project.controlMap, summary.controlMap, finding resolvedAt).
+export const SNAPSHOT_SCHEMA_VERSION = '1.9';
+export const SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS = ['1.9'] as const;
 
 export const HealthStatusSchema = z.enum(['green', 'amber', 'red', 'grey']);
 export type HealthStatus = z.infer<typeof HealthStatusSchema>;

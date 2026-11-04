@@ -109,6 +109,13 @@ only chooses what to count.
   checked against GitHub's
   [permissions-required-for-github-apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps)
   page on 2026-10-03.
+- **Control map sources** (only when the [control map](control-map.md) is published). All GET:
+  GitHub environments of the coordinator (`GET /repos/{owner}/{repo}/environments`), commits of a
+  versions-file path, the file at a commit, commit dates and releases (**Contents: read**), and the
+  push protection status from the repository metadata (`security_and_analysis`, returned only to
+  callers allowed to see security settings). Without access a check reads **not visible** with the
+  reason (`github-environments` collection error on a 403), never 0. Confirm the environments
+  permission on GitHub's permissions page for your App before relying on it.
 - **Repository controls sources.** Checked on 2026-10-21 on GitHub's
   [permissions-required-for-fine-grained-personal-access-tokens](https://docs.github.com/en/rest/authentication/permissions-required-for-fine-grained-personal-access-tokens)
   page:

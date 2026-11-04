@@ -6,7 +6,9 @@ import { compareVersions, normaliseVersion, parseVersion } from '../util/semver'
 /**
  * Pure parser for the `uses:` references of a workflow file. The workflow text is parsed in memory
  * and discarded: only identifiers rebuilt from validated parts leave this module (never step names,
- * `run:`, `with:`, `env:` or expressions).
+ * `run:`, `with:` values, `env:` or expressions). For the control map, two booleans per file also
+ * leave it: whether the workflow deploys, and whether it authenticates with OIDC (from the names of
+ * the login step's `with:` keys and the `id-token` permission, never their values).
  */
 
 export type UsesKind = 'local' | 'action' | 'reusable-workflow' | 'docker' | 'invalid';
@@ -19,11 +21,68 @@ export interface UsesRef {
   ref: string | null;
   pinned: boolean; // false for local / invalid
 }
+export interface WorkloadIdentity {
+  /** Uses a cloud login action or a job `environment:`. */
+  deploying: boolean;
+  /** Deploying, with `id-token: write` and no secret credential input on the login step. */
+  oidc: boolean;
+}
 export interface ParsedWorkflow {
   file: string;
   refs: UsesRef[];
   capped: boolean;
   unparsable: boolean;
+  /** null when the file could not be parsed. */
+  identity?: WorkloadIdentity | null;
+}
+
+/** Cloud login actions (spec 2026-11-04 §5.2), matched on owner/name without the ref. */
+const LOGIN_ACTIONS = new Set([
+  'azure/login',
+  'aws-actions/configure-aws-credentials',
+  'google-github-actions/auth',
+]);
+/** Inputs that carry a long-lived secret credential. */
+const SECRET_INPUTS = new Set([
+  'creds',
+  'credentials_json',
+  'aws-secret-access-key',
+  'client-secret',
+]);
+
+const grantsIdToken = (permissions: unknown): boolean =>
+  permissions === 'write-all' || (isRecord(permissions) && permissions['id-token'] === 'write');
+
+/** Deploying / OIDC per spec §5.2, from an already parsed workflow document. */
+export function workloadIdentity(doc: unknown): WorkloadIdentity {
+  const none = { deploying: false, oidc: false };
+  const jobs = isRecord(doc) ? doc.jobs : null;
+  if (!isRecord(jobs)) return none;
+  const workflowToken = grantsIdToken((doc as Record<string, unknown>).permissions);
+  let deploying = false;
+  let longLived = false;
+  let tokenOnDeploying = false;
+  for (const job of Object.values(jobs)) {
+    if (!isRecord(job)) continue;
+    const steps = Array.isArray(job.steps) ? job.steps.filter(isRecord) : [];
+    const logins = steps.filter((s) => {
+      if (typeof s.uses !== 'string') return false;
+      const name = s.uses.split('@')[0]!.toLowerCase();
+      return LOGIN_ACTIONS.has(name);
+    });
+    const jobDeploys =
+      logins.length > 0 || (job.environment !== undefined && job.environment !== null);
+    if (!jobDeploys) continue;
+    deploying = true;
+    // Job-level permissions replace the workflow's (GitHub Actions), they never add to them.
+    const own = isRecord(job.permissions) || typeof job.permissions === 'string';
+    if (own ? grantsIdToken(job.permissions) : workflowToken) tokenOnDeploying = true;
+    else longLived = true;
+    for (const s of logins)
+      if (isRecord(s.with) && Object.keys(s.with).some((k) => SECRET_INPUTS.has(k.toLowerCase())))
+        longLived = true;
+  }
+  return { deploying, oidc: deploying && tokenOnDeploying && !longLived };
 }
 
 export const MAX_REFS_PER_FILE = 200;
@@ -126,7 +185,13 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 
 /** Walks only `jobs.*.uses` and `jobs.*.steps[*].uses`; everything else is ignored. */
 export function parseWorkflow(file: string, text: string): ParsedWorkflow {
-  const result: ParsedWorkflow = { file, refs: [], capped: false, unparsable: false };
+  const result: ParsedWorkflow = {
+    file,
+    refs: [],
+    capped: false,
+    unparsable: false,
+    identity: null,
+  };
   if (text.length > MAX_WORKFLOW_TEXT) return { ...result, unparsable: true };
   let doc: unknown;
   try {
@@ -136,6 +201,7 @@ export function parseWorkflow(file: string, text: string): ParsedWorkflow {
   } catch {
     return { ...result, unparsable: true };
   }
+  result.identity = workloadIdentity(doc);
   const add = (raw: unknown): boolean => {
     if (result.refs.length >= MAX_REFS_PER_FILE) {
       result.capped = true;
