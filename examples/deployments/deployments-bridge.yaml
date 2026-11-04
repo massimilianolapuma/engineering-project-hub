@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../config/schema/deployments-bridge.schema.json
+#
+# Deployments bridge map (SYNTHETIC example): which Azure DevOps environments are recorded into
+# which GitHub repositories and environments. Reference: docs/deployments-ledger.md (EN) ·
+# docs/it/deployments-ledger.md (IT). Review changes in pull requests and run dry-run first.
+
+schemaVersion: '1.0'
+sources:
+  - type: azure-devops
+    organization: example-org # dev.azure.com/<organization>
+    project: example-project
+    environments:
+      - ado: test # Azure DevOps environment name
+        repository: example-org/example-service # GitHub owner/repo (the mirror's origin)
+        github: test # GitHub environment name (= the hub catalog environment id)
+      - ado: prod
+        repository: example-org/example-service
+        github: prod
+        production: true
+        # Optional: read the deployed version from the promoted environment file.
+        versionFrom: { file: environments/prod.yaml, key: umbrella }
+        # Optional: when the pipeline YAML lives in another Azure DevOps repository, the alias of
+        # the resources.repositories entry that is the mirror.
+        commitFrom: self

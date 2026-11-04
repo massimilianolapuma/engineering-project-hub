@@ -1,0 +1,162 @@
+# Reusable — declared deploy into GitHub Deployments (deployments ledger, ADR 0015, spec §5.4).
+#
+# Records a deploy that no system can report, marked `declared`. The job runs in the protected
+# environment `deployments-declare` of the calling repository: configure required reviewers there,
+# so a declared deploy needs a second person. Dry-run unless mode is 'write' AND the calling
+# repository's variable HUB_DEPLOYMENTS_BRIDGE is 'write'.
+#
+# Caller: see examples/deployments/caller-declare.yml.
+
+name: Reusable — Declared deploy [host]
+
+on:
+  workflow_call:
+    inputs:
+      hub-ref:
+        description: 'Full commit SHA of a hub release tag (vX.Y.Z); other commits are refused'
+        type: string
+        required: true
+      repository:
+        description: 'GitHub repository (owner/repo)'
+        type: string
+        required: true
+      environment:
+        description: 'GitHub environment name (dev, test, prod...)'
+        type: string
+        required: true
+      sha:
+        description: 'Deployed commit (or give a version)'
+        type: string
+        default: ''
+      version:
+        description: 'Deployed version; resolved to the commit of tag <tag-prefix><version>'
+        type: string
+        default: ''
+      tag-prefix:
+        type: string
+        default: 'v'
+      result:
+        description: 'success or failure'
+        type: string
+        required: true
+      date:
+        description: 'When the deploy finished (ISO 8601); default now'
+        type: string
+        default: ''
+      note:
+        description: 'Short note shown as the deployment description'
+        type: string
+        default: ''
+      production:
+        type: boolean
+        default: false
+      mode:
+        description: "'dry-run' (default) or 'write'"
+        type: string
+        default: 'dry-run'
+    secrets:
+      LEDGER_APP_ID:
+        required: true
+      LEDGER_APP_PRIVATE_KEY:
+        required: true
+      GH_APP_ID:
+        required: true
+      GH_APP_PRIVATE_KEY:
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  HUB_REPOSITORY: massimilianolapuma/engineering-project-hub
+
+jobs:
+  verify:
+    name: Verify hub release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    outputs:
+      sha: ${{ steps.release.outputs.sha }}
+    steps:
+      - name: Validate inputs
+        shell: bash
+        env:
+          HUB_REF: ${{ inputs.hub-ref }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          [[ "$HUB_REF" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::hub-ref must be a full 40-character commit SHA"; exit 1; }
+          [[ "$MODE" == dry-run || "$MODE" == write ]] || { echo "::error::mode must be dry-run or write"; exit 1; }
+
+      - name: Require a release tag commit
+        id: release
+        shell: bash
+        env:
+          HUB_REF: ${{ inputs.hub-ref }}
+        run: |
+          tag=$(git ls-remote --tags "https://github.com/${HUB_REPOSITORY}.git" 'refs/tags/v*' \
+            | awk -v sha="$HUB_REF" '$1 == sha { sub(/^refs\/tags\//, "", $2); sub(/\^\{\}$/, "", $2); print $2; exit }')
+          if [[ -z "$tag" ]]; then
+            echo "::error::hub-ref ${HUB_REF} is not the commit of a release tag (v*) of ${HUB_REPOSITORY}"
+            exit 1
+          fi
+          echo "sha=${HUB_REF}" >> "$GITHUB_OUTPUT"
+
+  declare:
+    name: Declare
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # Required reviewers on this environment: a declared deploy needs a second person.
+    environment: deployments-declare
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+        working-directory: hub
+    steps:
+      - name: Checkout hub (verified release)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.HUB_REPOSITORY }}
+          ref: ${{ needs.verify.outputs.sha }}
+          path: hub
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: hub/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # [template-injection] every input reaches the script through env, never inline.
+      - name: Declare
+        env:
+          REPOSITORY: ${{ inputs.repository }}
+          ENVIRONMENT: ${{ inputs.environment }}
+          SHA: ${{ inputs.sha }}
+          VERSION: ${{ inputs.version }}
+          TAG_PREFIX: ${{ inputs.tag-prefix }}
+          RESULT: ${{ inputs.result }}
+          DATE: ${{ inputs.date }}
+          NOTE: ${{ inputs.note }}
+          PRODUCTION: ${{ inputs.production }}
+          MODE: ${{ inputs.mode }}
+          HUB_DEPLOYMENTS_BRIDGE: ${{ vars.HUB_DEPLOYMENTS_BRIDGE }}
+          LEDGER_APP_ID: ${{ secrets.LEDGER_APP_ID }}
+          LEDGER_APP_PRIVATE_KEY: ${{ secrets.LEDGER_APP_PRIVATE_KEY }}
+          GH_APP_ID: ${{ secrets.GH_APP_ID }}
+          GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
+        run: |
+          args=(--repository "$REPOSITORY" --environment "$ENVIRONMENT" --tag-prefix "$TAG_PREFIX"
+                --result "$RESULT" --note "$NOTE" --mode "$MODE")
+          [[ -n "$SHA" ]] && args+=(--sha "$SHA")
+          [[ -n "$VERSION" ]] && args+=(--version "$VERSION")
+          [[ -n "$DATE" ]] && args+=(--date "$DATE")
+          [[ "$PRODUCTION" == true ]] && args+=(--production)
+          npm run --silent deployments:declare -- "${args[@]}"

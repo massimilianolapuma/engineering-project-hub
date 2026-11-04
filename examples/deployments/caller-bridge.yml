@@ -1,0 +1,32 @@
+# Example caller of the deployments bridge (copy to .github/workflows/ of a private deploy
+# repository). One job per (GitHub organisation, Azure DevOps tenant). Synthetic values.
+name: Deployments bridge
+
+on:
+  schedule:
+    - cron: '17,47 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: deployments-bridge
+  cancel-in-progress: false
+
+jobs:
+  bridge:
+    permissions:
+      contents: read
+      id-token: write # Microsoft Entra workload identity federation
+    uses: massimilianolapuma/engineering-project-hub/.github/workflows/rw-deployments-bridge.yml@0000000000000000000000000000000000000000 # vX.Y.Z
+    with:
+      hub-ref: '0000000000000000000000000000000000000000' # the same release commit
+      map: config/deployments-bridge.yaml
+      mode: write # still dry-run until the repository variable HUB_DEPLOYMENTS_BRIDGE=write
+      ado-tenant-id: ${{ vars.ADO_TENANT_ID }}
+      ado-client-id: ${{ vars.ADO_CLIENT_ID }}
+    secrets:
+      LEDGER_APP_ID: ${{ secrets.LEDGER_APP_ID }}
+      LEDGER_APP_PRIVATE_KEY: ${{ secrets.LEDGER_APP_PRIVATE_KEY }}
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
