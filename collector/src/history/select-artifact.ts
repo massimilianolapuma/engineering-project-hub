@@ -41,8 +41,20 @@ export type RestoreOutcome =
  */
 export function candidateArtifacts(
   list: ArtifactLike[],
-  o: { repositoryId: number; defaultBranch: string; currentRunId: number },
+  o: {
+    repositoryId: number;
+    defaultBranch: string;
+    currentRunId: number;
+    /** Artifact name; default hub-history. */
+    name?: string;
+    /**
+     * The notification ledger must see an earlier attempt of the same run (a re-run after a
+     * successful send); history never does (its own run has not uploaded yet).
+     */
+    includeCurrentRun?: boolean;
+  },
 ): ArtifactLike[] {
+  const name = o.name ?? HISTORY_ARTIFACT;
   const time = (a: ArtifactLike): number => {
     const t = Date.parse(a.created_at ?? '');
     return Number.isNaN(t) ? 0 : t;
@@ -51,7 +63,7 @@ export function candidateArtifacts(
     .filter((a) => {
       const run = a.workflow_run;
       return (
-        a.name === HISTORY_ARTIFACT &&
+        a.name === name &&
         !a.expired &&
         a.size_in_bytes <= MAX_ARTIFACT_BYTES &&
         run != null &&
@@ -59,7 +71,7 @@ export function candidateArtifacts(
         run.head_repository_id === o.repositoryId &&
         run.head_branch === o.defaultBranch &&
         run.id !== undefined &&
-        run.id !== o.currentRunId
+        (o.includeCurrentRun === true || run.id !== o.currentRunId)
       );
     })
     .sort((x, y) => time(y) - time(x))
