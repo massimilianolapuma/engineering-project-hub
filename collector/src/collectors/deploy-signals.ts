@@ -110,6 +110,10 @@ export async function collectDeploySignal(
     case 'external':
       return none('external-pipelines');
 
+    case 'github-deployments':
+      // Read by Task 2 of the deployments ledger plan; until then the signal is not read.
+      return none('source-unreadable');
+
     case 'workflow': {
       const tracked = raw.config.trackedWorkflows.find((w) => w.id === signal.workflow);
       const listSince = provider.listWorkflowRunsSince?.bind(provider);

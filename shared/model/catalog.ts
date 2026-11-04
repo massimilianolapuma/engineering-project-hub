@@ -212,7 +212,7 @@ export const ProjectConfigSchema = z
           message: `unknown tracked workflow "${s.workflow}"`,
         });
       if (
-        s.type === 'versions-file' &&
+        (s.type === 'versions-file' || s.type === 'github-deployments') &&
         s.repository !== 'coordinator' &&
         !p.components.some((c) => c.id === s.repository)
       )

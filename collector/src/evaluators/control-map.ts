@@ -22,7 +22,7 @@ import { levelFor } from './control-map-ladders';
  * to check, or the catalog says so with a reason.
  */
 
-type DeploySignalType = 'workflow' | 'versions-file' | 'argocd' | 'release' | 'external';
+import type { DeploySignalType } from './delivery-metrics';
 
 /** Readings of the new sources (Tasks 3–4); null = not collected. */
 export interface ControlMapExtras {

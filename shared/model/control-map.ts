@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { LEDGER_SOURCES } from './ledger';
 
 /*
  * Control map (spec 2026-11-04, ADR 0014): technical checks the hub can evidence, each with a
@@ -122,6 +123,7 @@ export const DeploySignalTypeSchema = z.enum([
   'versions-file',
   'argocd',
   'release',
+  'github-deployments',
   'external',
 ]);
 
@@ -209,6 +211,21 @@ export const DeploySignalSchema = z.discriminatedUnion('type', [
     .strict(),
   z.object({ type: z.literal('argocd') }).strict(),
   z.object({ type: z.literal('release') }).strict(),
+  // Deployments ledger (ADR 0015): GitHub Deployments of the repository, written by Actions jobs
+  // and by external writers (push step, pull bridge, declared record).
+  z
+    .object({
+      type: z.literal('github-deployments'),
+      repository: z.string().regex(/^[a-z0-9][a-z0-9-]*$/),
+      environment: z.string().min(1).max(255).optional(),
+      tagPrefix: z.string().max(50).default('v'),
+      sources: z
+        .array(z.enum(['github-actions', ...LEDGER_SOURCES]))
+        .min(1)
+        .max(4)
+        .optional(),
+    })
+    .strict(),
   z.object({ type: z.literal('external') }).strict(),
 ]);
 export type DeploySignal = z.infer<typeof DeploySignalSchema>;

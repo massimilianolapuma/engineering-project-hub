@@ -1,3 +1,5 @@
+import type { z } from 'zod';
+import type { DeploySignalTypeSchema } from '@model/index';
 /*
  * Delivery metrics of one environment from its deploy events (spec §5.3, C6). Pure.
  * - frequency: deploys in the last `frequencyDays`, per week (0 is a measured zero);
@@ -11,7 +13,7 @@
  * Argo CD history and releases only show that a deploy happened: frequency only.
  */
 
-export type DeploySignalType = 'workflow' | 'versions-file' | 'argocd' | 'release' | 'external';
+export type DeploySignalType = z.infer<typeof DeploySignalTypeSchema>;
 
 export interface DeployEvent {
   at: string;

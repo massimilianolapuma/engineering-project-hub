@@ -1890,6 +1890,7 @@ export const it: Dict = {
       'versions-file': 'File delle versioni nella repository',
       argocd: 'Storico Argo CD',
       release: 'Release pubblicate',
+      'github-deployments': 'Deployment GitHub',
       external: 'Pipeline esterne',
     },
   },
