@@ -12,7 +12,7 @@
     "newFindings": 1,
     "resolvedFindings": 1,
     "versionMoves": 1,
-    "newErrors": 6,
+    "newErrors": 7,
     "checkChanges": 1,
     "newlyOverdue": 1,
     "expiredExceptions": 1
@@ -173,6 +173,11 @@
         {
           "repository": "example-org/project-beta-coordinator",
           "source": "argocd",
+          "classification": "not-authorised"
+        },
+        {
+          "repository": "example-org/project-beta-coordinator",
+          "source": "github-environments",
           "classification": "not-authorised"
         },
         {

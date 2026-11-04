@@ -23,6 +23,11 @@ components:
 environments:
   - { id: dev, name: DEV }
 
+# Control map: checks that do not apply, with the reason shown in the cell.
+controlMap:
+  notApplicable:
+    - { check: dast, reason: internal service without a web interface }
+
 trackedWorkflows:
   - id: ci
     name: Continuous Integration

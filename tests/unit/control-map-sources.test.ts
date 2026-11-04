@@ -174,16 +174,41 @@ describe('push protection', () => {
     const s = snap('platform');
     for (const comp of s.securityControls)
       for (const ctl of comp.controls) if (ctl.control === 'secretScanning') ctl.state = 'enabled';
-    const repos = new Set(s.securityControls.map((c) => c.repository)).size;
+    const repos = [...new Set(s.securityControls.map((c) => c.repository))];
     const map = evaluateControlMap(
       {
         snapshot: s,
         project,
-        extras: { ...emptyExtras(), pushProtection: Array(repos).fill('enabled') },
+        extras: {
+          ...emptyExtras(),
+          pushProtection: new Map(repos.map((r) => [r, 'enabled' as const])),
+        },
       },
       policies,
     );
     expect(cell(map.cells, 'secret-scanning')).toMatchObject({ level: 5, note: null });
+  });
+
+  it('scanning on everywhere but push protection off gives 3 (scanning only), not 0', async () => {
+    const { catalog } = await loadConfig('config');
+    const project = catalog.projects.find((p) => p.id === 'platform')!;
+    const s = snap('platform');
+    for (const comp of s.securityControls)
+      for (const ctl of comp.controls) if (ctl.control === 'secretScanning') ctl.state = 'enabled';
+    const repos = [...new Set(s.securityControls.map((c) => c.repository))];
+    const map = evaluateControlMap(
+      {
+        snapshot: s,
+        project,
+        extras: {
+          ...emptyExtras(),
+          pushProtection: new Map(repos.map((r) => [r, 'disabled' as const])),
+        },
+      },
+      policies,
+    );
+    expect(cell(map.cells, 'secret-scanning')).toMatchObject({ level: 3, value: 100 });
+    expect(cell(map.cells, 'secret-scanning').note).toContain('push protection on 0%');
   });
 });
 

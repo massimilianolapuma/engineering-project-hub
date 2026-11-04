@@ -16,6 +16,7 @@ import {
   type SecurityFinding,
 } from '@model/index';
 import type { RawProjectData } from './collectors/collect';
+import { buildControlMap, controlMapSummary } from './normalizers/control-map-model';
 import {
   evaluateCoverage,
   evaluateDelivery,
@@ -505,7 +506,7 @@ export function buildProjectSnapshot(
     .sort();
   const anyRepo = raw.repos.some((r) => r.repo.ok);
 
-  return {
+  const snapshot: ProjectSnapshot = {
     schemaVersion: SNAPSHOT_SCHEMA_VERSION,
     generatedAt,
     project: {
@@ -566,6 +567,9 @@ export function buildProjectSnapshot(
     collectionErrors: ctx.errors,
     controlMap: null,
   };
+  // Evaluated on the built snapshot; its collection errors join ctx.errors (same array).
+  snapshot.controlMap = buildControlMap(raw, snapshot, policies, now, ctx);
+  return snapshot;
 }
 
 /** null when no value of the sum is measured, so "not measured" is never shown as 0. */
@@ -643,6 +647,6 @@ export function toProjectSummary(s: ProjectSnapshot): ProjectSummary {
     unresolvedSubmodules: s.coordinator.submodules.filter(
       (x) => x.association === 'unmapped' || x.status !== 'resolved',
     ).length,
-    controlMap: null,
+    controlMap: controlMapSummary(s.controlMap),
   };
 }

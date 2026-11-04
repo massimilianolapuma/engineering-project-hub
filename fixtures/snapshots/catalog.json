@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.8",
+  "schemaVersion": "1.9",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "catalog": {
     "discovery": {
@@ -96,7 +96,8 @@
             "id": "prod",
             "name": "PROD",
             "deploySignal": {
-              "type": "external"
+              "type": "workflow",
+              "workflow": "release"
             }
           }
         ],
@@ -274,8 +275,13 @@
               "project": "alpha"
             },
             "deploySignal": {
-              "type": "external"
-            }
+              "type": "versions-file",
+              "repository": "coordinator",
+              "path": "environments/prod.yaml",
+              "key": "umbrella",
+              "tagPrefix": "v"
+            },
+            "githubEnvironment": "production"
           }
         ],
         "trackedWorkflows": [
@@ -437,7 +443,8 @@
             },
             "deploySignal": {
               "type": "external"
-            }
+            },
+            "delivery": true
           }
         ],
         "trackedWorkflows": [
@@ -576,7 +583,12 @@
         "securityStatusPath": ".security/project-security-status.json",
         "teams": [],
         "controlMap": {
-          "notApplicable": []
+          "notApplicable": [
+            {
+              "check": "dast",
+              "reason": "internal service without a web interface"
+            }
+          ]
         }
       }
     ]

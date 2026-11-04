@@ -307,6 +307,8 @@ export const it: Dict = {
     harbor: 'Harbor',
     argocd: 'Argo CD',
     'quality-report': 'Report di qualità',
+    'github-environments': 'Ambienti GitHub',
+    'deploy-signal': 'Segnale di deploy',
   },
   availability: {
     available: 'Disponibile',

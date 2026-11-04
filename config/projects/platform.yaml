@@ -44,7 +44,8 @@ components:
 
 environments:
   - { id: dev, name: DEV }
-  - { id: prod, name: PROD }
+  # Control map: deploys to PROD are the runs of the "release" workflow.
+  - { id: prod, name: PROD, deploySignal: { type: workflow, workflow: release } }
 
 trackedWorkflows:
   - id: ci

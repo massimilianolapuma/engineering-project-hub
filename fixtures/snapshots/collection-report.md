@@ -8,7 +8,7 @@
 | Duration | 0 ms |
 | Repositories | 12 total · 5 ok · 5 with errors · 2 unavailable |
 | History | fixture · 13 entries |
-| Metrics | written 228 series (19.9 KB) |
+| Metrics | written 298 series (25.4 KB) |
 
 Exceptions: 7 loaded (fixture) · 3 active · 1 expired · 1 stale · 1 unverifiable · 1 orphaned
 
@@ -20,7 +20,7 @@ Providers: sonarqube partial (3 items, 1 error) · harbor available (3, 1 error)
 |---|---|---|
 | platform | red | 0 |
 | project-alpha | amber | 1 |
-| project-beta | red | 7 |
+| project-beta | red | 8 |
 | project-gamma | grey | 3 |
 
 ### Collection errors
@@ -35,6 +35,7 @@ Providers: sonarqube partial (3 items, 1 error) · harbor available (3, 1 error)
 | example-org/project-beta-api | attestations | not-authorised | 403 |
 | example-org/project-beta-coordinator | argocd | not-authorised | 403 |
 | example-org/project-beta-helm | repository-rules | not-authorised | 403 |
+| example-org/project-beta-coordinator | github-environments | not-authorised | 403 |
 | example-org/project-gamma-coordinator | repository | not-found | 404 |
 | example-org/project-gamma-service | repository | not-authorised | 403 |
 | example-org/project-gamma-service | sonarqube | not-authorised | 403 |

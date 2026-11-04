@@ -313,7 +313,7 @@ const readGolden = async <T>(file: string): Promise<T> =>
   JSON.parse(await readFile(join('fixtures/snapshots', file), 'utf8')) as T;
 
 describe('history and changes (mock run)', () => {
-  it('golden changes totals are {statusChanges:6,newFindings:1,resolvedFindings:1,versionMoves:1,newErrors:6}', async () => {
+  it('golden changes totals are {statusChanges:6,newFindings:1,resolvedFindings:1,versionMoves:1,newErrors:7}', async () => {
     const changes = await readGolden<ChangesFile>('changes.json');
     expect(changes.totals).toEqual({
       statusChanges: 6,
@@ -322,7 +322,7 @@ describe('history and changes (mock run)', () => {
       versionMoves: 1,
       // New against the fixture history: Alpha 1 (harbor), Beta 4 (3 new + web secret scanning),
       // Gamma 1 (sonarqube).
-      newErrors: 6,
+      newErrors: 7,
       checkChanges: 1,
       newlyOverdue: 1,
       expiredExceptions: 1,
@@ -396,6 +396,11 @@ describe('history and changes (mock run)', () => {
       {
         repository: 'example-org/project-beta-coordinator',
         source: 'argocd',
+        classification: 'not-authorised',
+      },
+      {
+        repository: 'example-org/project-beta-coordinator',
+        source: 'github-environments',
         classification: 'not-authorised',
       },
       {
@@ -1167,7 +1172,7 @@ describe('sanitisation end to end', () => {
 describe('snapshot schema versions', () => {
   it('fails in a controlled way on an unsupported schemaVersion', async () => {
     const text = (await readFile('fixtures/snapshots/index.json', 'utf8')).replace(
-      '"schemaVersion": "1.8"',
+      '"schemaVersion": "1.9"',
       '"schemaVersion": "9.0"',
     );
     const r = validatePortfolio(text);
@@ -1241,10 +1246,10 @@ describe('repository controls (mock run)', () => {
     p.repositoryControls.repositories.find((r) => r.repository === `example-org/${name}`)!;
   const states = (p: ProjectSnapshot, name: string) => repoOf(p, name).checks.map((c) => c.state);
 
-  it('writes snapshot schema 1.8', async () => {
+  it('writes snapshot schema 1.9', async () => {
     const { index, projects } = await byId();
-    expect(index.schemaVersion).toBe('1.8');
-    for (const p of Object.values(projects)) expect(p.schemaVersion).toBe('1.8');
+    expect(index.schemaVersion).toBe('1.9');
+    for (const p of Object.values(projects)) expect(p.schemaVersion).toBe('1.9');
   });
 
   it('counts the checks per project over unique repositories', async () => {
@@ -1605,12 +1610,12 @@ describe('risk governance (mock run)', () => {
   const finding = (p: ProjectSnapshot, id: string) =>
     p.securityFindings.find((f) => f.id === `${id}`)!;
 
-  it('schemaVersion is "1.8" in index, projects and catalog', async () => {
+  it('schemaVersion is "1.9" in index, projects and catalog', async () => {
     const { index, projects } = await mockRun();
-    expect(index.schemaVersion).toBe('1.8');
-    for (const p of projects) expect(p.schemaVersion).toBe('1.8');
+    expect(index.schemaVersion).toBe('1.9');
+    for (const p of projects) expect(p.schemaVersion).toBe('1.9');
     const catalog = JSON.parse(await readFile('fixtures/snapshots/catalog.json', 'utf8'));
-    expect(catalog.schemaVersion).toBe('1.8');
+    expect(catalog.schemaVersion).toBe('1.9');
   });
 
   it('index.run.exceptions equals { source: "fixture", total: 7, orphaned: ["EXC-LEGACY-001"] }', async () => {
@@ -1851,5 +1856,68 @@ describe('risk governance (mock run)', () => {
     expect(
       resolveExceptionsPath({ source: 'github', config: 'cfg', exceptions: 'x.yaml' }),
     ).toEqual({ file: 'x.yaml', allowDateTokens: false });
+  });
+});
+
+describe('control map (spec 2026-11-04)', () => {
+  type Cell = { check: string; value: number | null } & Record<string, unknown>;
+  type Golden = {
+    schemaVersion: string;
+    projects: { controlMap: { levels: Record<string, unknown> } }[];
+    controlMap: { cells: Cell[] };
+  };
+  const golden = async (f: string) =>
+    JSON.parse(await readFile(join('fixtures/snapshots', f), 'utf8')) as Golden;
+
+  it('golden index: schema 1.9, every project summary has 25 control levels', async () => {
+    const index = await golden('index.json');
+    expect(index.schemaVersion).toBe('1.9');
+    for (const p of index.projects) expect(Object.keys(p.controlMap.levels)).toHaveLength(25);
+  });
+
+  it('an external delivery environment leaves the four delivery checks not visible', async () => {
+    const beta = await golden('projects/project-beta.json');
+    for (const id of ['deploy-frequency', 'lead-time', 'change-failure-rate', 'time-to-restore'])
+      expect(beta.controlMap.cells.find((c) => c.check === id)).toMatchObject({
+        level: null,
+        reason: 'external-pipelines',
+        environment: 'PROD',
+      });
+  });
+
+  it('the versions-file project measures its change failure rate (a rollback)', async () => {
+    const alpha = await golden('projects/project-alpha.json');
+    const cfr = alpha.controlMap.cells.find((c) => c.check === 'change-failure-rate')!;
+    expect(cfr).toMatchObject({ state: 'measured', signal: 'versions-file' });
+    expect(cfr.value).toBeGreaterThan(0);
+  });
+
+  it('public audience with real data: no control map anywhere, no control metrics', async () => {
+    const { catalog, policies } = await loadConfig('config');
+    expect(policies.publication.audience).toBe('public');
+    const clock = fixedClock(GOLDEN_NOW);
+    const mock = new MockProvider('fixtures/github', clock);
+    const provider: SourceProvider = Object.assign(Object.create(mock) as SourceProvider, {
+      dataSource: 'github',
+      authenticationMode: 'github-token',
+    });
+    const result = await runCollection({ catalog, policies, provider, clock });
+    expect(result.projects.every((p) => p.controlMap === null)).toBe(true);
+    expect(result.index.projects.every((p) => p.controlMap === null)).toBe(true);
+    const metrics = renderMetrics(result.index, policies.outputs.metrics).text;
+    expect(metrics).not.toMatch(/^hub_project_control_/m);
+  });
+
+  it('restricted audience with real data: the control map is produced', async () => {
+    const { catalog, policies } = await loadConfig('config');
+    policies.publication.audience = 'restricted';
+    const clock = fixedClock(GOLDEN_NOW);
+    const mock = new MockProvider('fixtures/github', clock);
+    const provider: SourceProvider = Object.assign(Object.create(mock) as SourceProvider, {
+      dataSource: 'github',
+      authenticationMode: 'github-token',
+    });
+    const result = await runCollection({ catalog, policies, provider, clock });
+    expect(result.projects.every((p) => p.controlMap !== null)).toBe(true);
   });
 });

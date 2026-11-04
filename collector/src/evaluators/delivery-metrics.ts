@@ -49,7 +49,7 @@ export function deliveryMetrics(
   const inFrequency = sorted.filter(
     (e) => e.kind === 'deploy' && t - Date.parse(e.at) <= windows.frequencyDays * DAY_MS,
   );
-  const frequencyPerWeek = (inFrequency.length / windows.frequencyDays) * 7;
+  const frequencyPerWeek = Math.round((inFrequency.length / windows.frequencyDays) * 700) / 100;
 
   const trend = sorted.filter((e) => t - Date.parse(e.at) <= windows.trendDays * DAY_MS);
   if (signal === 'argocd' || signal === 'release' || trend.length === 0)

@@ -23,6 +23,8 @@ export interface DeploySignalInput {
   config: ProjectConfig;
   workflows: { workflow: { id: string }; runs: ProviderResult<WorkflowRunDTO[]> }[];
   argocd?: Map<string, ProviderResult<ArgoApplicationDTO> | 'off'>;
+  /** Repository metadata already read: an unreadable repository is not called again. */
+  repos?: { repository: string; repo: ProviderResult<unknown> }[];
 }
 
 export interface DeploySignalResult {
@@ -82,6 +84,9 @@ export async function collectDeploySignal(
     ...extra,
   });
   const since = now.getTime() - windows.trendDays * DAY_MS;
+  // Already reported once as the repository error: no second call, no second error.
+  const unreadable = (repository: string) =>
+    raw.repos?.some((r) => r.repository === repository && !r.repo.ok) ?? false;
 
   switch (signal.type) {
     case 'external':
@@ -121,7 +126,7 @@ export async function collectDeploySignal(
 
     case 'release': {
       const repository = raw.config.coordinator.repository;
-      if (!provider.listReleases) return none('source-unreadable');
+      if (!provider.listReleases || unreadable(repository)) return none('source-unreadable');
       const releases = await provider.listReleases(repository);
       if (!releases.ok)
         return none(reasonOf(releases.error), { error: releases.error, repository });
@@ -142,7 +147,8 @@ export async function collectDeploySignal(
         signal.repository === 'coordinator'
           ? raw.config.coordinator.repository
           : raw.config.components.find((c) => c.id === signal.repository)?.repository;
-      if (!repository || !provider.listCommitsForPath) return none('source-unreadable');
+      if (!repository || !provider.listCommitsForPath || unreadable(repository))
+        return none('source-unreadable');
       const commits = await provider.listCommitsForPath(repository, signal.path);
       if (!commits.ok) return none(reasonOf(commits.error), { error: commits.error, repository });
       const dated = commits.data

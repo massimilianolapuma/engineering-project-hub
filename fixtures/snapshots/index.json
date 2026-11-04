@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.8",
+  "schemaVersion": "1.9",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "run": {
     "dataSource": "mock",
@@ -54,6 +54,11 @@
       {
         "repository": "example-org/project-beta-helm",
         "source": "repository-rules",
+        "classification": "not-authorised"
+      },
+      {
+        "repository": "example-org/project-beta-coordinator",
+        "source": "github-environments",
         "classification": "not-authorised"
       },
       {
@@ -178,7 +183,38 @@
       "collectedAt": "2026-01-15T12:00:00.000Z",
       "collectionErrorCount": 0,
       "unresolvedSubmodules": 0,
-      "controlMap": null
+      "controlMap": {
+        "score": 63,
+        "measured": 20,
+        "applicable": 22,
+        "levels": {
+          "sbom-coverage": 5,
+          "image-signature": "n/a",
+          "build-provenance": "n/a",
+          "license-policy": 1,
+          "dependency-scanning": 5,
+          "sast": 5,
+          "container-scanning": 5,
+          "iac-scanning": 0,
+          "dast": 0,
+          "vulnerability-age": 3,
+          "security-mttr": null,
+          "secret-scanning": 3,
+          "exposed-secrets": 5,
+          "workload-identity": "n/a",
+          "branch-protection": 5,
+          "required-checks": 5,
+          "pipeline-integrity": 0,
+          "environment-separation": 4,
+          "config-drift": null,
+          "deploy-frequency": 2,
+          "lead-time": 4,
+          "change-failure-rate": 3,
+          "time-to-restore": 4,
+          "test-coverage": 2,
+          "evidence-freshness": 2
+        }
+      }
     },
     {
       "id": "project-alpha",
@@ -246,7 +282,38 @@
       "collectedAt": "2026-01-15T12:00:00.000Z",
       "collectionErrorCount": 1,
       "unresolvedSubmodules": 0,
-      "controlMap": null
+      "controlMap": {
+        "score": 78,
+        "measured": 24,
+        "applicable": 24,
+        "levels": {
+          "sbom-coverage": 3,
+          "image-signature": 5,
+          "build-provenance": 5,
+          "license-policy": 5,
+          "dependency-scanning": 5,
+          "sast": 5,
+          "container-scanning": 3,
+          "iac-scanning": 0,
+          "dast": 1,
+          "vulnerability-age": 5,
+          "security-mttr": 4,
+          "secret-scanning": 5,
+          "exposed-secrets": 5,
+          "workload-identity": "n/a",
+          "branch-protection": 5,
+          "required-checks": 5,
+          "pipeline-integrity": 5,
+          "environment-separation": 5,
+          "config-drift": 3,
+          "deploy-frequency": 2,
+          "lead-time": 4,
+          "change-failure-rate": 2,
+          "time-to-restore": 4,
+          "test-coverage": 4,
+          "evidence-freshness": 4
+        }
+      }
     },
     {
       "id": "project-beta",
@@ -311,9 +378,40 @@
       "secretScanning": "not-authorised",
       "failedCriticalWorkflows": 1,
       "collectedAt": "2026-01-15T12:00:00.000Z",
-      "collectionErrorCount": 7,
+      "collectionErrorCount": 8,
       "unresolvedSubmodules": 1,
-      "controlMap": null
+      "controlMap": {
+        "score": 61,
+        "measured": 14,
+        "applicable": 24,
+        "levels": {
+          "sbom-coverage": 0,
+          "image-signature": 0,
+          "build-provenance": null,
+          "license-policy": null,
+          "dependency-scanning": 5,
+          "sast": 5,
+          "container-scanning": 5,
+          "iac-scanning": 2,
+          "dast": 0,
+          "vulnerability-age": 4,
+          "security-mttr": null,
+          "secret-scanning": null,
+          "exposed-secrets": 5,
+          "workload-identity": "n/a",
+          "branch-protection": null,
+          "required-checks": 3,
+          "pipeline-integrity": 2,
+          "environment-separation": null,
+          "config-drift": 5,
+          "deploy-frequency": null,
+          "lead-time": null,
+          "change-failure-rate": null,
+          "time-to-restore": null,
+          "test-coverage": 3,
+          "evidence-freshness": 4
+        }
+      }
     },
     {
       "id": "project-gamma",
@@ -378,7 +476,38 @@
       "collectedAt": "2026-01-15T12:00:00.000Z",
       "collectionErrorCount": 3,
       "unresolvedSubmodules": 0,
-      "controlMap": null
+      "controlMap": {
+        "score": null,
+        "measured": 1,
+        "applicable": 22,
+        "levels": {
+          "sbom-coverage": null,
+          "image-signature": "n/a",
+          "build-provenance": null,
+          "license-policy": null,
+          "dependency-scanning": null,
+          "sast": null,
+          "container-scanning": null,
+          "iac-scanning": null,
+          "dast": "n/a",
+          "vulnerability-age": null,
+          "security-mttr": null,
+          "secret-scanning": null,
+          "exposed-secrets": null,
+          "workload-identity": "n/a",
+          "branch-protection": null,
+          "required-checks": null,
+          "pipeline-integrity": null,
+          "environment-separation": 1,
+          "config-drift": null,
+          "deploy-frequency": null,
+          "lead-time": null,
+          "change-failure-rate": null,
+          "time-to-restore": null,
+          "test-coverage": null,
+          "evidence-freshness": null
+        }
+      }
     }
   ]
 }

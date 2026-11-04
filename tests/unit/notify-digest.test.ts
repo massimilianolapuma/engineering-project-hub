@@ -106,7 +106,7 @@ describe('triggers and edge cases', () => {
 
   it('counts new collection errors only when the trigger asks for them', () => {
     const d = buildDigest(changes(), index(), config({ trigger: { newErrors: { min: 1 } } }))!;
-    expect(d.totals.newErrors).toBe(6);
+    expect(d.totals.newErrors).toBe(7);
     expect(d.projects.map((p) => p.id)).toEqual([
       'platform',
       'project-beta',

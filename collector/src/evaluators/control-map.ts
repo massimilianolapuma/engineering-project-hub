@@ -27,7 +27,7 @@ type DeploySignalType = 'workflow' | 'versions-file' | 'argocd' | 'release' | 'e
 /** Readings of the new sources (Tasks 3–4); null = not collected. */
 export interface ControlMapExtras {
   /** Push protection per unique repository; null when not read at all. */
-  pushProtection: ('enabled' | 'disabled' | null)[] | null;
+  pushProtection: Map<string, 'enabled' | 'disabled' | null> | null;
   /** GitHub environments of the coordinator; null not read, 'not-authorised' on 403. */
   environments:
     { name: string; protected: boolean; branchPolicy: boolean }[] | null | 'not-authorised';
@@ -162,6 +162,14 @@ function fromRatio(
 
 /** Per unique repository: the control's state across its components. */
 function controlStates(s: ProjectSnapshot, control: ControlId, staleIsFail: boolean): RepoState[] {
+  return [...controlStatesByRepo(s, control, staleIsFail).values()];
+}
+
+function controlStatesByRepo(
+  s: ProjectSnapshot,
+  control: ControlId,
+  staleIsFail: boolean,
+): Map<string, RepoState> {
   const byRepo = new Map<string, RepoState[]>();
   for (const comp of s.securityControls) {
     const c = comp.controls.find((x) => x.control === control);
@@ -180,15 +188,19 @@ function controlStates(s: ProjectSnapshot, control: ControlId, staleIsFail: bool
               : 'unknown';
     byRepo.set(comp.repository, [...(byRepo.get(comp.repository) ?? []), st]);
   }
-  return [...byRepo.values()].map((list) =>
-    list.every((x) => x === 'n/a')
-      ? 'n/a'
-      : list.includes('pass')
-        ? 'pass'
-        : list.includes('fail')
-          ? 'fail'
-          : 'unknown',
-  );
+  const merged = new Map<string, RepoState>();
+  for (const [repo, list] of byRepo)
+    merged.set(
+      repo,
+      list.every((x) => x === 'n/a')
+        ? 'n/a'
+        : list.includes('pass')
+          ? 'pass'
+          : list.includes('fail')
+            ? 'fail'
+            : 'unknown',
+    );
+  return merged;
 }
 
 function repoCheckStates(s: ProjectSnapshot, ids: string[]): RepoState[] {
@@ -309,24 +321,26 @@ function evaluateCheck(
         ? notVisible(check, 'source-unreadable', 'no resolved critical or high alert dates')
         : measured(check, extras.resolvedMedianDays, 'days', override);
     case 'secret-scanning': {
-      const scanning = controlStates(s, 'secretScanning', false);
-      const push = extras.pushProtection;
-      if (push === null || push.length !== scanning.length) {
-        const cell = fromRatio(check, scanning, override);
-        if (cell.state !== 'measured') return cell;
-        const level = Math.min(cell.level as number, 3) as Level;
-        return { ...cell, level, note: 'push protection not read: capped at level 3' };
-      }
-      const states = scanning.map((st, i): RepoState =>
-        st === 'pass'
-          ? push[i] === 'enabled'
-            ? 'pass'
-            : push[i] === 'disabled'
-              ? 'fail'
-              : 'unknown'
-          : st,
-      );
-      return fromRatio(check, states, override);
+      // The scanning ratio sets the level (spec §5.2); levels 4–5 also need push protection on
+      // at least 90% of the scanned repositories whose setting could be read. Not read at all:
+      // capped at 3, never guessed.
+      const scanning = controlStatesByRepo(s, 'secretScanning', false);
+      const cell = fromRatio(check, [...scanning.values()], override);
+      if (cell.state !== 'measured' || (cell.level as number) <= 3) return cell;
+      const scanned = [...scanning].filter(([, st]) => st === 'pass').map(([repo]) => repo);
+      const known = scanned
+        .map((repo) => extras.pushProtection?.get(repo) ?? null)
+        .filter((v) => v !== null);
+      if (known.length === 0)
+        return { ...cell, level: 3, note: 'push protection not read: capped at level 3' };
+      const on = (known.filter((v) => v === 'enabled').length / known.length) * 100;
+      return on >= 90
+        ? cell
+        : {
+            ...cell,
+            level: 3,
+            note: `push protection on ${Math.round(on)}% of scanned repositories`,
+          };
     }
     case 'exposed-secrets': {
       const open = s.securityHealth.openSecretAlerts;
@@ -448,7 +462,11 @@ function deliveryCell(
     return notApplicable(check, 'no-object', 'no environments');
   const d = extras.deploy;
   if (d === null) return notVisible(check, 'no-deploy-signal');
-  const ctx = { environment: d.environment, signal: d.signal };
+  const ctx = {
+    environment: d.environment,
+    signal: d.signal,
+    note: d.notes.length ? d.notes.join('; ').slice(0, 200) : null,
+  };
   if (d.reason) return { ...notVisible(check, d.reason), ...ctx };
   const value =
     check === 'deploy-frequency'

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.8",
+  "schemaVersion": "1.9",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-alpha",
@@ -824,6 +824,7 @@
       "title": "Use of a weak cryptographic algorithm",
       "detectedAt": "2025-12-16T12:00:00.000Z",
       "updatedAt": "2025-12-16T12:00:00.000Z",
+      "resolvedAt": "2025-12-20T12:00:00.000Z",
       "fixAvailable": null,
       "htmlUrl": "https://github.com/example-org/project-alpha-backend/security/code-scanning/9",
       "tool": "CodeQL",
@@ -2774,5 +2775,410 @@
       "httpStatus": 404
     }
   ],
-  "controlMap": null
+  "controlMap": {
+    "cells": [
+      {
+        "check": "sbom-coverage",
+        "level": 3,
+        "state": "measured",
+        "value": 75,
+        "unit": "percent",
+        "threshold": 50,
+        "readable": {
+          "k": 4,
+          "n": 5
+        },
+        "reason": null,
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "image-signature",
+        "level": 5,
+        "state": "measured",
+        "value": 100,
+        "unit": "percent",
+        "threshold": 100,
+        "readable": {
+          "k": 2,
+          "n": 3
+        },
+        "reason": null,
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "build-provenance",
+        "level": 5,
+        "state": "measured",
+        "value": 100,
+        "unit": "percent",
+        "threshold": 100,
+        "readable": {
+          "k": 1,
+          "n": 2
+        },
+        "reason": null,
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "license-policy",
+        "level": 5,
+        "state": "measured",
+        "value": 0,
+        "unit": "count",
+        "threshold": null,
+        "readable": null,
+        "reason": null,
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "dependency-scanning",
+        "level": 5,
+        "state": "measured",
+        "value": 100,
+        "unit": "percent",
+        "threshold": 100,
+        "readable": {
+          "k": 5,
+          "n": 5
+        },
+        "reason": null,
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "sast",
+        "level": 5,
+        "state": "measured",
+        "value": 100,
+        "unit": "percent",
+        "threshold": 100,
+        "readable": {
+          "k": 5,
+          "n": 5
+        },
+        "reason": null,
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "container-scanning",
+        "level": 3,
+        "state": "measured",
+        "value": 66.7,
+        "unit": "percent",
+        "threshold": 50,
+        "readable": {
+          "k": 3,
+          "n": 3
+        },
+        "reason": null,
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "iac-scanning",
+        "level": 0,
+        "state": "measured",
+        "value": 0,
+        "unit": "percent",
+        "threshold": null,
+        "readable": {
+          "k": 5,
+          "n": 5
+        },
+        "reason": null,
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "dast",
+        "level": 1,
+        "state": "measured",
+        "value": 20,
+        "unit": "percent",
+        "threshold": 0,
+        "readable": {
+          "k": 5,
+          "n": 5
+        },
+        "reason": null,
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "vulnerability-age",
+        "level": 5,
+        "state": "measured",
+        "value": 0,
+        "unit": "count",
+        "threshold": null,
+        "readable": null,
+        "reason": null,
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "security-mttr",
+        "level": 4,
+        "state": "measured",
+        "value": 4,
+        "unit": "days",
+        "threshold": 7,
+        "readable": null,
+        "reason": null,
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "secret-scanning",
+        "level": 5,
+        "state": "measured",
+        "value": 100,
+        "unit": "percent",
+        "threshold": 100,
+        "readable": {
+          "k": 5,
+          "n": 5
+        },
+        "reason": null,
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "exposed-secrets",
+        "level": 5,
+        "state": "measured",
+        "value": 0,
+        "unit": "count",
+        "threshold": null,
+        "readable": null,
+        "reason": null,
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "workload-identity",
+        "level": null,
+        "state": "not-applicable",
+        "value": null,
+        "unit": "percent",
+        "threshold": null,
+        "readable": null,
+        "reason": "no-object",
+        "note": "no deploying workflow",
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "branch-protection",
+        "level": 5,
+        "state": "measured",
+        "value": 100,
+        "unit": "percent",
+        "threshold": 100,
+        "readable": {
+          "k": 5,
+          "n": 5
+        },
+        "reason": null,
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "required-checks",
+        "level": 5,
+        "state": "measured",
+        "value": 100,
+        "unit": "percent",
+        "threshold": 100,
+        "readable": {
+          "k": 5,
+          "n": 5
+        },
+        "reason": null,
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "pipeline-integrity",
+        "level": 5,
+        "state": "measured",
+        "value": 100,
+        "unit": "percent",
+        "threshold": 100,
+        "readable": {
+          "k": 4,
+          "n": 4
+        },
+        "reason": null,
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "environment-separation",
+        "level": 5,
+        "state": "measured",
+        "value": 5,
+        "unit": "level",
+        "threshold": null,
+        "readable": null,
+        "reason": null,
+        "note": null,
+        "environment": "PROD",
+        "signal": null
+      },
+      {
+        "check": "config-drift",
+        "level": 3,
+        "state": "measured",
+        "value": 66.7,
+        "unit": "percent",
+        "threshold": 50,
+        "readable": {
+          "k": 3,
+          "n": 4
+        },
+        "reason": null,
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "deploy-frequency",
+        "level": 2,
+        "state": "measured",
+        "value": 0.47,
+        "unit": "per-week",
+        "threshold": 0.23076923076923078,
+        "readable": null,
+        "reason": null,
+        "note": null,
+        "environment": "PROD",
+        "signal": "versions-file"
+      },
+      {
+        "check": "lead-time",
+        "level": 4,
+        "state": "measured",
+        "value": 17,
+        "unit": "hours",
+        "threshold": 24,
+        "readable": null,
+        "reason": null,
+        "note": null,
+        "environment": "PROD",
+        "signal": "versions-file"
+      },
+      {
+        "check": "change-failure-rate",
+        "level": 2,
+        "state": "measured",
+        "value": 33.3,
+        "unit": "percent",
+        "threshold": 45,
+        "readable": null,
+        "reason": null,
+        "note": null,
+        "environment": "PROD",
+        "signal": "versions-file"
+      },
+      {
+        "check": "time-to-restore",
+        "level": 4,
+        "state": "measured",
+        "value": 6,
+        "unit": "hours",
+        "threshold": 8,
+        "readable": null,
+        "reason": null,
+        "note": null,
+        "environment": "PROD",
+        "signal": "versions-file"
+      },
+      {
+        "check": "test-coverage",
+        "level": 4,
+        "state": "measured",
+        "value": 84.7,
+        "unit": "percent",
+        "threshold": 80,
+        "readable": null,
+        "reason": null,
+        "note": null,
+        "environment": null,
+        "signal": null
+      },
+      {
+        "check": "evidence-freshness",
+        "level": 4,
+        "state": "measured",
+        "value": 97.3,
+        "unit": "percent",
+        "threshold": 90,
+        "readable": {
+          "k": 37,
+          "n": 37
+        },
+        "reason": null,
+        "note": null,
+        "environment": null,
+        "signal": null
+      }
+    ],
+    "score": 78,
+    "measured": 24,
+    "applicable": 24,
+    "areas": {
+      "supply-chain": {
+        "score": 92,
+        "measured": 5,
+        "applicable": 5
+      },
+      "vulnerabilities": {
+        "score": 60,
+        "measured": 6,
+        "applicable": 6
+      },
+      "secrets": {
+        "score": 100,
+        "measured": 2,
+        "applicable": 2
+      },
+      "change-access": {
+        "score": 92,
+        "measured": 5,
+        "applicable": 5
+      },
+      "delivery": {
+        "score": 64,
+        "measured": 5,
+        "applicable": 5
+      },
+      "evidence": {
+        "score": 80,
+        "measured": 1,
+        "applicable": 1
+      }
+    }
+  }
 }

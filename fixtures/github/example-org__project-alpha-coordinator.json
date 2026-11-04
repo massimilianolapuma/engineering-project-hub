@@ -8,7 +8,8 @@
     "defaultBranch": "main",
     "archived": false,
     "updatedAt": "@now-1d",
-    "topics": ["demo"]
+    "topics": ["demo"],
+    "pushProtection": "enabled"
   },
   "head": {
     "sha": "4e8100969f2ec6777df476c40eeedec80aca4380",
@@ -25,7 +26,12 @@
   "files": {
     ".github/workflows/rel-release.yml": "name: Release\non: workflow_dispatch\njobs:\n  build:\n    uses: example-shared/ci-templates/.github/workflows/build.yml@a1b2c3d4e5f60718293a4b5c6d7e8f9012345678\n  publish:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@0123456789abcdef0123456789abcdef01234567\n",
     "release-manifest.yaml": "schemaVersion: '1.0'\nversion: 1.4.0\ncomponents:\n  backend:\n    version: 1.4.0\n  frontend:\n    version: 2.1.0\n  worker:\n    version: 1.2.0\n  helm:\n    version: 0.9.0\nenvironments:\n  dev:\n    version: 1.4.0\n  test:\n    version: 1.4.0\n  uat:\n    version: 1.4.0\n  prod:\n    version: 1.3.0\n",
-    ".gitmodules": "[submodule \"backend\"]\n\tpath = services/backend\n\turl = https://github.com/example-org/project-alpha-backend.git\n[submodule \"frontend\"]\n\tpath = apps/frontend\n\turl = ../project-alpha-frontend.git\n[submodule \"worker\"]\n\tpath = services/worker\n\turl = git@github.com:example-org/project-alpha-worker.git\n[submodule \"helm\"]\n\tpath = deploy/helm\n\turl = https://github.com/example-org/project-alpha-helm.git\n"
+    ".gitmodules": "[submodule \"backend\"]\n\tpath = services/backend\n\turl = https://github.com/example-org/project-alpha-backend.git\n[submodule \"frontend\"]\n\tpath = apps/frontend\n\turl = ../project-alpha-frontend.git\n[submodule \"worker\"]\n\tpath = services/worker\n\turl = git@github.com:example-org/project-alpha-worker.git\n[submodule \"helm\"]\n\tpath = deploy/helm\n\turl = https://github.com/example-org/project-alpha-helm.git\n",
+    "environments/prod.yaml@1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a": "# Versions installed on PROD (synthetic)\numbrella: 2.3.0\n",
+    "environments/prod.yaml@2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b": "# Versions installed on PROD (synthetic)\numbrella: 2.4.0\n",
+    "environments/prod.yaml@3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c": "# Versions installed on PROD (synthetic)\numbrella: 2.4.0\n",
+    "environments/prod.yaml@4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d": "# Versions installed on PROD (synthetic)\numbrella: 2.3.0\n",
+    "environments/prod.yaml@5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e": "# Versions installed on PROD (synthetic)\numbrella: 2.4.1\n"
   },
   "submodules": {
     "services/backend": "a854f48ad1aa650b2594455e44d9016866a5d5b3",
@@ -113,5 +119,50 @@
         }
       ]
     }
+  },
+  "environments": [
+    {
+      "name": "dev",
+      "protected": false,
+      "branchPolicy": false
+    },
+    {
+      "name": "uat",
+      "protected": true,
+      "branchPolicy": false
+    },
+    {
+      "name": "production",
+      "protected": true,
+      "branchPolicy": true
+    }
+  ],
+  "pathCommits": {
+    "environments/prod.yaml": [
+      {
+        "sha": "5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e",
+        "committedAt": "@now-240h"
+      },
+      {
+        "sha": "4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d",
+        "committedAt": "@now-714h"
+      },
+      {
+        "sha": "3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c",
+        "committedAt": "@now-716h"
+      },
+      {
+        "sha": "2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b",
+        "committedAt": "@now-720h"
+      },
+      {
+        "sha": "1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a",
+        "committedAt": "@now-120d"
+      }
+    ]
+  },
+  "commitDates": {
+    "v2.4.0": "@now-744h",
+    "v2.4.1": "@now-250h"
   }
 }

@@ -1,4 +1,5 @@
 import {
+  CONTROL_CHECKS,
   countsAsOpen,
   type ControlStatus,
   type HistoryFile,
@@ -329,3 +330,44 @@ function projectSupplyChainRows(p: ProjectSnapshot): CsvValue[][] {
 
 export const supplyChainRows = (data: SiteData): CsvValue[][] =>
   data.projects.flatMap(projectSupplyChainRows);
+
+export const CONTROL_MAP_HEADERS: readonly string[] = [
+  'project_id',
+  'business_unit',
+  'check',
+  'area',
+  'level',
+  'state',
+  'value',
+  'unit',
+  'readable',
+  'reason',
+  'source_environment',
+  'signal',
+  'collected_at',
+];
+
+const AREA_OF = new Map(CONTROL_CHECKS.map((c) => [c.id, c.area]));
+
+/**
+ * Control map: one row per project and check (spec 2026-11-04 §5.5). A level that could not be
+ * measured is n/a with its reason, never 0. No row when the map is not published.
+ */
+export const controlMapRows = (data: SiteData): CsvValue[][] =>
+  data.projects.flatMap((p) =>
+    (p.controlMap?.cells ?? []).map((c) => [
+      p.project.id,
+      p.project.businessUnit,
+      c.check,
+      AREA_OF.get(c.check) ?? null,
+      c.level ?? NA,
+      c.state,
+      c.value ?? NA,
+      c.unit,
+      c.readable ? `${c.readable.k}/${c.readable.n}` : null,
+      c.reason,
+      c.environment,
+      c.signal,
+      p.generatedAt,
+    ]),
+  );

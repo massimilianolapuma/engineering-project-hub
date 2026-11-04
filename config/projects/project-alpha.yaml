@@ -62,6 +62,13 @@ environments:
   - id: prod
     name: PROD
     argocdApplication: { name: alpha-prod, namespace: argocd, project: alpha }
+    githubEnvironment: production
+    # Control map: a promotion is a pull request that raises the version in this file.
+    deploySignal:
+      type: versions-file
+      repository: coordinator
+      path: environments/prod.yaml
+      key: umbrella
 
 trackedWorkflows:
   - id: ci

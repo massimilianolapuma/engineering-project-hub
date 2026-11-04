@@ -784,7 +784,7 @@ describe('static site', () => {
       expect(html).toMatch(new RegExp(`data-repo-count="${key}"[^>]*>\\s*<span[^>]*>${n}<`));
     // What we could not read, grouped by classification (403: 9 sources, 404: 2 sources).
     expect(html).toContain('What we could not read, by cause');
-    expect(html).toMatch(/data-cause="not-authorised"[^>]*data-sources="9"/);
+    expect(html).toMatch(/data-cause="not-authorised"[^>]*data-sources="10"/);
     expect(html).toMatch(/data-cause="not-found"[^>]*data-sources="2"/);
     expect(html.indexOf('data-cause="not-authorised"')).toBeLessThan(
       html.indexOf('data-cause="not-found"'),
@@ -1380,10 +1380,10 @@ describe('static site', () => {
     it('shows the five totals with their labels', async () => {
       const t = text(await page('changes'));
       expect(t).toContain(
-        '6 status changes · 1 new and 1 resolved critical/high alerts · 1 version moves · 6 new collection errors',
+        '6 status changes · 1 new and 1 resolved critical/high alerts · 1 version moves · 7 new collection errors',
       );
       expect(text(await page('it/changes'))).toContain(
-        '6 cambi di stato · 1 alert critici/alti nuovi e 1 risolti · 1 versioni cambiate · 6 nuovi errori di raccolta',
+        '6 cambi di stato · 1 alert critici/alti nuovi e 1 risolti · 1 versioni cambiate · 7 nuovi errori di raccolta',
       );
       expect(t).toContain('Compared with the collection of 14 Jan 2026');
       expect(t).toContain('Demo data: earlier collections are synthetic.');
@@ -1983,7 +1983,7 @@ describe('static site', () => {
     const idx = join(data, 'index.json');
     await writeFile(
       idx,
-      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.8"', '"schemaVersion": "9.0"'),
+      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.9"', '"schemaVersion": "9.0"'),
     );
     const out = join(work, 'dist-bad');
     await buildSite(data, out);

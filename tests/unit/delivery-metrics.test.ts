@@ -33,7 +33,7 @@ describe('deliveryMetrics', () => {
     expect(m.cfrPercent).toBe(33.3);
     expect(m.ttrHoursMedian).toBe(2);
     expect(m.leadHoursMedian).toBe(20);
-    expect(m.frequencyPerWeek).toBeCloseTo((2 / 30) * 7, 5);
+    expect(m.frequencyPerWeek).toBe(0.47);
   });
 
   it('versions file: a rollback counts as a failed change, restored at the rollback', () => {

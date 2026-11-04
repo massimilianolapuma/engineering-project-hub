@@ -85,6 +85,41 @@ describe('versions-file signal', () => {
     expect(m.cfrPercent).toBe(33.3);
   });
 
+  it('an unreadable repository is not called again', async () => {
+    const p = withEnv(await baseProject(), {
+      type: 'versions-file',
+      repository: 'coordinator',
+      path: 'environments/prod.yaml',
+      key: 'umbrella',
+      tagPrefix: 'v',
+    });
+    let calls = 0;
+    const counting = {
+      listCommitsForPath: async () => {
+        calls++;
+        return ok([]);
+      },
+    } as unknown as SourceProvider;
+    const r = await collectDeploySignal(
+      counting,
+      {
+        config: p,
+        workflows: [],
+        repos: [
+          {
+            repository: p.coordinator.repository,
+            repo: fail({ classification: 'not-found' as const }),
+          },
+        ],
+      },
+      p.environments[0]!,
+      now,
+      windows,
+    );
+    expect(calls).toBe(0);
+    expect(r).toMatchObject({ reason: 'source-unreadable', error: null });
+  });
+
   it('an unreadable commit history is not visible', async () => {
     const p = withEnv(await baseProject(), {
       type: 'versions-file',

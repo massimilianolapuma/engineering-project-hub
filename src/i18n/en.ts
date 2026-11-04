@@ -305,6 +305,8 @@ export const en = {
     sonarqube: 'SonarQube',
     harbor: 'Harbor',
     argocd: 'Argo CD',
+    'github-environments': 'GitHub environments',
+    'deploy-signal': 'Deploy signal',
   },
   availability: {
     available: 'Available',
