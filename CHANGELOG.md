@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Executive summary: a `?team=` that matches no project now says "No project in this selection."
+  instead of "Not measured (remediation deadlines are off…)", which gave the wrong reason.
+- How to read: the "On this page" list links the Executive summary section.
+- Data quality: the "Metrics for Prometheus" line links `data/metrics/hub.prom` only when the
+  published data has it ("Not published" otherwise), instead of trusting the site policies.
+
 ## [0.14.0] - 2026-11-04
 
 ### Added

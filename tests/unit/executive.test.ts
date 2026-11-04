@@ -168,6 +168,13 @@ describe('executive view edge cases', () => {
     expect(none.risks).toEqual([]);
   });
 
+  it('says the selection is empty instead of "not measured" when no project matches', () => {
+    const t = textOf(filterInput(input(), ['nobody']));
+    expect(t.remediation).toBe('No project in this selection.');
+    expect(t.supplyChain).toBe('No project in this selection.');
+    expect(t.exceptions).toBe('');
+  });
+
   it('uses singular wording', () => {
     const i = filterInput(input(), ['pay-project-beta-dev']);
     const t = textOf(i);

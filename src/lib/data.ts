@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import type {
   CatalogSnapshot,
@@ -22,6 +22,9 @@ import {
  * these validated JSON files. SNAPSHOT_DIR overrides the default location (tests).
  */
 const dataDir = () => resolve(process.env.SNAPSHOT_DIR ?? 'public/data');
+
+/** True when the published data carries the Prometheus metrics file (metrics/hub.prom). */
+export const hasMetricsFile = (): boolean => existsSync(join(dataDir(), 'metrics', 'hub.prom'));
 
 function readText(file: string): string | null {
   try {

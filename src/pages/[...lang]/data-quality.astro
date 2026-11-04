@@ -12,8 +12,7 @@ import ErrorsTable from '../../components/ErrorsTable.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import Pill from '../../components/Pill.astro';
 import Base from '../../layouts/Base.astro';
-import { loadHistory } from '../../lib/data';
-import { loadSitePolicies } from '../../lib/policies';
+import { hasMetricsFile, loadHistory } from '../../lib/data';
 import { healthRank } from '../../lib/format';
 import { providerCounts } from '../../lib/supply-chain-view';
 import { pageContext } from '../../lib/page';
@@ -25,7 +24,8 @@ const { locale } = Astro.props;
 const { i18n, data, index, alternates } = pageContext(locale, 'dataQuality');
 const { d, f } = i18n;
 const q = d.dataQualityPage;
-const metricsOn = loadSitePolicies().policies.outputs.metrics.enabled;
+// Linked only when the published data has the file (an older collector or metrics off: none).
+const metricsOn = hasMetricsFile();
 const metricsHref = `${import.meta.env.BASE_URL.replace(/\/?$/, '/')}data/metrics/hub.prom`;
 
 const PERMISSIONS_GUIDE =
@@ -690,7 +690,7 @@ const lead = [
                     <code>data/metrics/hub.prom</code>
                   </a>
                 ) : (
-                  q.metricsOff
+                  q.metricsNone
                 )}
               </dd>
             </div>
