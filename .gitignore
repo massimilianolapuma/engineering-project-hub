@@ -247,3 +247,8 @@ config.local/
 .impeccable/live/
 .impeccable/questions/
 .impeccable/hook.cache.json
+
+# Notifier (local runs)
+notify-out/
+.notify-in/
+.notify-ledger/
