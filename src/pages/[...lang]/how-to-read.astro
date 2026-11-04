@@ -568,6 +568,18 @@ const SECTIONS = [
     <p class="note">{d.howToReadSupplyChain.sources}</p>
   </section>
 
+  <section class="card htr-section" id="control-map" aria-labelledby="control-map-title">
+    <h2 id="control-map-title">{d.howToReadControlMap.title}</h2>
+    <p>{d.howToReadControlMap.lead}</p>
+    <ul class="htr-points">
+      {d.howToReadControlMap.points.map((p) => (
+        <li>{p}</li>
+      ))}
+    </ul>
+    <p class="note">{d.howToReadControlMap.notAssessment}</p>
+    <p class="note">{d.howToReadControlMap.published}</p>
+  </section>
+
   <section class="card htr-section" id="trends" aria-labelledby="trends-title">
     <h2 id="trends-title">{h.trendsTitle}</h2>
     <ul class="htr-points">

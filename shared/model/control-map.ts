@@ -132,10 +132,10 @@ export const ControlCellSchema = z
     check: CheckIdSchema,
     level: LevelSchema.nullable(),
     state: z.enum(['measured', 'not-visible', 'not-applicable']),
-    value: z.number().finite().nullable(),
+    value: z.number().nullable(),
     unit: z.enum(['percent', 'count', 'per-week', 'hours', 'days', 'level']),
     /** The lower bound of the level reached (the threshold that set it), when the ladder has one. */
-    threshold: z.number().finite().nullable(),
+    threshold: z.number().nullable(),
     readable: z.object({ k: count, n: count }).strict().nullable(),
     reason: ControlReasonSchema.nullable(),
     note: z.string().max(200).nullable(),
@@ -234,6 +234,6 @@ export const ControlMapPolicySchema = z
       .strict()
       .prefault({}),
     /** Per-check override of the ladder: the values for levels 1–5. */
-    thresholds: z.partialRecord(CheckIdSchema, z.array(z.number().finite()).length(5)).default({}),
+    thresholds: z.partialRecord(CheckIdSchema, z.array(z.number()).length(5)).default({}),
   })
   .strict();

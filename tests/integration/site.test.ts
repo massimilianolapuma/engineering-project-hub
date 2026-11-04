@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -234,7 +234,7 @@ describe('static site', () => {
       const html = await page(p);
       const nav = /<nav class="mainnav"[\s\S]*?<\/nav>/.exec(html)?.[0] ?? '';
       const links = nav.match(/<a [\s\S]*?<\/a>/g) ?? [];
-      expect(links.length, p).toBe(8);
+      expect(links.length, p).toBe(9);
       for (const a of links) expect(a, p).toMatch(/<svg[^>]*class="octicon octicon-/);
       expect(nav, p).not.toContain('class="Counter"');
       const footer = /<footer class="footer"[\s\S]*?<\/footer>/.exec(html)?.[0] ?? '';
@@ -2092,5 +2092,87 @@ describe('executive summary', () => {
     } finally {
       delete process.env.POLICIES_FILE;
     }
+  }, 180_000);
+});
+
+describe('control map page (spec 2026-11-04)', () => {
+  const CLAIM = /\bcompliant\b|compliance with|\bconforme\b|conformità/i;
+  /** The page without scripts and templates' markup: what a reader sees. */
+  const visibleText = (html: string) =>
+    textOf(html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, ''));
+
+  it('is built in both languages, after Security in the navigation', async () => {
+    const en = await page('controls');
+    const itHtml = await page('it/controls');
+    expect(en).toMatch(/<h1[^>]*>Control map<\/h1>/);
+    expect(itHtml).toMatch(/<h1[^>]*>Mappa dei controlli<\/h1>/);
+    const nav = /<nav[^>]*aria-label="Main navigation"[\s\S]*?<\/nav>/.exec(await page(''))![0];
+    const hrefs = [...nav.matchAll(/href="([^"]+)"/g)].map((m) => m[1]!);
+    const sec = hrefs.findIndex((h) => h.endsWith('/security/'));
+    expect(hrefs[sec + 1]).toMatch(/\/controls\/$/);
+  });
+
+  it('shows the lede, 25 check columns grouped by area and the score column', async () => {
+    const html = await page('controls');
+    expect(textOf(html)).toContain(
+      'This is not a compliance assessment: governance and organisational requirements are out of scope.',
+    );
+    expect(html.match(/<th[^>]*data-check="[a-z-]+"/g)).toHaveLength(25);
+    expect(html.match(/<th[^>]*scope="colgroup"/g)).toHaveLength(6);
+    expect(textOf(html)).toMatch(/measured \d+ of \d+/);
+  });
+
+  it('an external delivery environment reads "not visible: deployed by external pipelines"', async () => {
+    const html = await page('controls');
+    expect(html).toContain(
+      'aria-label="Project Beta, Deploy frequency: not visible (deployed by external pipelines)"',
+    );
+  });
+
+  it('has a detail for every project cell, with the related DORA and ISO references', async () => {
+    const html = await page('controls');
+    expect(html.match(/<button[^>]*data-cm-cell=/g)).toHaveLength(4 * 25);
+    const detail = /<template id="cm-d-project-alpha-sbom-coverage">[\s\S]*?<\/template>/.exec(
+      html,
+    )![0];
+    expect(textOf(detail)).toContain('RTS art. 4–5');
+    expect(textOf(detail)).toContain('5.21');
+  });
+
+  it('lists every check in the references table and links the CSV', async () => {
+    const html = await page('controls');
+    const refs = /<table[^>]*data-cm-references[\s\S]*?<\/table>/.exec(html)![0];
+    expect(refs.match(/<tr/g)).toHaveLength(26);
+    expect(html).toContain('href="/exports/control-map.csv"');
+    const csv = await readFile(join(dist, 'exports', 'control-map.csv'), 'utf8');
+    expect(csv.startsWith('﻿project_id,business_unit,check,area,level,')).toBe(true);
+  });
+
+  it('never claims compliance in visible text (EN and IT)', async () => {
+    for (const p of ['controls', 'it/controls', 'how-to-read', 'it/how-to-read'])
+      expect(visibleText(await page(p)), p).not.toMatch(CLAIM);
+  });
+
+  it('the project page links its row in the control map', async () => {
+    expect(await page('projects/project-alpha')).toContain('href="/controls/#cm-project-alpha"');
+  });
+
+  it('no navigation entry when no project carries a control map', async () => {
+    const data = join(work, 'data-no-control-map');
+    await cp(join(process.cwd(), 'fixtures/snapshots'), data, { recursive: true });
+    for (const f of await readdir(join(data, 'projects'))) {
+      const file = join(data, 'projects', f);
+      const j = JSON.parse(await readFile(file, 'utf8'));
+      j.controlMap = null;
+      await writeFile(file, JSON.stringify(j));
+    }
+    const idx = join(data, 'index.json');
+    const index = JSON.parse(await readFile(idx, 'utf8'));
+    for (const p of index.projects) p.controlMap = null;
+    await writeFile(idx, JSON.stringify(index));
+    const out = join(work, 'dist-no-control-map');
+    await buildSite(data, out);
+    const html = await readFile(join(out, 'index.html'), 'utf8');
+    expect(html).not.toMatch(/href="[^"]*\/controls\/"/);
   }, 180_000);
 });

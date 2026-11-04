@@ -498,6 +498,30 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
 
       <TrendSection projectId={s.project.id} history={loadHistory()} locale={locale} />
 
+      {s.controlMap && (
+        <section id="controls" class="block" aria-labelledby="h-controls">
+          <h2 id="h-controls">{d.controlMap.projectBlockTitle}</h2>
+          <p>
+            <strong>
+              {s.controlMap.score === null
+                ? d.controlMap.scoreNone
+                : `${d.controlMap.score} ${s.controlMap.score}`}
+            </strong>{' '}
+            <span class="muted">
+              {f(d.controlMap.measured, {
+                n: s.controlMap.measured,
+                m: s.controlMap.applicable,
+              })}
+            </span>
+          </p>
+          <p>
+            <a href={`${href(locale, 'controls')}#cm-${s.project.id}`}>
+              {d.controlMap.projectBlockLink}
+            </a>
+          </p>
+        </section>
+      )}
+
       <section id="environments" class="block" aria-labelledby="h-env">
         <h2 id="h-env">{d.project.environments}</h2>
         <p class="coordline">

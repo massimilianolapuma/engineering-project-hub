@@ -1832,3 +1832,251 @@ a.teamlabel:hover {
     border: 1px solid var(--borderColor-default);
   }
 }
+
+/*
+ * Control map (spec 2026-11-04 §5.5). Sequential single-hue scale for levels 0–5 from Primer's
+ * display blue scale (steps 0, 2, 3, 4, 6, 8: near the page background → far from it, in both
+ * themes); the number is always printed, so colour is never the only cue. Text is the default
+ * foreground on the near steps and the page background on the far ones: at least 4.5:1 in both
+ * themes (tests/unit/control-map-palette.test.ts).
+ */
+.cm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-24);
+}
+.cm__lede {
+  max-width: 72ch;
+}
+.cm-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--base-size-12) var(--base-size-16);
+}
+.cm-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-4);
+  font-size: var(--text-body-size-small);
+}
+.cm-filters select {
+  min-height: 32px;
+  font: inherit;
+  font-size: var(--text-body-size-medium);
+}
+.cm-filters__csv {
+  margin-left: auto;
+}
+.cm-scroll {
+  /* Positioned, so the visually hidden labels inside the table stay in its scroll box. */
+  position: relative;
+  max-width: 100%;
+  max-height: 75vh;
+  overflow: auto;
+  border: var(--borderWidth-thin) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium);
+}
+.cm-scroll:focus-visible {
+  outline: 2px solid var(--focus-outlineColor);
+  outline-offset: 2px;
+}
+.cm-table {
+  border-collapse: separate;
+  border-spacing: 2px;
+  font-size: var(--text-body-size-small);
+  background: var(--bgColor-default);
+}
+.cm-table caption {
+  padding: var(--base-size-8);
+  text-align: left;
+  color: var(--fgColor-muted);
+}
+.cm-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bgColor-default);
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  padding: var(--base-size-4) 2px;
+}
+.cm-table thead tr:nth-child(2) th {
+  top: 28px;
+}
+.cm-table thead th[scope='colgroup'] {
+  border-bottom: var(--borderWidth-thin) solid var(--borderColor-default);
+}
+.cm-table__check abbr {
+  text-decoration: none;
+  cursor: help;
+}
+.cm-table .cm-table__name {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--bgColor-default);
+  text-align: left;
+  min-width: 9rem;
+  max-width: 12rem;
+  padding: var(--base-size-4) var(--base-size-8);
+}
+.cm-table thead .cm-table__name {
+  z-index: 3;
+}
+.cm-table__score {
+  text-align: right;
+  padding: var(--base-size-4) var(--base-size-8);
+  max-width: 7.5rem;
+}
+.cm-score {
+  display: block;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.cm-score__measured,
+.cm-unit__hint {
+  display: block;
+  color: var(--fgColor-muted);
+  font-weight: 400;
+  font-size: var(--text-caption-size);
+}
+.cm-unit th,
+.cm-unit td {
+  border-top: var(--borderWidth-thick) solid var(--borderColor-default);
+}
+.cm-unit__name {
+  font-weight: 600;
+}
+.cm-cell,
+.cm-swatch {
+  min-width: 28px;
+  height: 30px;
+  text-align: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border-radius: var(--borderRadius-small);
+}
+.cm-swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  vertical-align: middle;
+}
+.cm-cell__btn {
+  width: 100%;
+  min-height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.cm-cell__btn:focus-visible {
+  outline: 2px solid var(--focus-outlineColor);
+  outline-offset: 1px;
+}
+.cm-cell__btn[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 2px var(--fgColor-default);
+}
+[data-cm-level='0'] {
+  background: var(--display-blue-scale-0);
+  color: var(--fgColor-default);
+}
+[data-cm-level='1'] {
+  background: var(--display-blue-scale-2);
+  color: var(--fgColor-default);
+}
+[data-cm-level='2'] {
+  background: var(--display-blue-scale-3);
+  color: var(--fgColor-default);
+}
+[data-cm-level='3'] {
+  background: var(--display-blue-scale-4);
+  color: var(--fgColor-default);
+}
+[data-cm-level='4'] {
+  background: var(--display-blue-scale-6);
+  color: var(--bgColor-default);
+}
+[data-cm-level='5'] {
+  background: var(--display-blue-scale-8);
+  color: var(--bgColor-default);
+}
+/* Not visible: hatched, never a level colour (unknown is not 0). */
+[data-cm-level='nv'] {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--bgColor-muted) 0 4px,
+    var(--bgColor-default) 4px 8px
+  );
+  color: var(--fgColor-muted);
+  box-shadow: inset 0 0 0 1px var(--borderColor-default);
+}
+/* Not applicable: blank, with a faint outline so the grid stays readable. */
+[data-cm-level='na'] {
+  background: var(--bgColor-default);
+  box-shadow: inset 0 0 0 1px var(--borderColor-muted);
+}
+.cm-detail {
+  border: var(--borderWidth-thin) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium);
+  padding: var(--base-size-16);
+}
+.cm-detail:focus-visible {
+  outline: 2px solid var(--focus-outlineColor);
+  outline-offset: 2px;
+}
+.cm-detail__list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--base-size-4) var(--base-size-16);
+  margin: 0 0 var(--base-size-12);
+}
+.cm-detail__list dt {
+  color: var(--fgColor-muted);
+}
+.cm-detail__list dd {
+  margin: 0;
+}
+.cm-legend__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--base-size-8);
+}
+.cm-legend__list li {
+  display: flex;
+  align-items: center;
+  gap: var(--base-size-12);
+}
+@media (max-width: 543px) {
+  .cm-filters__csv {
+    margin-left: 0;
+  }
+  .cm-detail__list {
+    grid-template-columns: 1fr;
+  }
+  .cm-detail__list dd {
+    margin-bottom: var(--base-size-8);
+  }
+  .cm-table .cm-table__name {
+    min-width: 7rem;
+    max-width: 9rem;
+  }
+}
+@media print {
+  .cm-filters,
+  .cm-detail {
+    display: none;
+  }
+  .cm-scroll {
+    max-height: none;
+    overflow: visible;
+  }
+}

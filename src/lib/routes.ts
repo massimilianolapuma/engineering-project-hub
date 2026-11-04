@@ -8,6 +8,7 @@ export type PageKey =
   | 'workflows'
   | 'versions'
   | 'security'
+  | 'controls'
   | 'dataQuality'
   | 'catalog'
   | 'howToRead';
@@ -19,6 +20,7 @@ const PATHS: Record<PageKey, string> = {
   workflows: 'workflows/',
   versions: 'versions/',
   security: 'security/',
+  controls: 'controls/',
   dataQuality: 'data-quality/',
   catalog: 'catalog/',
   howToRead: 'how-to-read/',
@@ -30,6 +32,7 @@ export const NAV: readonly PageKey[] = [
   'changes',
   'executive',
   'security',
+  'controls',
   'versions',
   'workflows',
   'dataQuality',
@@ -42,6 +45,7 @@ export const NAV_ICON: Record<PageKey, OcticonName> = {
   changes: 'history',
   executive: 'briefcase',
   security: 'shield',
+  controls: 'checklist',
   versions: 'tag',
   workflows: 'workflow',
   dataQuality: 'database',
@@ -49,9 +53,14 @@ export const NAV_ICON: Record<PageKey, OcticonName> = {
   howToRead: 'question',
 };
 
-/** Main navigation for this build: the executive summary only when outputs.executive is on. */
-export function navFor(executiveEnabled: boolean): readonly PageKey[] {
-  return executiveEnabled ? NAV : NAV.filter((k) => k !== 'executive');
+/**
+ * Main navigation for this build: the executive summary only when outputs.executive is on, the
+ * control map only when the published data carries it (restricted audience or mock data).
+ */
+export function navFor(executiveEnabled: boolean, controlMap = false): readonly PageKey[] {
+  return NAV.filter(
+    (k) => (k !== 'executive' || executiveEnabled) && (k !== 'controls' || controlMap),
+  );
 }
 
 const base = () => {
@@ -67,7 +76,12 @@ export function href(locale: Locale, page: PageKey | `projects/${string}`): stri
 
 /** Static CSV export (shared by both locales), honouring the base path. */
 export function exportHref(
-  name: 'portfolio.csv' | 'findings-summary.csv' | 'versions.csv' | 'supply-chain.csv',
+  name:
+    | 'portfolio.csv'
+    | 'findings-summary.csv'
+    | 'versions.csv'
+    | 'supply-chain.csv'
+    | 'control-map.csv',
 ): string {
   return `${base()}exports/${name}`;
 }
