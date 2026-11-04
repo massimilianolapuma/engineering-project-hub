@@ -321,6 +321,113 @@
               "name"
             ],
             "additionalProperties": false
+          },
+          "deploySignal": {
+            "default": {
+              "type": "external"
+            },
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "workflow"
+                  },
+                  "workflow": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9-]*$"
+                  }
+                },
+                "required": [
+                  "type",
+                  "workflow"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "versions-file"
+                  },
+                  "repository": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9-]*$"
+                  },
+                  "path": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "key": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*$"
+                  },
+                  "tagPrefix": {
+                    "default": "v",
+                    "type": "string",
+                    "maxLength": 50
+                  }
+                },
+                "required": [
+                  "type",
+                  "repository",
+                  "path",
+                  "key"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "argocd"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "release"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "external"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "delivery": {
+            "type": "boolean"
+          },
+          "githubEnvironment": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
           }
         },
         "required": [
@@ -495,6 +602,63 @@
         "maxLength": 141,
         "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})\\/[a-z0-9][a-z0-9_-]{0,99}$"
       }
+    },
+    "controlMap": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "notApplicable": {
+          "default": [],
+          "maxItems": 25,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "check": {
+                "type": "string",
+                "enum": [
+                  "sbom-coverage",
+                  "image-signature",
+                  "build-provenance",
+                  "license-policy",
+                  "dependency-scanning",
+                  "sast",
+                  "container-scanning",
+                  "iac-scanning",
+                  "dast",
+                  "vulnerability-age",
+                  "security-mttr",
+                  "secret-scanning",
+                  "exposed-secrets",
+                  "workload-identity",
+                  "branch-protection",
+                  "required-checks",
+                  "pipeline-integrity",
+                  "environment-separation",
+                  "config-drift",
+                  "deploy-frequency",
+                  "lead-time",
+                  "change-failure-rate",
+                  "time-to-restore",
+                  "test-coverage",
+                  "evidence-freshness"
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              }
+            },
+            "required": [
+              "check",
+              "reason"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
     }
   },
   "required": [

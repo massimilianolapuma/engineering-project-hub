@@ -31,6 +31,7 @@ import {
   SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS,
 } from './enums';
 import { httpsUrl, isoDate, nullableCount, sha, shortText } from './primitives';
+import { ControlMapSchema, ControlMapSummarySchema } from './control-map';
 
 /*
  * Normalised, provider-neutral snapshot model. Every object is `.strict()`: unknown keys are
@@ -932,6 +933,8 @@ export const ProjectSnapshotSchema = z
       })
       .strict(),
     collectionErrors: z.array(CollectionErrorSchema),
+    /** Control map (spec 2026-11-04); null when off or not published for this audience. */
+    controlMap: ControlMapSchema.nullable(),
   })
   .strict();
 export type ProjectSnapshot = z.infer<typeof ProjectSnapshotSchema>;
@@ -995,6 +998,8 @@ export const ProjectSummarySchema = z
     collectedAt: isoDate,
     collectionErrorCount: z.number().int().min(0),
     unresolvedSubmodules: z.number().int().min(0),
+    /** Control map levels and score; null when off or not published for this audience. */
+    controlMap: ControlMapSummarySchema.nullable(),
   })
   .strict();
 export type ProjectSummary = z.infer<typeof ProjectSummarySchema>;

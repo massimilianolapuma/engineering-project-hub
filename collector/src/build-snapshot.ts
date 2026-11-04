@@ -564,6 +564,7 @@ export function buildProjectSnapshot(
       staleSources,
     },
     collectionErrors: ctx.errors,
+    controlMap: null,
   };
 }
 
@@ -642,5 +643,6 @@ export function toProjectSummary(s: ProjectSnapshot): ProjectSummary {
     unresolvedSubmodules: s.coordinator.submodules.filter(
       (x) => x.association === 'unmapped' || x.status !== 'resolved',
     ).length,
+    controlMap: null,
   };
 }

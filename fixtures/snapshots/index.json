@@ -177,7 +177,8 @@
       "failedCriticalWorkflows": 0,
       "collectedAt": "2026-01-15T12:00:00.000Z",
       "collectionErrorCount": 0,
-      "unresolvedSubmodules": 0
+      "unresolvedSubmodules": 0,
+      "controlMap": null
     },
     {
       "id": "project-alpha",
@@ -244,7 +245,8 @@
       "failedCriticalWorkflows": 0,
       "collectedAt": "2026-01-15T12:00:00.000Z",
       "collectionErrorCount": 1,
-      "unresolvedSubmodules": 0
+      "unresolvedSubmodules": 0,
+      "controlMap": null
     },
     {
       "id": "project-beta",
@@ -310,7 +312,8 @@
       "failedCriticalWorkflows": 1,
       "collectedAt": "2026-01-15T12:00:00.000Z",
       "collectionErrorCount": 7,
-      "unresolvedSubmodules": 1
+      "unresolvedSubmodules": 1,
+      "controlMap": null
     },
     {
       "id": "project-gamma",
@@ -374,7 +377,8 @@
       "failedCriticalWorkflows": null,
       "collectedAt": "2026-01-15T12:00:00.000Z",
       "collectionErrorCount": 3,
-      "unresolvedSubmodules": 0
+      "unresolvedSubmodules": 0,
+      "controlMap": null
     }
   ]
 }

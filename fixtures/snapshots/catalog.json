@@ -87,11 +87,17 @@
         "environments": [
           {
             "id": "dev",
-            "name": "DEV"
+            "name": "DEV",
+            "deploySignal": {
+              "type": "external"
+            }
           },
           {
             "id": "prod",
-            "name": "PROD"
+            "name": "PROD",
+            "deploySignal": {
+              "type": "external"
+            }
           }
         ],
         "trackedWorkflows": [
@@ -144,7 +150,10 @@
         "teams": [
           "example-org/platform",
           "example-org/security"
-        ]
+        ],
+        "controlMap": {
+          "notApplicable": []
+        }
       },
       {
         "id": "project-alpha",
@@ -232,11 +241,17 @@
               "name": "alpha-dev",
               "namespace": "argocd",
               "project": "alpha"
+            },
+            "deploySignal": {
+              "type": "external"
             }
           },
           {
             "id": "test",
-            "name": "TEST"
+            "name": "TEST",
+            "deploySignal": {
+              "type": "external"
+            }
           },
           {
             "id": "uat",
@@ -245,6 +260,9 @@
               "name": "alpha-uat",
               "namespace": "argocd",
               "project": "alpha"
+            },
+            "deploySignal": {
+              "type": "external"
             }
           },
           {
@@ -254,6 +272,9 @@
               "name": "alpha-prod",
               "namespace": "argocd",
               "project": "alpha"
+            },
+            "deploySignal": {
+              "type": "external"
             }
           }
         ],
@@ -321,7 +342,10 @@
         "teams": [
           "example-org/pay-project-alpha-dev",
           "example-org/platform"
-        ]
+        ],
+        "controlMap": {
+          "notApplicable": []
+        }
       },
       {
         "id": "project-beta",
@@ -391,11 +415,17 @@
               "name": "beta-dev",
               "namespace": "argocd",
               "project": "beta"
+            },
+            "deploySignal": {
+              "type": "external"
             }
           },
           {
             "id": "uat",
-            "name": "UAT"
+            "name": "UAT",
+            "deploySignal": {
+              "type": "external"
+            }
           },
           {
             "id": "prod",
@@ -404,6 +434,9 @@
               "name": "beta-prod",
               "namespace": "argocd",
               "project": "beta"
+            },
+            "deploySignal": {
+              "type": "external"
             }
           }
         ],
@@ -468,7 +501,10 @@
         "securityStatusPath": ".security/project-security-status.json",
         "teams": [
           "example-org/pay-project-beta-dev"
-        ]
+        ],
+        "controlMap": {
+          "notApplicable": []
+        }
       },
       {
         "id": "project-gamma",
@@ -497,7 +533,10 @@
         "environments": [
           {
             "id": "dev",
-            "name": "DEV"
+            "name": "DEV",
+            "deploySignal": {
+              "type": "external"
+            }
           }
         ],
         "trackedWorkflows": [
@@ -535,7 +574,10 @@
           }
         },
         "securityStatusPath": ".security/project-security-status.json",
-        "teams": []
+        "teams": [],
+        "controlMap": {
+          "notApplicable": []
+        }
       }
     ]
   },
@@ -662,7 +704,10 @@
             }
           },
           "securityStatusPath": ".security/project-security-status.json",
-          "teams": []
+          "teams": [],
+          "controlMap": {
+            "notApplicable": []
+          }
         }
       },
       {
@@ -739,7 +784,10 @@
             }
           },
           "securityStatusPath": ".security/project-security-status.json",
-          "teams": []
+          "teams": [],
+          "controlMap": {
+            "notApplicable": []
+          }
         }
       },
       {
@@ -858,7 +906,10 @@
             }
           },
           "securityStatusPath": ".security/project-security-status.json",
-          "teams": []
+          "teams": [],
+          "controlMap": {
+            "notApplicable": []
+          }
         }
       },
       {
@@ -941,7 +992,10 @@
             }
           },
           "securityStatusPath": ".security/project-security-status.json",
-          "teams": []
+          "teams": [],
+          "controlMap": {
+            "notApplicable": []
+          }
         }
       },
       {
@@ -1014,7 +1068,10 @@
             }
           },
           "securityStatusPath": ".security/project-security-status.json",
-          "teams": []
+          "teams": [],
+          "controlMap": {
+            "notApplicable": []
+          }
         }
       }
     ],

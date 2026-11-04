@@ -51,6 +51,10 @@ export interface DraftEnvironment {
   name: string;
   /** Not edited here, but kept when a project is saved. */
   argocdApplication?: ArgocdApplication;
+  /** Control map fields: not edited here yet, but kept when a project is saved. */
+  deploySignal?: ProjectConfig['environments'][number]['deploySignal'];
+  delivery?: boolean;
+  githubEnvironment?: string;
 }
 export interface DraftWorkflow {
   id: string;
@@ -86,6 +90,8 @@ export interface DraftProject {
   securityControls: Record<ControlId, boolean>;
   /** Empty = schema default. */
   securityStatusPath: string;
+  /** Control map exclusions: not edited here yet, but kept when a project is saved. */
+  controlMap?: ProjectConfig['controlMap'];
 }
 export interface DraftCatalog {
   /** Read-only here: discovery settings live in config/catalog.yaml. */
@@ -126,6 +132,7 @@ export function projectToDraft(p: ProjectConfig): DraftProject {
       CONTROL_IDS.map((id) => [id, p.securityControls[id].required]),
     ) as Record<ControlId, boolean>,
     securityStatusPath: orEmpty(p.securityStatusPath, DEFAULT_SECURITY_STATUS_PATH),
+    controlMap: p.controlMap.notApplicable.length ? p.controlMap : undefined,
   };
 }
 
@@ -239,7 +246,15 @@ export function toProjectInput(p: DraftProject): Record<string, unknown> {
       : undefined,
     environments: p.environments.length
       ? p.environments.map((e) =>
-          compact({ id: t(e.id), name: t(e.name), argocdApplication: e.argocdApplication }),
+          compact({
+            id: t(e.id),
+            name: t(e.name),
+            argocdApplication: e.argocdApplication,
+            deploySignal:
+              e.deploySignal && e.deploySignal.type !== 'external' ? e.deploySignal : undefined,
+            delivery: e.delivery ? true : undefined,
+            githubEnvironment: e.githubEnvironment,
+          }),
         )
       : undefined,
     trackedWorkflows: p.trackedWorkflows.length
@@ -257,6 +272,7 @@ export function toProjectInput(p: DraftProject): Record<string, unknown> {
       CONTROL_IDS.map((id) => [id, { required: p.securityControls[id] }]),
     ),
     securityStatusPath: opt(p.securityStatusPath, DEFAULT_SECURITY_STATUS_PATH),
+    controlMap: p.controlMap?.notApplicable.length ? p.controlMap : undefined,
   });
 }
 

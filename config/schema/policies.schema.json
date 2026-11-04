@@ -1100,6 +1100,78 @@
       },
       "additionalProperties": false
     },
+    "controlMap": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "type": "boolean"
+        },
+        "windows": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "frequencyDays": {
+              "default": 30,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 90
+            },
+            "trendDays": {
+              "default": 90,
+              "type": "integer",
+              "minimum": 7,
+              "maximum": 365
+            }
+          },
+          "additionalProperties": false
+        },
+        "thresholds": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "enum": [
+              "sbom-coverage",
+              "image-signature",
+              "build-provenance",
+              "license-policy",
+              "dependency-scanning",
+              "sast",
+              "container-scanning",
+              "iac-scanning",
+              "dast",
+              "vulnerability-age",
+              "security-mttr",
+              "secret-scanning",
+              "exposed-secrets",
+              "workload-identity",
+              "branch-protection",
+              "required-checks",
+              "pipeline-integrity",
+              "environment-separation",
+              "config-drift",
+              "deploy-frequency",
+              "lead-time",
+              "change-failure-rate",
+              "time-to-restore",
+              "test-coverage",
+              "evidence-freshness"
+            ]
+          },
+          "additionalProperties": {
+            "minItems": 5,
+            "maxItems": 5,
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "publication": {
       "type": "object",
       "properties": {

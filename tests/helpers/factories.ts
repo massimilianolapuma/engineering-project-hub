@@ -179,6 +179,7 @@ export function projectSummary(partial: Partial<ProjectSummary> = {}): ProjectSu
     collectedAt: NOW.toISOString(),
     collectionErrorCount: 0,
     unresolvedSubmodules: 0,
+    controlMap: null,
     ...partial,
   };
 }

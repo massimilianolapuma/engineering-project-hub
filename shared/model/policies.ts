@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ControlMapPolicySchema } from './control-map';
 import {
   ControlSourceSchema,
   DimensionSchema,
@@ -409,6 +410,8 @@ export const PoliciesSchema = z
       })
       .strict()
       .prefault({}),
+    /** Control map (DORA / ISO 27001 related technical checks). Optional block. */
+    controlMap: ControlMapPolicySchema.prefault({}),
     publication: z
       .object({
         /**
