@@ -20,6 +20,8 @@ import {
   type WorkflowDTO,
   type DependabotAlertDTO,
   type PathCommitDTO,
+  type DeploymentDTO,
+  type DeploymentStatusDTO,
   type EnvironmentDTO,
   type FileDTO,
   type ProviderResult,
@@ -507,6 +509,38 @@ export class GitHubProvider implements SourceProvider {
         sha: c.sha,
         committedAt: c.commit.committer?.date ?? c.commit.author?.date ?? null,
       }));
+    });
+  }
+
+  listDeployments(repo: string, environment: string): Promise<ProviderResult<DeploymentDTO[]>> {
+    return guard(async () => {
+      const { data } = await this.client.rest.repos.listDeployments({
+        ...split(repo),
+        environment,
+        per_page: 100,
+      });
+      return data.map((d) => ({
+        id: d.id,
+        sha: d.sha,
+        environment: d.environment,
+        createdAt: d.created_at,
+        payload: d.payload,
+        creator: d.creator?.login ?? null,
+      }));
+    });
+  }
+
+  listDeploymentStatuses(
+    repo: string,
+    deploymentId: number,
+  ): Promise<ProviderResult<DeploymentStatusDTO[]>> {
+    return guard(async () => {
+      const { data } = await this.client.rest.repos.listDeploymentStatuses({
+        ...split(repo),
+        deployment_id: deploymentId,
+        per_page: 100,
+      });
+      return data.map((s) => ({ state: s.state, createdAt: s.created_at }));
     });
   }
 

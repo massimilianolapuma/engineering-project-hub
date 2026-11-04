@@ -381,8 +381,8 @@
       "collectionErrorCount": 8,
       "unresolvedSubmodules": 1,
       "controlMap": {
-        "score": 61,
-        "measured": 14,
+        "score": 59,
+        "measured": 18,
         "applicable": 24,
         "levels": {
           "sbom-coverage": 0,
@@ -404,10 +404,10 @@
           "pipeline-integrity": 2,
           "environment-separation": null,
           "config-drift": 5,
-          "deploy-frequency": null,
-          "lead-time": null,
-          "change-failure-rate": null,
-          "time-to-restore": null,
+          "deploy-frequency": 2,
+          "lead-time": 4,
+          "change-failure-rate": 1,
+          "time-to-restore": 3,
           "test-coverage": 3,
           "evidence-freshness": 4
         }

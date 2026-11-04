@@ -442,7 +442,9 @@
               "project": "beta"
             },
             "deploySignal": {
-              "type": "external"
+              "type": "github-deployments",
+              "repository": "coordinator",
+              "tagPrefix": "v"
             },
             "delivery": true
           }

@@ -112,5 +112,138 @@
       "httpStatus": 403,
       "message": "Resource not accessible by integration"
     }
+  },
+  "deployments": {
+    "prod": [
+      {
+        "id": 506,
+        "sha": "971a7f034dadeeaea0d6daacfc265dd40cde39e8",
+        "environment": "prod",
+        "createdAt": "@now-1h",
+        "payload": {},
+        "creator": "github-actions[bot]"
+      },
+      {
+        "id": 505,
+        "sha": "971a7f034dadeeaea0d6daacfc265dd40cde39e8",
+        "environment": "prod",
+        "createdAt": "@now-2h",
+        "payload": {
+          "ledger": 1,
+          "source": "azure-devops",
+          "runId": "903",
+          "runUrl": "https://dev.azure.com/example-org/example-project/_build/results?buildId=903",
+          "attempt": 1,
+          "finishedAt": "@now-7d",
+          "version": "1.4.0",
+          "kind": "rollback"
+        },
+        "creator": "example-org-deployment-reporter[bot]"
+      },
+      {
+        "id": 504,
+        "sha": "971a7f034dadeeaea0d6daacfc265dd40cde39e8",
+        "environment": "prod",
+        "createdAt": "@now-3h",
+        "payload": {
+          "ledger": 1,
+          "source": "manual",
+          "runId": "77",
+          "runUrl": "https://github.com/example-org/hub-deploy/actions/runs/77",
+          "attempt": 1,
+          "finishedAt": "@now-8d",
+          "version": "1.4.1",
+          "declared": true
+        },
+        "creator": "example-org-deployment-reporter[bot]"
+      },
+      {
+        "id": 503,
+        "sha": "971a7f034dadeeaea0d6daacfc265dd40cde39e8",
+        "environment": "prod",
+        "createdAt": "@now-4h",
+        "payload": {
+          "ledger": 1,
+          "source": "azure-devops",
+          "runId": "900",
+          "runUrl": "https://dev.azure.com/example-org/example-project/_build/results?buildId=900",
+          "attempt": 2,
+          "finishedAt": "@now-14d",
+          "version": "1.4.0"
+        },
+        "creator": "example-org-deployment-reporter[bot]"
+      },
+      {
+        "id": 502,
+        "sha": "971a7f034dadeeaea0d6daacfc265dd40cde39e8",
+        "environment": "prod",
+        "createdAt": "@now-5h",
+        "payload": {
+          "ledger": 1,
+          "source": "azure-devops",
+          "runId": "900",
+          "runUrl": "https://dev.azure.com/example-org/example-project/_build/results?buildId=900",
+          "attempt": 1,
+          "finishedAt": "@now-15d",
+          "version": "1.4.0"
+        },
+        "creator": "example-org-deployment-reporter[bot]"
+      },
+      {
+        "id": 501,
+        "sha": "971a7f034dadeeaea0d6daacfc265dd40cde39e8",
+        "environment": "prod",
+        "createdAt": "@now-20d",
+        "payload": {},
+        "creator": "github-actions[bot]"
+      }
+    ]
+  },
+  "deploymentStatuses": {
+    "506": [
+      {
+        "state": "in_progress",
+        "createdAt": "@now-1h"
+      }
+    ],
+    "505": [
+      {
+        "state": "success",
+        "createdAt": "@now-2h"
+      }
+    ],
+    "504": [
+      {
+        "state": "success",
+        "createdAt": "@now-3h"
+      }
+    ],
+    "503": [
+      {
+        "state": "inactive",
+        "createdAt": "@now-2h"
+      },
+      {
+        "state": "success",
+        "createdAt": "@now-4h"
+      }
+    ],
+    "502": [
+      {
+        "state": "failure",
+        "createdAt": "@now-5h"
+      }
+    ],
+    "501": [
+      {
+        "state": "success",
+        "createdAt": "@now-20d"
+      }
+    ]
+  },
+  "commitDates": {
+    "v1.4.0": "@now-16d",
+    "v1.4.1": "@now-9d",
+    "971a7f034dadeeaea0d6daacfc265dd40cde39e8": "@now-21d"
   }
 }

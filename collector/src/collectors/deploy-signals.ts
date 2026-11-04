@@ -1,7 +1,14 @@
 import { parse } from 'yaml';
-import type { ControlReason, ProjectConfig } from '@model/index';
+import {
+  LedgerPayloadSchema,
+  type ControlReason,
+  type LedgerPayload,
+  type ProjectConfig,
+} from '@model/index';
 import type { ArgoApplicationDTO } from '../providers/external/types';
 import type {
+  DeploymentDTO,
+  DeploymentStatusDTO,
   ProviderError,
   ProviderResult,
   SourceProvider,
@@ -83,6 +90,96 @@ function runEvents(runs: readonly WorkflowRunDTO[], since: number): DeployEvent[
     .sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
 }
 
+/** Ledger payload of a deployment, or null (Actions jobs and anything that does not parse). */
+function ledgerPayload(raw: unknown): LedgerPayload | null {
+  let value = raw;
+  if (typeof raw === 'string') {
+    try {
+      value = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  const parsed = LedgerPayloadSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
+}
+
+/**
+ * Deploy events of one environment from its GitHub deployments (deployments ledger spec §5.5).
+ * A success status is a deploy (even if later inactive), failure/error a failure, anything else
+ * nothing. The time is the ledger's `finishedAt` (D10), else the final status time.
+ */
+async function ledgerEvents(
+  provider: SourceProvider,
+  repository: string,
+  signal: Extract<Environment['deploySignal'], { type: 'github-deployments' }>,
+  deployments: DeploymentDTO[],
+  listStatuses: (repo: string, id: number) => Promise<ProviderResult<DeploymentStatusDTO[]>>,
+  since: number,
+  base: Omit<DeploySignalResult, 'events' | 'reason'>,
+): Promise<DeploySignalResult> {
+  const candidates = deployments
+    .map((d) => ({ d, payload: ledgerPayload(d.payload) }))
+    .filter(({ payload }) => {
+      const source = payload?.source ?? 'github-actions';
+      return !signal.sources || signal.sources.includes(source);
+    });
+  if (candidates.length === 0)
+    return { ...base, events: [], reason: 'source-unreadable', notes: ['no deployment recorded'] };
+  const inWindow = candidates
+    .filter(({ d, payload }) => Date.parse(payload?.finishedAt ?? d.createdAt) >= since)
+    .slice(0, MAX_LEDGER_DEPLOYMENTS);
+  const dates = new Map<string, Promise<string | null>>();
+  const commitDate = (ref: string) => {
+    if (!dates.has(ref))
+      dates.set(
+        ref,
+        provider.getCommitDate
+          ? provider.getCommitDate(repository, ref).then((r) => (r.ok ? r.data : null))
+          : Promise.resolve(null),
+      );
+    return dates.get(ref)!;
+  };
+  const raw: { at: string; kind: DeployEvent['kind']; version: string | null; sha: string }[] = [];
+  let declared = 0;
+  for (const { d, payload } of inWindow) {
+    const statuses = await listStatuses(repository, d.id);
+    if (!statuses.ok) continue;
+    const success = statuses.data.find((s) => s.state === 'success');
+    const failed = statuses.data.find((s) => s.state === 'failure' || s.state === 'error');
+    const final = success ?? failed;
+    if (!final) continue;
+    if (payload?.declared) declared++;
+    raw.push({
+      at: payload?.finishedAt ?? final.createdAt,
+      kind: success ? (payload?.kind === 'rollback' ? 'rollback' : 'deploy') : 'failure',
+      version: payload?.version ?? null,
+      sha: d.sha,
+    });
+  }
+  raw.sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+  const events: DeployEvent[] = [];
+  let previous: string | null = null;
+  for (const e of raw) {
+    let kind = e.kind;
+    const version = e.version ? normaliseVersion(e.version) : null;
+    if (kind === 'deploy' && version && previous && (compareVersions(version, previous) ?? 0) < 0)
+      kind = 'rollback';
+    if (kind !== 'failure' && version) previous = version;
+    let leadHours: number | null = null;
+    if (kind === 'deploy') {
+      const tagged = version ? await commitDate(`${signal.tagPrefix}${version}`) : null;
+      leadHours = hoursBetween(tagged ?? (await commitDate(e.sha)), e.at);
+    }
+    events.push({ at: e.at, kind, version, leadHours });
+  }
+  const notes = declared ? [`includes ${declared} declared`] : [];
+  return { ...base, notes, events, reason: null };
+}
+
+/** Deployments read per environment and collection (newest first). */
+const MAX_LEDGER_DEPLOYMENTS = 100;
+
 /** Argo CD keeps `revisionHistoryLimit` entries (10 by default). */
 const ARGO_HISTORY_LIMIT = 10;
 
@@ -110,9 +207,20 @@ export async function collectDeploySignal(
     case 'external':
       return none('external-pipelines');
 
-    case 'github-deployments':
-      // Read by Task 2 of the deployments ledger plan; until then the signal is not read.
-      return none('source-unreadable');
+    case 'github-deployments': {
+      const repository =
+        signal.repository === 'coordinator'
+          ? raw.config.coordinator.repository
+          : raw.config.components.find((c) => c.id === signal.repository)?.repository;
+      const listDeployments = provider.listDeployments?.bind(provider);
+      const listStatuses = provider.listDeploymentStatuses?.bind(provider);
+      if (!repository || !listDeployments || !listStatuses || unreadable(repository))
+        return none('source-unreadable');
+      const environment = signal.environment ?? env.githubEnvironment ?? env.id;
+      const list = await listDeployments(repository, environment);
+      if (!list.ok) return none(reasonOf(list.error), { error: list.error, repository });
+      return ledgerEvents(provider, repository, signal, list.data, listStatuses, since, base);
+    }
 
     case 'workflow': {
       const tracked = raw.config.trackedWorkflows.find((w) => w.id === signal.workflow);

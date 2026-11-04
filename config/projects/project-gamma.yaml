@@ -21,7 +21,8 @@ components:
     sonarProjectKey: example-org_project-gamma-service
 
 environments:
-  - { id: dev, name: DEV }
+  # Control map: deployed by external pipelines that report nothing (deploySignal external).
+  - { id: dev, name: DEV, deploySignal: { type: external } }
 
 # Control map: checks that do not apply, with the reason shown in the cell.
 controlMap:

@@ -49,8 +49,9 @@ environments:
   - id: prod
     name: PROD
     argocdApplication: { name: beta-prod, namespace: argocd, project: beta }
-    # Control map: the customer deploys from a mirror with its own pipelines.
-    deploySignal: { type: external }
+    # Control map: the customer deploys from a mirror with its own pipelines, which report each
+    # deploy to GitHub Deployments (deployments ledger, docs/deployments-ledger.md).
+    deploySignal: { type: github-deployments, repository: coordinator }
     delivery: true
 
 trackedWorkflows:

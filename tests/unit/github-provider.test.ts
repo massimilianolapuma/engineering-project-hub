@@ -145,6 +145,50 @@ describe('GitHubProvider', () => {
     expect(query.has('branch')).toBe(false);
   });
 
+  it('deployments ledger: lists deployments of an environment and their statuses', async () => {
+    const seen: string[] = [];
+    const p = provider(
+      {
+        '/repos/o/a/deployments': {
+          status: 200,
+          body: [
+            {
+              id: 7,
+              sha: 'a'.repeat(40),
+              environment: 'prod',
+              created_at: '2026-02-01T00:00:00Z',
+              payload: { ledger: 1, source: 'azure-devops' },
+              creator: { login: 'example-reporter[bot]' },
+            },
+          ],
+        },
+        '/repos/o/a/deployments/7/statuses': {
+          status: 200,
+          body: [{ state: 'success', created_at: '2026-02-01T00:05:00Z' }],
+        },
+      },
+      seen,
+    );
+    expect(await p.listDeployments('o/a', 'prod')).toEqual({
+      ok: true,
+      data: [
+        {
+          id: 7,
+          sha: 'a'.repeat(40),
+          environment: 'prod',
+          createdAt: '2026-02-01T00:00:00Z',
+          payload: { ledger: 1, source: 'azure-devops' },
+          creator: 'example-reporter[bot]',
+        },
+      ],
+    });
+    expect(new URLSearchParams(seen[0]!.split('?')[1]).get('environment')).toBe('prod');
+    expect(await p.listDeploymentStatuses('o/a', 7)).toEqual({
+      ok: true,
+      data: [{ state: 'success', createdAt: '2026-02-01T00:05:00Z' }],
+    });
+  });
+
   it('control map: reads path commits, releases and commit dates (GET only)', async () => {
     const seen: string[] = [];
     const p = provider(

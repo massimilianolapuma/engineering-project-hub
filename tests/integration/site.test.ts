@@ -2128,7 +2128,7 @@ describe('control map page (spec 2026-11-04)', () => {
   it('an external delivery environment reads "not visible: deployed by external pipelines"', async () => {
     const html = await page('controls');
     expect(html).toContain(
-      'aria-label="Project Beta, Deploy frequency: not visible (deployed by external pipelines)"',
+      'aria-label="Project Gamma, Deploy frequency: not visible (deployed by external pipelines)"',
     );
   });
 
