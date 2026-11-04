@@ -113,6 +113,38 @@ const provider = (routes: Record<string, Route>, seen?: string[]) =>
   );
 
 describe('GitHubProvider', () => {
+  it('control map: lists delivery runs since a date (search syntax, date only), all refs', async () => {
+    const seen: string[] = [];
+    const run = (id: number) => ({
+      id,
+      run_number: id,
+      run_attempt: 1,
+      status: 'completed',
+      conclusion: 'success',
+      head_branch: 'v1.0.0',
+      event: 'push',
+      head_sha: 'a'.repeat(40),
+      head_commit: { timestamp: '2026-02-01T00:00:00Z' },
+      created_at: '2026-02-01T01:00:00Z',
+      updated_at: '2026-02-01T01:05:00Z',
+      html_url: `https://github.com/o/a/actions/runs/${id}`,
+    });
+    const p = provider(
+      {
+        '/repos/o/a/actions/workflows/deploy.yml/runs': {
+          status: 200,
+          body: { total_count: 2, workflow_runs: [run(1), run(2)] },
+        },
+      },
+      seen,
+    );
+    const r = await p.listWorkflowRunsSince('o/a', 'deploy.yml', '2025-12-01T00:00:00.000Z');
+    expect(r).toMatchObject({ ok: true, data: { truncated: false, runs: [{ id: 1 }, { id: 2 }] } });
+    const query = new URLSearchParams(seen[0]!.split('?')[1]);
+    expect(query.get('created')).toBe('>=2025-12-01');
+    expect(query.has('branch')).toBe(false);
+  });
+
   it('control map: reads path commits, releases and commit dates (GET only)', async () => {
     const seen: string[] = [];
     const p = provider(

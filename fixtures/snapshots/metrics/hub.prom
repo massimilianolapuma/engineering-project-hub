@@ -296,7 +296,7 @@ hub_project_control_level{check="branch-protection",project="platform"} 5
 hub_project_control_level{check="branch-protection",project="project-alpha"} 5
 hub_project_control_level{check="build-provenance",project="project-alpha"} 5
 hub_project_control_level{check="change-failure-rate",project="platform"} 3
-hub_project_control_level{check="change-failure-rate",project="project-alpha"} 2
+hub_project_control_level{check="change-failure-rate",project="project-alpha"} 1
 hub_project_control_level{check="config-drift",project="project-alpha"} 3
 hub_project_control_level{check="config-drift",project="project-beta"} 5
 hub_project_control_level{check="container-scanning",project="platform"} 5

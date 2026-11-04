@@ -113,7 +113,9 @@ only chooses what to count.
   GitHub environments of the coordinator (`GET /repos/{owner}/{repo}/environments`), commits of a
   versions-file path, the file at a commit, commit dates and releases (**Contents: read**), and the
   push protection status from the repository metadata (`security_and_analysis`, returned only to
-  callers allowed to see security settings). Without access a check reads **not visible** with the
+  repository admins and organisation owners or security managers: the read-only App does not see it,
+  so `secret-scanning` stays at level 3 at most). Details per reading:
+  [Control map, Permissions](control-map.md#permissions). Without access a check reads **not visible** with the
   reason (`github-environments` collection error on a 403), never 0. Confirm the environments
   permission on GitHub's permissions page for your App before relying on it.
 - **Repository controls sources.** Checked on 2026-10-21 on GitHub's

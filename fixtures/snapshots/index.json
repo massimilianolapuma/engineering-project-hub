@@ -308,7 +308,7 @@
           "config-drift": 3,
           "deploy-frequency": 2,
           "lead-time": 4,
-          "change-failure-rate": 2,
+          "change-failure-rate": 1,
           "time-to-restore": 4,
           "test-coverage": 4,
           "evidence-freshness": 4

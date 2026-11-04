@@ -627,7 +627,8 @@ export class GitHubProvider implements SourceProvider {
         const { data } = await this.client.rest.actions.listWorkflowRuns({
           ...split(repo),
           workflow_id: workflowFile,
-          created: `>=${since}`,
+          // Search syntax (`created:>=YYYY-MM-DD`): the day is enough for a 90-day window.
+          created: `>=${since.slice(0, 10)}`,
           per_page: 100,
           page,
           exclude_pull_requests: true,

@@ -36,7 +36,7 @@ describe('deliveryMetrics', () => {
     expect(m.frequencyPerWeek).toBe(0.47);
   });
 
-  it('versions file: a rollback counts as a failed change, restored at the rollback', () => {
+  it('versions file: a rollback marks the deploy it undoes as failed and is not itself a deployment (CFR 1 of 2)', () => {
     const m = deliveryMetrics(
       [
         ev('2026-02-10T00:00:00Z', 'deploy'),
@@ -47,7 +47,7 @@ describe('deliveryMetrics', () => {
       windows,
       now,
     );
-    expect(m.cfrPercent).toBe(33.3);
+    expect(m.cfrPercent).toBe(50);
     expect(m.ttrHoursMedian).toBe(6);
   });
 
@@ -74,5 +74,15 @@ describe('deliveryMetrics', () => {
       now,
     );
     expect(m.cfrPercent).toBe(0);
+  });
+
+  it('more rollbacks than deploys in the window never exceed 100%', () => {
+    const m = deliveryMetrics(
+      [ev('2026-02-10T00:00:00Z', 'rollback'), ev('2026-02-11T00:00:00Z', 'rollback')],
+      'versions-file',
+      windows,
+      now,
+    );
+    expect(m.cfrPercent).toBe(100);
   });
 });

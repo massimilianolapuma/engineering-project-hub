@@ -70,7 +70,7 @@ values for levels 1–5). "%" ladders: 1 > 0%, 2 ≥ 25%, 3 ≥ 50%, 4 ≥ the t
 | `config-drift`           | % environments in sync with Git                                              | %, 4 ≥ 95%                                                                                     | Argo CD                                 | RTS art. 17              | 8.9               |
 | `deploy-frequency`       | deploys per week (delivery environment, last 30 days)                        | 1 > 0, 2 ≥ 1 a month, 3 ≥ 1 a week, 4 ≥ 2 a week, 5 ≥ 1 a day                                  | deploy signal                           | RTS art. 17              | 8.32              |
 | `lead-time`              | median hours from the change to its deploy                                   | 5 ≤ 1 h, 4 ≤ 24 h, 3 ≤ 7 days, 2 ≤ 30 days, 1 more                                             | deploy signal                           | RTS art. 17              | 8.32              |
-| `change-failure-rate`    | % changes that failed or were rolled back                                    | 5 ≤ 5%, 4 ≤ 15%, 3 ≤ 30%, 2 ≤ 45%, 1 more                                                      | deploy signal                           | art. 11; RTS art. 17     | 8.32              |
+| `change-failure-rate`    | % deployments that failed or were rolled back                                | 5 ≤ 5%, 4 ≤ 15%, 3 ≤ 30%, 2 ≤ 45%, 1 more                                                      | deploy signal                           | art. 11; RTS art. 17     | 8.32              |
 | `time-to-restore`        | median hours from a failure to the next good deploy                          | 5 ≤ 1 h, 4 ≤ 8 h, 3 ≤ 24 h, 2 ≤ 7 days, 1 more                                                 | deploy signal                           | art. 11–12; RTS art. 26  | 5.30              |
 | `test-coverage`          | line coverage                                                                | 1 > 0%, 2 ≥ 30%, 3 ≥ 60%, 4 ≥ 80%, 5 ≥ 90%                                                     | quality                                 | RTS art. 16              | 8.29              |
 | `evidence-freshness`     | % evidence sources read and not stale                                        | 1 > 0%, 2 ≥ 50%, 3 ≥ 75%, 4 ≥ 90%, 5 = 100%                                                    | data freshness                          | art. 13                  | 5.36, cl. 9.1     |
@@ -121,8 +121,22 @@ controlMap:
     - { check: dast, reason: internal service without a web interface }
 ```
 
-Change failure rate = (failed runs + rollbacks) / (deploys + failed runs + rollbacks): a rollback
-is itself a change and marks the deploy it undoes as failed. The delivery workflow's runs are read
+**How the delivery metrics are computed.** The definitions follow the "four keys" of DevOps
+Research and Assessment (the research programme also called DORA, unrelated to the EU regulation):
+
+- **Change failure rate** = deployments that failed in production / all deployments, over the trend
+  window. A failed workflow run is a failed deployment. A rollback (a lower version in the versions
+  file) is the remediation of the deploy it undoes: that deploy counts as failed, the rollback is
+  not a deployment. Example: 0.5.0, rollback to 0.4.0, 0.5.1 = 2 deployments, 1 failed = 50%.
+  Capped at 100% (a rollback of a deploy made before the window).
+- **Time to restore** ("failed deployment recovery time"): from a failed run to the next
+  successful deploy, or from the rolled-back deploy to its rollback; median, in hours.
+- **Lead time for changes**: from the change (head commit, or the commit of the release tag) to
+  its deploy; median, in hours.
+- **Deploy frequency**: deploys per week over the frequency window.
+
+The regulation itself defines none of these metrics; they are evidence for change management
+(RTS 2024/1774 art. 17) and response and recovery (DORA art. 11). The delivery workflow's runs are read
 over the whole window on every ref (a deploy on a tag push counts), up to 500 runs; Argo CD keeps a
 limited history. When a list is cut, the cell notes that the frequency is a lower bound. Deploys
 made inside a reusable workflow (`jobs.<id>.uses`) are not seen by the OIDC check.
@@ -132,11 +146,23 @@ the environment and the signal.
 
 ## Permissions
 
-The new readings are GET only: GitHub environments (`GET /repos/{o}/{r}/environments`), the
-commits of a path, a file at a commit, commit dates, releases (Contents: read), and the push
-protection status in the repository metadata (`security_and_analysis`, returned only to callers
-allowed to see it). Without a permission the check reads **not visible** with the reason, never 0.
-See [Security](security.md#authorisation-model).
+Every new reading is a GET. What each needs, as checked on GitHub's REST docs on 2026-11-04, and
+what the hub shows when it is missing (never 0):
+
+| Reading                        | Endpoint                                                                | Needs                                                                                                                                                   | Without it                                                                                            |
+| ------------------------------ | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| GitHub environments            | `GET /repos/{o}/{r}/environments`                                       | read access to the repository ("Anyone with read access"); for a GitHub App, Actions: read (as recorded in [Security](security.md#authorisation-model)) | `environment-separation` not visible ("needs permission"), one `github-environments` collection error |
+| Push protection status         | `security_and_analysis` in `GET /repos/{o}/{r}`                         | **admin** on the repository, or owner / security manager of the organisation (GitHub: "you must have admin permissions")                                | `secret-scanning` capped at level 3 with a note                                                       |
+| Commits of the versions file   | `GET /repos/{o}/{r}/commits?path=`                                      | Contents: read (already granted)                                                                                                                        | delivery checks not visible                                                                           |
+| File at a commit, commit dates | Contents API with `ref`, `GET /repos/{o}/{r}/commits/{ref}`             | Contents: read                                                                                                                                          | lead time not visible; file unreadable at a commit is noted                                           |
+| Releases                       | `GET /repos/{o}/{r}/releases`                                           | Contents: read                                                                                                                                          | delivery checks not visible                                                                           |
+| Delivery workflow runs         | `GET /repos/{o}/{r}/actions/workflows/{file}/runs?created=>=YYYY-MM-DD` | Actions: read (already granted)                                                                                                                         | delivery checks not visible                                                                           |
+
+The read-only GitHub App of the [Security](security.md#authorisation-model) model **does not** see
+push protection (it needs admin): `secret-scanning` stays at level 3 at most until an owner grants
+it, which is a choice to make knowingly (admin is a write-level permission on settings). GitHub's
+pages do not show the fine-grained permission box for these endpoints in their text version;
+confirm the names on the App's permission page when you install it.
 
 ## Outputs
 
@@ -151,9 +177,33 @@ See [Security](security.md#authorisation-model).
 
 ## Sources
 
-Checked 2026-11-04 against the published texts; the EUR-Lex pages could not be fetched that day,
-so confirm the article numbers on EUR-Lex before relying on them externally.
+Article numbers and titles checked on 2026-11-04 against the Official Journal text as reproduced
+verbatim by Springlex ([RTS 2024/1774](https://www.springlex.eu/en/packages/dora/rts-rmf-regulation/),
+[Regulation 2022/2554](https://www.springlex.eu/en/packages/dora/dora-regulation/)); EUR-Lex did
+not answer that day. Each reference is **related**: it names the requirement a check gives
+technical evidence for, never a statement that it is met.
 
-- Regulation (EU) 2022/2554 (DORA), Chapter II (art. 5–16) and art. 24–25.
-- Commission Delegated Regulation (EU) 2024/1774 (RTS on the ICT risk management framework).
-- ISO/IEC 27001:2022, Annex A.
+| Reference    | Title                                                                           | Used by                                                                                                                 |
+| ------------ | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| DORA art. 8  | Identification                                                                  | sbom-coverage                                                                                                           |
+| DORA art. 10 | Detection                                                                       | security-mttr                                                                                                           |
+| DORA art. 11 | Response and recovery                                                           | security-mttr, change-failure-rate, time-to-restore                                                                     |
+| DORA art. 12 | Backup policies and procedures, restoration and recovery procedures and methods | time-to-restore                                                                                                         |
+| DORA art. 13 | Learning and evolving                                                           | evidence-freshness                                                                                                      |
+| DORA art. 25 | Testing of ICT tools and systems                                                | sast, container-scanning, dast                                                                                          |
+| RTS art. 4   | ICT asset management policy                                                     | sbom-coverage                                                                                                           |
+| RTS art. 5   | ICT asset management procedure                                                  | sbom-coverage                                                                                                           |
+| RTS art. 7   | Cryptographic key management                                                    | secret-scanning, exposed-secrets, workload-identity                                                                     |
+| RTS art. 10  | Vulnerability and patch management                                              | dependency-scanning, sast, container-scanning, iac-scanning, vulnerability-age, security-mttr                           |
+| RTS art. 11  | Data and system security                                                        | secret-scanning                                                                                                         |
+| RTS art. 16  | ICT systems acquisition, development, and maintenance                           | sbom-coverage, image-signature, build-provenance, license-policy, sast, iac-scanning, pipeline-integrity, test-coverage |
+| RTS art. 17  | ICT change management                                                           | branch-protection, required-checks, environment-separation, config-drift, delivery checks                               |
+| RTS art. 20  | Identity management                                                             | workload-identity                                                                                                       |
+| RTS art. 21  | Access control                                                                  | workload-identity, branch-protection                                                                                    |
+| RTS art. 26  | ICT response and recovery plans                                                 | time-to-restore                                                                                                         |
+
+ISO/IEC 27001:2022 Annex A control numbers (5.9, 5.17, 5.21, 5.26, 5.30, 5.32, 5.36, 8.4, 8.5,
+8.8, 8.9, 8.24, 8.25, 8.28, 8.29, 8.31, 8.32) and clause 9.1 follow the published Annex A control
+list; the standard is not freely available, so they were not re-read online.
+
+Delivery metric definitions: DevOps Research and Assessment, "four keys" (dora.dev).
