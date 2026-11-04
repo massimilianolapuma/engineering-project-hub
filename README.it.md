@@ -144,6 +144,13 @@ scala 0–5, con i riferimenti DORA e ISO 27001 collegati e un punteggio. **Non 
 adeguatezza normativa**: la governance è esclusa, e una fonte illeggibile è «non visibile», mai 0
 ([Mappa dei controlli](docs/it/control-map.md), [ADR 0014](docs/it/architecture/adr/0014-control-map.md)).
 
+**Registro dei deploy.** Gli ambienti rilasciati fuori da GitHub (per esempio dall'Azure DevOps di
+un cliente dopo un mirror) vengono registrati come GitHub Deployments da uno step push, da un bridge
+Azure DevOps in sola lettura o da un record dichiarato e approvato, così ogni ambiente di ogni
+repository mostra i suoi deploy e l'hub misura il rilascio da lì
+([Registro dei deploy](docs/it/deployments-ledger.md),
+[ADR 0015](docs/it/architecture/adr/0015-deployments-ledger.md)).
+
 **Notifiche su Teams.** Dopo ogni raccolta l'hub può pubblicare in un canale di Microsoft Teams un
 breve riepilogo dei progetti peggiorati: stati, conteggi e un link all'hub, mai nomi di repository,
 titoli di alert o link a GitHub. Spento di default, poi in dry-run; invia solo con due consensi

@@ -1,0 +1,44 @@
+# Example caller of the declared-deploy workflow (copy to .github/workflows/ of a private deploy
+# repository). Create the environment `deployments-declare` there with required reviewers and
+# store LEDGER_APP_ID, LEDGER_APP_PRIVATE_KEY, GH_APP_ID, GH_APP_PRIVATE_KEY as its environment
+# secrets (not repository secrets). List the allowed targets in config/deployments-declare.yaml.
+name: Declare a deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository: { description: 'owner/repo', required: true, type: string }
+      environment:
+        { description: 'GitHub environment (dev, test, prod...)', required: true, type: string }
+      version: { description: 'Deployed version (or give a commit)', required: false, type: string }
+      sha: { description: 'Deployed commit (or give a version)', required: false, type: string }
+      result:
+        {
+          description: 'success or failure',
+          required: true,
+          type: choice,
+          options: [success, failure],
+        }
+      date:
+        { description: 'When it finished (ISO 8601, default now)', required: false, type: string }
+      note: { description: 'Short note', required: false, type: string }
+      production: { description: 'Production environment', required: false, type: boolean }
+
+permissions: {}
+
+jobs:
+  declare:
+    permissions:
+      contents: read
+    uses: massimilianolapuma/engineering-project-hub/.github/workflows/rw-deployments-declare.yml@0000000000000000000000000000000000000000 # vX.Y.Z
+    with:
+      hub-ref: '0000000000000000000000000000000000000000'
+      repository: ${{ inputs.repository }}
+      environment: ${{ inputs.environment }}
+      version: ${{ inputs.version }}
+      sha: ${{ inputs.sha }}
+      result: ${{ inputs.result }}
+      date: ${{ inputs.date }}
+      note: ${{ inputs.note }}
+      production: ${{ inputs.production }}
+      mode: write

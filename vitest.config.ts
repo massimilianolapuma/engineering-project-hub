@@ -14,6 +14,7 @@ export default defineConfig({
       include: [
         'collector/src/**',
         'notifier/src/**',
+        'ledger/src/**',
         'shared/**',
         'src/lib/**',
         'src/i18n/**',

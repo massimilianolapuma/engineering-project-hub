@@ -142,6 +142,21 @@ export interface WorkflowRunDTO {
   htmlUrl: string;
 }
 
+/** A GitHub deployment (deployments ledger, ADR 0015). `payload` is untrusted until parsed. */
+export interface DeploymentDTO {
+  id: number;
+  sha: string;
+  environment: string;
+  createdAt: string;
+  payload: unknown;
+  creator: string | null;
+}
+
+export interface DeploymentStatusDTO {
+  state: string;
+  createdAt: string;
+}
+
 /** A commit touching a path (control map: versions-file deploy signal). */
 export interface PathCommitDTO {
   sha: string;
@@ -361,6 +376,13 @@ export interface SourceProvider {
   listCommitsForPath?(repo: string, path: string): Promise<ProviderResult<PathCommitDTO[]>>;
   /** Published releases, newest first (first page of 100). */
   listReleases?(repo: string): Promise<ProviderResult<ReleaseDTO[]>>;
+  /** Deployments of one environment, newest first (first page of 100). */
+  listDeployments?(repo: string, environment: string): Promise<ProviderResult<DeploymentDTO[]>>;
+  /** Statuses of one deployment, newest first (first page of 100). */
+  listDeploymentStatuses?(
+    repo: string,
+    deploymentId: number,
+  ): Promise<ProviderResult<DeploymentStatusDTO[]>>;
   /** Committer date of a commit-ish (a tag name or a SHA). */
   getCommitDate?(repo: string, ref: string): Promise<ProviderResult<string | null>>;
   /** Newest `hub-quality-summary` artifact of a branch, unzipped to the summary JSON text. */

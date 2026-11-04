@@ -165,8 +165,8 @@
   },
   "metrics": {
     "state": "written",
-    "series": 298,
-    "bytes": 26007,
+    "series": 302,
+    "bytes": 26310,
     "truncated": "none"
   }
 }

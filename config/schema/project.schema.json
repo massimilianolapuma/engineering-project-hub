@@ -411,6 +411,48 @@
                 "properties": {
                   "type": {
                     "type": "string",
+                    "const": "github-deployments"
+                  },
+                  "repository": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9-]*$"
+                  },
+                  "environment": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "tagPrefix": {
+                    "default": "v",
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "sources": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "github-actions",
+                        "azure-devops",
+                        "manual",
+                        "other"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "type",
+                  "repository"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
                     "const": "external"
                   }
                 },

@@ -2722,55 +2722,55 @@
       },
       {
         "check": "deploy-frequency",
-        "level": null,
-        "state": "not-visible",
-        "value": null,
-        "unit": "percent",
-        "threshold": null,
+        "level": 2,
+        "state": "measured",
+        "value": 0.7,
+        "unit": "per-week",
+        "threshold": 0.23076923076923078,
         "readable": null,
-        "reason": "external-pipelines",
-        "note": null,
+        "reason": null,
+        "note": "includes 1 declared",
         "environment": "PROD",
-        "signal": "external"
+        "signal": "github-deployments"
       },
       {
         "check": "lead-time",
-        "level": null,
-        "state": "not-visible",
-        "value": null,
-        "unit": "percent",
-        "threshold": null,
+        "level": 4,
+        "state": "measured",
+        "value": 24,
+        "unit": "hours",
+        "threshold": 24,
         "readable": null,
-        "reason": "external-pipelines",
-        "note": null,
+        "reason": null,
+        "note": "includes 1 declared",
         "environment": "PROD",
-        "signal": "external"
+        "signal": "github-deployments"
       },
       {
         "check": "change-failure-rate",
-        "level": null,
-        "state": "not-visible",
-        "value": null,
+        "level": 1,
+        "state": "measured",
+        "value": 50,
         "unit": "percent",
         "threshold": null,
         "readable": null,
-        "reason": "external-pipelines",
-        "note": null,
+        "reason": null,
+        "note": "includes 1 declared",
         "environment": "PROD",
-        "signal": "external"
+        "signal": "github-deployments"
       },
       {
         "check": "time-to-restore",
-        "level": null,
-        "state": "not-visible",
-        "value": null,
-        "unit": "percent",
-        "threshold": null,
+        "level": 3,
+        "state": "measured",
+        "value": 24,
+        "unit": "hours",
+        "threshold": 24,
         "readable": null,
-        "reason": "external-pipelines",
-        "note": null,
+        "reason": null,
+        "note": "includes 1 declared",
         "environment": "PROD",
-        "signal": "external"
+        "signal": "github-deployments"
       },
       {
         "check": "test-coverage",
@@ -2802,8 +2802,8 @@
         "signal": null
       }
     ],
-    "score": 61,
-    "measured": 14,
+    "score": 59,
+    "measured": 18,
     "applicable": 24,
     "areas": {
       "supply-chain": {
@@ -2827,8 +2827,8 @@
         "applicable": 5
       },
       "delivery": {
-        "score": null,
-        "measured": 1,
+        "score": 52,
+        "measured": 5,
         "applicable": 5
       },
       "evidence": {

@@ -300,6 +300,7 @@ cases pin the decisions ([ADR 0008](architecture/adr/0008-risk-governance-policy
 - [ADR 0012: Optional read-only external providers behind one audited HTTP client](architecture/adr/0012-optional-external-read-only-providers.md)
 - [ADR 0013: Outward notifications from a separate job, dry-run by default, digest without repository detail](architecture/adr/0013-outward-notifications.md)
 - [ADR 0014: Control map of technical checks with related DORA and ISO 27001 references, never a compliance claim](architecture/adr/0014-control-map.md)
+- [ADR 0015: GitHub Deployments as the ledger of every environment, written from outside the hub](architecture/adr/0015-deployments-ledger.md)
 
 Further decisions:
 

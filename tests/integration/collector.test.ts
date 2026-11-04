@@ -1876,13 +1876,24 @@ describe('control map (spec 2026-11-04)', () => {
   });
 
   it('an external delivery environment leaves the four delivery checks not visible', async () => {
-    const beta = await golden('projects/project-beta.json');
+    const gamma = await golden('projects/project-gamma.json');
     for (const id of ['deploy-frequency', 'lead-time', 'change-failure-rate', 'time-to-restore'])
-      expect(beta.controlMap.cells.find((c) => c.check === id)).toMatchObject({
+      expect(gamma.controlMap.cells.find((c) => c.check === id)).toMatchObject({
         level: null,
         reason: 'external-pipelines',
-        environment: 'PROD',
+        environment: 'DEV',
       });
+  });
+
+  it('the github-deployments project measures delivery from the ledger, noting declared records', async () => {
+    const beta = await golden('projects/project-beta.json');
+    const cfr = beta.controlMap.cells.find((c) => c.check === 'change-failure-rate')!;
+    expect(cfr).toMatchObject({
+      state: 'measured',
+      signal: 'github-deployments',
+      value: 50,
+      note: 'includes 1 declared',
+    });
   });
 
   it('the versions-file project measures its change failure rate (a rollback)', async () => {

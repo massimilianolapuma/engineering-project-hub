@@ -1,0 +1,174 @@
+# Reusable — Azure DevOps → GitHub Deployments bridge (deployments ledger, ADR 0015).
+#
+# Reads the deployment records of the Azure DevOps environments listed in a map file (read-only)
+# and records each completed deploy as a GitHub deployment with its status. Dry-run unless the
+# input mode is 'write' AND the calling repository's variable HUB_DEPLOYMENTS_BRIDGE is 'write'.
+#
+# Caller (one job per GitHub organisation and Azure DevOps tenant, D12):
+#
+#   on:
+#     schedule: [{ cron: '*/30 * * * *' }]
+#     workflow_dispatch:
+#   permissions: {}
+#   jobs:
+#     bridge:
+#       permissions:
+#         contents: read
+#         id-token: write # Microsoft Entra workload identity federation
+#       uses: massimilianolapuma/engineering-project-hub/.github/workflows/rw-deployments-bridge.yml@<commit-sha> # vX.Y.Z
+#       with:
+#         hub-ref: <same commit-sha>
+#         map: config/deployments-bridge.yaml
+#         mode: write
+#         ado-tenant-id: ${{ vars.ADO_TENANT_ID }}
+#         ado-client-id: ${{ vars.ADO_CLIENT_ID }}
+#       secrets:
+#         LEDGER_APP_ID: ${{ secrets.LEDGER_APP_ID }}
+#         LEDGER_APP_PRIVATE_KEY: ${{ secrets.LEDGER_APP_PRIVATE_KEY }}
+#         GH_APP_ID: ${{ secrets.GH_APP_ID }}
+#         GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
+#         # ADO_PAT: ${{ secrets.ADO_PAT }} # only without federation
+
+name: Reusable — Azure DevOps deployments bridge [host]
+
+on:
+  workflow_call:
+    inputs:
+      hub-ref:
+        description: 'Full commit SHA of a hub release tag (vX.Y.Z); other commits are refused'
+        type: string
+        required: true
+      map:
+        description: 'Bridge map in the CALLING repository'
+        type: string
+        default: 'config/deployments-bridge.yaml'
+      mode:
+        description: "'dry-run' (default) or 'write'"
+        type: string
+        default: 'dry-run'
+      since-days:
+        description: 'Days of Azure DevOps records to read (1-90)'
+        type: string
+        default: '7'
+      ado-tenant-id:
+        description: 'Microsoft Entra tenant id (workload identity federation)'
+        type: string
+        default: ''
+      ado-client-id:
+        description: 'Microsoft Entra application (client) id (workload identity federation)'
+        type: string
+        default: ''
+    secrets:
+      LEDGER_APP_ID:
+        required: true
+      LEDGER_APP_PRIVATE_KEY:
+        required: true
+      GH_APP_ID:
+        required: true
+      GH_APP_PRIVATE_KEY:
+        required: true
+      ADO_PAT:
+        required: false
+
+permissions:
+  contents: read
+
+env:
+  HUB_REPOSITORY: massimilianolapuma/engineering-project-hub
+
+jobs:
+  verify:
+    name: Verify hub release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    outputs:
+      sha: ${{ steps.release.outputs.sha }}
+    steps:
+      # [template-injection] inputs mapped to env and validated before any use.
+      - name: Validate inputs
+        shell: bash
+        env:
+          HUB_REF: ${{ inputs.hub-ref }}
+          MAP: ${{ inputs.map }}
+          MODE: ${{ inputs.mode }}
+          SINCE_DAYS: ${{ inputs.since-days }}
+        run: |
+          [[ "$HUB_REF" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::hub-ref must be a full 40-character commit SHA"; exit 1; }
+          [[ "$MAP" =~ ^[A-Za-z0-9._/-]+$ && "$MAP" != *..* && "$MAP" != /* ]] || { echo "::error::invalid map path"; exit 1; }
+          [[ "$MODE" == dry-run || "$MODE" == write ]] || { echo "::error::mode must be dry-run or write"; exit 1; }
+          [[ "$SINCE_DAYS" =~ ^[0-9]{1,2}$ ]] || { echo "::error::since-days must be 1-90"; exit 1; }
+
+      # Public repository: anonymous ls-remote, no token involved.
+      - name: Require a release tag commit
+        id: release
+        shell: bash
+        env:
+          HUB_REF: ${{ inputs.hub-ref }}
+        run: |
+          tag=$(git ls-remote --tags "https://github.com/${HUB_REPOSITORY}.git" 'refs/tags/v*' \
+            | awk -v sha="$HUB_REF" '$1 == sha { sub(/^refs\/tags\//, "", $2); sub(/\^\{\}$/, "", $2); print $2; exit }')
+          if [[ -z "$tag" ]]; then
+            echo "::error::hub-ref ${HUB_REF} is not the commit of a release tag (v*) of ${HUB_REPOSITORY}"
+            exit 1
+          fi
+          echo "Hub release ${tag} (${HUB_REF})" >> "$GITHUB_STEP_SUMMARY"
+          echo "sha=${HUB_REF}" >> "$GITHUB_OUTPUT"
+
+  bridge:
+    name: Bridge
+    needs: verify
+    # Two overlapping runs could both find a deploy missing and both create it.
+    concurrency:
+      group: deployments-bridge-job-${{ github.repository }}
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read # checkout of the calling repository's map
+      id-token: write # Microsoft Entra workload identity federation (no stored Azure secret)
+    defaults:
+      run:
+        shell: bash
+        working-directory: hub
+    steps:
+      - name: Checkout hub (verified release)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.HUB_REPOSITORY }}
+          ref: ${{ needs.verify.outputs.sha }}
+          path: hub
+          persist-credentials: false
+
+      - name: Checkout map (calling repository)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: caller
+          sparse-checkout: ${{ inputs.map }}
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: hub/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Bridge
+        env:
+          MAP: ${{ inputs.map }}
+          MODE: ${{ inputs.mode }}
+          SINCE_DAYS: ${{ inputs.since-days }}
+          HUB_DEPLOYMENTS_BRIDGE: ${{ vars.HUB_DEPLOYMENTS_BRIDGE }}
+          ADO_TENANT_ID: ${{ inputs.ado-tenant-id }}
+          ADO_CLIENT_ID: ${{ inputs.ado-client-id }}
+          ADO_PAT: ${{ secrets.ADO_PAT }}
+          LEDGER_APP_ID: ${{ secrets.LEDGER_APP_ID }}
+          LEDGER_APP_PRIVATE_KEY: ${{ secrets.LEDGER_APP_PRIVATE_KEY }}
+          GH_APP_ID: ${{ secrets.GH_APP_ID }}
+          GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
+        run: npm run --silent deployments:bridge -- --map "../caller/$MAP" --mode "$MODE" --since-days "$SINCE_DAYS"

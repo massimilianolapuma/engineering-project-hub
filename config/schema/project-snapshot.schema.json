@@ -6015,6 +6015,7 @@
                           "versions-file",
                           "argocd",
                           "release",
+                          "github-deployments",
                           "external"
                         ]
                       },

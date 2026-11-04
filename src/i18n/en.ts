@@ -1872,6 +1872,7 @@ export const en = {
       'versions-file': 'Versions file in the repository',
       argocd: 'Argo CD history',
       release: 'Published releases',
+      'github-deployments': 'GitHub deployments',
       external: 'External pipelines',
     },
   },

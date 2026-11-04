@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Deployments ledger ([ADR 0015](docs/architecture/adr/0015-deployments-ledger.md),
+  [docs](docs/deployments-ledger.md)): GitHub Deployments record every deploy of every
+  environment, including environments deployed outside GitHub.
+  - Push step `scripts/report-deployment.sh` for external pipelines (Azure DevOps example).
+  - Azure DevOps pull bridge `rw-deployments-bridge.yml` (`npm run deployments:bridge`): reads
+    environment deployment records read-only (Microsoft Entra federation or PAT) and writes
+    idempotent ledger records; map `config/deployments-bridge.yaml`.
+  - Declared records `rw-deployments-declare.yml` (`npm run deployments:declare`): protected
+    environment with reviewers holds the keys; reviewed allowlist `config/deployments-declare.yaml`.
+  - Writers use a separate GitHub App with only Deployments: read and write, tokens narrowed per
+    repository; dry-run unless `mode: write` and `HUB_DEPLOYMENTS_BRIDGE=write`.
+- Control map: deploy signal `github-deployments` reads the ledger (real deploy times from the
+  payload, declared records noted). The hub App needs Deployments: read for it.
+
+### Changed
+
+- Demo data: Project Beta reads its PROD deploys from the ledger; the "external pipelines" example
+  moves to Project Gamma.
+
 ## [0.16.0] - 2026-11-04
 
 ### Added

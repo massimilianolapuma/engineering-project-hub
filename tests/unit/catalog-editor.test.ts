@@ -81,6 +81,26 @@ describe('catalog editor: draft → catalog', () => {
     expect(again.controlMap).toEqual(withMap.controlMap);
   });
 
+  it('keeps a github-deployments deploy signal when a project is saved', () => {
+    const base = snapshot.catalog.projects[0]!;
+    const withSignal = ProjectConfigSchema.parse({
+      ...base,
+      environments: [
+        {
+          id: 'prod',
+          name: 'PROD',
+          deploySignal: {
+            type: 'github-deployments',
+            repository: 'coordinator',
+            sources: ['azure-devops'],
+          },
+        },
+      ],
+    });
+    const again = ProjectConfigSchema.parse(toProjectInput(projectToDraft(withSignal)));
+    expect(again.environments).toEqual(withSignal.environments);
+  });
+
   it('keeps discovery settings out of the project files', () => {
     expect(toCatalogInput(draft())).not.toHaveProperty('discovery');
     expect(draft().discovery).toEqual(snapshot.catalog.discovery);

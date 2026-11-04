@@ -29,6 +29,8 @@ import {
   type SecretScanningAlertDTO,
   type EnvironmentDTO,
   type PathCommitDTO,
+  type DeploymentDTO,
+  type DeploymentStatusDTO,
   type SourceProvider,
   type SubmoduleRefDTO,
   type TagDTO,
@@ -80,6 +82,10 @@ export interface RepoFixture {
   releases?: ReleaseDTO[] | ErrorFixture;
   /** Committer dates by ref (tag name or SHA). */
   commitDates?: Record<string, string>;
+  /** GitHub deployments by environment, newest first (deployments ledger). */
+  deployments?: Record<string, DeploymentDTO[] | ErrorFixture>;
+  /** Statuses by deployment id, newest first. */
+  deploymentStatuses?: Record<string, DeploymentStatusDTO[]>;
   qualitySummary?:
     { summary: unknown; createdAt: string; expired?: boolean; runId: number } | ErrorFixture;
   codeQualityFindings?: CodeQualityFindingDTO[] | ErrorFixture;
@@ -395,6 +401,17 @@ export class MockProvider implements SourceProvider {
 
   listCommitsForPath(repo: string, path: string): Promise<ProviderResult<PathCommitDTO[]>> {
     return this.pick(repo, (f) => f.pathCommits?.[path]);
+  }
+
+  listDeployments(repo: string, environment: string): Promise<ProviderResult<DeploymentDTO[]>> {
+    return this.pick(repo, (f) => f.deployments?.[environment], ok([]));
+  }
+
+  listDeploymentStatuses(
+    repo: string,
+    deploymentId: number,
+  ): Promise<ProviderResult<DeploymentStatusDTO[]>> {
+    return this.pick(repo, (f) => f.deploymentStatuses?.[String(deploymentId)], ok([]));
   }
 
   listReleases(repo: string): Promise<ProviderResult<ReleaseDTO[]>> {

@@ -69,6 +69,34 @@ export default tseslint.config(
               group: ['**/notifier/**', '**/notifier'],
               message: 'Only the notify job may run notifier code (ADR 0013).',
             },
+            {
+              group: ['**/ledger/**', '**/ledger'],
+              message: 'Only the ledger jobs may run the deployments writers (ADR 0015).',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // ADR 0015: the deployments writers hold write credentials of their own; they never share a
+  // code path with the collector (read credentials) or the notifier.
+  {
+    files: ['ledger/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '**/collector/**',
+                '**/collector',
+                '**/notifier/**',
+                '**/notifier',
+                '**/src/**',
+              ],
+              message: 'The ledger writers use only shared/** and the model (ADR 0015).',
+            },
           ],
         },
       ],

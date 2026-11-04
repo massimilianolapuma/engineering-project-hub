@@ -104,11 +104,22 @@ only chooses what to count.
 - **Preferred: GitHub App**, installed only on the monitored repositories, with read-only
   repository permissions: **Metadata**, **Contents**, **Actions**, **Code scanning alerts**
   (`security_events`), **Dependabot alerts** (`vulnerability_alerts`) and **Secret
-  scanning alerts** (`secret_scanning_alerts`). Deployments and Environments are not
-  needed by the MVP (listing environments needs Actions: read). Permission names were
+  scanning alerts** (`secret_scanning_alerts`). Add **Deployments: read** to read the
+  [deployments ledger](deployments-ledger.md) (`github-deployments` signal); listing environments
+  needs Actions: read. Permission names were
   checked against GitHub's
   [permissions-required-for-github-apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps)
   page on 2026-10-03.
+- **Deployments ledger** ([ADR 0015](architecture/adr/0015-deployments-ledger.md),
+  [docs](deployments-ledger.md)). The hub App needs **Deployments: read** to read the ledger. The
+  writers use a separate GitHub App with only **Deployments: read and write** (one private key per
+  line or external project; tokens narrowed to one repository and `deployments: write`; any key
+  can address every repository the App is installed on, accepted by the owner). The bridge job has
+  `contents: read` and `id-token: write` (Microsoft Entra federation to read Azure DevOps, no stored
+  secret) and reads GitHub with the hub's read App. The declare job runs in the protected
+  environment `deployments-declare` (required reviewers with Prevent self-review, default branch
+  only, created before the first run; never `secrets: inherit`) whose environment secrets hold the
+  keys, and only for targets in a reviewed allowlist read from the default branch. Both write only with `mode: write` and `HUB_DEPLOYMENTS_BRIDGE=write`.
 - **Control map sources** (only when the [control map](control-map.md) is published). All GET:
   GitHub environments of the coordinator (`GET /repos/{owner}/{repo}/environments`), commits of a
   versions-file path, the file at a commit, commit dates and releases (**Contents: read**), and the

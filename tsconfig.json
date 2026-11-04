@@ -15,6 +15,7 @@
     "shared",
     "collector",
     "notifier",
+    "ledger",
     "scripts",
     "tests",
     "*.config.ts",

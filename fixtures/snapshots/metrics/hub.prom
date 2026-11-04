@@ -277,12 +277,12 @@ hub_project_measure_known{measure="unsigned_images",project="project-gamma"} 0
 # TYPE hub_project_control_score gauge
 hub_project_control_score{project="platform"} 63
 hub_project_control_score{project="project-alpha"} 78
-hub_project_control_score{project="project-beta"} 61
+hub_project_control_score{project="project-beta"} 59
 # HELP hub_project_control_measured Control map checks measured, out of hub_project_control_applicable.
 # TYPE hub_project_control_measured gauge
 hub_project_control_measured{project="platform"} 20
 hub_project_control_measured{project="project-alpha"} 24
-hub_project_control_measured{project="project-beta"} 14
+hub_project_control_measured{project="project-beta"} 18
 hub_project_control_measured{project="project-gamma"} 1
 # HELP hub_project_control_applicable Control map checks that apply to the project.
 # TYPE hub_project_control_applicable gauge
@@ -297,6 +297,7 @@ hub_project_control_level{check="branch-protection",project="project-alpha"} 5
 hub_project_control_level{check="build-provenance",project="project-alpha"} 5
 hub_project_control_level{check="change-failure-rate",project="platform"} 3
 hub_project_control_level{check="change-failure-rate",project="project-alpha"} 1
+hub_project_control_level{check="change-failure-rate",project="project-beta"} 1
 hub_project_control_level{check="config-drift",project="project-alpha"} 3
 hub_project_control_level{check="config-drift",project="project-beta"} 5
 hub_project_control_level{check="container-scanning",project="platform"} 5
@@ -310,6 +311,7 @@ hub_project_control_level{check="dependency-scanning",project="project-alpha"} 5
 hub_project_control_level{check="dependency-scanning",project="project-beta"} 5
 hub_project_control_level{check="deploy-frequency",project="platform"} 2
 hub_project_control_level{check="deploy-frequency",project="project-alpha"} 2
+hub_project_control_level{check="deploy-frequency",project="project-beta"} 2
 hub_project_control_level{check="environment-separation",project="platform"} 4
 hub_project_control_level{check="environment-separation",project="project-alpha"} 5
 hub_project_control_level{check="environment-separation",project="project-gamma"} 1
@@ -326,6 +328,7 @@ hub_project_control_level{check="image-signature",project="project-alpha"} 5
 hub_project_control_level{check="image-signature",project="project-beta"} 0
 hub_project_control_level{check="lead-time",project="platform"} 4
 hub_project_control_level{check="lead-time",project="project-alpha"} 4
+hub_project_control_level{check="lead-time",project="project-beta"} 4
 hub_project_control_level{check="license-policy",project="platform"} 1
 hub_project_control_level{check="license-policy",project="project-alpha"} 5
 hub_project_control_level{check="pipeline-integrity",project="platform"} 0
@@ -348,6 +351,7 @@ hub_project_control_level{check="test-coverage",project="project-alpha"} 4
 hub_project_control_level{check="test-coverage",project="project-beta"} 3
 hub_project_control_level{check="time-to-restore",project="platform"} 4
 hub_project_control_level{check="time-to-restore",project="project-alpha"} 4
+hub_project_control_level{check="time-to-restore",project="project-beta"} 3
 hub_project_control_level{check="vulnerability-age",project="platform"} 3
 hub_project_control_level{check="vulnerability-age",project="project-alpha"} 5
 hub_project_control_level{check="vulnerability-age",project="project-beta"} 4
