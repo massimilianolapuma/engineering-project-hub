@@ -350,7 +350,8 @@ SLA clock started when the alert was created; those findings appear as a Securit
 
 Each collection appends one compact point per project to `history.json`, and the collector
 diffs it against the previous one to write `changes.json` (the "What changed" page). The
-runner starts empty every time, so GitHub Actions carries the history:
+runner starts empty every time, so GitHub Actions carries the history (on GitHub Pages and,
+from v0.14.2, on the protected deploy path too, in the deploy repository):
 
 - the `collect` job runs `npm run history:restore` first. It reads the hub's **own** newest
   `hub-history` artifact with `GITHUB_TOKEN` and `actions: read` (never the collector

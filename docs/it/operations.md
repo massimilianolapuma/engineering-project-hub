@@ -359,7 +359,8 @@ dello SLA è partito alla creazione dell'alert; quei finding compaiono come camb
 
 Ogni raccolta aggiunge a `history.json` un punto compatto per progetto, e il collector lo
 confronta con il precedente per scrivere `changes.json` (la pagina "Cosa è cambiato"). Il
-runner parte vuoto ogni volta, quindi è GitHub Actions a portare lo storico:
+runner parte vuoto ogni volta, quindi è GitHub Actions a portare lo storico (su GitHub Pages e, dalla v0.14.2, anche nel percorso di deploy protetto, nel repository
+di deploy):
 
 - il job `collect` esegue prima `npm run history:restore`. Legge l'artifact `hub-history`
   più recente del **proprio** repository con `GITHUB_TOKEN` e `actions: read` (mai con le

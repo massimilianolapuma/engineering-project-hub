@@ -124,6 +124,13 @@ After logging in, the browser dev tools show `content-security-policy` with
 Pin a new release: update both `HUB_SHA` occurrences to the new tag's commit SHA. Read
 the CHANGELOG first; the deploy repository never follows `main` automatically.
 
+> **From v0.14.2** the hub keeps its history in the deploy repository: the collect job restores
+> the newest `hub-history` artifact of that repository and uploads the new one (90 days), so "What
+> changed", the trends and the executive summary work on real data. The calling job must grant
+> `actions: read` (see `examples/protected-deploy/.github/workflows/deploy-hub.yml`); without it
+> GitHub refuses to start the workflow. Only artifacts of this repository's default branch,
+> produced by its own deploy workflow on a scheduled, push or manual run, are trusted.
+
 ## Limits
 
 - Everyone allowed by the Access policy sees every project (no per-project

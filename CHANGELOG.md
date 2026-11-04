@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Protected deploy path (`rw-hub-cloudflare-deploy.yml`): the collect job now restores the deploy
+  repository's newest `hub-history` artifact and uploads the new one (90 days), as the GitHub Pages
+  path does. Before, every real-data collection started without history, so "What changed", the
+  trends and the executive summary trend were always empty there. The restore trusts the calling
+  workflow (from `GITHUB_WORKFLOW_REF`) besides the hub's own.
+
+### Upgrade notes
+
+- In the deploy repository, the calling job must grant `actions: read` in addition to
+  `contents: read` (see `examples/protected-deploy/.github/workflows/deploy-hub.yml`); otherwise
+  GitHub refuses to start the workflow.
+
 ## [0.14.1] - 2026-11-04
 
 ### Fixed
