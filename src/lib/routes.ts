@@ -11,7 +11,8 @@ export type PageKey =
   | 'controls'
   | 'dataQuality'
   | 'catalog'
-  | 'howToRead';
+  | 'howToRead'
+  | 'setupApp';
 
 const PATHS: Record<PageKey, string> = {
   portfolio: '',
@@ -24,6 +25,7 @@ const PATHS: Record<PageKey, string> = {
   dataQuality: 'data-quality/',
   catalog: 'catalog/',
   howToRead: 'how-to-read/',
+  setupApp: 'setup/github-app/',
 };
 
 /** Main navigation in reading order. "How to read" is a header utility link, not a section. */
@@ -51,6 +53,7 @@ export const NAV_ICON: Record<PageKey, OcticonName> = {
   dataQuality: 'database',
   catalog: 'book',
   howToRead: 'question',
+  setupApp: 'key',
 };
 
 /**

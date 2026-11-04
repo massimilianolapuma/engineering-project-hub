@@ -101,6 +101,14 @@ only chooses what to count.
 
 ## Authorisation model
 
+- **App creation page** (`/setup/github-app/`). The only page whose CSP allows a form post
+  (`form-action https://github.com`, meta CSP): it POSTs GitHub's App manifest (read-only
+  permissions below, webhook off, private App). GitHub returns a one-hour code that the page
+  accepts only with the random `state` it saved in `sessionStorage` before leaving, only as
+  letters and digits, and removes from the address bar at once. The page never exchanges the
+  code: it prints the `gh api -X POST app-manifests/<code>/conversions` commands, so the private
+  key goes from GitHub to the person's terminal only. A restricted build keeps `form-action
+'none'` (also in `public/_headers`) and links the page of the public demo site instead.
 - **Preferred: GitHub App**, installed only on the monitored repositories, with read-only
   repository permissions: **Metadata**, **Contents**, **Actions**, **Code scanning alerts**
   (`security_events`), **Dependabot alerts** (`vulnerability_alerts`) and **Secret

@@ -104,6 +104,15 @@ l'hub sceglie solo cosa contare.
 
 ## Modello di autorizzazione
 
+- **Pagina di creazione dell'App** (`/setup/github-app/`). L'unica pagina la cui CSP consente
+  l'invio di un modulo (`form-action https://github.com`, CSP nel meta): invia a GitHub l'App
+  manifest (permessi in sola lettura qui sotto, webhook spento, App privata). GitHub restituisce
+  un codice valido un'ora che la pagina accetta solo con lo `state` casuale salvato in
+  `sessionStorage` prima di uscire, solo se fatto di lettere e cifre, e che toglie subito dalla
+  barra degli indirizzi. La pagina non scambia mai il codice: mostra i comandi
+  `gh api -X POST app-manifests/<codice>/conversions`, così la chiave privata va da GitHub solo al
+  terminale della persona. Una build ristretta mantiene `form-action 'none'` (anche in
+  `public/_headers`) e rimanda alla pagina del sito demo pubblico.
 - **Consigliata: GitHub App**, installata solo sui repository monitorati, con permessi di
   repository in sola lettura: **Metadata**, **Contents**, **Actions**, **Code scanning
   alerts** (`security_events`), **Dependabot alerts** (`vulnerability_alerts`) e **Secret

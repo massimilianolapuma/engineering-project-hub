@@ -23,8 +23,13 @@ interface Props {
    * page places its own `<Legend>` under its list (the full explanation is "How to read").
    */
   legend?: 'status' | 'symbols' | false;
+  /**
+   * CSP form-action of this page. 'none' everywhere except the GitHub App setup page, which
+   * POSTs a manifest to github.com (public builds only: public/_headers keeps 'none').
+   */
+  formAction?: "'none'" | 'https://github.com';
 }
-const { i18n, title, page, alternates, index, legend = false } = Astro.props;
+const { i18n, title, page, alternates, index, legend = false, formAction = "'none'" } = Astro.props;
 const { d, locale } = i18n;
 const run = index?.run;
 const staleHours = run?.policy.snapshotStaleHours ?? 24;
@@ -51,7 +56,7 @@ const identity = import.meta.env.PUBLIC_IDENTITY_SOURCE === 'cloudflare-access';
     <!-- frame-ancestors is ignored in a <meta> CSP: it is sent as a header (public/_headers). -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'"
+      content={`default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action ${formAction}`}
     />
     <!-- Restores the saved theme before first paint (blocking, external: CSP script-src 'self'). -->
     <script is:inline src={`${base}theme-init.js`}></script>
