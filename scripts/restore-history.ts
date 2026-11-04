@@ -56,9 +56,20 @@ function failure(e: unknown): RestoreOutcome {
   };
 }
 
-export async function restoreHistory(
+export interface ArtifactFileOptions extends RestoreOptions {
+  artifactName: string;
+  fileName: string;
+  maxBytes: number;
+  includeCurrentRun: boolean;
+}
+
+/**
+ * Restores one file from this repository's own newest trusted artifact of a given name: the
+ * selection, trust and archive rules are those of the history (planted-artifact defence).
+ */
+export async function restoreArtifactFile(
   octokit: RestoreClient,
-  o: RestoreOptions,
+  o: ArtifactFileOptions,
 ): Promise<RestoreOutcome> {
   const { owner, repo } = o;
   let candidates: ArtifactLike[];
@@ -68,6 +79,8 @@ export async function restoreHistory(
       repositoryId: repository.id,
       defaultBranch: repository.default_branch,
       currentRunId: o.currentRunId,
+      name: o.artifactName,
+      includeCurrentRun: o.includeCurrentRun,
     };
     // Newest first. Page (bounded) until enough trusted candidates are found, so artifacts
     // that are not trusted (other branches, forks) cannot push the real ones off page 1.
@@ -77,7 +90,7 @@ export async function restoreHistory(
       const { data } = await octokit.rest.actions.listArtifactsForRepo({
         owner,
         repo,
-        name: HISTORY_ARTIFACT,
+        name: o.artifactName,
         per_page: PAGE_SIZE,
         page,
       });
@@ -109,7 +122,7 @@ export async function restoreHistory(
       let text: string | null = null;
       if (bytes.byteLength <= MAX_ARTIFACT_BYTES) {
         try {
-          text = readZipEntry(bytes, HISTORY_FILE, HISTORY_MAX_BYTES);
+          text = readZipEntry(bytes, o.fileName, o.maxBytes);
         } catch {
           text = null;
         }
@@ -121,7 +134,7 @@ export async function restoreHistory(
       }
       const dir = resolve(o.out);
       mkdirSync(dir, { recursive: true });
-      writeFileSync(join(dir, HISTORY_FILE), text);
+      writeFileSync(join(dir, o.fileName), text);
       return { state: 'restored' };
     } catch (e) {
       return failure(e);
@@ -129,6 +142,16 @@ export async function restoreHistory(
   }
   if (badArchives > 0) return { state: 'failed', reason: 'bad-archive' };
   return { state: 'none', reason: 'no-artifact' };
+}
+
+export function restoreHistory(octokit: RestoreClient, o: RestoreOptions): Promise<RestoreOutcome> {
+  return restoreArtifactFile(octokit, {
+    ...o,
+    artifactName: HISTORY_ARTIFACT,
+    fileName: HISTORY_FILE,
+    maxBytes: HISTORY_MAX_BYTES,
+    includeCurrentRun: false,
+  });
 }
 
 function report(outcome: RestoreOutcome): void {

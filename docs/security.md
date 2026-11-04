@@ -218,6 +218,7 @@ only:
 - Every workflow has a top-level `permissions: contents: read`.
 - `collect`: `contents: read` and `actions: read`. `actions: read` is only used to list and download this repository's own `hub-history` artifacts with `GITHUB_TOKEN`; the collector credentials are not given to the restore step. The caller job in `deploy-pages.yml` has the same permission because a called workflow cannot exceed its caller. Secrets are mapped only into the collector step's `env`.
 - `build`: `contents: read`, `pages: read` (configure-pages). No secrets.
+- `notify` (opt-in, after `deploy`): `contents: read` and `actions: read` (its own `hub-notify-ledger` artifact). `TEAMS_WEBHOOK_URL` is mapped only into the "Notify" step; this job never receives the collector's credentials, and no other job receives the Teams URL ([ADR 0013](architecture/adr/0013-outward-notifications.md)). Every payload is checked for credential patterns and for the values of credentials in the environment before it is written or sent.
 - `deploy`: `pages: write` and `id-token: write`, only in the reusable deploy job.
 - CI: no secrets. PR title lint needs `pull-requests: write` and `statuses: write`. SARIF
   uploads (zizmor, Trivy) need `security-events: write` on those jobs only.
@@ -311,6 +312,8 @@ Never weaken sanitisation to "see more". Follow the GitHub link instead.
    less is recommended).
 3. Check the Data quality page after rotation: the authentication mode is as expected and
    there are no new Not authorised entries.
+4. **Teams webhook** (`TEAMS_WEBHOOK_URL`): the URL is the credential. Delete and recreate the
+   flow's trigger in Teams Workflows, update the secret, and check the next `notify` summary.
 
 ## Response to accidental exposure
 

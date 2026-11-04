@@ -19,6 +19,11 @@ describe('sensitiveEnvValues', () => {
     );
   });
 
+  it('returns the Teams webhook URL (its sig parameter is the credential)', () => {
+    const url = 'https://a.environment.api.powerplatform.com/x?sig=abcdefgh';
+    expect(sensitiveEnvValues({ TEAMS_WEBHOOK_URL: url })).toContain(url);
+  });
+
   it('ignores short values and unrelated variables', () => {
     expect(
       sensitiveEnvValues({ SONARQUBE_TOKEN: 'short', PATH: '/usr/bin/some-long-path' }),

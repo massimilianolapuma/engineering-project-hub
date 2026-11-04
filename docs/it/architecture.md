@@ -315,6 +315,7 @@ casi bloccano le decisioni ([ADR 0008](architecture/adr/0008-risk-governance-pol
 - [ADR 0010: Viste per team senza controllo degli accessi per persona su hosting statico](architecture/adr/0010-per-team-views-without-access-control.md)
 - [ADR 0011: Evidenze della supply chain da fonti native GitHub e riepiloghi CI](architecture/adr/0011-supply-chain-evidence-github-native-and-ci-summaries.md)
 - [ADR 0012: Provider esterni facoltativi in sola lettura dietro un unico client HTTP verificato](architecture/adr/0012-optional-external-read-only-providers.md)
+- [ADR 0013: Notifiche verso l'esterno da un job separato, dry-run di default, riepilogo senza dettagli dei repository](architecture/adr/0013-outward-notifications.md)
 
 Altre decisioni:
 

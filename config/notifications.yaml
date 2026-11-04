@@ -1,0 +1,22 @@
+# Notifications (v0.15.0, Microsoft Teams). Never published. Docs: docs/notifications.md.
+# Nothing is sent unless mode is "send" AND the repository variable HUB_NOTIFICATIONS=send AND the
+# data is real and compared with a previous collection. The webhook URL is the secret
+# TEAMS_WEBHOOK_URL, never written here.
+schemaVersion: '1.0'
+mode: dry-run # dry-run | send
+locale: en # en | it: language of the digest
+siteUrl: null # e.g. https://hub.example.com/ (https, no query, ends with "/"): the only link in a digest
+trigger:
+  overallWorsened: true # Healthy → Attention, Healthy/Attention → Critical
+  becameUnknown: true # overall turned Unknown from a measured status
+  dimensionsWorsened: [security, delivery] # [] = no dimension triggers
+  newFindings: { severities: [critical], min: 1 } # critical | high
+  newlyOverdue: { severities: [critical, high], min: 1 }
+  newErrors: { min: 0 } # 0 = new collection errors never trigger
+  expiredExceptions: { min: 1 } # 0 = never
+digest:
+  maxProjects: 10 # 1–50; the rest is counted as "N more projects"
+targets:
+  teams:
+    enabled: false
+    allowedHostSuffixes: [environment.api.powerplatform.com] # Workflows trigger hosts

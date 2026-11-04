@@ -220,6 +220,7 @@ solo leggere, dedicata a questo hub:
 - `collect`: `contents: read` e `actions: read`. `actions: read` serve solo a elencare e scaricare gli artifact `hub-history` di questo stesso repository con `GITHUB_TOKEN`; le credenziali del collector non vengono date allo step di ripristino. Il job chiamante in `deploy-pages.yml` ha lo stesso permesso perché un workflow chiamato non può superare il chiamante. I secret sono mappati solo nell'`env` dello step del
   collector.
 - `build`: `contents: read`, `pages: read` (configure-pages). Nessun secret.
+- `notify` (facoltativo, dopo `deploy`): `contents: read` e `actions: read` (il proprio artifact `hub-notify-ledger`). `TEAMS_WEBHOOK_URL` è mappato solo nello step "Notify"; questo job non riceve mai le credenziali del collector, e nessun altro job riceve l'URL di Teams ([ADR 0013](architecture/adr/0013-outward-notifications.md)). Ogni contenuto viene controllato per modelli di credenziale e per i valori delle credenziali nell'ambiente prima di essere scritto o inviato.
 - `deploy`: `pages: write` e `id-token: write`, solo nel reusable job di deploy.
 - CI: nessun secret. Il lint del titolo della PR richiede `pull-requests: write` e
   `statuses: write`. Gli upload SARIF (zizmor, Trivy) richiedono `security-events: write`, solo su quei job.
@@ -317,6 +318,9 @@ Non indebolire mai la sanitizzazione per "vedere di più". Segui invece il link 
    (si consigliano 90 giorni o meno).
 3. Dopo la rotazione controlla la pagina Qualità dati: la modalità di autenticazione è
    quella attesa e non ci sono nuove voci Not authorised (Non autorizzato).
+4. **Webhook di Teams** (`TEAMS_WEBHOOK_URL`): l'URL è la credenziale. Elimina e ricrea il
+   trigger del flusso in Teams Workflows, aggiorna il secret e controlla il riepilogo del job
+   `notify` successivo.
 
 ## Risposta a un'esposizione accidentale
 

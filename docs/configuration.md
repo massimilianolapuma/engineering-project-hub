@@ -760,6 +760,14 @@ The collector reads `metrics`; the site build reads `executive` (through `POLICI
 policies live in a separate configuration). What each output contains is in
 [Outputs](outputs.md).
 
+## `config/notifications.yaml`: notifications (optional)
+
+Microsoft Teams digests after each collection (v0.15.0). The file is never published; a missing
+file means notifications are not configured. The webhook URL is the secret `TEAMS_WEBHOOK_URL`,
+never a field here. Every key, the modes and the setup are in [Notifications](notifications.md);
+`npm run validate:config` validates the file. Jira and Azure DevOps keys are rejected until those
+targets exist.
+
 ## Policy decision cases: `config/policy-cases/*.yaml`
 
 A decision case is a tiny synthetic scenario with the status you expect. `npm run policy:check`

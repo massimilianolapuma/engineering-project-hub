@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "mode": {
+      "default": "dry-run",
+      "type": "string",
+      "enum": [
+        "dry-run",
+        "send"
+      ]
+    },
+    "locale": {
+      "default": "en",
+      "type": "string",
+      "enum": [
+        "en",
+        "it"
+      ]
+    },
+    "siteUrl": {
+      "default": null,
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 200
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "trigger": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "overallWorsened": {
+          "default": true,
+          "type": "boolean"
+        },
+        "becameUnknown": {
+          "default": true,
+          "type": "boolean"
+        },
+        "dimensionsWorsened": {
+          "default": [
+            "security",
+            "delivery"
+          ],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "delivery",
+              "version",
+              "security",
+              "coverage",
+              "governance",
+              "quality"
+            ]
+          }
+        },
+        "newFindings": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "severities": {
+              "default": [
+                "critical"
+              ],
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "critical",
+                  "high"
+                ]
+              }
+            },
+            "min": {
+              "default": 1,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          "additionalProperties": false
+        },
+        "newlyOverdue": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "severities": {
+              "default": [
+                "critical",
+                "high"
+              ],
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "critical",
+                  "high"
+                ]
+              }
+            },
+            "min": {
+              "default": 1,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          "additionalProperties": false
+        },
+        "newErrors": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "min": {
+              "default": 0,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "additionalProperties": false
+        },
+        "expiredExceptions": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "min": {
+              "default": 1,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "digest": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "maxProjects": {
+          "default": 10,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        }
+      },
+      "additionalProperties": false
+    },
+    "targets": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "teams": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "default": false,
+              "type": "boolean"
+            },
+            "allowedHostSuffixes": {
+              "default": [
+                "environment.api.powerplatform.com"
+              ],
+              "minItems": 1,
+              "maxItems": 5,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9-]+(\\.[a-z0-9-]+)+$"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schemaVersion"
+  ],
+  "additionalProperties": false
+}

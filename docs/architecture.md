@@ -298,6 +298,7 @@ cases pin the decisions ([ADR 0008](architecture/adr/0008-risk-governance-policy
 - [ADR 0010: Per-team views without per-person access control on static hosting](architecture/adr/0010-per-team-views-without-access-control.md)
 - [ADR 0011: Supply-chain evidence from GitHub-native sources and CI summaries](architecture/adr/0011-supply-chain-evidence-github-native-and-ci-summaries.md)
 - [ADR 0012: Optional read-only external providers behind one audited HTTP client](architecture/adr/0012-optional-external-read-only-providers.md)
+- [ADR 0013: Outward notifications from a separate job, dry-run by default, digest without repository detail](architecture/adr/0013-outward-notifications.md)
 
 Further decisions:
 

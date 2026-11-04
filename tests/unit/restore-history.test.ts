@@ -9,7 +9,11 @@ import {
   workflowPathFromRef,
   type ArtifactLike,
 } from '../../collector/src/history/select-artifact';
-import { restoreHistory, type RestoreClient } from '../../scripts/restore-history';
+import {
+  restoreArtifactFile,
+  restoreHistory,
+  type RestoreClient,
+} from '../../scripts/restore-history';
 import { makeZip } from '../helpers/factories';
 
 const O = { repositoryId: 100, defaultBranch: 'main', currentRunId: 999 };
@@ -303,5 +307,49 @@ describe('protected deploy path (calling workflow trusted)', () => {
     const o = opts();
     expect(await restoreHistory(c, o)).toEqual({ state: 'none', reason: 'no-artifact' });
     expect(await restoreHistory(c, { ...o, trustedPaths: [HUB] })).toEqual({ state: 'restored' });
+  });
+});
+
+describe('notification ledger restore (same selection rules, its own artifact)', () => {
+  const ledgerArt = (id: number, over: Partial<ArtifactLike> = {}) =>
+    art(id, { name: 'hub-notify-ledger', ...over });
+
+  it('candidateArtifacts keeps the current run only when asked', () => {
+    const current = ledgerArt(1, { workflow_run: wr({ id: 999 }) });
+    expect(candidateArtifacts([current], { ...O, name: 'hub-notify-ledger' })).toEqual([]);
+    expect(
+      candidateArtifacts([current], { ...O, name: 'hub-notify-ledger', includeCurrentRun: true }),
+    ).toHaveLength(1);
+    expect(candidateArtifacts([ledgerArt(2)], O)).toEqual([]);
+  });
+
+  it('restoreArtifactFile restores ledger.json from the ledger artifact of a re-run', async () => {
+    const zip = zipOf('ledger.json', '{"kind":"hub-notify-ledger"}');
+    const { c } = client({ artifacts: [ledgerArt(1, { workflow_run: wr({ id: 999 }) })], zip });
+    const o = opts();
+    expect(
+      await restoreArtifactFile(c, {
+        ...o,
+        artifactName: 'hub-notify-ledger',
+        fileName: 'ledger.json',
+        maxBytes: 1_048_576,
+        includeCurrentRun: true,
+      }),
+    ).toEqual({ state: 'restored' });
+    expect(readFileSync(join(o.out, 'ledger.json'), 'utf8')).toBe('{"kind":"hub-notify-ledger"}');
+  });
+
+  it('an archive without the file fails, it is never treated as an empty ledger', async () => {
+    const zip = zipOf('other.json', '{}');
+    const { c } = client({ artifacts: [ledgerArt(1)], zip });
+    expect(
+      await restoreArtifactFile(c, {
+        ...opts(),
+        artifactName: 'hub-notify-ledger',
+        fileName: 'ledger.json',
+        maxBytes: 1_048_576,
+        includeCurrentRun: true,
+      }),
+    ).toEqual({ state: 'failed', reason: 'bad-archive' });
   });
 });

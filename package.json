@@ -36,6 +36,8 @@
     "test:e2e": "playwright test",
     "scan:output": "tsx scripts/scan-output.ts",
     "history:restore": "tsx scripts/restore-history.ts",
+    "notify": "tsx notifier/src/index.ts",
+    "notify:restore-ledger": "tsx scripts/restore-ledger.ts",
     "fixtures:update": "tsx scripts/update-golden-snapshots.ts",
     "policy:check": "tsx scripts/policy-check.ts",
     "schema:generate": "tsx scripts/generate-json-schema.ts"

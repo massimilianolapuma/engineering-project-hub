@@ -1,4 +1,6 @@
 import type { ProviderId } from '@model/index';
+import { classifyStatus } from '../../../../shared/http/classify';
+import { buildTemplateUrl } from '../../../../shared/http/url';
 import { DownloadError, readBodyCapped } from '../../util/bounded-fetch';
 import { createLimiter } from '../../util/concurrency';
 import { fail, ok, type ProviderResult } from '../types';
@@ -7,7 +9,6 @@ import { fail, ok, type ProviderResult } from '../types';
 export const MAX_EXTERNAL_BYTES = 1_048_576;
 /** Concurrent requests per provider. */
 const CONCURRENCY = 2;
-const PLACEHOLDER = /\{(\w+)\}/g;
 
 export interface ExternalClientOptions {
   id: ProviderId;
@@ -37,33 +38,12 @@ export interface ExternalClient {
 export function createExternalClient(o: ExternalClientOptions): ExternalClient {
   const limit = createLimiter(CONCURRENCY);
   const base = new URL(o.baseUrl);
-  const basePath = base.pathname.replace(/\/+$/, '');
-
   const buildUrl = (
     template: string,
     params: Record<string, string>,
     query: Record<string, string>,
     doubleEncode: readonly string[],
-  ): URL => {
-    const path =
-      basePath +
-      template.replace(PLACEHOLDER, (_, name: string) => {
-        const value = params[name];
-        if (value === undefined) throw new Error(`external path parameter "${name}" missing`);
-        // "." and ".." are not touched by encodeURIComponent and would be normalised away.
-        if (value === '.' || value === '..') throw new Error('external path mismatch');
-        const once = encodeURIComponent(value);
-        return doubleEncode.includes(name) ? encodeURIComponent(once) : once;
-      });
-    const url = new URL(path, base.origin);
-    if (url.protocol !== 'https:' || url.host !== base.host)
-      throw new Error('external host mismatch');
-    // Any normalisation (dot segments, backslashes) means the path is not the one intended.
-    if (url.pathname !== path) throw new Error('external path mismatch');
-    const search = new URLSearchParams(query).toString();
-    url.search = search;
-    return url;
-  };
+  ): URL => buildTemplateUrl(base, template, params, query, doubleEncode);
 
   const run = async (
     template: string,
@@ -99,11 +79,13 @@ export function createExternalClient(o: ExternalClientOptions): ExternalClient {
     const httpStatus = response.status;
     if (!response.ok) {
       await response.body?.cancel().catch(() => undefined);
-      if (httpStatus === 401 || httpStatus === 403)
+      // The collector keeps its own classes: rejected and too-large stay "error".
+      const cls = classifyStatus(httpStatus);
+      if (cls === 'not-authorised')
         return fail({ classification: 'not-authorised', httpStatus, message: 'not authorised' });
-      if (httpStatus === 404)
+      if (cls === 'not-found')
         return fail({ classification: 'not-found', httpStatus, message: 'not found' });
-      if (httpStatus === 429)
+      if (cls === 'rate-limited')
         return fail({ classification: 'rate-limited', httpStatus, message: 'rate limited' });
       return fail({ classification: 'error', httpStatus, message: 'request failed' });
     }
