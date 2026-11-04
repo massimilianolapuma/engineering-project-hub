@@ -12,14 +12,15 @@ GitHub API with read-only credentials, writes **sanitised JSON snapshots**, and 
 **Astro** static site built from those snapshots is published to **GitHub Pages**.
 The browser never calls the GitHub API, and the site has no backend and no database.
 
-| Field                   | Value                                                                     |
-| ----------------------- | ------------------------------------------------------------------------- |
-| **Project**             | Engineering Project Hub (working name), MVP                               |
-| **Module scope**        | Single repository: collector + static site                                |
-| **Repository**          | https://github.com/massimilianolapuma/engineering-project-hub             |
-| **Live demo**           | https://massimilianolapuma.github.io/engineering-project-hub/ (mock data) |
-| **Target environments** | GitHub Pages (static). No runtime servers.                                |
-| **Status**              | MVP. Works with mock data out of the box; GitHub mode needs credentials.  |
+| Field                   | Value                                                                                                                                 |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Project**             | Engineering Project Hub (working name), MVP                                                                                           |
+| **Module scope**        | Single repository: collector + static site                                                                                            |
+| **Repository**          | https://github.com/massimilianolapuma/engineering-project-hub                                                                         |
+| **Live demo**           | https://massimilianolapuma.github.io/engineering-project-hub/ (mock data)                                                             |
+| **Install in your org** | [engineering-project-hub-template](https://github.com/massimilianolapuma/engineering-project-hub-template) (real data behind a login) |
+| **Target environments** | GitHub Pages (static). No runtime servers.                                                                                            |
+| **Status**              | MVP. Works with mock data out of the box; GitHub mode needs credentials.                                                              |
 
 ---
 

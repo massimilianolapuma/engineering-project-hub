@@ -13,14 +13,15 @@ sito statico **Astro**, generato a partire da quegli snapshot, viene pubblicato 
 **GitHub Pages**. Il browser non chiama mai l'API di GitHub e il sito non ha né backend né
 database.
 
-| Campo                 | Valore                                                                       |
-| --------------------- | ---------------------------------------------------------------------------- |
-| **Progetto**          | Engineering Project Hub (nome provvisorio), MVP                              |
-| **Ambito del modulo** | Repository singolo: collector + sito statico                                 |
-| **Repository**        | https://github.com/massimilianolapuma/engineering-project-hub                |
-| **Demo online**       | https://massimilianolapuma.github.io/engineering-project-hub/ (dati mock)    |
-| **Ambienti target**   | GitHub Pages (statico). Nessun server a runtime.                             |
-| **Stato**             | MVP. Funziona subito con dati mock; la modalità GitHub richiede credenziali. |
+| Campo                                 | Valore                                                                                                                               |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Progetto**                          | Engineering Project Hub (nome provvisorio), MVP                                                                                      |
+| **Ambito del modulo**                 | Repository singolo: collector + sito statico                                                                                         |
+| **Repository**                        | https://github.com/massimilianolapuma/engineering-project-hub                                                                        |
+| **Demo online**                       | https://massimilianolapuma.github.io/engineering-project-hub/ (dati mock)                                                            |
+| **Installa nella tua organizzazione** | [engineering-project-hub-template](https://github.com/massimilianolapuma/engineering-project-hub-template) (dati reali dietro login) |
+| **Ambienti target**                   | GitHub Pages (statico). Nessun server a runtime.                                                                                     |
+| **Stato**                             | MVP. Funziona subito con dati mock; la modalità GitHub richiede credenziali.                                                         |
 
 ---
 

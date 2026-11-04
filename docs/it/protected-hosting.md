@@ -89,6 +89,10 @@ permessi in sola lettura, installata **solo** sui repository da monitorare (anch
 
 ### 4. Repository di deploy privato
 
+> **Scorciatoia:** crealo dal template [engineering-project-hub-template](https://github.com/massimilianolapuma/engineering-project-hub-template)
+> (**Use this template**, privato): contiene i passi qui sotto, un `config/` di esempio, i
+> workflow di deploy, bootstrap e validazione della configurazione, e `scripts/upgrade-hub.sh`.
+
 1. Crea un repository **privato**, es. `<owner>/engineering-project-hub-deploy`.
 2. Aggiungi `config/` (stessa struttura di questo repository: `catalog.yaml`, `projects/`,
    `policies.yaml`). In `policies.yaml` imposta `publication.audience: restricted`; in
