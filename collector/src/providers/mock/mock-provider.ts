@@ -362,6 +362,17 @@ export class MockProvider implements SourceProvider {
     return this.pick(repo, (f) => f.workflowRuns?.[workflowFile]);
   }
 
+  async listWorkflowRunsSince(
+    repo: string,
+    workflowFile: string,
+    since: string,
+  ): Promise<ProviderResult<{ runs: WorkflowRunDTO[]; truncated: boolean }>> {
+    const r = await this.pick(repo, (f) => f.workflowRuns?.[workflowFile]);
+    if (!r.ok) return r;
+    const from = Date.parse(since);
+    return ok({ runs: r.data.filter((x) => Date.parse(x.createdAt) >= from), truncated: false });
+  }
+
   getRunFailure(repo: string, runId: number) {
     return this.pick<RunFailureDTO | null>(repo, (f) => f.runFailures?.[String(runId)], ok(null));
   }

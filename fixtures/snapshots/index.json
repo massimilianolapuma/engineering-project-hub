@@ -479,7 +479,7 @@
       "controlMap": {
         "score": null,
         "measured": 1,
-        "applicable": 22,
+        "applicable": 23,
         "levels": {
           "sbom-coverage": null,
           "image-signature": "n/a",
@@ -494,7 +494,7 @@
           "security-mttr": null,
           "secret-scanning": null,
           "exposed-secrets": null,
-          "workload-identity": "n/a",
+          "workload-identity": null,
           "branch-protection": null,
           "required-checks": null,
           "pipeline-integrity": null,

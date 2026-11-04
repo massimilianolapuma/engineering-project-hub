@@ -130,6 +130,28 @@ const split = (repo: string) => {
   return { owner, repo: name };
 };
 
+/** Pages of 100 runs read for the control map delivery workflow (500 runs in the window). */
+export const MAX_DELIVERY_RUN_PAGES = 5;
+
+type RawRun = Awaited<
+  ReturnType<Client['rest']['actions']['listWorkflowRuns']>
+>['data']['workflow_runs'][number];
+
+const toRunDTO = (r: RawRun): WorkflowRunDTO => ({
+  id: r.id,
+  runNumber: r.run_number,
+  runAttempt: r.run_attempt ?? 1,
+  status: r.status ?? 'unknown',
+  conclusion: r.conclusion ?? null,
+  headBranch: r.head_branch ?? null,
+  event: r.event,
+  headSha: r.head_sha ?? null,
+  headCommitAt: r.head_commit?.timestamp ?? null,
+  createdAt: r.created_at,
+  updatedAt: r.updated_at,
+  htmlUrl: r.html_url,
+});
+
 /** security_and_analysis is only returned to callers allowed to see it: absent → null. */
 function pushProtectionOf(data: {
   security_and_analysis?: {
@@ -589,20 +611,32 @@ export class GitHubProvider implements SourceProvider {
         per_page: 20,
         exclude_pull_requests: true,
       });
-      return data.workflow_runs.map((r) => ({
-        id: r.id,
-        runNumber: r.run_number,
-        runAttempt: r.run_attempt ?? 1,
-        status: r.status ?? 'unknown',
-        conclusion: r.conclusion ?? null,
-        headBranch: r.head_branch ?? null,
-        event: r.event,
-        headSha: r.head_sha ?? null,
-        headCommitAt: r.head_commit?.timestamp ?? null,
-        createdAt: r.created_at,
-        updatedAt: r.updated_at,
-        htmlUrl: r.html_url,
-      }));
+      return data.workflow_runs.map(toRunDTO);
+    });
+  }
+
+  listWorkflowRunsSince(
+    repo: string,
+    workflowFile: string,
+    since: string,
+  ): Promise<ProviderResult<{ runs: WorkflowRunDTO[]; truncated: boolean }>> {
+    return guard(async () => {
+      const runs: WorkflowRunDTO[] = [];
+      let truncated = false;
+      for (let page = 1; page <= MAX_DELIVERY_RUN_PAGES; page++) {
+        const { data } = await this.client.rest.actions.listWorkflowRuns({
+          ...split(repo),
+          workflow_id: workflowFile,
+          created: `>=${since}`,
+          per_page: 100,
+          page,
+          exclude_pull_requests: true,
+        });
+        runs.push(...data.workflow_runs.map(toRunDTO));
+        if (data.workflow_runs.length < 100 || runs.length >= data.total_count) break;
+        if (page === MAX_DELIVERY_RUN_PAGES) truncated = true;
+      }
+      return { runs, truncated };
     });
   }
 

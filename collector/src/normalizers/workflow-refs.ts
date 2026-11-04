@@ -74,7 +74,9 @@ export function workloadIdentity(doc: unknown): WorkloadIdentity {
       logins.length > 0 || (job.environment !== undefined && job.environment !== null);
     if (!jobDeploys) continue;
     deploying = true;
-    if (workflowToken || grantsIdToken(job.permissions)) tokenOnDeploying = true;
+    // Job-level permissions replace the workflow's (GitHub Actions), they never add to them.
+    const own = isRecord(job.permissions) || typeof job.permissions === 'string';
+    if (own ? grantsIdToken(job.permissions) : workflowToken) tokenOnDeploying = true;
     else longLived = true;
     for (const s of logins)
       if (isRecord(s.with) && Object.keys(s.with).some((k) => SECRET_INPUTS.has(k.toLowerCase())))

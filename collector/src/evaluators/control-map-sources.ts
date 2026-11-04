@@ -35,14 +35,19 @@ export function medianResolvedDays(
   return Math.round(median * 10) / 10;
 }
 
-/** Deploying and OIDC workflow counts over the parsed files of each repository; null if none read. */
+/**
+ * Deploying and OIDC workflow counts over the repositories whose workflows could be read, and how
+ * many repositories that is (k of n); null when there is no repository.
+ */
 export function workloadIdentityOf(
-  repos: readonly (readonly { identity?: WorkloadIdentity | null }[])[],
-): { deploying: number; oidc: number } | null {
-  const parsed = repos.flat().filter((f) => f.identity);
+  repos: readonly { read: boolean; files: readonly { identity?: WorkloadIdentity | null }[] }[],
+): { deploying: number; oidc: number; readable: { k: number; n: number } } | null {
   if (repos.length === 0) return null;
+  const read = repos.filter((r) => r.read);
+  const parsed = read.flatMap((r) => r.files).filter((f) => f.identity);
   return {
     deploying: parsed.filter((f) => f.identity!.deploying).length,
     oidc: parsed.filter((f) => f.identity!.oidc).length,
+    readable: { k: read.length, n: repos.length },
   };
 }

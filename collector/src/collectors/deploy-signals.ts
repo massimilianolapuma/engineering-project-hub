@@ -68,6 +68,24 @@ export function valueAt(text: string, key: string): string | null {
   return typeof node === 'string' || typeof node === 'number' ? String(node).trim() : null;
 }
 
+/** Completed successful / failed runs in the window as deploy events, oldest first. */
+function runEvents(runs: readonly WorkflowRunDTO[], since: number): DeployEvent[] {
+  return [...new Map(runs.map((r) => [r.id, r])).values()]
+    .filter((r) => r.status === 'completed' && r.event !== 'pull_request')
+    .filter((r) => r.conclusion === 'success' || r.conclusion === 'failure')
+    .filter((r) => Date.parse(r.updatedAt) >= since)
+    .map((r) => ({
+      at: r.updatedAt,
+      kind: r.conclusion === 'success' ? ('deploy' as const) : ('failure' as const),
+      version: null,
+      leadHours: r.conclusion === 'success' ? hoursBetween(r.headCommitAt, r.updatedAt) : null,
+    }))
+    .sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+}
+
+/** Argo CD keeps `revisionHistoryLimit` entries (10 by default). */
+const ARGO_HISTORY_LIMIT = 10;
+
 export async function collectDeploySignal(
   provider: SourceProvider,
   raw: DeploySignalInput,
@@ -93,24 +111,47 @@ export async function collectDeploySignal(
       return none('external-pipelines');
 
     case 'workflow': {
+      const tracked = raw.config.trackedWorkflows.find((w) => w.id === signal.workflow);
+      const listSince = provider.listWorkflowRunsSince?.bind(provider);
+      if (tracked && listSince) {
+        // The delivery workflow is read over the whole window and on every ref: a deploy on a
+        // tag push has head_branch = the tag, so the default-branch list would miss it.
+        const targets = tracked.appliesTo ?? raw.config.components.map((c) => c.id);
+        const repos = [
+          ...new Set(
+            targets.map((id) =>
+              id === 'coordinator'
+                ? raw.config.coordinator.repository
+                : raw.config.components.find((c) => c.id === id)?.repository,
+            ),
+          ),
+        ].filter((r): r is string => !!r && !unreadable(r));
+        if (repos.length === 0) return none('source-unreadable');
+        const sinceIso = new Date(since).toISOString();
+        const results = await Promise.all(repos.map((r) => listSince(r, tracked.file, sinceIso)));
+        const okResults = results.filter((r) => r.ok);
+        if (okResults.length === 0) {
+          const err = results.find((r) => !r.ok);
+          return err && !err.ok
+            ? none(reasonOf(err.error), { error: err.error, repository: repos[0]! })
+            : none('source-unreadable');
+        }
+        const notes = okResults.some((r) => r.ok && r.data.truncated)
+          ? ['run list truncated: the frequency is at least this']
+          : [];
+        const runs = okResults.flatMap((r) => (r.ok ? r.data.runs : []));
+        return { ...base, notes, events: runEvents(runs, since), reason: null };
+      }
       const data = raw.workflows.filter((w) => w.workflow.id === signal.workflow);
       const readable = data.filter((w) => w.runs.ok);
       if (readable.length === 0) {
         const err = data.find((w) => !w.runs.ok)?.runs;
         return none(err && !err.ok ? reasonOf(err.error) : 'source-unreadable');
       }
-      const events: DeployEvent[] = readable
-        .flatMap((w) => (w.runs.ok ? w.runs.data : []))
-        .filter((r) => r.status === 'completed')
-        .filter((r) => r.conclusion === 'success' || r.conclusion === 'failure')
-        .filter((r) => Date.parse(r.updatedAt) >= since)
-        .map((r) => ({
-          at: r.updatedAt,
-          kind: r.conclusion === 'success' ? ('deploy' as const) : ('failure' as const),
-          version: null,
-          leadHours: r.conclusion === 'success' ? hoursBetween(r.headCommitAt, r.updatedAt) : null,
-        }))
-        .sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+      const events = runEvents(
+        readable.flatMap((w) => (w.runs.ok ? w.runs.data : [])),
+        since,
+      );
       return { ...base, events, reason: null };
     }
 
@@ -118,10 +159,15 @@ export async function collectDeploySignal(
       const app = raw.argocd?.get(env.id);
       if (!app || app === 'off') return none('no-argocd');
       if (!app.ok) return none(reasonOf(app.error));
-      const events: DeployEvent[] = (app.data.deployHistory ?? [])
+      const history = app.data.deployHistory ?? [];
+      const events: DeployEvent[] = history
         .filter((at) => Date.parse(at) >= since)
         .map((at) => ({ at, kind: 'deploy' as const, version: null, leadHours: null }));
-      return { ...base, events, reason: null };
+      const notes =
+        history.length >= ARGO_HISTORY_LIMIT
+          ? ['Argo CD keeps a limited history: the frequency is at least this']
+          : [];
+      return { ...base, notes, events, reason: null };
     }
 
     case 'release': {
@@ -154,6 +200,9 @@ export async function collectDeploySignal(
       const dated = commits.data
         .filter((c) => c.committedAt && Number.isFinite(Date.parse(c.committedAt)))
         .sort((a, b) => Date.parse(a.committedAt!) - Date.parse(b.committedAt!));
+      // A path no commit touches is a misconfiguration, not "no deploy": not visible.
+      if (dated.length === 0)
+        return none('source-unreadable', { notes: ['no commit touches the path'], repository });
       const inWindow = dated
         .filter((c) => Date.parse(c.committedAt!) >= since)
         .slice(-MAX_VERSION_COMMITS);
@@ -173,6 +222,7 @@ export async function collectDeploySignal(
         const v = await read(baseline.sha);
         previous = v === 'unreadable' ? null : semverOf(v);
       }
+      let seenVersion = previous !== null;
       const events: DeployEvent[] = [];
       for (const c of inWindow) {
         const raw = await read(c.sha);
@@ -186,6 +236,7 @@ export async function collectDeploySignal(
           notes.push(`non-semver value at ${short}`);
           continue;
         }
+        seenVersion = true;
         const order = previous === null ? 1 : compareVersions(version, previous);
         previous = version;
         if (!order) continue; // equal: a commit that did not change the version
@@ -201,6 +252,9 @@ export async function collectDeploySignal(
         }
         events.push({ at, kind: 'deploy', version, leadHours });
       }
+      // No commit held a version at `key` (a wrong key or path): not visible, never 0 deploys.
+      if (!seenVersion)
+        return none('source-unreadable', { notes: [...notes, 'no version found at the key'] });
       return { ...base, notes, events, reason: null };
     }
   }

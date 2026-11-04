@@ -289,7 +289,7 @@ hub_project_control_measured{project="project-gamma"} 1
 hub_project_control_applicable{project="platform"} 22
 hub_project_control_applicable{project="project-alpha"} 24
 hub_project_control_applicable{project="project-beta"} 24
-hub_project_control_applicable{project="project-gamma"} 22
+hub_project_control_applicable{project="project-gamma"} 23
 # HELP hub_project_control_level Control map level 0-5 per check; a check not measured or not applicable has no series.
 # TYPE hub_project_control_level gauge
 hub_project_control_level{check="branch-protection",project="platform"} 5

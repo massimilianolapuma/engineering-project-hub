@@ -121,6 +121,12 @@ controlMap:
     - { check: dast, reason: internal service without a web interface }
 ```
 
+Change failure rate = (failed runs + rollbacks) / (deploys + failed runs + rollbacks): a rollback
+is itself a change and marks the deploy it undoes as failed. The delivery workflow's runs are read
+over the whole window on every ref (a deploy on a tag push counts), up to 500 runs; Argo CD keeps a
+limited history. When a list is cut, the cell notes that the frequency is a lower bound. Deploys
+made inside a reusable workflow (`jobs.<id>.uses`) are not seen by the OIDC check.
+
 Delivery metrics on DEV, on releases or on Argo CD history are **proxies**: the cell always names
 the environment and the signal.
 

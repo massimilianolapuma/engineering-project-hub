@@ -39,10 +39,17 @@ export function controlMapExtras(
     if (cm.environments.error.classification === 'not-authorised') environments = 'not-authorised';
   }
 
-  const withControls = unique.filter((r) => r.controls);
-  const workloadIdentity = workloadIdentityOf(
-    withControls.map((r) => parsedWorkflows(r.controls!).files),
-  );
+  // Repositories whose workflow directory was listed count as read (a 404 = no workflows).
+  const workloadIdentity = unique.some((r) => r.controls)
+    ? workloadIdentityOf(
+        unique.map((r) =>
+          r.controls &&
+          (r.controls.workflowDir.ok || r.controls.workflowDir.error.classification === 'not-found')
+            ? { read: true, files: parsedWorkflows(r.controls).files }
+            : { read: false, files: [] },
+        ),
+      )
+    : null;
 
   let deploy: ControlMapExtras['deploy'] = null;
   if (cm.deploy) {

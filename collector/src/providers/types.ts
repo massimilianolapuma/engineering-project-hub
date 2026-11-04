@@ -348,6 +348,15 @@ export interface SourceProvider {
   listSecretScanningAlerts(repo: string): Promise<ProviderResult<SecretScanningAlertDTO[]>>;
   /** Deployment environments of a repository (control map). Optional: absent = not read. */
   listEnvironments?(repo: string): Promise<ProviderResult<EnvironmentDTO[]>>;
+  /**
+   * Runs of a workflow created since `since` on every ref (control map delivery workflow), at most
+   * MAX_DELIVERY_RUN_PAGES pages of 100; `truncated` when more remain.
+   */
+  listWorkflowRunsSince?(
+    repo: string,
+    workflowFile: string,
+    since: string,
+  ): Promise<ProviderResult<{ runs: WorkflowRunDTO[]; truncated: boolean }>>;
   /** Newest commits touching a catalog-configured path (first page of 100), newest first. */
   listCommitsForPath?(repo: string, path: string): Promise<ProviderResult<PathCommitDTO[]>>;
   /** Published releases, newest first (first page of 100). */

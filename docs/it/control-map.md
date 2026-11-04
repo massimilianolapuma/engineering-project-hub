@@ -126,6 +126,13 @@ controlMap:
     - { check: dast, reason: servizio interno senza interfaccia web }
 ```
 
+Tasso di modifiche fallite = (esecuzioni fallite + rollback) / (deploy + esecuzioni fallite +
+rollback): un rollback è anch'esso una modifica e segna come fallito il deploy che annulla. Le
+esecuzioni del workflow di rilascio si leggono su tutta la finestra e su ogni ref (conta anche un
+deploy su push di un tag), fino a 500; Argo CD conserva uno storico limitato. Quando un elenco è
+troncato, la cella indica che la frequenza è un minimo. I deploy fatti dentro un workflow riusabile
+(`jobs.<id>.uses`) non sono visti dal controllo OIDC.
+
 Le metriche di rilascio su DEV, sulle release o sullo storico Argo CD sono **approssimazioni**:
 la cella indica sempre l'ambiente e il segnale.
 

@@ -98,7 +98,11 @@ jobs:
       { identity: { deploying: true, oidc: false } },
       { identity: { deploying: false, oidc: false } },
     ];
-    expect(workloadIdentityOf([files])).toEqual({ deploying: 2, oidc: 1 });
+    expect(workloadIdentityOf([{ read: true, files }])).toEqual({
+      deploying: 2,
+      oidc: 1,
+      readable: { k: 1, n: 1 },
+    });
     expect(workloadIdentityOf([])).toBeNull();
   });
 
@@ -109,7 +113,10 @@ jobs:
       {
         snapshot: snap('platform'),
         project,
-        extras: { ...emptyExtras(), workloadIdentity: { deploying: 0, oidc: 0 } },
+        extras: {
+          ...emptyExtras(),
+          workloadIdentity: { deploying: 0, oidc: 0, readable: { k: 1, n: 1 } },
+        },
       },
       policies,
     );

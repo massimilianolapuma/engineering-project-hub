@@ -1090,13 +1090,16 @@
       {
         "check": "workload-identity",
         "level": null,
-        "state": "not-applicable",
+        "state": "not-visible",
         "value": null,
         "unit": "percent",
         "threshold": null,
-        "readable": null,
-        "reason": "no-object",
-        "note": "no deploying workflow",
+        "readable": {
+          "k": 0,
+          "n": 2
+        },
+        "reason": "source-unreadable",
+        "note": null,
         "environment": null,
         "signal": null
       },
@@ -1246,7 +1249,10 @@
         "value": null,
         "unit": "percent",
         "threshold": null,
-        "readable": null,
+        "readable": {
+          "k": 0,
+          "n": 21
+        },
         "reason": "source-unreadable",
         "note": null,
         "environment": null,
@@ -1255,7 +1261,7 @@
     ],
     "score": null,
     "measured": 1,
-    "applicable": 22,
+    "applicable": 23,
     "areas": {
       "supply-chain": {
         "score": null,
@@ -1270,7 +1276,7 @@
       "secrets": {
         "score": null,
         "measured": 0,
-        "applicable": 2
+        "applicable": 3
       },
       "change-access": {
         "score": null,

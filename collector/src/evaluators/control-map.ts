@@ -33,8 +33,8 @@ export interface ControlMapExtras {
     { name: string; protected: boolean; branchPolicy: boolean }[] | null | 'not-authorised';
   /** Median days to close critical/high alerts closed in the trend window. */
   resolvedMedianDays: number | null;
-  /** Deploying workflows and how many authenticate with OIDC; null when not read. */
-  workloadIdentity: { deploying: number; oidc: number } | null;
+  /** Deploying workflows, how many use OIDC, and the repositories read (k of n); null: not read. */
+  workloadIdentity: { deploying: number; oidc: number; readable: { k: number; n: number } } | null;
   /** Delivery metrics on the delivery environment; null when not collected. */
   deploy: {
     environment: string;
@@ -216,6 +216,50 @@ function repoCheckStates(s: ProjectSnapshot, ids: string[]): RepoState[] {
 
 const DAY_MS = 86_400_000;
 
+function repositoryCheck(
+  check: 'branch-protection' | 'required-checks' | 'pipeline-integrity',
+  s: ProjectSnapshot,
+  override: readonly number[] | undefined,
+): ControlCell {
+  const ids =
+    check === 'branch-protection'
+      ? ['branch-protected', 'pull-request-required', 'force-push-blocked']
+      : check === 'required-checks'
+        ? ['status-checks-required']
+        : ['actions-pinned', 'reusable-workflows-current'];
+  return fromRatio(check, repoCheckStates(s, ids), override);
+}
+
+/** Evidence sources expected for the project: true fresh, false stale, null unreadable. */
+function evidenceSources(s: ProjectSnapshot): (boolean | null)[] {
+  const out: (boolean | null)[] = [];
+  for (const comp of s.securityControls)
+    for (const c of comp.controls) {
+      if (c.state === 'enabled' || c.state === 'stale') out.push(c.state !== 'stale');
+      else if (
+        c.state === 'not-authorised' ||
+        c.state === 'unknown' ||
+        c.state === 'collection-failed'
+      )
+        out.push(null);
+    }
+  for (const c of s.qualityHealth.perComponent) {
+    if (c.state === 'readable' || c.state === 'stale') out.push(c.state !== 'stale');
+    else if (c.state === 'not-authorised' || c.state === 'unknown' || c.state === 'invalid')
+      out.push(null);
+  }
+  for (const r of s.supplyChain.repositories) {
+    const st = r.summary.state;
+    if (st === 'readable' || st === 'stale') out.push(st !== 'stale');
+    else if (st === 'not-authorised' || st === 'unknown' || st === 'invalid') out.push(null);
+  }
+  for (const w of s.workflows) {
+    if (w.lastCompletedRun) out.push(!w.stale);
+    else if (w.state === 'not-authorised' || w.state === 'unknown') out.push(null);
+  }
+  return out;
+}
+
 function evaluateCheck(
   check: CheckId,
   { snapshot: s, project, extras }: ControlMapInput,
@@ -261,9 +305,14 @@ function evaluateCheck(
       return fromRatio(check, [...digests.values()], override);
     }
     case 'build-provenance': {
-      const states = s.supplyChain.repositories.map((r): RepoState => {
+      const repos = s.supplyChain.repositories;
+      // Off = not read, so not visible (never "nothing to check").
+      if (repos.length > 0 && repos.every((r) => r.attestations.state === 'off'))
+        return notVisible(check, 'source-unreadable', 'attestation reading is off in the policies');
+      const states = repos.map((r): RepoState => {
         const a = r.attestations;
-        if (a.state === 'not-applicable' || a.state === 'off') return 'n/a';
+        if (a.state === 'not-applicable') return 'n/a';
+        if (a.state === 'off') return 'unknown';
         if (a.state === 'available') return (a.withProvenance ?? 0) > 0 ? 'pass' : 'fail';
         if (a.state === 'none') return 'fail';
         return 'unknown';
@@ -358,25 +407,21 @@ function evaluateCheck(
     case 'workload-identity': {
       const w = extras.workloadIdentity;
       if (w === null) return notVisible(check, 'source-unreadable', 'workflow files not read');
+      if (w.readable.k === 0)
+        return { ...notVisible(check, 'source-unreadable'), readable: w.readable };
+      if (w.readable.k < w.readable.n / 2)
+        return { ...notVisible(check, 'too-few-readable'), readable: w.readable };
       if (w.deploying === 0) return notApplicable(check, 'no-object', 'no deploying workflow');
       return measured(check, Math.round((w.oidc / w.deploying) * 1000) / 10, 'percent', override, {
-        readable: { k: w.deploying, n: w.deploying },
+        readable: w.readable,
       });
     }
     case 'branch-protection':
-      return fromRatio(
-        check,
-        repoCheckStates(s, ['branch-protected', 'pull-request-required', 'force-push-blocked']),
-        override,
-      );
     case 'required-checks':
-      return fromRatio(check, repoCheckStates(s, ['status-checks-required']), override);
     case 'pipeline-integrity':
-      return fromRatio(
-        check,
-        repoCheckStates(s, ['actions-pinned', 'reusable-workflows-current']),
-        override,
-      );
+      if (!policies.repositoryControls.enabled)
+        return notVisible(check, 'source-unreadable', 'repository controls reading is off');
+      return repositoryCheck(check, s, override);
     case 'environment-separation': {
       const envs = project.environments;
       if (envs.length === 0) return notApplicable(check, 'no-object', 'no environments');
@@ -428,20 +473,16 @@ function evaluateCheck(
       return measured(check, q.percentage, 'percent', override);
     }
     case 'evidence-freshness': {
-      const items: boolean[] = [];
-      for (const comp of s.securityControls)
-        for (const c of comp.controls)
-          if (c.state === 'enabled' || c.state === 'stale') items.push(c.state !== 'stale');
-      for (const c of s.qualityHealth.perComponent)
-        if (c.state === 'readable' || c.state === 'stale') items.push(c.state !== 'stale');
-      for (const r of s.supplyChain.repositories)
-        if (r.summary.state === 'readable' || r.summary.state === 'stale')
-          items.push(r.summary.state !== 'stale');
-      for (const w of s.workflows) if (w.lastCompletedRun) items.push(!w.stale);
-      if (items.length === 0) return notVisible(check, 'source-unreadable');
-      const fresh = items.filter(Boolean).length;
-      return measured(check, Math.round((fresh / items.length) * 1000) / 10, 'percent', override, {
-        readable: { k: items.length, n: items.length },
+      // Unreadable sources count in n: one fresh source out of ten expected is not 100%.
+      const sources = evidenceSources(s);
+      const read = sources.filter((x): x is boolean => x !== null);
+      const readable = { k: read.length, n: sources.length };
+      if (read.length === 0) return { ...notVisible(check, 'source-unreadable'), readable };
+      if (read.length < sources.length / 2)
+        return { ...notVisible(check, 'too-few-readable'), readable };
+      const fresh = read.filter(Boolean).length;
+      return measured(check, Math.round((fresh / read.length) * 1000) / 10, 'percent', override, {
+        readable,
       });
     }
   }
