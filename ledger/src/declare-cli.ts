@@ -4,12 +4,15 @@
  *   [--date <ISO 8601>] [--note <text>] [--production] [--mode dry-run|write]
  * Declared ledger record (ADR 0015, spec §5.4). Runs in the protected `deployments-declare`
  * environment of the calling repository. Writes only with --mode write AND
- * HUB_DEPLOYMENTS_BRIDGE=write. Environment: LEDGER_APP_ID, LEDGER_APP_PRIVATE_KEY, GH_APP_ID,
+ * HUB_DEPLOYMENTS_BRIDGE=write. The target must be listed in the reviewed allowlist (--allowlist,
+ * default config/deployments-declare.yaml). Environment: LEDGER_APP_ID, LEDGER_APP_PRIVATE_KEY, GH_APP_ID,
  * GH_APP_PRIVATE_KEY, and the job's GITHUB_SERVER_URL, GITHUB_REPOSITORY, GITHUB_RUN_ID.
  */
-import { appendFile } from 'node:fs/promises';
+import { appendFile, readFile } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
-import { buildDeclaredRecord } from './declare';
+import { parse } from 'yaml';
+import { DeclareAllowlistSchema } from '@model/index';
+import { buildDeclaredRecord, declareAllowed } from './declare';
 import { createAppClients } from './github';
 import { resolveLedgerMode } from './mode';
 import { renderSummary } from './summary';
@@ -27,6 +30,7 @@ const { values } = parseArgs({
     note: { type: 'string', default: '' },
     production: { type: 'boolean', default: false },
     mode: { type: 'string', default: 'dry-run' },
+    allowlist: { type: 'string', default: 'config/deployments-declare.yaml' },
   },
 });
 
@@ -45,6 +49,10 @@ async function main(): Promise<number> {
     throw new Error('missing or invalid --result (success or failure)');
   const finishedAt = values.date ? new Date(values.date) : new Date();
   if (Number.isNaN(finishedAt.getTime())) throw new Error('missing or invalid --date');
+  // Only reviewed targets: refused before any token is requested.
+  const allowlist = DeclareAllowlistSchema.parse(parse(await readFile(values.allowlist, 'utf8')));
+  if (!declareAllowed(allowlist, repository, values.environment ?? ''))
+    throw new Error('missing allowlist entry for this repository and environment');
   const runId = required('GITHUB_RUN_ID');
   const apps = createAppClients({
     writeAppId: required('LEDGER_APP_ID'),

@@ -1,4 +1,4 @@
-import { LedgerRecordSchema, type LedgerRecord } from '@model/index';
+import { LedgerRecordSchema, type DeclareAllowlist, type LedgerRecord } from '@model/index';
 import { normaliseVersion } from '../../shared/semver';
 import type { LedgerReader } from './github';
 
@@ -60,4 +60,17 @@ export async function buildDeclaredRecord(
       kind: 'deploy',
     },
   });
+}
+
+/** Whether a person may declare a deploy of this repository and environment (exact match). */
+export function declareAllowed(
+  list: DeclareAllowlist,
+  repository: string,
+  environment: string,
+): boolean {
+  return list.targets.some(
+    (t) =>
+      t.repository.toLowerCase() === repository.toLowerCase() &&
+      t.environments.includes(environment),
+  );
 }

@@ -1,5 +1,7 @@
 # Example caller of the declared-deploy workflow (copy to .github/workflows/ of a private deploy
-# repository). Create the environment `deployments-declare` there with required reviewers.
+# repository). Create the environment `deployments-declare` there with required reviewers and
+# store LEDGER_APP_ID, LEDGER_APP_PRIVATE_KEY, GH_APP_ID, GH_APP_PRIVATE_KEY as its environment
+# secrets (not repository secrets). List the allowed targets in config/deployments-declare.yaml.
 name: Declare a deploy
 
 on:
@@ -40,8 +42,3 @@ jobs:
       note: ${{ inputs.note }}
       production: ${{ inputs.production }}
       mode: write
-    secrets:
-      LEDGER_APP_ID: ${{ secrets.LEDGER_APP_ID }}
-      LEDGER_APP_PRIVATE_KEY: ${{ secrets.LEDGER_APP_PRIVATE_KEY }}
-      GH_APP_ID: ${{ secrets.GH_APP_ID }}
-      GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}

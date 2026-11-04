@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../config/schema/deployments-declare.schema.json
+#
+# Declared-deploy allowlist (SYNTHETIC example): the only repositories and environments a person
+# may declare deploys for. Reviewed in pull requests. Reference: docs/deployments-ledger.md.
+
+schemaVersion: '1.0'
+targets:
+  - repository: example-org/example-service
+    environments: [test, prod]

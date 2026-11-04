@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildDeclaredRecord } from '../../ledger/src/declare';
+import { DeclareAllowlistSchema } from '@model/index';
+import { buildDeclaredRecord, declareAllowed } from '../../ledger/src/declare';
 import type { LedgerReader } from '../../ledger/src/github';
 
 /*
@@ -60,5 +61,20 @@ describe('buildDeclaredRecord', () => {
 
   it('refuses a record with neither commit nor version', async () => {
     expect(await buildDeclaredRecord(input, reader())).toEqual({ refused: 'no-ref' });
+  });
+});
+
+describe('declare allowlist', () => {
+  it('accepts only repositories and environments listed in the reviewed allowlist', () => {
+    const list = DeclareAllowlistSchema.parse({
+      schemaVersion: '1.0',
+      targets: [{ repository: 'example-org/example-service', environments: ['test', 'prod'] }],
+    });
+    expect(declareAllowed(list, 'example-org/example-service', 'prod')).toBe(true);
+    expect(declareAllowed(list, 'example-org/example-service', 'dev')).toBe(false);
+    expect(declareAllowed(list, 'example-org/other', 'prod')).toBe(false);
+    expect(DeclareAllowlistSchema.safeParse({ schemaVersion: '1.0', targets: [] }).success).toBe(
+      false,
+    );
   });
 });

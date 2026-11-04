@@ -1,9 +1,13 @@
 # Reusable — declared deploy into GitHub Deployments (deployments ledger, ADR 0015, spec §5.4).
 #
-# Records a deploy that no system can report, marked `declared`. The job runs in the protected
-# environment `deployments-declare` of the calling repository: configure required reviewers there,
-# so a declared deploy needs a second person. Dry-run unless mode is 'write' AND the calling
-# repository's variable HUB_DEPLOYMENTS_BRIDGE is 'write'.
+# Records a deploy that no system can report, marked `declared`. Fail-closed by design:
+# - the job runs in the environment `deployments-declare` of the calling repository; store the
+#   four App secrets as ENVIRONMENT secrets there (not repository secrets) and give it required
+#   reviewers: the keys exist only after a second person approves the run, and without them the
+#   job fails;
+# - the repository and environment must be listed in the reviewed allowlist file of the calling
+#   repository (default config/deployments-declare.yaml), or the record is refused;
+# - dry-run unless mode is 'write' AND the repository variable HUB_DEPLOYMENTS_BRIDGE is 'write'.
 #
 # Caller: see examples/deployments/caller-declare.yml.
 
@@ -54,15 +58,12 @@ on:
         description: "'dry-run' (default) or 'write'"
         type: string
         default: 'dry-run'
-    secrets:
-      LEDGER_APP_ID:
-        required: true
-      LEDGER_APP_PRIVATE_KEY:
-        required: true
-      GH_APP_ID:
-        required: true
-      GH_APP_PRIVATE_KEY:
-        required: true
+      allowlist:
+        description: 'Reviewed allowlist in the CALLING repository'
+        type: string
+        default: 'config/deployments-declare.yaml'
+    # No secrets are passed by the caller: the job reads the App keys from the environment
+    # secrets of `deployments-declare`, available only after the environment's reviewers approve.
 
 permissions:
   contents: read
@@ -84,9 +85,11 @@ jobs:
         env:
           HUB_REF: ${{ inputs.hub-ref }}
           MODE: ${{ inputs.mode }}
+          ALLOWLIST: ${{ inputs.allowlist }}
         run: |
           [[ "$HUB_REF" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::hub-ref must be a full 40-character commit SHA"; exit 1; }
           [[ "$MODE" == dry-run || "$MODE" == write ]] || { echo "::error::mode must be dry-run or write"; exit 1; }
+          [[ "$ALLOWLIST" =~ ^[A-Za-z0-9._/-]+$ && "$ALLOWLIST" != *..* && "$ALLOWLIST" != /* ]] || { echo "::error::invalid allowlist path"; exit 1; }
 
       - name: Require a release tag commit
         id: release
@@ -124,6 +127,14 @@ jobs:
           path: hub
           persist-credentials: false
 
+      - name: Checkout allowlist (calling repository)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: caller
+          sparse-checkout: ${{ inputs.allowlist }}
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -147,6 +158,7 @@ jobs:
           NOTE: ${{ inputs.note }}
           PRODUCTION: ${{ inputs.production }}
           MODE: ${{ inputs.mode }}
+          ALLOWLIST: ${{ inputs.allowlist }}
           HUB_DEPLOYMENTS_BRIDGE: ${{ vars.HUB_DEPLOYMENTS_BRIDGE }}
           LEDGER_APP_ID: ${{ secrets.LEDGER_APP_ID }}
           LEDGER_APP_PRIVATE_KEY: ${{ secrets.LEDGER_APP_PRIVATE_KEY }}
@@ -154,7 +166,7 @@ jobs:
           GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
         run: |
           args=(--repository "$REPOSITORY" --environment "$ENVIRONMENT" --tag-prefix "$TAG_PREFIX"
-                --result "$RESULT" --note "$NOTE" --mode "$MODE")
+                --result "$RESULT" --note "$NOTE" --mode "$MODE" --allowlist "../caller/$ALLOWLIST")
           [[ -n "$SHA" ]] && args+=(--sha "$SHA")
           [[ -n "$VERSION" ]] && args+=(--version "$VERSION")
           [[ -n "$DATE" ]] && args+=(--date "$DATE")

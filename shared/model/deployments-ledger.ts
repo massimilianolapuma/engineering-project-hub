@@ -104,3 +104,26 @@ export const DeploymentsBridgeMapSchema = z
   })
   .strict();
 export type DeploymentsBridgeMap = z.infer<typeof DeploymentsBridgeMapSchema>;
+
+/**
+ * Declared-deploy allowlist (security review of the declare workflow): the repositories and
+ * environments a person may declare deploys for, kept in the calling repository and reviewed in
+ * pull requests. Anything not listed is refused before a writer token is requested.
+ */
+export const DeclareAllowlistSchema = z
+  .object({
+    schemaVersion: z.literal('1.0'),
+    targets: z
+      .array(
+        z
+          .object({
+            repository,
+            environments: z.array(z.string().min(1).max(255)).min(1).max(20),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(200),
+  })
+  .strict();
+export type DeclareAllowlist = z.infer<typeof DeclareAllowlistSchema>;
