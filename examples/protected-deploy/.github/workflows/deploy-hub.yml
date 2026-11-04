@@ -27,6 +27,7 @@ jobs:
   hub:
     permissions:
       contents: read
+      actions: read # the hub restores this repository's own hub-history artifact (v0.14.2+)
     uses: massimilianolapuma/engineering-project-hub/.github/workflows/rw-hub-cloudflare-deploy.yml@HUB_SHA # vX.Y.Z
     with:
       hub-ref: HUB_SHA

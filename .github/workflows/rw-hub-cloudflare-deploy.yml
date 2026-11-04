@@ -164,6 +164,7 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read # checkout of the calling repository's configuration
+      actions: read # restores this repository's own hub-history artifact
     defaults:
       run:
         shell: bash
@@ -199,9 +200,23 @@ jobs:
           CONFIG_DIR: ${{ github.workspace }}/deploy/${{ inputs.config-path }}
         run: npx tsx scripts/validate-config.ts "$CONFIG_DIR"
 
+      # Restores the previous history from this repository's own newest "hub-history" artifact
+      # (default branch, this calling workflow or the hub's own, trusted events only).
+      # Only the workflow GITHUB_TOKEN (actions: read); collector secrets are not passed.
+      - name: Restore previous history
+        id: history
+        # A crash before the script's own handler must not fail the collection (state stays empty).
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: npm run --silent history:restore -- --out .history-restore
+
       # Credentials only in this step's environment.
       - name: Collect
         env:
+          HISTORY_FROM: .history-restore
+          # [template-injection] step output mapped to env var — never inline in run:
+          HISTORY_RESTORE_STATE: ${{ steps.history.outputs.state }}
           DATA_SOURCE: github
           CONFIG_DIR: ${{ github.workspace }}/deploy/${{ inputs.config-path }}
           GH_APP_ID: ${{ secrets.GH_APP_ID }}
@@ -228,6 +243,17 @@ jobs:
           path: hub/public/data
           retention-days: 7
           if-no-files-found: error
+
+      # Never after a failed (or crashed, empty state) restore: the fresh one-entry history would
+      # become the newest artifact and the previous chain would be dropped for good.
+      - name: Upload history artifact
+        if: ${{ steps.history.outputs.state == 'restored' || steps.history.outputs.state == 'none' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: hub-history
+          path: hub/public/data/history.json
+          retention-days: 90
+          if-no-files-found: warn
 
   # ==========================================================================
   # build — no secrets, no write permission

@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   candidateArtifacts,
   runIsTrusted,
+  workflowPathFromRef,
   type ArtifactLike,
 } from '../../collector/src/history/select-artifact';
 import { restoreHistory, type RestoreClient } from '../../scripts/restore-history';
@@ -267,5 +268,40 @@ describe('restore-history CLI', () => {
     expect(r.stdout).toContain('History restore: failed (api-error)');
     expect(r.stdout + r.stderr + readFileSync(ghOut, 'utf8')).not.toContain(token);
     expect(readFileSync(ghOut, 'utf8')).toContain('state=failed');
+  });
+});
+
+describe('protected deploy path (calling workflow trusted)', () => {
+  const HUB = '.github/workflows/deploy-hub.yml';
+
+  it('runIsTrusted accepts an extra path only when it is passed', () => {
+    expect(runIsTrusted({ id: 1, path: HUB, event: 'schedule' }, [HUB])).toBe(true);
+    expect(runIsTrusted({ id: 1, path: `${HUB}@refs/heads/main`, event: 'push' }, [HUB])).toBe(
+      true,
+    );
+    expect(runIsTrusted({ id: 1, path: HUB, event: 'schedule' })).toBe(false);
+    expect(runIsTrusted({ id: 1, path: HUB, event: 'pull_request' }, [HUB])).toBe(false);
+  });
+
+  it('workflowPathFromRef keeps only a workflow file path', () => {
+    expect(
+      workflowPathFromRef(
+        'example-org/hub-deploy/.github/workflows/deploy-hub.yml@refs/heads/main',
+      ),
+    ).toBe(HUB);
+    expect(workflowPathFromRef(undefined)).toBeNull();
+    expect(workflowPathFromRef('x')).toBeNull();
+    expect(workflowPathFromRef('a/b/../../etc/passwd@x')).toBeNull();
+    expect(workflowPathFromRef('a/b/.github/workflows/../x.yml@r')).toBeNull();
+  });
+
+  it('restoreHistory restores an artifact of the trusted calling workflow', async () => {
+    const { c } = client({
+      artifacts: [art(1)],
+      runs: { 501: { path: HUB, event: 'schedule' } },
+    });
+    const o = opts();
+    expect(await restoreHistory(c, o)).toEqual({ state: 'none', reason: 'no-artifact' });
+    expect(await restoreHistory(c, { ...o, trustedPaths: [HUB] })).toEqual({ state: 'restored' });
   });
 });

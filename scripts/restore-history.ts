@@ -13,6 +13,7 @@ import {
   HISTORY_ARTIFACT,
   MAX_ARTIFACT_BYTES,
   runIsTrusted,
+  workflowPathFromRef,
   type ArtifactLike,
   type RestoreOutcome,
 } from '../collector/src/history/select-artifact';
@@ -34,6 +35,8 @@ export interface RestoreOptions {
   repo: string;
   currentRunId: number;
   out: string;
+  /** Workflow paths trusted besides the hub's own (the calling workflow of a deploy repo). */
+  trustedPaths?: readonly string[];
 }
 
 export function createRestoreClient(token: string, baseUrl?: string): RestoreClient {
@@ -95,7 +98,7 @@ export async function restoreHistory(
         repo,
         run_id: artifact.workflow_run?.id ?? 0,
       });
-      if (!runIsTrusted({ id: run.id, path: run.path, event: run.event })) continue;
+      if (!runIsTrusted({ id: run.id, path: run.path, event: run.event }, o.trustedPaths)) continue;
       const res = await octokit.rest.actions.downloadArtifact({
         owner,
         repo,
@@ -147,7 +150,14 @@ export async function main(): Promise<void> {
     outcome = { state: 'failed', reason: 'api-error' };
   } else {
     const client = createRestoreClient(token, process.env.GITHUB_API_URL);
-    outcome = await restoreHistory(client, { owner, repo, currentRunId, out });
+    const caller = workflowPathFromRef(process.env.GITHUB_WORKFLOW_REF);
+    outcome = await restoreHistory(client, {
+      owner,
+      repo,
+      currentRunId,
+      out,
+      trustedPaths: caller ? [caller] : [],
+    });
   }
   report(outcome);
 }

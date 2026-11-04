@@ -127,6 +127,14 @@ Fissa una nuova release: aggiorna entrambe le occorrenze di `HUB_SHA` allo SHA d
 del nuovo tag. Leggi prima il CHANGELOG; il repository di deploy non segue mai `main` in
 automatico.
 
+> **Dalla v0.14.2** l'hub conserva lo storico nel repository di deploy: il job di raccolta
+> ripristina l'artifact `hub-history` più recente di quel repository e carica quello nuovo (90
+> giorni), così "Cosa è cambiato", gli andamenti e la sintesi direzionale funzionano sui dati reali.
+> Il job chiamante deve concedere `actions: read` (vedi
+> `examples/protected-deploy/.github/workflows/deploy-hub.yml`); senza, GitHub rifiuta di avviare il
+> workflow. Sono considerati affidabili solo gli artifact del branch predefinito di questo
+> repository, prodotti dal suo workflow di deploy in un'esecuzione pianificata, su push o manuale.
+
 ## Limiti
 
 - Chiunque sia ammesso dalla policy Access vede tutti i progetti (nessuna autorizzazione

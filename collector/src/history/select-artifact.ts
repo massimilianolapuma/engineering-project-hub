@@ -66,8 +66,25 @@ export function candidateArtifacts(
     .slice(0, MAX_CANDIDATES);
 }
 
-/** The producing run must be the deploy or collect workflow, on a trusted event. */
-export function runIsTrusted(run: RunLike): boolean {
+/**
+ * The producing run must be the deploy or collect workflow, on a trusted event. `extraPaths` adds
+ * the calling workflow of the protected deploy path (a deploy repository names its own file).
+ */
+export function runIsTrusted(run: RunLike, extraPaths: readonly string[] = []): boolean {
   const path = run.path.split('@')[0] ?? '';
-  return ALLOWED_PATHS.includes(path) && ALLOWED_EVENTS.includes(run.event);
+  return (
+    (ALLOWED_PATHS.includes(path) || extraPaths.includes(path)) &&
+    ALLOWED_EVENTS.includes(run.event)
+  );
+}
+
+const WORKFLOW_REF = /^[^/]+\/[^/]+\/(\.github\/workflows\/[\w-]+(?:\.[\w-]+)*\.ya?ml)@/;
+
+/**
+ * Workflow file path of GITHUB_WORKFLOW_REF ("owner/repo/.github/workflows/x.yml@ref" →
+ * ".github/workflows/x.yml"); null for anything else (no "..", no other directory).
+ */
+export function workflowPathFromRef(ref: string | undefined): string | null {
+  const m = WORKFLOW_REF.exec(ref ?? '');
+  return m && !m[1]!.includes('..') ? m[1]! : null;
 }
