@@ -72,42 +72,54 @@ writer keys never read code.
 
 Requirements: the agent can reach `https://api.github.com` (Microsoft-hosted agents can; a
 self-hosted agent in a customer network needs egress or a proxy), and the mirror keeps the commit
-SHAs. `scripts/report-deployment.sh` needs bash, openssl, curl and jq. Azure DevOps example, in
-the deployment job of each environment:
+SHAs. `scripts/report-deployment.sh` needs bash, openssl, curl and jq.
+
+Azure DevOps keeps one deployment record **per deployment job**, so report **once per stage**,
+from a last job that depends on all the deploy jobs of that environment (a stage is one deploy:
+failed if any job failed). The run id carries the stage, as the pull bridge does, so using both
+never records the same deploy twice:
 
 ```yaml
-- task: DownloadSecureFile@1
-  name: ghAppKey
-  inputs:
-    secureFile: github-deployment-reporter.pem
-- bash: |
-    # Agent.JobStatus is Succeeded, SucceededWithIssues, Failed or Canceled at this point.
-    case "$AGENT_JOBSTATUS" in
-      Succeeded | SucceededWithIssues) STATE=success ;;
-      Failed) STATE=failure ;;
-      *) echo "deploy $AGENT_JOBSTATUS: not recorded"; exit 0 ;;
-    esac
-    STATE="$STATE" FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)" ./scripts/report-deployment.sh
-  displayName: Report deployment to GitHub
+- job: ReportDeployment
+  dependsOn: [DeployInfra, DeployApp] # every deployment job of this stage
   condition: always()
-  env:
-    GH_APP_ID: $(GITHUB_DEPLOY_APP_ID)
-    GH_INSTALLATION_ID: $(GITHUB_DEPLOY_INSTALLATION_ID)
-    GH_KEY_FILE: $(ghAppKey.secureFilePath)
-    GH_OWNER: example-org
-    GH_REPO_NAME: example-service
-    SHA: $(Build.SourceVersion)
-    ENV_NAME: prod # the hub catalog environment id
-    RUN_ID: $(Build.BuildId)
-    ATTEMPT: $(System.StageAttempt)
-    RUN_URL: $(System.CollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
-    PRODUCTION: 'true'
+  variables:
+    infraResult: $[ dependencies.DeployInfra.result ]
+    appResult: $[ dependencies.DeployApp.result ]
+  steps:
+    - checkout: self # the script lives in the repository (or fetch it from a hub release)
+    - task: DownloadSecureFile@1
+      name: ghAppKey
+      inputs:
+        secureFile: github-deployment-reporter.pem
+    - bash: |
+        results="$INFRA_RESULT $APP_RESULT"
+        if [[ "$results" == *Failed* ]]; then STATE=failure
+        elif [[ "$results" =~ ^((Succeeded|SucceededWithIssues)( |$))+$ ]]; then STATE=success
+        else echo "deploy not completed ($results): not recorded"; exit 0; fi
+        STATE="$STATE" FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)" ./scripts/report-deployment.sh
+      displayName: Report deployment to GitHub
+      continueOnError: true # a GitHub outage must never fail a good deploy
+      env:
+        INFRA_RESULT: $(infraResult)
+        APP_RESULT: $(appResult)
+        GH_APP_ID: $(GITHUB_DEPLOY_APP_ID)
+        GH_INSTALLATION_ID: $(GITHUB_DEPLOY_INSTALLATION_ID)
+        GH_KEY_FILE: $(ghAppKey.secureFilePath)
+        GH_OWNER: example-org
+        GH_REPO_NAME: example-service
+        SHA: $(Build.SourceVersion)
+        ENV_NAME: prod # the hub catalog environment id
+        RUN_ID: $(Build.BuildId)/$(System.StageName)
+        ATTEMPT: $(System.StageAttempt)
+        RUN_URL: $(System.CollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
+        PRODUCTION: 'true'
 ```
 
-`scripts/report-deployment.sh` is copied into the external repository (or fetched from a hub
-release). A canceled deploy is not recorded, as in the bridge. A commit GitHub does not know
-returns HTTP 422: the script
-exits 0 with "commit not on GitHub", so the deploy job does not fail.
+A canceled or skipped deploy is not recorded, as in the bridge. A commit GitHub does not know
+returns HTTP 422: the script exits 0 and prints GitHub's message. A status that could not be
+written fails the step (a warning, with `continueOnError`) and the next run of the step adds it;
+the deployment itself is never written twice.
 
 ## Pull bridge: Azure DevOps → GitHub
 
@@ -135,7 +147,9 @@ run.
    subject `repo:<owner>/<repo>:ref:refs/heads/main` or the environment you use), added to the
    Azure DevOps organisation as a user (Basic or Stakeholder) with read access to the project and
    its environments. Set the repository variables `ADO_TENANT_ID` and `ADO_CLIENT_ID`. Fallback: a
-   PAT with Environment: read and Build: read, as the secret `ADO_PAT`.
+   PAT with **Environment: Read & manage** and **Build: Read**, as the secret `ADO_PAT`. Azure
+   DevOps has no read-only Environment scope for PATs, so this PAT can also manage environments:
+   prefer federation.
 3. **Secrets** of the calling repository: `LEDGER_APP_ID`, `LEDGER_APP_PRIVATE_KEY` (deployment
    App), `GH_APP_ID`, `GH_APP_PRIVATE_KEY` (the hub's read App).
 4. **Caller workflow**: [example](../examples/deployments/caller-bridge.yml), one job per GitHub
@@ -152,12 +166,14 @@ run.
 repository, environment, version or commit, result, date and note. A version resolves to the
 commit of tag `<prefix><version>`; a missing tag refuses the record. The workflow fails closed:
 
-- the job runs in the environment `deployments-declare` of the calling repository. Give it
-  required reviewers and store `LEDGER_APP_ID`, `LEDGER_APP_PRIVATE_KEY`, `GH_APP_ID` and
+- the job runs in the environment `deployments-declare` of the calling repository. Create it
+  **before** the first run (GitHub creates a missing environment unprotected), give it required
+  reviewers with **Prevent self-review**, limit its deployment branches to the default branch,
+  never call the workflow with `secrets: inherit`, and store `LEDGER_APP_ID`, `LEDGER_APP_PRIVATE_KEY`, `GH_APP_ID` and
   `GH_APP_PRIVATE_KEY` as **environment secrets** there, not as repository secrets: the keys exist
   only after a second person approves the run, and without them the job fails;
 - the repository and environment must be listed in the reviewed allowlist
-  `config/deployments-declare.yaml` of the calling repository
+  `config/deployments-declare.yaml` of the calling repository, read from its default branch
   ([example](../examples/deployments/deployments-declare.yaml)); anything else is refused before a
   token is requested.
 

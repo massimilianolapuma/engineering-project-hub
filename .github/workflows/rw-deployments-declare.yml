@@ -131,6 +131,8 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: caller
+          # The reviewed allowlist of the default branch, never one edited on a dispatched branch.
+          ref: ${{ github.event.repository.default_branch }}
           sparse-checkout: ${{ inputs.allowlist }}
           sparse-checkout-cone-mode: false
           persist-credentials: false

@@ -23,8 +23,9 @@ interface Call {
 let server: Server;
 let base = '';
 let calls: Call[] = [];
-let deployments: { id: number; payload: unknown }[] = [];
+let deployments: { id: number; payload: unknown; statuses: string[] }[] = [];
 let createStatus = 201;
+let statusPost = 201;
 const dir = mkdtempSync(join(tmpdir(), 'eph-report-'));
 const keyFile = join(dir, 'app.pem');
 
@@ -60,10 +61,28 @@ beforeAll(async () => {
     ) {
       if (createStatus !== 201) return send(createStatus, { message: 'No ref found' });
       const id = deployments.length + 1;
-      deployments.push({ id, payload: (JSON.parse(raw) as { payload: unknown }).payload });
+      deployments.push({
+        id,
+        payload: (JSON.parse(raw) as { payload: unknown }).payload,
+        statuses: [],
+      });
       return send(201, { id });
     }
-    if (/\/deployments\/\d+\/statuses$/.test(url.pathname)) return send(201, { id: 1 });
+    const st = /\/deployments\/(\d+)\/statuses$/.exec(url.pathname);
+    if (st && req.method === 'GET')
+      return send(
+        200,
+        (deployments.find((d) => d.id === Number(st[1]))?.statuses ?? []).map((state) => ({
+          state,
+        })),
+      );
+    if (st && req.method === 'POST') {
+      if (statusPost !== 201) return send(statusPost, { message: 'Server Error' });
+      deployments
+        .find((d) => d.id === Number(st[1]))
+        ?.statuses.push((JSON.parse(raw) as { state: string }).state);
+      return send(201, { id: 1 });
+    }
     return send(404, { message: 'Not Found' });
   });
   await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
@@ -75,7 +94,7 @@ afterAll(() => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-function run(): Promise<{ code: number; out: string }> {
+function run(extra: Record<string, string> = {}): Promise<{ code: number; out: string }> {
   return new Promise((resolve) => {
     execFile(
       'bash',
@@ -99,6 +118,7 @@ function run(): Promise<{ code: number; out: string }> {
           FINISHED_AT: '2026-11-04T09:20:31Z',
           VERSION: '0.5.2',
           PRODUCTION: 'true',
+          ...extra,
         },
       },
       (e, stdout, stderr) =>
@@ -163,6 +183,34 @@ describe('report-deployment.sh', async () => {
     createStatus = 422;
     const r = await run();
     expect(r.code).toBe(0);
-    expect(r.out).toContain('commit not on GitHub');
+    expect(r.out).toContain('not recorded (HTTP 422): No ref found');
+  });
+
+  it.skipIf(!ready)(
+    'a failed status POST fails the step, and the next run repairs it',
+    async () => {
+      calls = [];
+      deployments = [];
+      createStatus = 201;
+      statusPost = 500;
+      const first = await run();
+      expect(first.code).not.toBe(0);
+      expect(first.out).toContain('status not recorded (HTTP 500)');
+      statusPost = 201;
+      const second = await run();
+      expect(second.code).toBe(0);
+      expect(second.out).toContain('status added');
+      expect(deployments[0]!.statuses).toEqual(['success']);
+      expect(
+        calls.filter((c) => c.method === 'POST' && c.path.endsWith('/deployments')),
+      ).toHaveLength(1);
+    },
+  );
+
+  it.skipIf(!ready)('refuses an end time that is not ISO 8601 UTC before any call', async () => {
+    calls = [];
+    const r = await run({ FINISHED_AT: 'yesterday' });
+    expect(r.code).not.toBe(0);
+    expect(calls).toHaveLength(0);
   });
 });

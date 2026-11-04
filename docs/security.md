@@ -117,8 +117,9 @@ only chooses what to count.
   can address every repository the App is installed on, accepted by the owner). The bridge job has
   `contents: read` and `id-token: write` (Microsoft Entra federation to read Azure DevOps, no stored
   secret) and reads GitHub with the hub's read App. The declare job runs in the protected
-  environment `deployments-declare` whose environment secrets hold the keys, and only for targets
-  in a reviewed allowlist. Both write only with `mode: write` and `HUB_DEPLOYMENTS_BRIDGE=write`.
+  environment `deployments-declare` (required reviewers with Prevent self-review, default branch
+  only, created before the first run; never `secrets: inherit`) whose environment secrets hold the
+  keys, and only for targets in a reviewed allowlist read from the default branch. Both write only with `mode: write` and `HUB_DEPLOYMENTS_BRIDGE=write`.
 - **Control map sources** (only when the [control map](control-map.md) is published). All GET:
   GitHub environments of the coordinator (`GET /repos/{owner}/{repo}/environments`), commits of a
   versions-file path, the file at a commit, commit dates and releases (**Contents: read**), and the

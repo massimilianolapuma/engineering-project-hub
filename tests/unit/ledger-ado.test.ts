@@ -79,6 +79,8 @@ describe('createAdoClient', () => {
               startTime: '2026-02-20T09:00:00Z',
               finishTime: '2026-02-20T09:10:00Z',
               stageAttempt: 2,
+              stageName: 'Deploy_Prod',
+              jobName: 'app',
               definition: { id: 7, name: 'deploy' },
               owner: { id: 345, name: '20260220.1' },
             },
@@ -99,6 +101,8 @@ describe('createAdoClient', () => {
         pipelineId: 7,
         runId: 345,
         attempt: 2,
+        stage: 'Deploy_Prod',
+        job: 'app',
         runUrl: 'https://dev.azure.com/example-org/example-project/_build/results?buildId=345',
       },
     ]);

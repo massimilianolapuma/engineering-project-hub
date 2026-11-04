@@ -128,7 +128,15 @@ async function ledgerEvents(
   let declared = 0;
   for (const { d, payload } of inWindow) {
     const statuses = await listStatuses(repository, d.id);
-    if (!statuses.ok) continue;
+    // A status that cannot be read leaves the set incomplete: not visible, never a partial count.
+    if (!statuses.ok)
+      return {
+        ...base,
+        events: [],
+        reason: reasonOf(statuses.error),
+        error: statuses.error,
+        repository,
+      };
     const success = statuses.data.find((s) => s.state === 'success');
     const failed = statuses.data.find((s) => s.state === 'failure' || s.state === 'error');
     const final = success ?? failed;

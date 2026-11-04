@@ -3,8 +3,8 @@ import { readBodyCapped } from '../../shared/http/bounded-read';
 /*
  * Azure DevOps sign-in of the bridge (deployments ledger D6). Preferred: workload identity
  * federation, no stored secret. The job asks GitHub for an OIDC token, then Microsoft Entra
- * exchanges it for a token on the Azure DevOps resource. Fallback: a PAT (Environment: read,
- * Build: read). Errors carry a fixed text: no token, assertion or response body.
+ * exchanges it for a token on the Azure DevOps resource. Fallback: a PAT (Environment: Read &
+ * manage, Build: Read; Azure DevOps has no read-only Environment PAT scope). Errors carry a fixed text: no token, assertion or response body.
  */
 
 /** Azure DevOps resource (application) id in Microsoft Entra. */

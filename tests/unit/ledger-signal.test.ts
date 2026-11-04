@@ -200,4 +200,36 @@ describe('github-deployments signal', () => {
       error: { classification: 'not-authorised' },
     });
   });
+
+  it('a status that cannot be read makes the signal not visible, never a measured 0', async () => {
+    const base = (await loadConfig('config')).catalog.projects.find(
+      (p) => p.id === 'project-alpha',
+    )!;
+    const env = {
+      id: 'prod',
+      name: 'PROD',
+      deploySignal: {
+        type: 'github-deployments',
+        repository: 'coordinator',
+        tagPrefix: 'v',
+      } as const,
+    };
+    const provider = {
+      listDeployments: async () => ok([dep(1, '2026-02-20T00:00:00Z')]),
+      listDeploymentStatuses: async () =>
+        fail({ classification: 'rate-limited' as const, httpStatus: 403 }),
+    } as unknown as SourceProvider;
+    const r = await collectDeploySignal(
+      provider,
+      { config: { ...base, environments: [env] }, workflows: [] },
+      env,
+      now,
+      windows,
+    );
+    expect(r).toMatchObject({
+      events: [],
+      reason: 'source-unreadable',
+      error: { classification: 'rate-limited' },
+    });
+  });
 });

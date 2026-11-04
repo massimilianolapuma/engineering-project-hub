@@ -6,8 +6,8 @@ import { readBodyCapped } from '../../shared/http/bounded-read';
  * - Environments - List:   GET {org}/{project}/_apis/distributedtask/environments?name=
  * - Environment deployment records - List:
  *                          GET {org}/{project}/_apis/distributedtask/environments/{id}/environmentdeploymentrecords?top=
- *   (record: id, result TaskResult, startTime, finishTime, definition {id} = pipeline,
- *    owner {id} = run (build) id, stageAttempt)
+ *   (one record per deployment job: id, result TaskResult, startTime, finishTime, definition {id}
+ *    = pipeline, owner {id} = run (build) id, stageName, jobName, stageAttempt)
  * - Pipelines Runs - Get:  GET {org}/{project}/_apis/pipelines/{pipelineId}/runs/{runId}
  *   (resources.repositories[alias].version = commit SHA)
  * Only https://dev.azure.com is called; every call has a timeout and a capped body.
@@ -29,6 +29,9 @@ export interface AdoRecord {
   pipelineId: number;
   runId: number;
   attempt: number;
+  /** Stage and job of the record: ADO keeps one record per deployment job. */
+  stage: string;
+  job: string;
   runUrl: string;
 }
 
@@ -118,6 +121,8 @@ export function createAdoClient(o: {
             pipelineId,
             runId,
             attempt: num(r.stageAttempt) ?? 1,
+            stage: str(r.stageName) ?? '',
+            job: str(r.jobName) ?? '',
             runUrl: `${HOST}/${seg(org)}/${seg(project)}/_build/results?buildId=${runId}`,
           },
         ];

@@ -26,6 +26,10 @@ PRODUCTION="${PRODUCTION:-false}"
 [[ "$STATE" == success || "$STATE" == failure ]] || { echo "STATE must be success or failure" >&2; exit 1; }
 [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "SHA must be a full commit SHA" >&2; exit 1; }
 [[ "$ATTEMPT" =~ ^[0-9]+$ ]] || { echo "ATTEMPT must be a number" >&2; exit 1; }
+ISO='^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?Z$'
+[[ "$FINISHED_AT" =~ $ISO ]] || { echo "FINISHED_AT must be ISO 8601 UTC (YYYY-MM-DDTHH:MM:SSZ)" >&2; exit 1; }
+[[ -z "${STARTED_AT:-}" || "$STARTED_AT" =~ $ISO ]] || { echo "STARTED_AT must be ISO 8601 UTC" >&2; exit 1; }
+[[ "$PRODUCTION" == true || "$PRODUCTION" == false ]] || { echo "PRODUCTION must be true or false" >&2; exit 1; }
 
 b64() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
 now=$(date +%s)
@@ -47,8 +51,22 @@ existing=$(api -G "$repo/deployments" --data-urlencode "sha=$SHA" --data-urlenco
   --data-urlencode "per_page=100" |
   jq -r --arg s "$SOURCE" --arg r "$RUN_ID" --argjson a "$ATTEMPT" \
     '[.[] | select(.payload.ledger == 1 and .payload.source == $s and .payload.runId == $r and .payload.attempt == $a)] | first | .id // empty')
+post_status() {
+  local code
+  code=$(api -o /dev/null -w '%{http_code}' -X POST "$repo/deployments/$1/statuses" \
+    -d "$(jq -cn --arg s "$STATE" --arg u "$RUN_URL" '{state: $s, log_url: $u}')")
+  [[ "$code" == 201 ]] || { echo "status not recorded (HTTP $code): run the step again" >&2; exit 1; }
+}
 if [[ -n "$existing" ]]; then
-  echo "already recorded (deployment $existing)"
+  # A record without a final status (an earlier status POST failed) gets it now.
+  final=$(api "$repo/deployments/$existing/statuses?per_page=100" |
+    jq -r '[.[] | select(.state == "success" or .state == "failure" or .state == "error")] | length')
+  if [[ "$final" == 0 ]]; then
+    post_status "$existing"
+    echo "status added (deployment $existing, $STATE)"
+  else
+    echo "already recorded (deployment $existing)"
+  fi
   exit 0
 fi
 
@@ -66,11 +84,11 @@ response=$(api -w '\n%{http_code}' -X POST "$repo/deployments" -d "$payload")
 code=${response##*$'\n'}
 body=${response%$'\n'*}
 if [[ "$code" == 422 ]]; then
-  echo "commit not on GitHub: nothing recorded (is the mirror up to date?)"
+  # Usually a commit GitHub does not know (mirror behind); GitHub's message says which.
+  echo "not recorded (HTTP 422): $(jq -r '.message // "unprocessable"' <<<"$body" 2>/dev/null | head -c 200)"
   exit 0
 fi
 [[ "$code" == 201 ]] || { echo "deployment not created (HTTP $code)" >&2; exit 1; }
 id=$(jq -r '.id' <<<"$body")
-api -o /dev/null -X POST "$repo/deployments/$id/statuses" \
-  -d "$(jq -cn --arg s "$STATE" --arg u "$RUN_URL" '{state: $s, log_url: $u}')"
+post_status "$id"
 echo "recorded deployment $id ($ENV_NAME, $STATE)"

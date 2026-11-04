@@ -74,41 +74,54 @@ file della versione (D11): le chiavi di scrittura non leggono mai il codice.
 Requisiti: l'agente raggiunge `https://api.github.com` (gli agenti Microsoft-hosted sì; un agente
 self-hosted nella rete di un cliente ha bisogno di accesso in uscita o di un proxy), e il mirror
 conserva gli SHA dei commit. `scripts/report-deployment.sh` richiede bash, openssl, curl e jq.
-Esempio Azure DevOps, nel job di deploy di ogni ambiente:
+
+Azure DevOps registra un record di deploy **per ogni job di deploy**, quindi la registrazione va
+fatta **una volta per stage**, da un ultimo job che dipende da tutti i job di deploy di
+quell'ambiente (uno stage è un deploy: fallito se un qualunque job è fallito). L'id
+dell'esecuzione contiene lo stage, come nel bridge, così usarli entrambi non registra mai due
+volte lo stesso deploy:
 
 ```yaml
-- task: DownloadSecureFile@1
-  name: ghAppKey
-  inputs:
-    secureFile: github-deployment-reporter.pem
-- bash: |
-    # Agent.JobStatus qui vale Succeeded, SucceededWithIssues, Failed o Canceled.
-    case "$AGENT_JOBSTATUS" in
-      Succeeded | SucceededWithIssues) STATE=success ;;
-      Failed) STATE=failure ;;
-      *) echo "deploy $AGENT_JOBSTATUS: not recorded"; exit 0 ;;
-    esac
-    STATE="$STATE" FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)" ./scripts/report-deployment.sh
-  displayName: Report deployment to GitHub
+- job: ReportDeployment
+  dependsOn: [DeployInfra, DeployApp] # tutti i job di deploy di questo stage
   condition: always()
-  env:
-    GH_APP_ID: $(GITHUB_DEPLOY_APP_ID)
-    GH_INSTALLATION_ID: $(GITHUB_DEPLOY_INSTALLATION_ID)
-    GH_KEY_FILE: $(ghAppKey.secureFilePath)
-    GH_OWNER: example-org
-    GH_REPO_NAME: example-service
-    SHA: $(Build.SourceVersion)
-    ENV_NAME: prod # id dell'ambiente nel catalogo dell'hub
-    RUN_ID: $(Build.BuildId)
-    ATTEMPT: $(System.StageAttempt)
-    RUN_URL: $(System.CollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
-    PRODUCTION: 'true'
+  variables:
+    infraResult: $[ dependencies.DeployInfra.result ]
+    appResult: $[ dependencies.DeployApp.result ]
+  steps:
+    - checkout: self # lo script sta nella repository (o va preso da una release dell'hub)
+    - task: DownloadSecureFile@1
+      name: ghAppKey
+      inputs:
+        secureFile: github-deployment-reporter.pem
+    - bash: |
+        results="$INFRA_RESULT $APP_RESULT"
+        if [[ "$results" == *Failed* ]]; then STATE=failure
+        elif [[ "$results" =~ ^((Succeeded|SucceededWithIssues)( |$))+$ ]]; then STATE=success
+        else echo "deploy not completed ($results): not recorded"; exit 0; fi
+        STATE="$STATE" FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)" ./scripts/report-deployment.sh
+      displayName: Report deployment to GitHub
+      continueOnError: true # un disservizio di GitHub non deve mai far fallire un deploy riuscito
+      env:
+        INFRA_RESULT: $(infraResult)
+        APP_RESULT: $(appResult)
+        GH_APP_ID: $(GITHUB_DEPLOY_APP_ID)
+        GH_INSTALLATION_ID: $(GITHUB_DEPLOY_INSTALLATION_ID)
+        GH_KEY_FILE: $(ghAppKey.secureFilePath)
+        GH_OWNER: example-org
+        GH_REPO_NAME: example-service
+        SHA: $(Build.SourceVersion)
+        ENV_NAME: prod # id dell'ambiente nel catalogo dell'hub
+        RUN_ID: $(Build.BuildId)/$(System.StageName)
+        ATTEMPT: $(System.StageAttempt)
+        RUN_URL: $(System.CollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
+        PRODUCTION: 'true'
 ```
 
-`scripts/report-deployment.sh` va copiato nella repository esterna (o preso da una release
-dell'hub). Un deploy annullato non viene registrato, come nel bridge. Un commit che GitHub non
-conosce restituisce HTTP 422: lo script esce con 0 e il messaggio "commit not on GitHub", così il
-job di deploy non fallisce.
+Un deploy annullato o saltato non viene registrato, come nel bridge. Un commit che GitHub non
+conosce restituisce HTTP 422: lo script esce con 0 e stampa il messaggio di GitHub. Uno stato che
+non si riesce a scrivere fa fallire lo step (un avviso, con `continueOnError`) e la prossima
+esecuzione dello step lo aggiunge; il deployment non viene mai scritto due volte.
 
 ## Bridge in lettura: Azure DevOps → GitHub
 
@@ -136,8 +149,10 @@ esecuzione.
    `https://token.actions.githubusercontent.com`, subject `repo:<owner>/<repo>:ref:refs/heads/main`
    o l'ambiente usato), aggiunta all'organizzazione Azure DevOps come utente (Basic o Stakeholder)
    con accesso in lettura al progetto e ai suoi environment. Impostare le variabili di repository
-   `ADO_TENANT_ID` e `ADO_CLIENT_ID`. Alternativa: un PAT con Environment: read e Build: read, come
-   segreto `ADO_PAT`.
+   `ADO_TENANT_ID` e `ADO_CLIENT_ID`. Alternativa: un PAT con **Environment: Read & manage** e
+   **Build: Read**, come segreto `ADO_PAT`. Azure DevOps non ha uno scope Environment in sola
+   lettura per i PAT, quindi questo PAT può anche gestire gli environment: preferire la
+   federazione.
 3. **Segreti** della repository chiamante: `LEDGER_APP_ID`, `LEDGER_APP_PRIVATE_KEY` (App dei
    deploy), `GH_APP_ID`, `GH_APP_PRIVATE_KEY` (App di lettura dell'hub).
 4. **Workflow chiamante**: [esempio](../../examples/deployments/caller-bridge.yml), un job per
@@ -156,12 +171,14 @@ esecuzione.
 si risolve nel commit del tag `<prefisso><versione>`; se il tag manca il record viene rifiutato.
 Il workflow è chiuso per default:
 
-- il job gira nell'ambiente `deployments-declare` della repository chiamante. Assegnargli revisori
-  obbligatori e salvare `LEDGER_APP_ID`, `LEDGER_APP_PRIVATE_KEY`, `GH_APP_ID` e
+- il job gira nell'ambiente `deployments-declare` della repository chiamante. Crearlo **prima**
+  della prima esecuzione (GitHub crea senza protezioni un ambiente mancante), assegnargli revisori
+  obbligatori con **Prevent self-review**, limitarne i branch di deploy al branch di default, non
+  chiamare mai il workflow con `secrets: inherit`, e salvare `LEDGER_APP_ID`, `LEDGER_APP_PRIVATE_KEY`, `GH_APP_ID` e
   `GH_APP_PRIVATE_KEY` come **segreti di ambiente** lì, non come segreti di repository: le chiavi
   esistono solo dopo che una seconda persona approva l'esecuzione, e senza di esse il job fallisce;
 - repository e ambiente devono comparire nella lista approvata `config/deployments-declare.yaml`
-  della repository chiamante ([esempio](../../examples/deployments/deployments-declare.yaml));
+  della repository chiamante, letta dal suo branch di default ([esempio](../../examples/deployments/deployments-declare.yaml));
   tutto il resto viene rifiutato prima di chiedere un token.
 
 L'hub conta i record dichiarati e la cella indica "includes N declared".

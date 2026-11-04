@@ -118,6 +118,10 @@ jobs:
   bridge:
     name: Bridge
     needs: verify
+    # Two overlapping runs could both find a deploy missing and both create it.
+    concurrency:
+      group: deployments-bridge-job-${{ github.repository }}
+      cancel-in-progress: false
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:

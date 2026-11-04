@@ -121,8 +121,9 @@ l'hub sceglie solo cosa contare.
   limite accettato dal responsabile). Il job del bridge ha `contents: read` e `id-token: write`
   (federazione Microsoft Entra per leggere Azure DevOps, nessun segreto salvato) e legge GitHub con
   l'App di lettura dell'hub. Il job di dichiarazione gira nell'ambiente protetto
-  `deployments-declare`, i cui segreti di ambiente contengono le chiavi, e solo per i target di una
-  lista approvata. Entrambi scrivono solo con `mode: write` e `HUB_DEPLOYMENTS_BRIDGE=write`.
+  `deployments-declare` (revisori obbligatori con Prevent self-review, solo il branch di default,
+  creato prima della prima esecuzione; mai `secrets: inherit`), i cui segreti di ambiente
+  contengono le chiavi, e solo per i target di una lista approvata letta dal branch di default. Entrambi scrivono solo con `mode: write` e `HUB_DEPLOYMENTS_BRIDGE=write`.
 - **Fonti della mappa dei controlli** (solo quando la [mappa dei controlli](control-map.md) è
   pubblicata). Tutte GET: ambienti GitHub della coordinatrice
   (`GET /repos/{owner}/{repo}/environments`), commit del percorso del file delle versioni, il file a

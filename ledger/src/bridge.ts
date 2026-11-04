@@ -1,7 +1,7 @@
 import type { DeploymentsBridgeMap, LedgerRecord } from '@model/index';
 import { valueAt } from '../../shared/yaml-value';
 import { normaliseVersion } from '../../shared/semver';
-import type { AdoClient, AdoRecord } from './ado';
+import { AdoError, type AdoClient, type AdoRecord } from './ado';
 import type { LedgerGitHub, LedgerReader } from './github';
 import type { LedgerMode } from './mode';
 import { renderSummary, type SummaryRow } from './summary';
@@ -32,13 +32,37 @@ const STATE: Record<string, LedgerRecord['state'] | undefined> = {
   failed: 'failure',
 };
 
+/** Records of one stage attempt of one run: ADO keeps one record per deployment job. */
+type Group = AdoRecord[];
+
+function groupByStage(records: readonly AdoRecord[]): Group[] {
+  const groups = new Map<string, Group>();
+  for (const r of records) {
+    const key = `${r.runId}|${r.stage}|${r.attempt}`;
+    groups.set(key, [...(groups.get(key) ?? []), r]);
+  }
+  return [...groups.values()];
+}
+
+const latest = (g: Group) => Math.max(...g.map((r) => Date.parse(r.finishTime ?? '') || 0));
+
+/** Why a writer failed on one environment, as a summary reason (no message, no body). */
+function errorReason(e: unknown): string {
+  if (e instanceof AdoError) return `ado-error-${e.status}`;
+  const status = (e as { status?: unknown } | null)?.status;
+  if (status === 404) return 'github-app-not-installed';
+  return typeof status === 'number' ? `github-error-${status}` : 'error';
+}
+
 export async function runBridge(d: BridgeDeps): Promise<{
   summary: string;
   written: number;
   skipped: number;
+  failed: number;
 }> {
   const since = d.now.getTime() - d.sinceDays * DAY_MS;
   const rows: SummaryRow[] = [];
+  let failed = 0;
   for (const source of d.map.sources) {
     for (const env of source.environments) {
       const row: SummaryRow = {
@@ -54,21 +78,29 @@ export async function runBridge(d: BridgeDeps): Promise<{
         if (s) s.count++;
         else row.skipped.push({ reason, count: 1 });
       };
-      const envId = await d.ado.environmentId(source.organization, source.project, env.ado);
-      if (envId === null) {
-        skip('ado-environment-not-found');
-        continue;
-      }
-      const records = (await d.ado.deploymentRecords(source.organization, source.project, envId))
-        .filter((r) => !r.finishTime || Date.parse(r.finishTime) >= since)
-        .sort((a, b) => Date.parse(a.finishTime ?? '') - Date.parse(b.finishTime ?? ''));
-      row.read = records.length;
-      const gh = await d.writer(env.repository);
-      const reader = await d.reader(env.repository);
-      for (const r of records) {
-        const outcome = await transcribe(d, source, env, r, gh, reader);
-        if (outcome === 'written') row.written++;
-        else if (outcome !== 'exists') skip(outcome);
+      // One environment failing never stops the others; the run fails at the end.
+      try {
+        const envId = await d.ado.environmentId(source.organization, source.project, env.ado);
+        if (envId === null) {
+          skip('ado-environment-not-found');
+          continue;
+        }
+        const groups = groupByStage(
+          await d.ado.deploymentRecords(source.organization, source.project, envId),
+        )
+          .filter((g) => g.some((r) => !r.finishTime) || latest(g) >= since)
+          .sort((a, b) => latest(a) - latest(b));
+        row.read = groups.length;
+        const gh = await d.writer(env.repository);
+        const reader = await d.reader(env.repository);
+        for (const g of groups) {
+          const outcome = await transcribe(d, source, env, g, gh, reader);
+          if (outcome === 'written') row.written++;
+          else if (outcome !== 'exists') skip(outcome);
+        }
+      } catch (e) {
+        failed++;
+        skip(errorReason(e));
       }
     }
   }
@@ -82,7 +114,7 @@ export async function runBridge(d: BridgeDeps): Promise<{
             ? 'input mode is not "write"'
             : 'repository variable HUB_DEPLOYMENTS_BRIDGE is not "write"'
         })\n`;
-  return { summary: renderSummary(rows, header), written, skipped };
+  return { summary: renderSummary(rows, header), written, skipped, failed };
 }
 
 type Source = DeploymentsBridgeMap['sources'][number];
@@ -92,12 +124,28 @@ async function transcribe(
   d: BridgeDeps,
   source: Source,
   env: Env,
-  r: AdoRecord,
+  group: Group,
   gh: LedgerGitHub,
   reader: LedgerReader,
 ): Promise<string> {
-  const state = r.result ? STATE[r.result] : undefined;
-  if (!state || !r.finishTime) return 'not-completed';
+  // A stage is one deploy: complete only when every job finished; failed if any job failed.
+  if (group.some((r) => !r.result || !r.finishTime)) return 'not-completed';
+  const states = group.map((r) => STATE[r.result!]);
+  const state: LedgerRecord['state'] | undefined = group.some((r) => r.result === 'failed')
+    ? 'failure'
+    : states.every((s) => s === 'success')
+      ? 'success'
+      : undefined;
+  if (!state) return 'not-completed';
+  const r = group[0]!;
+  const last = group.reduce((a, b) =>
+    (Date.parse(b.finishTime!) || 0) > (Date.parse(a.finishTime!) || 0) ? b : a,
+  );
+  const finishTime = last.finishTime!;
+  const starts = group
+    .map((x) => x.startTime)
+    .filter((t): t is string => !!t)
+    .sort();
   const sha = await d.ado.runCommit(
     source.organization,
     source.project,
@@ -124,12 +172,12 @@ async function transcribe(
     payload: {
       ledger: 1,
       source: 'azure-devops',
-      runId: String(r.runId),
+      runId: `${r.runId}/${r.stage}`.slice(0, 100),
       runUrl: r.runUrl,
       attempt: r.attempt,
       ...(version ? { version } : {}),
-      ...(r.startTime ? { startedAt: r.startTime } : {}),
-      finishedAt: r.finishTime,
+      ...(starts[0] ? { startedAt: starts[0] } : {}),
+      finishedAt: finishTime,
       declared: false,
       kind: 'deploy',
     },

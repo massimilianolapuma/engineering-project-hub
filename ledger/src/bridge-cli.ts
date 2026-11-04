@@ -35,7 +35,10 @@ async function main(): Promise<number> {
   const sinceDays = Number(values['since-days']);
   if (!Number.isInteger(sinceDays) || sinceDays < 1 || sinceDays > 90)
     throw new Error('--since-days must be an integer between 1 and 90');
-  const map = DeploymentsBridgeMapSchema.parse(parse(await readFile(values.map, 'utf8')));
+  const parsedMap = DeploymentsBridgeMapSchema.safeParse(parse(await readFile(values.map, 'utf8')));
+  if (!parsedMap.success)
+    throw new Error('missing or invalid map (see config/schema/deployments-bridge.schema.json)');
+  const map = parsedMap.data;
   const env = process.env;
   const authHeader = await adoAuthHeader(
     env.ADO_PAT
@@ -66,7 +69,8 @@ async function main(): Promise<number> {
   });
   console.log(result.summary);
   if (env.GITHUB_STEP_SUMMARY) await appendFile(env.GITHUB_STEP_SUMMARY, result.summary);
-  return 0;
+  // Environments that failed are in the summary; the run fails so the caller sees it.
+  return result.failed > 0 ? 1 : 0;
 }
 
 main()
