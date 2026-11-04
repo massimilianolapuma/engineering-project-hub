@@ -36,6 +36,17 @@ export interface RepositoryDTO {
   updatedAt: string | null;
   topics: string[];
   fork?: boolean;
+  /** security_and_analysis.secret_scanning_push_protection; null/absent when not visible. */
+  pushProtection?: 'enabled' | 'disabled' | null;
+}
+
+/** A GitHub deployment environment (names and protection only). */
+export interface EnvironmentDTO {
+  name: string;
+  /** Required reviewers or a wait timer. */
+  protected: boolean;
+  /** Deployments limited to protected branches or to a branch/tag policy. */
+  branchPolicy: boolean;
 }
 
 export interface DirectoryEntryDTO {
@@ -146,6 +157,8 @@ export interface CodeScanningAlertDTO {
   toolName: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+  /** fixed_at / dismissed_at / resolved_at of a closed alert. */
+  resolvedAt?: string | null;
   htmlUrl: string;
   /** File of the most recent instance; used only to attribute the alert to a monorepo component. */
   path?: string | null;
@@ -179,6 +192,8 @@ export interface DependabotAlertDTO {
   manifestPath?: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+  /** fixed_at / dismissed_at / resolved_at of a closed alert. */
+  resolvedAt?: string | null;
   htmlUrl: string;
 }
 
@@ -193,6 +208,8 @@ export interface SecretScanningAlertDTO {
   secretTypeDisplayName: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+  /** fixed_at / dismissed_at / resolved_at of a closed alert. */
+  resolvedAt?: string | null;
   htmlUrl: string;
 }
 
@@ -321,6 +338,8 @@ export interface SourceProvider {
   getCustomPropertyValues(repo: string): Promise<ProviderResult<CustomPropertyDTO[]>>;
   listDependabotAlerts(repo: string): Promise<ProviderResult<DependabotAlertDTO[]>>;
   listSecretScanningAlerts(repo: string): Promise<ProviderResult<SecretScanningAlertDTO[]>>;
+  /** Deployment environments of a repository (control map). Optional: absent = not read. */
+  listEnvironments?(repo: string): Promise<ProviderResult<EnvironmentDTO[]>>;
   /** Newest `hub-quality-summary` artifact of a branch, unzipped to the summary JSON text. */
   getQualitySummary(
     repo: string,

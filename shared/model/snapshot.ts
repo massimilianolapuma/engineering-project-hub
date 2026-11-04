@@ -70,6 +70,8 @@ export const CollectionErrorSchema = z
       'sonarqube',
       'harbor',
       'argocd',
+      'github-environments',
+      'deploy-signal',
     ]),
     classification: ErrorClassificationSchema,
     httpStatus: z.number().int().min(100).max(599).optional(),
@@ -323,6 +325,8 @@ export const SecurityFindingSchema = z
     commitSha: sha.optional(),
     detectedAt: isoDate.nullable(),
     updatedAt: isoDate.nullable(),
+    /** When a closed alert was fixed, dismissed or resolved (control map: time to close). */
+    resolvedAt: isoDate.nullable().optional(),
     fixAvailable: z.boolean().nullable(),
     htmlUrl: httpsUrl.nullable(),
     tool: z.string().max(50).nullable(),

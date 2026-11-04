@@ -19,6 +19,7 @@ import {
   type DirectoryEntryDTO,
   type WorkflowDTO,
   type DependabotAlertDTO,
+  type EnvironmentDTO,
   type FileDTO,
   type ProviderResult,
   type TeamDTO,
@@ -128,6 +129,16 @@ const split = (repo: string) => {
   return { owner, repo: name };
 };
 
+/** security_and_analysis is only returned to callers allowed to see it: absent → null. */
+function pushProtectionOf(data: {
+  security_and_analysis?: {
+    secret_scanning_push_protection?: { status?: string } | null;
+  } | null;
+}): 'enabled' | 'disabled' | null {
+  const status = data.security_and_analysis?.secret_scanning_push_protection?.status;
+  return status === 'enabled' || status === 'disabled' ? status : null;
+}
+
 async function guard<T>(
   task: () => Promise<T>,
   notFoundAs?: () => ProviderResult<T>,
@@ -222,7 +233,24 @@ export class GitHubProvider implements SourceProvider {
         archived: data.archived,
         updatedAt: data.pushed_at ?? data.updated_at ?? null,
         topics: data.topics ?? [],
+        pushProtection: pushProtectionOf(data),
       };
+    });
+  }
+
+  listEnvironments(repo: string): Promise<ProviderResult<EnvironmentDTO[]>> {
+    return guard(async () => {
+      const { data } = await this.client.rest.repos.getAllEnvironments({
+        ...split(repo),
+        per_page: 100,
+      });
+      return (data.environments ?? []).map((e) => ({
+        name: e.name,
+        protected: (e.protection_rules ?? []).some(
+          (r) => r.type === 'required_reviewers' || r.type === 'wait_timer',
+        ),
+        branchPolicy: e.deployment_branch_policy != null,
+      }));
     });
   }
 
@@ -610,6 +638,7 @@ export class GitHubProvider implements SourceProvider {
           category: a.most_recent_instance?.category ?? null,
           createdAt: a.created_at,
           updatedAt: a.updated_at ?? null,
+          resolvedAt: a.fixed_at ?? a.dismissed_at ?? null,
           htmlUrl: a.html_url,
         }),
       ),
@@ -650,6 +679,7 @@ export class GitHubProvider implements SourceProvider {
           manifestPath: a.dependency.manifest_path ?? null,
           createdAt: a.created_at,
           updatedAt: a.updated_at,
+          resolvedAt: a.fixed_at ?? a.dismissed_at ?? a.auto_dismissed_at ?? null,
           htmlUrl: a.html_url,
         }),
       ),
@@ -672,6 +702,7 @@ export class GitHubProvider implements SourceProvider {
           secretTypeDisplayName: a.secret_type_display_name ?? null,
           createdAt: a.created_at ?? null,
           updatedAt: a.updated_at ?? null,
+          resolvedAt: a.resolved_at ?? null,
           htmlUrl: a.html_url ?? '',
         }),
       ),

@@ -113,6 +113,100 @@ const provider = (routes: Record<string, Route>, seen?: string[]) =>
   );
 
 describe('GitHubProvider', () => {
+  it('control map: maps push protection, environments and closed-alert dates', async () => {
+    const repo = (extra: Record<string, unknown>) => ({
+      owner: { login: 'o' },
+      name: 'a',
+      full_name: 'o/a',
+      html_url: 'https://github.com/o/a',
+      private: true,
+      visibility: 'private',
+      default_branch: 'main',
+      archived: false,
+      pushed_at: null,
+      updated_at: null,
+      topics: [],
+      ...extra,
+    });
+    const withPp = provider({
+      '/repos/o/a': {
+        status: 200,
+        body: repo({
+          security_and_analysis: { secret_scanning_push_protection: { status: 'enabled' } },
+        }),
+      },
+      '/repos/o/a/environments': {
+        status: 200,
+        body: {
+          total_count: 3,
+          environments: [
+            { name: 'dev', protection_rules: [], deployment_branch_policy: null },
+            {
+              name: 'staging',
+              protection_rules: [{ id: 1, type: 'wait_timer', wait_timer: 5 }],
+              deployment_branch_policy: null,
+            },
+            {
+              name: 'production',
+              protection_rules: [{ id: 2, type: 'required_reviewers', reviewers: [] }],
+              deployment_branch_policy: { protected_branches: true, custom_branch_policies: false },
+            },
+          ],
+        },
+      },
+      '/repos/o/a/dependabot/alerts': {
+        status: 200,
+        body: [
+          {
+            number: 4,
+            state: 'fixed',
+            dismissed_reason: null,
+            security_advisory: { ghsa_id: 'GHSA-xxxx-xxxx-xxxx', cve_id: null, severity: 'high' },
+            security_vulnerability: { severity: 'high', first_patched_version: null },
+            dependency: { package: { name: 'left-pad' }, manifest_path: 'package.json' },
+            created_at: '2026-01-01T00:00:00Z',
+            updated_at: '2026-01-05T00:00:00Z',
+            fixed_at: '2026-01-05T00:00:00Z',
+            dismissed_at: null,
+            html_url: 'https://github.com/o/a/security/dependabot/4',
+          },
+        ],
+      },
+    });
+    expect(await withPp.getRepository('o/a')).toMatchObject({
+      ok: true,
+      data: { pushProtection: 'enabled' },
+    });
+    expect(await withPp.listEnvironments('o/a')).toEqual({
+      ok: true,
+      data: [
+        { name: 'dev', protected: false, branchPolicy: false },
+        { name: 'staging', protected: true, branchPolicy: false },
+        { name: 'production', protected: true, branchPolicy: true },
+      ],
+    });
+    expect(await withPp.listDependabotAlerts('o/a')).toMatchObject({
+      ok: true,
+      data: [{ resolvedAt: '2026-01-05T00:00:00Z' }],
+    });
+
+    const hidden = provider({
+      '/repos/o/a': { status: 200, body: repo({}) },
+      '/repos/o/a/environments': {
+        status: 403,
+        body: { message: 'Resource not accessible by integration' },
+      },
+    });
+    expect(await hidden.getRepository('o/a')).toMatchObject({
+      ok: true,
+      data: { pushProtection: null },
+    });
+    expect(await hidden.listEnvironments('o/a')).toMatchObject({
+      ok: false,
+      error: { classification: 'not-authorised' },
+    });
+  });
+
   it('maps repository metadata to the minimal DTO', async () => {
     const p = provider({
       '/repos/example-org/demo': {
@@ -145,6 +239,7 @@ describe('GitHubProvider', () => {
         archived: false,
         updatedAt: '2026-01-01T00:00:00Z',
         topics: ['x'],
+        pushProtection: null,
       },
     });
   });

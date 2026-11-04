@@ -126,7 +126,9 @@
                   "code-scanning-analyses",
                   "sonarqube",
                   "harbor",
-                  "argocd"
+                  "argocd",
+                  "github-environments",
+                  "deploy-signal"
                 ]
               },
               "classification": {
