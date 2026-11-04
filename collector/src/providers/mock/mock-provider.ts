@@ -28,6 +28,7 @@ import {
   type SbomRequestDTO,
   type SecretScanningAlertDTO,
   type EnvironmentDTO,
+  type PathCommitDTO,
   type SourceProvider,
   type SubmoduleRefDTO,
   type TagDTO,
@@ -73,6 +74,12 @@ export interface RepoFixture {
   secretScanningAlerts?: SecretScanningAlertDTO[] | ErrorFixture;
   /** GitHub deployment environments (control map); absent → none. */
   environments?: EnvironmentDTO[] | ErrorFixture;
+  /** Commits touching a path, newest first, keyed by path (control map versions file). */
+  pathCommits?: Record<string, PathCommitDTO[] | ErrorFixture>;
+  /** Published releases, newest first; absent → none. */
+  releases?: ReleaseDTO[] | ErrorFixture;
+  /** Committer dates by ref (tag name or SHA). */
+  commitDates?: Record<string, string>;
   qualitySummary?:
     { summary: unknown; createdAt: string; expired?: boolean; runId: number } | ErrorFixture;
   codeQualityFindings?: CodeQualityFindingDTO[] | ErrorFixture;
@@ -336,8 +343,13 @@ export class MockProvider implements SourceProvider {
     return this.pick(repo, (f) => f.comparisons?.[`${base}...${head}`]);
   }
 
-  async getFile(repo: string, path: string): Promise<ProviderResult<FileDTO>> {
-    const r = await this.pick(repo, (f) => f.files?.[path]);
+  /** `files` may key a file at a commit as "path@sha" (versions-file deploy signal). */
+  async getFile(repo: string, path: string, ref?: string): Promise<ProviderResult<FileDTO>> {
+    const r = await this.pick(repo, (f) =>
+      ref && f.files?.[`${path}@${ref}`] !== undefined
+        ? f.files[`${path}@${ref}`]
+        : f.files?.[path],
+    );
     return r.ok ? ok({ text: r.data }) : r;
   }
 
@@ -368,6 +380,18 @@ export class MockProvider implements SourceProvider {
 
   listSecretScanningAlerts(repo: string) {
     return this.pick(repo, (f) => f.secretScanningAlerts);
+  }
+
+  listCommitsForPath(repo: string, path: string): Promise<ProviderResult<PathCommitDTO[]>> {
+    return this.pick(repo, (f) => f.pathCommits?.[path]);
+  }
+
+  listReleases(repo: string): Promise<ProviderResult<ReleaseDTO[]>> {
+    return this.pick(repo, (f) => f.releases, ok([]));
+  }
+
+  getCommitDate(repo: string, ref: string): Promise<ProviderResult<string | null>> {
+    return this.pick(repo, (f) => f.commitDates?.[ref]);
   }
 
   listEnvironments(repo: string): Promise<ProviderResult<EnvironmentDTO[]>> {

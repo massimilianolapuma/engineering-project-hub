@@ -113,6 +113,65 @@ const provider = (routes: Record<string, Route>, seen?: string[]) =>
   );
 
 describe('GitHubProvider', () => {
+  it('control map: reads path commits, releases and commit dates (GET only)', async () => {
+    const seen: string[] = [];
+    const p = provider(
+      {
+        '/repos/o/a/commits': {
+          status: 200,
+          body: [
+            { sha: 'b'.repeat(40), commit: { committer: { date: '2026-02-02T00:00:00Z' } } },
+            {
+              sha: 'a'.repeat(40),
+              commit: { committer: null, author: { date: '2026-02-01T00:00:00Z' } },
+            },
+          ],
+        },
+        '/repos/o/a/commits/v1.2.0': {
+          status: 200,
+          body: { sha: 'c'.repeat(40), commit: { committer: { date: '2026-01-31T00:00:00Z' } } },
+        },
+        '/repos/o/a/releases': {
+          status: 200,
+          body: [
+            {
+              tag_name: 'v1.2.0',
+              name: null,
+              published_at: '2026-02-03T00:00:00Z',
+              prerelease: false,
+              draft: false,
+              html_url: 'https://github.com/o/a/releases/1',
+              assets: [],
+            },
+            {
+              tag_name: 'v1.3.0',
+              name: null,
+              published_at: null,
+              prerelease: false,
+              draft: true,
+              html_url: 'https://github.com/o/a/releases/2',
+              assets: [],
+            },
+          ],
+        },
+      },
+      seen,
+    );
+    expect(await p.listCommitsForPath('o/a', 'environments/prod.yaml')).toEqual({
+      ok: true,
+      data: [
+        { sha: 'b'.repeat(40), committedAt: '2026-02-02T00:00:00Z' },
+        { sha: 'a'.repeat(40), committedAt: '2026-02-01T00:00:00Z' },
+      ],
+    });
+    expect(seen.some((u) => u.includes('path=environments%2Fprod.yaml'))).toBe(true);
+    expect(await p.getCommitDate('o/a', 'v1.2.0')).toEqual({
+      ok: true,
+      data: '2026-01-31T00:00:00Z',
+    });
+    expect(await p.listReleases('o/a')).toMatchObject({ ok: true, data: [{ tagName: 'v1.2.0' }] });
+  });
+
   it('control map: maps push protection, environments and closed-alert dates', async () => {
     const repo = (extra: Record<string, unknown>) => ({
       owner: { login: 'o' },

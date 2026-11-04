@@ -66,8 +66,21 @@ describe('Argo CD provider', () => {
         targetRevision: 'v1.4.0',
         images: ['registry.example.com/alpha/backend:1.4.0'],
         deployedAt: '2026-01-14T09:00:00Z',
+        deployHistory: [],
       },
     });
+  });
+
+  it('keeps the history deploy dates (control map deploy frequency)', async () => {
+    const { argo } = provider({
+      ...base,
+      status: {
+        ...base.status,
+        history: [{ deployedAt: '2026-01-10T09:00:00Z' }, { deployedAt: 'not a date' }, {}],
+      },
+    });
+    const r = await argo.getApplication({ name: 'a' });
+    expect(r.ok && r.data.deployHistory).toEqual(['2026-01-10T09:00:00Z']);
   });
 
   it('maps Synced/Healthy, Degraded, Suspended, Missing; anything else → unknown', async () => {
