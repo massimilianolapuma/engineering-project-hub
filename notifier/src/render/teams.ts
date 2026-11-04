@@ -12,10 +12,16 @@ export const TEAMS_MAX_BYTES = 24_576;
 
 /** Backslash-escapes Teams markdown and neutralises HTML in text from the catalog. */
 export function escapeTeamsMarkdown(text: string): string {
-  return text
-    .replace(/</g, '&lt;')
-    .replace(/(&lt;[^&>]*)>/g, '$1&gt;')
-    .replace(/[\\*_[\]()#>~`]/g, (c) => `\\${c}`);
+  return (
+    text
+      // One line: a newline would start a list or a heading in the card.
+      .replace(/\s+/g, ' ')
+      .replace(/</g, '&lt;')
+      .replace(/(&lt;[^&>]*)>/g, '$1&gt;')
+      .replace(/[\\*_[\]()#>~`]/g, (c) => `\\${c}`)
+      // A zero-width space after "://" stops Teams from auto-linking a URL in a name (D9).
+      .replace(/:\/\//g, ':/\u200b/')
+  );
 }
 
 const fill = (template: string, params: Record<string, string | number>) =>

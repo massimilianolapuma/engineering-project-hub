@@ -21,7 +21,9 @@ type Item = [projectId: string, kind: string, detail: string];
 
 /** First 16 hex characters of SHA-256 over the basis and the sorted significant items (D11). */
 export function changeSetKey(previousCollectedAt: string, items: Item[]): string {
-  const sorted = [...items].sort((a, b) => a.join('\u0000').localeCompare(b.join('\u0000')));
+  // Code-unit order, never the runtime locale: the key must not change between Node versions.
+  const flat = (x: Item) => x.join('\u0000');
+  const sorted = [...items].sort((a, b) => (flat(a) < flat(b) ? -1 : flat(a) > flat(b) ? 1 : 0));
   return createHash('sha256')
     .update(JSON.stringify({ previous: previousCollectedAt, items: sorted }), 'utf8')
     .digest('hex')

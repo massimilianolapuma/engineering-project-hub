@@ -24,7 +24,7 @@ permette a chiunque la possieda di pubblicare nel canale.
    configurazione, la variabile di repository `HUB_NOTIFICATIONS=send`, dati reali (`github`) e un
    `changes.json` davvero confrontato e non sintetico. Altrimenti il contenuto viene scritto in un
    artifact da rivedere e il riepilogo nomina la prima condizione non soddisfatta.
-3. **Un riepilogo senza dettagli dei repository.** Il messaggio contiene id e nomi dei progetti,
+3. **Un riepilogo senza dettagli dei repository.** Il messaggio contiene nomi dei progetti,
    stati, punteggi e conteggi, e porta solo alla pagina "Cosa è cambiato" dell'hub. Mai nomi di
    repository, id di componenti, id o titoli di alert, id di eccezioni, riferimenti ai team, link
    a GitHub o dettagli di errore. I nomi dei progetti sono resi inerti (escape). Ogni contenuto

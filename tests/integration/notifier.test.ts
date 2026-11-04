@@ -82,6 +82,28 @@ describe('dry-run on the golden snapshots', () => {
 });
 
 describe('send mode', () => {
+  it('tells the workflow to upload the ledger only when this run saved a new one', async () => {
+    makeReal();
+    const out1 = p('gh-output-1');
+    writeFileSync(out1, '');
+    await run(sendEnv({ GITHUB_OUTPUT: out1 }));
+    expect(readFileSync(out1, 'utf8')).toContain('ledger=saved');
+
+    const out2 = p('gh-output-2');
+    writeFileSync(out2, '');
+    const dup = await run(sendEnv({ GITHUB_OUTPUT: out2 }));
+    expect(dup.summary).toContain('skipped-duplicate');
+    expect(readFileSync(out2, 'utf8')).not.toContain('ledger=saved');
+
+    // An unparsable ledger blocks this run but is never re-published.
+    writeFileSync(p('ledger', 'ledger.json'), '{"kind":"something-else"}');
+    const out3 = p('gh-output-3');
+    writeFileSync(out3, '');
+    const bad = await run(sendEnv({ GITHUB_OUTPUT: out3 }));
+    expect(bad.exitCode).toBe(1);
+    expect(readFileSync(out3, 'utf8')).not.toContain('ledger=saved');
+  });
+
   it('posts once per change set and records it in the ledger', async () => {
     makeReal();
     const fetch = ok();

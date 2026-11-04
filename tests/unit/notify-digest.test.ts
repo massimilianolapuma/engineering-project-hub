@@ -6,7 +6,8 @@ import {
   PortfolioIndexSchema,
   type ChangesFile,
 } from '@model/index';
-import { buildDigest } from '../../notifier/src/digest';
+import { createHash } from 'node:crypto';
+import { buildDigest, changeSetKey } from '../../notifier/src/digest';
 
 /*
  * The digest (spec §5.5.3): only significant worsening, project ids and names, statuses,
@@ -69,6 +70,22 @@ describe('buildDigest on the golden snapshots', () => {
 });
 
 describe('change-set key', () => {
+  it('sorts items by code unit, never by locale', () => {
+    // localeCompare puts "a" before "B"; code-unit order puts "B" (0x42) first.
+    const items: [string, string, string][] = [
+      ['a', 'overall', 'amber>red'],
+      ['B', 'overall', 'amber>red'],
+    ];
+    const expected = createHash('sha256')
+      .update(
+        JSON.stringify({ previous: '2026-01-14T12:00:00.000Z', items: [items[1], items[0]] }),
+        'utf8',
+      )
+      .digest('hex')
+      .slice(0, 16);
+    expect(changeSetKey('2026-01-14T12:00:00.000Z', items)).toBe(expected);
+  });
+
   it('is 16 hex characters, stable across generatedAt and sensitive to the basis', () => {
     const a = buildDigest(changes(), index(), config())!;
     expect(a.key).toMatch(/^[0-9a-f]{16}$/);

@@ -81,13 +81,21 @@ describe('renderTeams', () => {
     );
   });
 
+  it('never turns a project name into a link or a list', () => {
+    const name = 'Pay see https://github.com/example-org/x\n- item\r\n1. two';
+    const out = escapeTeamsMarkdown(name);
+    expect(out).not.toMatch(/https?:\/\//);
+    expect(out).not.toMatch(/[\r\n]/);
+    expect(out.replace(/\u200b/g, '')).toContain('https://github.com');
+  });
+
   it('escapes markdown and HTML in project names', () => {
     const d = digestWith();
     d.projects[0]!.name = '[x](http://evil) **b** <i>';
     const t = texts((renderTeams(d, en).body as Card).attachments[0]!.content.body);
-    expect(t.some((s) => s.startsWith('\\[x\\]\\(http://evil\\) \\*\\*b\\*\\* &lt;i&gt;'))).toBe(
-      true,
-    );
+    expect(
+      t.some((s) => s.startsWith('\\[x\\]\\(http:/\u200b/evil\\) \\*\\*b\\*\\* &lt;i&gt;')),
+    ).toBe(true);
     expect(escapeTeamsMarkdown('a_b~c#d>e`f\\g')).toBe('a\\_b\\~c\\#d\\>e\\`f\\\\g');
   });
 

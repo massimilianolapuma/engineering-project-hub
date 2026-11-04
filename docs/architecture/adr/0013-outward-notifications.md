@@ -23,7 +23,7 @@ credential (the Workflows trigger URL) lets anyone who holds it post to the chan
    variable `HUB_NOTIFICATIONS=send`, real data (`github`), and a `changes.json` that was really
    compared and is not synthetic. Otherwise the payload is written to an artifact for review and
    the summary names the first condition that failed.
-3. **A digest without repository detail.** The message carries project ids and names, statuses,
+3. **A digest without repository detail.** The message carries project names, statuses,
    scores and counts, and links only to the hub's own "What changed" page. Never repository names,
    component ids, alert ids or titles, exception ids, team references, GitHub links or error
    details. Project names are escaped. Every payload is checked for credential patterns and for

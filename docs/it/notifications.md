@@ -62,16 +62,23 @@ La riga `Mode` del riepilogo nomina la prima condizione non soddisfatta:
 
 Ogni riepilogo ha una chiave dell'insieme di modifiche (un hash della data della raccolta precedente
 e degli elementi significativi). Dopo un invio riuscito la chiave viene salvata nell'artifact
-`hub-notify-ledger` (90 giorni). Una nuova esecuzione dello stesso run, o un run successivo con le
-stesse modifiche, vede la chiave e riporta `skipped-duplicate`. Se il registro non si può
-ripristinare in modalità send, non si invia nulla ("ledger unavailable"). Un invio fallito **non**
-viene ritentato automaticamente: riesegui il job, oppure l'insieme di modifiche successivo verrà
-inviato normalmente. Una notifica fallita non blocca mai un deploy.
+`hub-notify-ledger` (90 giorni). Una **nuova esecuzione dello stesso run** vede la chiave e riporta
+`skipped-duplicate`. Una raccolta successiva ha sempre una chiave nuova (la sua raccolta precedente
+è un'altra), quindi viene inviata se è successo di nuovo qualcosa di significativo. Se in modalità
+send il registro non si può ripristinare o leggere, non si invia nulla ("ledger unavailable"), e un
+registro che il notificatore non ha salvato da sé non viene mai ricaricato.
+
+Un invio fallito **non** viene ritentato automaticamente. Riesegui il job per riprovare, oppure
+lascia che la raccolta successiva invii le proprie modifiche. Un'avvertenza: dopo un `error` dovuto a
+un timeout, Teams potrebbe aver accettato comunque il messaggio, quindi una nuova esecuzione può
+pubblicarlo una seconda volta. Una notifica fallita non blocca mai un deploy.
 
 Esiti del riepilogo per Teams: `dry-run`, `off`, `sent`, `skipped-duplicate`, `not-configured`
 (segreto assente), `refused` (l'URL non è un host di Workflows in https), `rejected`,
 `not-authorised`, `not-found`, `too-large`, `rate-limited`, `error`. Ogni esito dopo
-`skipped-duplicate` in questo elenco fa fallire il job.
+`skipped-duplicate` in questo elenco fa fallire il job, e lo fanno anche `not sent` (registro non
+disponibile), un controllo del contenuto non superato (una credenziale trovata nel messaggio: nulla
+viene scritto né inviato) e un `notifications.yaml` non valido.
 
 ## Rischi e limiti
 

@@ -67,6 +67,8 @@ export async function runNotifier(o: RunOptions): Promise<RunResult> {
   const notes: string[] = [];
   let exitCode: 0 | 1 = 0;
   let mode: 'send' | 'dry-run' = 'dry-run';
+  /** Only a ledger this run saved is uploaded: a bad restored one is never re-published. */
+  let ledgerSaved = false;
   mkdirSync(o.out, { recursive: true });
 
   const finish = (): RunResult => {
@@ -82,7 +84,8 @@ export async function runNotifier(o: RunOptions): Promise<RunResult> {
     ].join('\n');
     writeFileSync(join(o.out, 'summary.md'), summary, 'utf8');
     if (o.env.GITHUB_STEP_SUMMARY) appendFileSync(o.env.GITHUB_STEP_SUMMARY, `${summary}\n`);
-    if (o.env.GITHUB_OUTPUT) appendFileSync(o.env.GITHUB_OUTPUT, `mode=${mode}\n`);
+    if (o.env.GITHUB_OUTPUT)
+      appendFileSync(o.env.GITHUB_OUTPUT, `mode=${mode}\n${ledgerSaved ? 'ledger=saved\n' : ''}`);
     return { exitCode, summary };
   };
 
@@ -174,11 +177,13 @@ export async function runNotifier(o: RunOptions): Promise<RunResult> {
         fetch: o.fetch,
       });
       outcome = r.outcome;
-      if (r.outcome === 'sent')
+      if (r.outcome === 'sent') {
         saveLedger(
           ledgerPath,
           appendLedger(ledger, { target: 'teams', key: digest.key, sentAt: o.now().toISOString() }),
         );
+        ledgerSaved = true;
+      }
     }
   }
   rows.push(['Teams', outcome]);

@@ -61,15 +61,22 @@ The summary's `Mode` line names the first condition that failed:
 
 Each digest has a change-set key (a hash of the previous collection date and the significant
 items). After a successful send the key is stored in the `hub-notify-ledger` artifact (90 days).
-A re-run of the same workflow run, or a later run with the same changes, sees the key and reports
-`skipped-duplicate`. If the ledger cannot be restored in send mode, nothing is sent ("ledger
-unavailable"). A failed send is **not** retried automatically: re-run the job, or the next change
-set is sent normally. A notification failure never blocks a deployment.
+A **re-run of the same workflow run** sees the key and reports `skipped-duplicate`. A later
+collection always has a new key (its previous collection is a different one), so it is sent if
+something significant happened again. If the ledger cannot be restored or read in send mode,
+nothing is sent ("ledger unavailable"), and a ledger the notifier did not save itself is never
+uploaded again.
+
+A failed send is **not** retried automatically. Re-run the job to try again, or let the next
+collection send its own changes. One caveat: after an `error` caused by a timeout, Teams may have
+accepted the message anyway, so a re-run can post it a second time. A notification failure never
+blocks a deployment.
 
 Summary outcomes for Teams: `dry-run`, `off`, `sent`, `skipped-duplicate`, `not-configured` (no
 secret), `refused` (the URL is not a Workflows host over https), `rejected`, `not-authorised`,
 `not-found`, `too-large`, `rate-limited`, `error`. Any outcome after `skipped-duplicate` in this
-list makes the job fail.
+list makes the job fail, and so do `not sent` (ledger unavailable), a refused payload check (a
+credential found in the message: nothing written or sent) and an invalid `notifications.yaml`.
 
 ## Risks and limits
 

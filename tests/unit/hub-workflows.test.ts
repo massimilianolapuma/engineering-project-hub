@@ -89,7 +89,8 @@ function checkNotifySteps(steps: Step[]) {
   const ledger = steps.find((s) => s.with?.name === 'hub-notify-ledger');
   expect(ledger?.with?.['retention-days']).toBe(90);
   expect(ledger?.with?.overwrite).toBe(true);
-  expect(ledger?.if).toContain("steps.notify.outputs.mode == 'send'");
+  // Only a ledger this run saved is uploaded: a bad restored one is never re-published.
+  expect(ledger?.if).toContain("steps.notify.outputs.ledger == 'saved'");
   expect(steps.some((s) => s.run?.includes('scan:output'))).toBe(true);
 }
 
