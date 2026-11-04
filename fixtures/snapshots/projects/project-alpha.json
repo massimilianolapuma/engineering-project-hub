@@ -3091,11 +3091,11 @@
       },
       {
         "check": "change-failure-rate",
-        "level": 2,
+        "level": 1,
         "state": "measured",
-        "value": 33.3,
+        "value": 50,
         "unit": "percent",
-        "threshold": 45,
+        "threshold": null,
         "readable": null,
         "reason": null,
         "note": null,
@@ -3170,7 +3170,7 @@
         "applicable": 5
       },
       "delivery": {
-        "score": 64,
+        "score": 60,
         "measured": 5,
         "applicable": 5
       },

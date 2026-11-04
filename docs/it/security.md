@@ -116,8 +116,10 @@ l'hub sceglie solo cosa contare.
   pubblicata). Tutte GET: ambienti GitHub della coordinatrice
   (`GET /repos/{owner}/{repo}/environments`), commit del percorso del file delle versioni, il file a
   un commit, date dei commit e release (**Contents: read**), e lo stato della push protection dai
-  metadati della repository (`security_and_analysis`, restituito solo a chi può vedere le
-  impostazioni di sicurezza). Senza accesso il controllo è **non visibile** con il motivo (errore
+  metadati della repository (`security_and_analysis`, restituito solo agli admin della repository e
+  a owner o security manager dell'organizzazione: l'App in sola lettura non lo vede, quindi
+  `secret-scanning` resta al massimo al livello 3). Dettaglio per lettura:
+  [Mappa dei controlli, Permessi](control-map.md#permessi). Senza accesso il controllo è **non visibile** con il motivo (errore
   di raccolta `github-environments` su un 403), mai 0. Verificare il permesso per gli ambienti
   sulla pagina dei permessi di GitHub per la propria App prima di farvi affidamento.
 - **Fonti dei controlli repository.** Verificate il 2026-10-21 sulla pagina GitHub

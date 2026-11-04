@@ -2,8 +2,10 @@
  * Delivery metrics of one environment from its deploy events (spec §5.3, C6). Pure.
  * - frequency: deploys in the last `frequencyDays`, per week (0 is a measured zero);
  * - lead time: median hours from the change (commit or release tag) to its deploy;
- * - change failure rate: failed changes over all changes. A failed run is a failed change; a
- *   rollback marks the deploy it undoes as failed and is itself a change;
+ * - change failure rate (DevOps Research and Assessment "four keys" definition): deployments that
+ *   failed in production over all deployments. A failed run is a failed deployment; a rollback is
+ *   the remediation of the deploy it undoes, which counts as failed; the rollback itself is not a
+ *   deployment. Capped at 100% (rollbacks of deploys made before the window);
  * - time to restore: median hours from a failure to the next deploy, or from the rolled-back
  *   deploy to the rollback.
  * Argo CD history and releases only show that a deploy happened: frequency only.
@@ -59,8 +61,10 @@ export function deliveryMetrics(
   const leadHoursMedian = median(
     deploys.map((e) => e.leadHours).filter((h): h is number => h !== null && h >= 0),
   );
-  const failed = trend.filter((e) => e.kind !== 'deploy').length;
-  const cfrPercent = round1((failed / trend.length) * 100);
+  const failures = trend.filter((e) => e.kind === 'failure').length;
+  const failed = failures + trend.filter((e) => e.kind === 'rollback').length;
+  const deployments = Math.max(deploys.length + failures, failed);
+  const cfrPercent = round1((failed / deployments) * 100);
 
   const restores: number[] = [];
   trend.forEach((e, i) => {

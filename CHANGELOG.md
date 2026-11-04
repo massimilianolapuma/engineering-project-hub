@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Control map: change failure rate follows the DevOps Research and Assessment "four keys"
+  definition (failed deployments / deployments); a rollback marks the deploy it undoes as failed and
+  is no longer counted as a deployment.
+
+### Fixed
+
+- Control map: the delivery workflow's runs are filtered by day (`created:>=YYYY-MM-DD`, GitHub
+  search syntax) instead of a full timestamp.
+
+### Docs
+
+- Control map: DORA and RTS 2024/1774 references checked against the Official Journal text (titles
+  listed), delivery metric definitions, and a permissions table per reading (push protection needs
+  repository admin).
+
 ### Added
 
 - Control map ([ADR 0014](docs/architecture/adr/0014-control-map.md),

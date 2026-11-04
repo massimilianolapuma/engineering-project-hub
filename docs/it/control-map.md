@@ -74,7 +74,7 @@ della pagina.
 | `config-drift`           | % ambienti allineati a Git                                                 | %, 4 ≥ 95%                                                                                        |
 | `deploy-frequency`       | deploy a settimana (ambiente di rilascio, ultimi 30 giorni)                | 1 > 0, 2 ≥ 1 al mese, 3 ≥ 1 a settimana, 4 ≥ 2 a settimana, 5 ≥ 1 al giorno                       |
 | `lead-time`              | ore mediane dalla modifica al suo deploy                                   | 5 ≤ 1 h, 4 ≤ 24 h, 3 ≤ 7 giorni, 2 ≤ 30 giorni, 1 oltre                                           |
-| `change-failure-rate`    | % modifiche fallite o annullate con rollback                               | 5 ≤ 5%, 4 ≤ 15%, 3 ≤ 30%, 2 ≤ 45%, 1 oltre                                                        |
+| `change-failure-rate`    | % deploy falliti o annullati con rollback                                  | 5 ≤ 5%, 4 ≤ 15%, 3 ≤ 30%, 2 ≤ 45%, 1 oltre                                                        |
 | `time-to-restore`        | ore mediane da un fallimento al deploy successivo riuscito                 | 5 ≤ 1 h, 4 ≤ 8 h, 3 ≤ 24 h, 2 ≤ 7 giorni, 1 oltre                                                 |
 | `test-coverage`          | copertura delle righe                                                      | 1 > 0%, 2 ≥ 30%, 3 ≥ 60%, 4 ≥ 80%, 5 ≥ 90%                                                        |
 | `evidence-freshness`     | % fonti di evidenza lette e non scadute                                    | 1 > 0%, 2 ≥ 50%, 3 ≥ 75%, 4 ≥ 90%, 5 = 100%                                                       |
@@ -126,8 +126,23 @@ controlMap:
     - { check: dast, reason: servizio interno senza interfaccia web }
 ```
 
-Tasso di modifiche fallite = (esecuzioni fallite + rollback) / (deploy + esecuzioni fallite +
-rollback): un rollback è anch'esso una modifica e segna come fallito il deploy che annulla. Le
+**Come si calcolano le metriche di rilascio.** Le definizioni seguono le "four keys" di DevOps
+Research and Assessment (il programma di ricerca chiamato anch'esso DORA, non collegato al
+regolamento UE):
+
+- **Tasso di modifiche fallite** = deploy falliti in produzione / tutti i deploy, nella finestra di
+  tendenza. Un'esecuzione di workflow fallita è un deploy fallito. Un rollback (una versione più
+  bassa nel file delle versioni) è il rimedio al deploy che annulla: quel deploy conta come fallito,
+  il rollback non è un deploy. Esempio: 0.5.0, rollback a 0.4.0, 0.5.1 = 2 deploy, 1 fallito = 50%.
+  Massimo 100% (rollback di un deploy fatto prima della finestra).
+- **Tempo di ripristino** ("failed deployment recovery time"): da un'esecuzione fallita al deploy
+  successivo riuscito, o dal deploy annullato al suo rollback; mediana, in ore.
+- **Tempo di consegna delle modifiche**: dalla modifica (head commit, o commit del tag di release)
+  al suo deploy; mediana, in ore.
+- **Frequenza dei deploy**: deploy a settimana nella finestra di frequenza.
+
+Il regolamento non definisce nessuna di queste metriche: sono evidenze per la gestione delle
+modifiche (RTS 2024/1774 art. 17) e per risposta e ripristino (DORA art. 11). Le
 esecuzioni del workflow di rilascio si leggono su tutta la finestra e su ogni ref (conta anche un
 deploy su push di un tag), fino a 500; Argo CD conserva uno storico limitato. Quando un elenco è
 troncato, la cella indica che la frequenza è un minimo. I deploy fatti dentro un workflow riusabile
@@ -138,11 +153,24 @@ la cella indica sempre l'ambiente e il segnale.
 
 ## Permessi
 
-Le nuove letture sono solo GET: ambienti GitHub (`GET /repos/{o}/{r}/environments`), commit di un
-percorso, file a un commit, date dei commit, release (Contents: read), e lo stato della push
-protection nei metadati della repository (`security_and_analysis`, restituito solo a chi può
-vederlo). Senza un permesso il controllo è **non visibile** con il motivo, mai 0. Vedi
-[Sicurezza](security.md#modello-di-autorizzazione).
+Ogni nuova lettura è una GET. Cosa serve, verificato sulla documentazione REST di GitHub il
+2026-11-04, e cosa mostra l'hub quando manca (mai 0):
+
+| Lettura                             | Endpoint                                                                | Serve                                                                                                                                                          | Senza                                                                                                    |
+| ----------------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Ambienti GitHub                     | `GET /repos/{o}/{r}/environments`                                       | accesso in lettura alla repository ("Anyone with read access"); per una GitHub App, Actions: read (come in [Sicurezza](security.md#modello-di-autorizzazione)) | `environment-separation` non visibile ("serve un permesso"), un errore di raccolta `github-environments` |
+| Stato della push protection         | `security_and_analysis` in `GET /repos/{o}/{r}`                         | **admin** sulla repository, o owner / security manager dell'organizzazione (GitHub: "you must have admin permissions")                                         | `secret-scanning` al massimo livello 3, con una nota                                                     |
+| Commit del file delle versioni      | `GET /repos/{o}/{r}/commits?path=`                                      | Contents: read (già concesso)                                                                                                                                  | controlli di rilascio non visibili                                                                       |
+| File a un commit, date dei commit   | Contents API con `ref`, `GET /repos/{o}/{r}/commits/{ref}`              | Contents: read                                                                                                                                                 | tempo di consegna non visibile; file illeggibile a un commit segnalato                                   |
+| Release                             | `GET /repos/{o}/{r}/releases`                                           | Contents: read                                                                                                                                                 | controlli di rilascio non visibili                                                                       |
+| Esecuzioni del workflow di rilascio | `GET /repos/{o}/{r}/actions/workflows/{file}/runs?created=>=YYYY-MM-DD` | Actions: read (già concesso)                                                                                                                                   | controlli di rilascio non visibili                                                                       |
+
+La GitHub App in sola lettura del modello di [Sicurezza](security.md#modello-di-autorizzazione)
+**non vede** la push protection (serve admin): `secret-scanning` resta al massimo al livello 3
+finché un owner non concede il permesso, scelta da fare consapevolmente (admin è un permesso di
+scrittura sulle impostazioni). Le pagine di GitHub, nella versione testuale, non mostrano il
+riquadro dei permessi fine-grained per questi endpoint: confermare i nomi nella pagina dei permessi
+dell'App al momento dell'installazione.
 
 ## Output
 
@@ -157,10 +185,16 @@ vederlo). Senza un permesso il controllo è **non visibile** con il motivo, mai 
 
 ## Fonti
 
-Verificate il 2026-11-04 sui testi pubblicati; quel giorno le pagine EUR-Lex non erano
-raggiungibili, quindi confermare i numeri degli articoli su EUR-Lex prima di usarli verso
-l'esterno.
+Numeri e titoli degli articoli verificati il 2026-11-04 sul testo della Gazzetta ufficiale
+riprodotto alla lettera da Springlex ([RTS 2024/1774](https://www.springlex.eu/en/packages/dora/rts-rmf-regulation/),
+[Regolamento 2022/2554](https://www.springlex.eu/en/packages/dora/dora-regulation/)); quel giorno
+EUR-Lex non rispondeva. Ogni riferimento è **collegato**: indica il requisito per cui un controllo
+fornisce evidenze tecniche, mai che sia soddisfatto. La tabella con i titoli è nella
+[versione inglese](../control-map.md#sources) (titoli ufficiali in inglese).
 
-- Regolamento (UE) 2022/2554 (DORA), capo II (art. 5–16) e art. 24–25.
-- Regolamento delegato (UE) 2024/1774 della Commissione (RTS sul quadro di gestione dei rischi ICT).
-- ISO/IEC 27001:2022, Allegato A.
+I numeri dei controlli dell'Allegato A della ISO/IEC 27001:2022 (5.9, 5.17, 5.21, 5.26, 5.30, 5.32,
+5.36, 8.4, 8.5, 8.8, 8.9, 8.24, 8.25, 8.28, 8.29, 8.31, 8.32) e la clausola 9.1 seguono l'elenco
+pubblicato dei controlli; la norma non è liberamente consultabile, quindi non sono stati riletti
+online.
+
+Definizioni delle metriche di rilascio: DevOps Research and Assessment, "four keys" (dora.dev).

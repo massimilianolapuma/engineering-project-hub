@@ -82,7 +82,7 @@ describe('versions-file signal', () => {
     expect(r.notes).toEqual([`non-semver value at ${'f'.repeat(7)}`]);
     expect(r.events[0]?.leadHours).toBe(24);
     const m = deliveryMetrics(r.events, 'versions-file', windows, now);
-    expect(m.cfrPercent).toBe(33.3);
+    expect(m.cfrPercent).toBe(50);
   });
 
   it('an unreadable repository is not called again', async () => {
