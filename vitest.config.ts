@@ -11,7 +11,14 @@ export default defineConfig({
       provider: 'v8',
       reportsDirectory: 'coverage',
       reporter: ['text-summary', 'lcov', 'cobertura'],
-      include: ['collector/src/**', 'shared/**', 'src/lib/**', 'src/i18n/**', 'scripts/**'],
+      include: [
+        'collector/src/**',
+        'notifier/src/**',
+        'shared/**',
+        'src/lib/**',
+        'src/i18n/**',
+        'scripts/**',
+      ],
     },
   },
 });

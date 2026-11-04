@@ -9,3 +9,4 @@ export * from './contracts';
 export * from './snapshot';
 export * from './history';
 export * from './images';
+export * from './notifications';

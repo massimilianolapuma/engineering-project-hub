@@ -47,6 +47,8 @@ export function sensitiveEnvValues(env: NodeJS.ProcessEnv = process.env): string
     'HARBOR_ROBOT_NAME',
     'HARBOR_ROBOT_SECRET',
     'ARGOCD_TOKEN',
+    // The Teams Workflows trigger URL: its sig parameter is the credential (notify job only).
+    'TEAMS_WEBHOOK_URL',
   ];
   return names
     .map((n) => env[n])

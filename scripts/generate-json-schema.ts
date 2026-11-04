@@ -9,6 +9,7 @@ import {
   CatalogSchema,
   CatalogSettingsSchema,
   ExceptionsFileSchema,
+  NotificationsConfigSchema,
   PolicyCaseSchema,
   ProjectConfigSchema,
   PoliciesSchema,
@@ -33,6 +34,7 @@ export const SCHEMA_TARGETS: [string, z.ZodType][] = [
   ['quality-summary.schema.json', QualitySummarySchema],
   ['exceptions.schema.json', ExceptionsFileSchema],
   ['providers.schema.json', ProvidersFileSchema],
+  ['notifications.schema.json', NotificationsConfigSchema],
   ['supply-chain-summary.schema.json', SupplyChainSummarySchema],
   ['policy-case.schema.json', PolicyCaseSchema],
 ];

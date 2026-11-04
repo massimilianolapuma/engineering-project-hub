@@ -1,11 +1,12 @@
 /**
  * Validates the catalog (config/catalog.yaml + config/projects/*.yaml, or the legacy
  * config/projects.yaml), config/policies.yaml and the optional config/exceptions.yaml and
- * config/providers.yaml against
+ * config/providers.yaml and config/notifications.yaml against
  * the Zod schemas.
  * Usage: tsx scripts/validate-config.ts [configDir]
  */
 import { ConfigError, loadConfig } from '../collector/src/config/load';
+import { loadNotificationsConfig } from '../notifier/src/config';
 
 const dir = process.argv[2] ?? 'config';
 try {
@@ -33,6 +34,11 @@ try {
       `✔ ${dir}/providers.yaml: ${(['sonarqube', 'harbor', 'argocd'] as const).map(state).join(' · ')}`,
     );
   }
+  const notifications = loadNotificationsConfig(dir);
+  if (notifications)
+    console.log(
+      `✔ ${dir}/notifications.yaml: ${notifications.mode} · teams ${notifications.targets.teams.enabled ? 'on' : 'off'}`,
+    );
 } catch (e) {
   console.error(e instanceof ConfigError ? `✖ ${e.message}` : `✖ ${(e as Error).message}`);
   process.exit(1);
