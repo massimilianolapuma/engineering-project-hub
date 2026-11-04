@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { LEDGER_SOURCES } from './ledger';
+import { LEDGER_SOURCES } from './deployments-ledger';
 
 /*
  * Control map (spec 2026-11-04, ADR 0014): technical checks the hub can evidence, each with a
