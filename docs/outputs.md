@@ -10,7 +10,7 @@ From v0.14.0 the hub turns the data it already publishes into three read-only ou
 - an **Executive summary** page, redacted so it can be printed or forwarded.
 
 None of them writes anywhere: no push to Prometheus, no message to a chat or tracker.
-Notifications (Microsoft Teams first) come in v0.15.0. Every output is on by default and can be
+Notifications to Microsoft Teams, the first outward write, are in [Notifications](notifications.md) (v0.15.0). Every output is on by default and can be
 turned off in `config/policies.yaml` (`outputs`, see
 [Configuration](configuration.md#outputs-outputs)).
 

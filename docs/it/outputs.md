@@ -10,7 +10,7 @@ Dalla v0.14.0 l'hub trasforma i dati che già pubblica in tre output in sola let
 - una pagina **Sintesi direzionale**, oscurata in modo da poterla stampare o inoltrare.
 
 Nessuno di essi scrive da qualche parte: nessun invio a Prometheus, nessun messaggio a chat o
-tracker. Le notifiche (prima Microsoft Teams) arrivano nella v0.15.0. Ogni output è attivo di
+tracker. Le notifiche verso Microsoft Teams, la prima scrittura verso l'esterno, sono in [Notifiche](notifications.md) (v0.15.0). Ogni output è attivo di
 default e si può disattivare in `config/policies.yaml` (`outputs`, vedi
 [Configurazione](configuration.md#output-outputs)).
 

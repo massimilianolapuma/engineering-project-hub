@@ -129,6 +129,12 @@ teams for each project in the catalog editor. This is a **view, not access contr
 can open the site sees every project ([ADR 0010](docs/architecture/adr/0010-per-team-views-without-access-control.md),
 [Configuration](docs/configuration.md#configcatalogyaml-teams)).
 
+**Teams notifications.** After each collection the hub can post one short digest of the projects
+that got worse to a Microsoft Teams channel: statuses, counts and a link to the hub, never
+repository names, alert titles or GitHub links. Off by default, then dry-run; it sends only with two
+separate opt-ins and never twice for the same changes ([Notifications](docs/notifications.md),
+[ADR 0013](docs/architecture/adr/0013-outward-notifications.md)).
+
 **Metrics and Grafana.** Each collection also writes `data/metrics/hub.prom`, a Prometheus
 text-format file (gauges only, no repository or team labels, an unknown value is a missing series,
 never 0), and [`examples/grafana/`](examples/grafana/) holds a ready-to-import dashboard. The hub

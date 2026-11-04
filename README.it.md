@@ -137,6 +137,12 @@ catalogo. È una **vista, non un controllo degli accessi**: chiunque può aprire
 progetti ([ADR 0010](docs/it/architecture/adr/0010-per-team-views-without-access-control.md),
 [Configurazione](docs/it/configuration.md#configcatalogyaml-team)).
 
+**Notifiche su Teams.** Dopo ogni raccolta l'hub può pubblicare in un canale di Microsoft Teams un
+breve riepilogo dei progetti peggiorati: stati, conteggi e un link all'hub, mai nomi di repository,
+titoli di alert o link a GitHub. Spento di default, poi in dry-run; invia solo con due consensi
+separati e mai due volte per le stesse modifiche ([Notifiche](docs/it/notifications.md),
+[ADR 0013](docs/it/architecture/adr/0013-outward-notifications.md)).
+
 **Metriche e Grafana.** Ogni raccolta scrive anche `data/metrics/hub.prom`, un file nel formato
 testo di Prometheus (solo gauge, nessuna label di repository o di team, un valore sconosciuto è una
 serie mancante, mai 0), e [`examples/grafana/`](examples/grafana/) contiene una dashboard pronta da

@@ -772,6 +772,14 @@ Il collector legge `metrics`; la build del sito legge `executive` (tramite `POLI
 le policy stanno in una configurazione separata). Cosa contiene ciascun output è in
 [Output](outputs.md).
 
+## `config/notifications.yaml`: notifiche (facoltativo)
+
+Riepiloghi su Microsoft Teams dopo ogni raccolta (v0.15.0). Il file non viene mai pubblicato; se
+manca, le notifiche non sono configurate. L'URL del webhook è il segreto `TEAMS_WEBHOOK_URL`, mai un
+campo di questo file. Tutte le chiavi, le modalità e la configurazione sono in
+[Notifiche](notifications.md); `npm run validate:config` valida il file. Le chiavi di Jira e Azure
+DevOps sono rifiutate finché quelle destinazioni non esistono.
+
 ## Casi di decisione delle policy: `config/policy-cases/*.yaml`
 
 Un caso di decisione è un piccolo scenario sintetico con lo stato atteso. `npm run policy:check`

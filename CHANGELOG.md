@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Microsoft Teams notifications (opt-in, [ADR 0013](docs/architecture/adr/0013-outward-notifications.md)):
+  after each collection a separate `notify` job posts one digest of the projects that got worse
+  (status, Security or Delivery worsening, new critical alerts, newly overdue alerts, expired
+  exceptions) as an Adaptive Card. Project names, statuses, counts and a link to the hub only;
+  never repository names, alert titles, team names or GitHub links.
+  - Dry-run unless `config/notifications.yaml` says `mode: send`, the repository variable
+    `HUB_NOTIFICATIONS=send`, and the data is real and compared; the summary says why a run stayed
+    dry-run.
+  - Never twice for the same change set (`hub-notify-ledger` artifact, also across re-runs); no
+    automatic retry; a failure never blocks a deployment.
+  - The secret `TEAMS_WEBHOOK_URL` exists only in the Notify step; the notify job never receives
+    the collector's credentials. Every payload is checked for secrets before it is written or sent.
+  - Protected deploy path: input `notifications` and the same optional secret.
+- `config/notifications.yaml` (demo: dry-run, Teams off) and its JSON Schema.
+- Docs: [Notifications](docs/notifications.md).
+
+### Changed
+
+- The audited HTTP client core (host pinning, encoded templates, capped reads, error classes)
+  moved to `shared/http/`, unchanged, and is shared by the collector and the notifier.
+
 ### Fixed
 
 - Protected deploy path (`rw-hub-cloudflare-deploy.yml`): the collect job now restores the deploy
