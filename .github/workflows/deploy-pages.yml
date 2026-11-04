@@ -201,3 +201,23 @@ jobs:
     uses: ./.github/workflows/rw-pages-deploy-host.yml
     with:
       artifact-name: site
+
+  # ==========================================================================
+  # notify — opt-in (repository variable HUB_NOTIFICATIONS = dry-run | send).
+  # After deploy, so the digest links to the data it describes. Only the Teams secret;
+  # nothing depends on it, so a notification failure never blocks a deployment (ADR 0013).
+  # ==========================================================================
+  notify:
+    name: Notify
+    needs: [collect, deploy]
+    if: ${{ vars.HUB_NOTIFICATIONS == 'dry-run' || vars.HUB_NOTIFICATIONS == 'send' }}
+    permissions:
+      contents: read
+      actions: read # restores this repository's own hub-notify-ledger artifact
+    uses: ./.github/workflows/notify.yml
+    with:
+      artifact-name: ${{ needs.collect.outputs.artifact-name }}
+      data-source: ${{ needs.collect.outputs.data-source }}
+      mode: ${{ vars.HUB_NOTIFICATIONS }}
+    secrets:
+      TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}

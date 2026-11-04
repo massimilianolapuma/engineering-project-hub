@@ -34,8 +34,12 @@ jobs:
       cloudflare-account-id: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
       cloudflare-project: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
       site-url: ${{ vars.HUB_SITE_URL }}
+      # Teams notifications (docs/notifications.md): '' (off), 'dry-run', then 'send'.
+      # notifications: ${{ vars.HUB_NOTIFICATIONS }}
     secrets:
       GH_APP_ID: ${{ secrets.GH_APP_ID }}
       GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
       GH_APP_INSTALLATION_ID: ${{ secrets.GH_APP_INSTALLATION_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      # Only the notify job receives it (in its Notify step).
+      # TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
