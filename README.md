@@ -129,6 +129,13 @@ teams for each project in the catalog editor. This is a **view, not access contr
 can open the site sees every project ([ADR 0010](docs/architecture/adr/0010-per-team-views-without-access-control.md),
 [Configuration](docs/configuration.md#configcatalogyaml-teams)).
 
+**Control map.** For a restricted audience, the `controls/` page maps 25 technical checks per
+project (SBOM, signatures, scanning, secrets and OIDC, branch rules, environments, delivery
+metrics from a per-environment deploy signal, coverage, evidence freshness) on a 0–5 scale, with
+the related DORA and ISO 27001 references and a score. It is **not a compliance assessment**:
+governance is out of scope, and an unreadable source is "not visible", never 0
+([Control map](docs/control-map.md), [ADR 0014](docs/architecture/adr/0014-control-map.md)).
+
 **Teams notifications.** After each collection the hub can post one short digest of the projects
 that got worse to a Microsoft Teams channel: statuses, counts and a link to the hub, never
 repository names, alert titles or GitHub links. Off by default, then dry-run; it sends only with two

@@ -137,6 +137,13 @@ catalogo. È una **vista, non un controllo degli accessi**: chiunque può aprire
 progetti ([ADR 0010](docs/it/architecture/adr/0010-per-team-views-without-access-control.md),
 [Configurazione](docs/it/configuration.md#configcatalogyaml-team)).
 
+**Mappa dei controlli.** Per un pubblico ristretto la pagina `controls/` mappa 25 controlli
+tecnici per progetto (SBOM, firme, analisi, segreti e OIDC, regole dei branch, ambienti, metriche
+di rilascio da un segnale di deploy per ambiente, copertura, aggiornamento delle evidenze) su una
+scala 0–5, con i riferimenti DORA e ISO 27001 collegati e un punteggio. **Non è una valutazione di
+adeguatezza normativa**: la governance è esclusa, e una fonte illeggibile è «non visibile», mai 0
+([Mappa dei controlli](docs/it/control-map.md), [ADR 0014](docs/it/architecture/adr/0014-control-map.md)).
+
 **Notifiche su Teams.** Dopo ogni raccolta l'hub può pubblicare in un canale di Microsoft Teams un
 breve riepilogo dei progetti peggiorati: stati, conteggi e un link all'hub, mai nomi di repository,
 titoli di alert o link a GitHub. Spento di default, poi in dry-run; invia solo con due consensi

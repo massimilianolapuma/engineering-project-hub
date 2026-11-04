@@ -155,6 +155,14 @@ outputs:
     topRisks: 5 # 1–10 projects listed under "Top risks"
     trendDays: 7 # 1–90; age of the comparison column of the trend table
 
+# Control map (docs/control-map.md): technical checks related to DORA and ISO 27001, levels 0-5.
+# Produced only for publication.audience: restricted, or with demo data. Not a compliance
+# assessment. thresholds.<check>: five values for levels 1-5 (default ladders in the docs).
+controlMap:
+  enabled: true
+  windows: { frequencyDays: 30, trendDays: 90 }
+  thresholds: {}
+
 publication:
   # public: titles and rule ids of findings in private/internal repositories are withheld.
   # restricted: use only when the site is served behind access control.

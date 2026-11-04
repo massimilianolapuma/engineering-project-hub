@@ -65,6 +65,10 @@ Regole:
 | `hub_project_quality_coverage_ratio`    | `project`                                            | copertura delle righe dai test (0–1)                                                     |
 | `hub_project_collection_errors`         | `project`                                            | fonti dati non lette                                                                     |
 | `hub_project_measure_known`             | `project`, `measure`                                 | 1 se la misura era nota, 0 altrimenti                                                    |
+| `hub_project_control_score`             | `project`                                            | punteggio della mappa dei controlli 0–100 (solo pubblico ristretto o dati demo)          |
+| `hub_project_control_measured`          | `project`                                            | controlli della mappa misurati                                                           |
+| `hub_project_control_applicable`        | `project`                                            | controlli della mappa applicabili                                                        |
+| `hub_project_control_level`             | `project`, `check`                                   | livello 0–5 per controllo misurato ([Mappa dei controlli](control-map.md))               |
 | `hub_metrics_truncated`                 |                                                      | 1 se è scattato il limite di dimensione                                                  |
 
 ### Leggerlo con Prometheus
@@ -119,9 +123,9 @@ L'hub non fornisce regole di alert. Tre espressioni da cui partire:
 ## Dashboard Grafana
 
 [`examples/grafana/engineering-project-hub.json`](../../examples/grafana/engineering-project-hub.json)
-ha dieci pannelli: progetti per stato, età dei dati, alert critici o alti scaduti, progetti per
+ha undici pannelli: progetti per stato, età dei dati, alert critici o alti scaduti, progetti per
 stato nel tempo, punteggio, alert critici e alti aperti, misure non visibili, immagini non firmate,
-copertura SBOM e stati dei provider. Un valore mancante mostra "Not measured", mai 0; il totale degli alert scaduti copre i progetti misurati e accanto mostra quanti non lo sono stati.
+copertura SBOM, stati dei provider e la mappa dei controlli (punteggio e controlli misurati). Un valore mancante mostra "Not measured", mai 0; il totale degli alert scaduti copre i progetti misurati e accanto mostra quanti non lo sono stati.
 
 Importazione: **Dashboards → New → Import**, carica il file, poi scegli la sorgente dati
 Prometheus nel menu **Data source** in alto nella dashboard. Il file non contiene UID di sorgenti

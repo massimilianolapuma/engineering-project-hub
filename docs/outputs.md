@@ -64,6 +64,10 @@ Rules:
 | `hub_project_quality_coverage_ratio`    | `project`                                            | test line coverage (0–1)                                                                |
 | `hub_project_collection_errors`         | `project`                                            | data sources that could not be read                                                     |
 | `hub_project_measure_known`             | `project`, `measure`                                 | 1 when the measure was known, 0 when not                                                |
+| `hub_project_control_score`             | `project`                                            | control map score 0–100 (restricted audience or demo data only)                         |
+| `hub_project_control_measured`          | `project`                                            | control map checks measured                                                             |
+| `hub_project_control_applicable`        | `project`                                            | control map checks that apply                                                           |
+| `hub_project_control_level`             | `project`, `check`                                   | level 0–5 per measured check ([Control map](control-map.md))                            |
 | `hub_metrics_truncated`                 |                                                      | 1 when the size cap applied                                                             |
 
 ### Reading it with Prometheus
@@ -118,9 +122,9 @@ The hub ships no alert rules. Three expressions to start from:
 ## Grafana dashboard
 
 [`examples/grafana/engineering-project-hub.json`](../examples/grafana/engineering-project-hub.json)
-has ten panels: projects per status, data age, overdue critical or high alerts, projects per
+has eleven panels: projects per status, data age, overdue critical or high alerts, projects per
 status over time, score, open critical and high alerts, measures not visible, unsigned images,
-SBOM coverage and provider states. A missing value shows "Not measured", never 0; the overdue total covers the measured projects and shows next to it how many were not measured.
+SBOM coverage, provider states and the control map (score and checks measured). A missing value shows "Not measured", never 0; the overdue total covers the measured projects and shows next to it how many were not measured.
 
 Import: **Dashboards → New → Import**, upload the file, then choose your Prometheus data source
 in the **Data source** drop-down at the top of the dashboard. The file contains no data source

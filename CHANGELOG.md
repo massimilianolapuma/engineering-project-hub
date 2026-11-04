@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Control map ([ADR 0014](docs/architecture/adr/0014-control-map.md),
+  [docs](docs/control-map.md)): page `controls/` with 25 technical checks per project on the
+  0–5 assessment scale, grouped by business unit (median rows), with the related DORA
+  (Regulation (EU) 2022/2554, RTS 2024/1774) and ISO/IEC 27001:2022 Annex A references, a score
+  ("measured N of M"), cell detail, filters (business unit, area, `?team=`), legend and
+  references table. Not a compliance assessment; governance is out of scope.
+  - Only for `publication.audience: restricted` or demo data; `policies.controlMap` (thresholds,
+    windows, `enabled`).
+  - Unknown is never 0: unreadable sources are "not visible" with a reason; "% of repositories"
+    checks use readable repositories only and refuse below half.
+  - Catalog: per-environment `deploySignal` (`workflow`, `versions-file`, `argocd`, `release`,
+    `external`), `delivery`, `githubEnvironment`; per-project `controlMap.notApplicable`. Delivery
+    metrics (frequency, lead time, change failure rate, time to restore) from the signal; a
+    versions file counts promotions and rollbacks from its commits.
+  - New read-only readings: push protection status, GitHub environments, closed-alert dates,
+    commits of a path, file at a commit, releases; OIDC use from workflow files already read.
+  - Project page "Controls" block, `exports/control-map.csv`, metrics
+    `hub_project_control_{score,measured,applicable,level}` and a Grafana panel.
+
+### Changed
+
+- Snapshot schema 1.9 (`project.controlMap`, `summary.controlMap`, finding `resolvedAt`; new
+  collection error sources `github-environments`, `deploy-signal`).
+- The catalog editor keeps the new environment and project fields when it saves.
+
 ## [0.15.0] - 2026-11-04
 
 ### Added

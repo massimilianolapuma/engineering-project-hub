@@ -112,6 +112,14 @@ l'hub sceglie solo cosa contare.
   sono stati verificati sulla pagina GitHub
   [permissions-required-for-github-apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps)
   il 2026-10-03.
+- **Fonti della mappa dei controlli** (solo quando la [mappa dei controlli](control-map.md) è
+  pubblicata). Tutte GET: ambienti GitHub della coordinatrice
+  (`GET /repos/{owner}/{repo}/environments`), commit del percorso del file delle versioni, il file a
+  un commit, date dei commit e release (**Contents: read**), e lo stato della push protection dai
+  metadati della repository (`security_and_analysis`, restituito solo a chi può vedere le
+  impostazioni di sicurezza). Senza accesso il controllo è **non visibile** con il motivo (errore
+  di raccolta `github-environments` su un 403), mai 0. Verificare il permesso per gli ambienti
+  sulla pagina dei permessi di GitHub per la propria App prima di farvi affidamento.
 - **Fonti dei controlli repository.** Verificate il 2026-10-21 sulla pagina GitHub
   [permissions-required-for-fine-grained-personal-access-tokens](https://docs.github.com/en/rest/authentication/permissions-required-for-fine-grained-personal-access-tokens):
 

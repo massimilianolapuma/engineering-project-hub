@@ -325,6 +325,17 @@ Sono nomi, mai host o credenziali, e vengono **pubblicati** con il catalogo in `
 (quindi nella demo pubblica sono sintetici). URL di base e token stanno altrove:
 `config/providers.yaml` e l'ambiente.
 
+### Campi della mappa dei controlli (`deploySignal`, `delivery`, `githubEnvironment`, `controlMap`)
+
+Per la [mappa dei controlli](control-map.md) ogni ambiente può dichiarare come si osservano i suoi
+deploy (`deploySignal`: `workflow`, `versions-file`, `argocd`, `release` o `external`, il default),
+quale ambiente usano le metriche di rilascio (`delivery: true`, al massimo uno; default l'ultimo) e
+il nome del suo ambiente GitHub (`githubEnvironment`, default il suo `id`). Un progetto può
+escludere i controlli che non si applicano, con un motivo mostrato nella cella:
+`controlMap: { notApplicable: [{ check: dast, reason: ... }] }`. Soglie e finestre stanno in
+`policies.yaml` sotto `controlMap` (`enabled`, `windows.frequencyDays` 30, `windows.trendDays` 90,
+`thresholds`). L'editor del catalogo conserva questi campi quando salva.
+
 ### Aggiungere un progetto (senza modifiche al codice)
 
 Metodo consigliato: apri `/it/catalog/`, aggiungi una proposta scoperta (o crea un
@@ -1107,6 +1118,7 @@ numeri non hanno mai prefissi. Excel con separatore di elenco `;`: usa Dati, Da 
 - `findings-summary.csv`: `project_id, component_id, repository, open_critical, open_high, open_medium, open_low, open_informational, open_unknown, sources_complete, overdue, accepted`. `overdue` e `accepted` contano i finding di quel repository (`unknown` quando gli SLA sono spenti o nessuna fonte di alert era leggibile). Tutti i conteggi sono `unknown` quando nessuna fonte di alert era leggibile; quando solo alcune lo erano, i conteggi sono un limite inferiore e `sources_complete` è `false`.
 - `versions.csv`: `row_type (coordinator|component|environment), project_id, item_id, item_name, repository, version, version_source, declared_version, latest_release, drift, manifest_consistency, pin_status, environment_status, environment_source, environment_declared_version, sync_status, health_status`. Le ultime quattro valgono per le righe di ambiente (`n/a` altrove): `environment_source` è `argocd` o `manifest`, `environment_declared_version` la versione dell'ambiente nel manifest, `sync_status` e `health_status` quanto riportato da Argo CD (`n/a` senza Argo CD).
 - `supply-chain.csv`: `project_id, repository, component_ids, sbom_state, sbom_source, packages, without_license, flagged, attestation_state, assets_checked, assets_with_provenance, images, images_signed, images_unsigned, container_scanning_source, iac_scanning_source, dast_source, summary_state`. `component_ids` è unito con `;`. I conteggi sono `unknown` quando la fonte non era leggibile, mai 0.
+- `control-map.csv` (solo quando la [mappa dei controlli](control-map.md) è pubblicata): `project_id, business_unit, check, area, level, state, value, unit, readable, reason, source_environment, signal, collected_at`. `level` e `value` sono `n/a` quando non misurati, mai 0; `readable` è `k/n` repository lette.
 
 Se i dati dello snapshot mancano o non sono validi, ogni CSV contiene l'intestazione e una sola riga che inizia con `data unavailable` e ha `unknown` nelle altre colonne. Non è mai un file con la sola intestazione, che si leggerebbe come "nessun progetto".
 
