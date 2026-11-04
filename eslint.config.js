@@ -40,5 +40,39 @@ export default tseslint.config(
     files: ['src/scripts/**/*.ts', 'public/**/*.js'],
     languageOptions: { globals: { ...globals.browser } },
   },
+  // D7 / ADR 0013: source credentials (collector) and target credentials (notifier) never share
+  // a code path. The notifier uses only shared/** and the model.
+  {
+    files: ['notifier/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/collector/**', '**/collector'],
+              message: 'The notifier must not import the collector (ADR 0013).',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['collector/**/*.ts', 'src/**/*.ts', 'src/**/*.astro', 'shared/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/notifier/**', '**/notifier'],
+              message: 'Only the notify job may run notifier code (ADR 0013).',
+            },
+          ],
+        },
+      ],
+    },
+  },
   prettier,
 );
