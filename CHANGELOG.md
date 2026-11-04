@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-11-04
+
 ### Fixed
 
 - Executive summary: a `?team=` that matches no project now says "No project in this selection."
@@ -391,7 +393,8 @@ Tagged after the fact (2026-10-21) and not deployed on its own: its changes ship
 - Read-only by design: no write calls, alert dismissals or workflow triggers. Secret scanning alerts are fetched with `hide_secret=true` and only the secret type is kept.
 - The public demo publishes synthetic mock data only.
 
-[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.14.1...HEAD
+[0.14.1]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.12.1...v0.13.0
 [0.12.1]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.12.0...v0.12.1
