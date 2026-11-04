@@ -1,6 +1,6 @@
 # HELP hub_info Engineering Project Hub collection metadata; always 1.
 # TYPE hub_info gauge
-hub_info{collector_version="0.13.0",data_source="mock",schema_version="1.8"} 1
+hub_info{collector_version="0.14.0",data_source="mock",schema_version="1.8"} 1
 # HELP hub_collection_timestamp_seconds When the data was collected, as Unix seconds.
 # TYPE hub_collection_timestamp_seconds gauge
 hub_collection_timestamp_seconds 1768478400
