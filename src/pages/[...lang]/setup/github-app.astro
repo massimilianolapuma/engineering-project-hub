@@ -1,0 +1,215 @@
+---
+/*
+ * One-click creation of the hub's read-only GitHub App (GitHub App manifest flow). The form is
+ * POSTed to github.com, so this page alone widens the meta CSP form-action to https://github.com.
+ * A restricted deployment keeps form-action 'none' (public/_headers, Cloudflare) and links the
+ * page of the public demo site instead. The returned code is turned into `gh` commands in the
+ * browser (src/scripts/github-app-setup.ts): the private key never reaches this site.
+ */
+import ExtLink from '../../../components/ExtLink.astro';
+import Base from '../../../layouts/Base.astro';
+import { HUB_REPOSITORY_URL, publicSetupUrl } from '../../../lib/github-app-manifest';
+import { pageContext } from '../../../lib/page';
+import { loadSitePolicies } from '../../../lib/policies';
+import { localeParams } from '../../../lib/routes';
+
+export const getStaticPaths = localeParams;
+const { locale } = Astro.props;
+const { i18n, index, alternates } = pageContext(locale, 'setupApp');
+const s = i18n.d.setupApp;
+const audience = index?.run.policy.audience ?? loadSitePolicies().policies.publication.audience;
+const restricted = audience === 'restricted';
+const guide = `${HUB_REPOSITORY_URL}/blob/main/docs/${locale === 'en' ? '' : `${locale}/`}protected-hosting.md`;
+const PERMISSIONS = [
+  'metadata',
+  'contents',
+  'actions',
+  'securityEvents',
+  'vulnerabilityAlerts',
+  'secretScanning',
+  'deployments',
+  'members',
+] as const;
+---
+
+<Base
+  i18n={i18n}
+  title={s.title}
+  page="setupApp"
+  alternates={alternates}
+  index={index}
+  formAction={restricted ? "'none'" : 'https://github.com'}
+>
+  <header class="page-head">
+    <h1>{s.title}</h1>
+    <p class="lead">{s.lede}</p>
+    <p class="note">{s.keyNote}</p>
+  </header>
+
+  {restricted ? (
+    <p class="card" data-setup-restricted>
+      {s.restricted}{' '}
+      <a href={publicSetupUrl(locale)} rel="noopener noreferrer external">
+        {s.restrictedLink}
+      </a>
+    </p>
+  ) : (
+    <div
+      class="app-setup"
+      data-app-setup
+      data-msg-invalid-owner={s.invalidOwner}
+      data-msg-invalid-name={s.invalidName}
+      data-msg-invalid-repo={s.invalidRepo}
+      data-msg-no-storage={s.noStorage}
+      data-msg-state-mismatch={s.stateMismatch}
+      data-msg-invalid-code={s.invalidCode}
+      data-msg-copied={s.copied}
+    >
+      <noscript>
+        <p class="callout callout--red">{s.noscript}</p>
+      </noscript>
+
+      <section class="card app-setup__result" aria-labelledby="app-h-done" data-app-result hidden>
+        <h2 id="app-h-done">{s.doneTitle}</h2>
+        <p class="note">{s.doneLede}</p>
+        <pre class="app-setup__commands" data-app-commands />
+        <button type="button" class="btn" data-app-copy>
+          {s.copy}
+        </button>
+        <span class="app-setup__status" role="status" data-app-copy-status />
+      </section>
+      <p class="callout callout--red" role="alert" data-app-return-error hidden />
+
+      <form id="app-form" class="card app-setup__form" method="post" novalidate>
+        <h2>{s.formTitle}</h2>
+        <fieldset class="app-setup__account">
+          <legend>{s.account}</legend>
+          <label>
+            <input type="radio" name="account" value="organization" checked /> {s.accountOrg}
+          </label>
+          <label>
+            <input type="radio" name="account" value="user" /> {s.accountUser}
+          </label>
+        </fieldset>
+        <div class="field">
+          <label for="app-owner">{s.owner}</label>
+          <input id="app-owner" type="text" autocomplete="off" spellcheck="false" required />
+        </div>
+        <div class="field">
+          <label for="app-name">{s.name}</label>
+          <input
+            id="app-name"
+            type="text"
+            maxlength="34"
+            autocomplete="off"
+            aria-describedby="app-name-help"
+            required
+          />
+          <span id="app-name-help">{s.nameHelp}</span>
+        </div>
+        <div class="field">
+          <label for="app-repo">{s.deployRepo}</label>
+          <input
+            id="app-repo"
+            type="text"
+            placeholder="owner/engineering-project-hub-deploy"
+            autocomplete="off"
+            spellcheck="false"
+            aria-describedby="app-repo-help"
+          />
+          <span id="app-repo-help">{s.deployRepoHelp}</span>
+        </div>
+        <label class="app-setup__check" data-app-teams-row>
+          <input id="app-teams" type="checkbox" /> {s.teams}
+        </label>
+        <input type="hidden" name="manifest" value="" />
+        <p class="callout callout--red" role="alert" data-app-error hidden />
+        <button type="submit" class="btn btn--primary">
+          {s.submit}
+        </button>
+      </form>
+    </div>
+  )}
+
+  <section class="card" aria-labelledby="app-h-perms">
+    <h2 id="app-h-perms">{s.permissionsTitle}</h2>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{s.permission}</th>
+            <th scope="col">{s.usedFor}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {PERMISSIONS.map((k) => (
+            <tr>
+              <th scope="row">{s.permissions[k][0]}</th>
+              <td>{s.permissions[k][1]}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p>
+      <ExtLink href={guide} i18n={i18n} label={s.guide} />
+    </p>
+  </section>
+</Base>
+
+<script>
+  import '../../../scripts/github-app-setup';
+</script>
+
+<style>
+  .app-setup__form {
+    display: grid;
+    gap: var(--base-size-16);
+    max-width: 40rem;
+  }
+  .app-setup__form h2 {
+    margin: 0;
+  }
+  .app-setup__account {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--base-size-16);
+    border: 0;
+    padding: 0;
+    margin: 0;
+  }
+  .app-setup__account legend {
+    font-weight: 600;
+    font-size: var(--text-body-size-small);
+    margin-bottom: var(--base-size-4);
+  }
+  .app-setup__account label,
+  .app-setup__check {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--base-size-8);
+  }
+  .app-setup__account input,
+  .app-setup__check input {
+    min-height: auto;
+  }
+  .app-setup__form .btn--primary {
+    justify-self: start;
+  }
+  .app-setup__commands {
+    font-family: var(--fontStack-monospace);
+    font-size: var(--text-body-size-small);
+    line-height: 1.5;
+    background: var(--bgColor-muted);
+    border: 1px solid var(--borderColor-default);
+    border-radius: var(--borderRadius-medium);
+    padding: var(--base-size-12);
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .app-setup__status {
+    margin-left: var(--base-size-8);
+    font-size: var(--text-body-size-small);
+    color: var(--fgColor-muted);
+  }
+</style>

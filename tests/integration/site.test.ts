@@ -2179,3 +2179,48 @@ describe('control map page (spec 2026-11-04)', () => {
     expect(html).not.toMatch(/href="[^"]*\/controls\/"/);
   }, 180_000);
 });
+
+describe('GitHub App setup page (one-click manifest)', () => {
+  const metaCsp = (html: string) =>
+    /<meta http-equiv="Content-Security-Policy" content="([^"]+)"/.exec(html)?.[1] ?? '';
+
+  it('is built in both languages with the form and the permission list', async () => {
+    const en = await page('setup/github-app');
+    const itHtml = await page('it/setup/github-app');
+    expect(en).toMatch(/<h1[^>]*>Create the GitHub App<\/h1>/);
+    expect(itHtml).toMatch(/<h1[^>]*>Crea la GitHub App<\/h1>/);
+    expect(en).toMatch(/<form[^>]*id="app-form"[^>]*method="post"/);
+    expect(en).toMatch(/<input[^>]*type="hidden"[^>]*name="manifest"/);
+    for (const p of ['Metadata', 'Contents', 'Actions', 'Code scanning alerts', 'Deployments'])
+      expect(textOf(en), p).toContain(p);
+    expect(en).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>/);
+  });
+
+  it('allows form posts to github.com on this page only', async () => {
+    expect(metaCsp(await page('setup/github-app'))).toContain('form-action https://github.com');
+    expect(metaCsp(await page(''))).toContain("form-action 'none'");
+    expect(metaCsp(await page('how-to-read'))).toContain("form-action 'none'");
+    expect(readFileSync('public/_headers', 'utf8')).toContain("form-action 'none'");
+  });
+
+  it('on a restricted deployment links the public page instead of posting', async () => {
+    const data = join(work, 'data-restricted-setup');
+    await cp(join(process.cwd(), 'fixtures/snapshots'), data, { recursive: true });
+    const idx = join(data, 'index.json');
+    const index = JSON.parse(await readFile(idx, 'utf8'));
+    index.run.policy.audience = 'restricted';
+    await writeFile(idx, JSON.stringify(index));
+    const out = join(work, 'dist-restricted-setup');
+    await buildSite(data, out);
+    const html = await readFile(join(out, 'setup/github-app/index.html'), 'utf8');
+    expect(html).not.toContain('id="app-form"');
+    expect(html).toContain(
+      'href="https://massimilianolapuma.github.io/engineering-project-hub/setup/github-app/"',
+    );
+    expect(metaCsp(html)).toContain("form-action 'none'");
+    const itHtml = await readFile(join(out, 'it/setup/github-app/index.html'), 'utf8');
+    expect(itHtml).toContain(
+      'href="https://massimilianolapuma.github.io/engineering-project-hub/it/setup/github-app/"',
+    );
+  }, 180_000);
+});

@@ -15,6 +15,7 @@ export const en = {
     catalog: 'Catalog',
     controls: 'Control map',
     howToRead: 'How to read',
+    setupApp: 'GitHub App setup',
     main: 'Main navigation',
     language: 'Language',
     theme: 'Theme',
@@ -1999,6 +2000,55 @@ export const en = {
     'dimension-amber': '{dimension} needs attention',
     'dimension-grey': '{dimension} is unknown',
     'all-dimensions-green': 'All dimensions healthy',
+  },
+  setupApp: {
+    title: 'Create the GitHub App',
+    lede: 'Creates the read-only GitHub App the hub collects with, in your organisation or personal account, with the permissions below already selected. GitHub asks you to confirm, then this page shows the commands that store the App credentials as secrets of your deploy repository.',
+    keyNote:
+      'The private key goes from GitHub to your terminal only: this page never receives it and sends nothing anywhere else.',
+    restricted:
+      'This deployment does not send forms to other sites. Create the App from the public page:',
+    restrictedLink: 'GitHub App setup on the public demo site',
+    noscript: 'This page needs JavaScript to prepare the request for GitHub.',
+    formTitle: 'Your App',
+    account: 'Account type',
+    accountOrg: 'Organisation',
+    accountUser: 'Personal account',
+    owner: 'Organisation or user name',
+    name: 'App name',
+    nameHelp: 'At most 34 characters, unique on GitHub.',
+    deployRepo: 'Deploy repository (optional)',
+    deployRepoHelp: 'owner/repository that runs the hub. Used only to fill in the commands.',
+    teams: 'Team discovery: also request organisation Members (read)',
+    submit: 'Create on GitHub',
+    permissionsTitle: 'Permissions requested (all read-only)',
+    permission: 'Permission',
+    usedFor: 'Used for',
+    permissions: {
+      metadata: ['Metadata', 'repositories, branch rules'],
+      contents: ['Contents', 'manifests, workflow files, releases, tags'],
+      actions: ['Actions', 'workflow runs, CI summaries, the hub history'],
+      securityEvents: ['Code scanning alerts', 'code scanning alerts and analyses'],
+      vulnerabilityAlerts: ['Dependabot alerts', 'dependency alerts'],
+      secretScanning: ['Secret scanning alerts', 'secret alert counts, never the secret'],
+      deployments: ['Deployments', 'the deployments ledger (control map delivery checks)'],
+      members: ['Members (organisation, optional)', 'team discovery'],
+    },
+    invalidOwner: 'Enter a valid GitHub organisation or user name.',
+    invalidName: 'Enter an App name of 1 to 34 characters.',
+    invalidRepo: 'Enter the deploy repository as owner/repository, or leave it empty.',
+    noStorage:
+      'This browser blocks session storage for this site, so the page could not check the answer from GitHub. Allow it and start again.',
+    doneTitle: 'App created: run these commands',
+    doneLede:
+      'Run them within one hour in a terminal with gh (logged in) and jq. Copy them now: reloading the page does not show them again. Then install the App only on the repositories to monitor and add the secret GH_APP_INSTALLATION_ID (the number at the end of the installation page address).',
+    copy: 'Copy',
+    copied: 'Copied',
+    stateMismatch:
+      'This answer from GitHub does not match a request started in this browser tab, so no command is shown. Start again from the form.',
+    invalidCode:
+      'GitHub returned an unexpected code, so no command is shown. Start again from the form.',
+    guide: 'Full setup guide',
   },
 };
 

@@ -51,6 +51,8 @@ export const OCTICON_NAMES = [
   'briefcase',
   // control map
   'checklist',
+  // GitHub App setup
+  'key',
 ] as const;
 export type OcticonName = (typeof OCTICON_NAMES)[number];
 

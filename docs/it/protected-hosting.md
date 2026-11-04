@@ -87,6 +87,11 @@ flowchart LR
 Segui [security.md → Modello di autorizzazione](security.md#modello-di-autorizzazione):
 permessi in sola lettura, installata **solo** sui repository da monitorare (anche privati).
 
+> **Con un clic:** la [pagina di configurazione della GitHub App](https://massimilianolapuma.github.io/engineering-project-hub/it/setup/github-app/) del sito demo
+> pubblico crea l'App con il flusso App manifest di GitHub, con questi permessi già selezionati,
+> poi mostra i comandi `gh` che salvano id e chiave privata come segreti del repository di
+> deploy. La chiave va da GitHub solo al tuo terminale.
+
 ### 4. Repository di deploy privato
 
 > **Scorciatoia:** crealo dal template [engineering-project-hub-template](https://github.com/massimilianolapuma/engineering-project-hub-template)

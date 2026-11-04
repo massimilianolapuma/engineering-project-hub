@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **GitHub App setup page** (`/setup/github-app/`, EN/IT): creates the hub's read-only GitHub App
+  in one click through GitHub's App manifest flow (Metadata, Contents, Actions, Code scanning
+  alerts, Dependabot alerts, Secret scanning alerts, Deployments; optional organisation Members),
+  then prints the `gh` commands that store its id and private key as deploy repository secrets.
+  The key never reaches the site. Only this page allows `form-action https://github.com`;
+  restricted builds link the public demo page instead.
+- README and protected hosting guide link the deployment template repository
+  (`engineering-project-hub-template`).
+
 ## [0.17.0] - 2026-11-04
 
 ### Added
