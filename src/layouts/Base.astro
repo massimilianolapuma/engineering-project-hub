@@ -4,7 +4,8 @@ import Legend from '../components/Legend.astro';
 import Octicon from '../components/Octicon.astro';
 import RelTime from '../components/RelTime.astro';
 import { LOCALES, type I18n, type Locale } from '../i18n';
-import { NAV, NAV_ICON, href, type PageKey } from '../lib/routes';
+import { loadSitePolicies } from '../lib/policies';
+import { NAV_ICON, href, navFor, type PageKey } from '../lib/routes';
 import '../styles/tokens.css';
 import '../styles/global.css';
 
@@ -26,6 +27,7 @@ const { d, locale } = i18n;
 const run = index?.run;
 const staleHours = run?.policy.snapshotStaleHours ?? 24;
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const nav = navFor(loadSitePolicies().policies.outputs.executive.enabled);
 /** Signed-in user from Cloudflare Access: opt-in at build time, never on GitHub Pages. */
 const identity = import.meta.env.PUBLIC_IDENTITY_SOURCE === 'cloudflare-access';
 ---
@@ -105,7 +107,7 @@ const identity = import.meta.env.PUBLIC_IDENTITY_SOURCE === 'cloudflare-access';
       </div>
       <nav class="mainnav" aria-label={d.nav.main}>
         <ul>
-          {NAV.map((k) => (
+          {nav.map((k) => (
             <li>
               <a href={href(locale, k)} aria-current={page === k ? 'page' : undefined}>
                 <Octicon name={NAV_ICON[k]} />

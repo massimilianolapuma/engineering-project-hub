@@ -47,6 +47,7 @@ afterAll(async () => {
 const VIEWS = [
   '',
   'changes',
+  'executive',
   'workflows',
   'versions',
   'security',
@@ -233,7 +234,7 @@ describe('static site', () => {
       const html = await page(p);
       const nav = /<nav class="mainnav"[\s\S]*?<\/nav>/.exec(html)?.[0] ?? '';
       const links = nav.match(/<a [\s\S]*?<\/a>/g) ?? [];
-      expect(links.length, p).toBe(7);
+      expect(links.length, p).toBe(8);
       for (const a of links) expect(a, p).toMatch(/<svg[^>]*class="octicon octicon-/);
       expect(nav, p).not.toContain('class="Counter"');
       const footer = /<footer class="footer"[\s\S]*?<\/footer>/.exec(html)?.[0] ?? '';
@@ -1991,5 +1992,89 @@ describe('static site', () => {
     expect(html).toContain('9.0');
     // (Project pages are not generated either; verified by a standalone build — Astro caches
     // getStaticPaths between builds in the same process, so it is not asserted here.)
+  }, 180_000);
+});
+
+describe('executive summary', () => {
+  /** The page without its JSON data blocks (they feed the team filter, not the reader). */
+  const visible = (html: string) =>
+    html.replace(/<script type="application\/json"[^>]*>[\s\S]*?<\/script>/g, '');
+  const catalog = readFileSync('fixtures/snapshots/catalog.json', 'utf8');
+  const repos = [...new Set([...catalog.matchAll(/example-org\/[\w.-]+/g)].map((m) => m[0]))];
+
+  it('renders in both languages with the lede, the redaction note and the trend sentence', async () => {
+    const text = textOf(await page('executive'));
+    expect(text).toContain('Executive summary');
+    expect(text).toContain('Prepared for sharing');
+    expect(text).toContain('Status of 4 projects at 15 Jan 2026.');
+    expect(text).toContain('Critical projects: 0 → 2 since 3 Jan 2026.');
+    expect(textOf(await page('it/executive'))).toContain('Sintesi per la direzione');
+  });
+
+  it('shows the tiles, the trend table and the top risks in order', async () => {
+    const html = await page('executive');
+    expect(html).toMatch(/data-slot="tiles.red"[^>]*>2</);
+    expect(html).toMatch(/data-slot="tiles.grey"[^>]*>1</);
+    expect(html).toMatch(/<caption[^>]*>/);
+    expect(html).toMatch(/data-slot="trend.amber.compare"[^>]*>3</);
+    const order = [...html.matchAll(/data-risk="([\w-]+)"/g)].map((m) => m[1]);
+    expect(order).toEqual(['project-beta', 'platform', 'project-gamma', 'project-alpha']);
+    expect(textOf(html)).toContain('≥ 1 critical security alert open.');
+  });
+
+  it('prints no repository, team, GitHub or source-system data', async () => {
+    for (const v of ['executive', 'it/executive']) {
+      const html = visible(await page(v));
+      expect(html).not.toContain('github.com');
+      expect(html).not.toContain('example-org');
+      for (const r of repos) expect(html, r).not.toContain(r);
+      for (const slug of ['pay-project-alpha-dev', 'pay-project-beta-dev'])
+        expect(html, slug).not.toContain(slug);
+    }
+    const block = /<script type="application\/json" id="exec-input"[^>]*>([\s\S]*?)<\/script>/.exec(
+      await page('executive'),
+    )?.[1];
+    expect(block).toBeDefined();
+    expect(block).not.toContain('example-org');
+    for (const r of repos) expect(block).not.toContain(r);
+  });
+
+  it('sits in the navigation after What changed', async () => {
+    const nav = /<nav class="mainnav"[\s\S]*?<\/nav>/.exec(await page(''))![0];
+    const links = [...nav.matchAll(/href="([^"]*)"/g)].map((m) => m[1]);
+    const at = links.findIndex((l) => l!.endsWith('/changes/'));
+    expect(links[at + 1]).toMatch(/\/executive\/$/);
+  });
+
+  it('ships print rules, a How to read section and the metrics line', async () => {
+    const html = await page('executive');
+    const css = await Promise.all(
+      [...html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map((m) =>
+        readFile(join(dist, m[1]!.replace(/^\//, '')), 'utf8'),
+      ),
+    );
+    const inline = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]);
+    expect([...css, ...inline].join('\n')).toMatch(/@media print/);
+    expect(await page('how-to-read')).toContain('id="executive"');
+    expect(await page('data-quality')).toMatch(/href="[^"]*data\/metrics\/hub\.prom"/);
+  });
+
+  it('drops the navigation entry when outputs.executive.enabled is false', async () => {
+    const policies = parse(readFileSync('config/policies.yaml', 'utf8'));
+    policies.outputs = { executive: { enabled: false } };
+    const file = join(work, 'policies-no-executive.yaml');
+    await writeFile(file, JSON.stringify(policies));
+    process.env.POLICIES_FILE = file;
+    try {
+      const out = join(work, 'dist-no-executive');
+      await buildSite(join(process.cwd(), 'fixtures/snapshots'), out);
+      const html = await readFile(join(out, 'index.html'), 'utf8');
+      expect(html).not.toMatch(/href="[^"]*\/executive\/"/);
+      expect(await readFile(join(out, 'data-quality/index.html'), 'utf8')).toContain(
+        'data-metrics-line',
+      );
+    } finally {
+      delete process.env.POLICIES_FILE;
+    }
   }, 180_000);
 });

@@ -27,6 +27,8 @@ To change the frequency, edit the `cron` in `deploy-pages.yml`. Keep the stale t
 - **Stale banner**: the site shows a banner when the snapshot is older than
   `snapshotStaleHours`. This is computed in the viewer's browser, so a site that stopped
   updating is still flagged.
+- **Prometheus** (optional): alert on `time() - hub_collection_timestamp_seconds > 8 * 3600`
+  (two missed collections) from `data/metrics/hub.prom`; see [Outputs](outputs.md#example-alerts).
 - Watch for failed `deploy-pages` runs. Failures are structural, such as invalid config,
   credentials, schema or sanitisation, and need action. Errors on individual repositories
   do **not** fail the run.

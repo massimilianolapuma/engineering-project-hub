@@ -732,6 +732,34 @@ unless you pass `--allow-date-tokens`). `npm run validate:config` validates the 
 
 What is published and what is withheld is in [Security](security.md#security-exceptions).
 
+### Outputs (`outputs`)
+
+From v0.14.0 the hub builds two read-only outputs from the data it already publishes. Both are
+on by default; the block is optional and these are its defaults:
+
+```yaml
+outputs:
+  metrics:
+    enabled: true # false = no data/metrics/hub.prom
+    maxBytes: 4194304 # 65536–16777216
+  executive:
+    enabled: true # false = no executive summary page and no navigation entry
+    topRisks: 5 # 1–10
+    trendDays: 7 # 1–90
+```
+
+| Key                   | Range             | Meaning                                                                                                                                                                         |
+| --------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `metrics.enabled`     | `true` / `false`  | Writes `metrics/hub.prom` (Prometheus text format) next to the snapshot.                                                                                                        |
+| `metrics.maxBytes`    | 65 536–16 777 216 | Size cap. Over it the file first drops the per-dimension statuses, then keeps only portfolio-level metrics, and says so in `hub_metrics_truncated`. The collection never fails. |
+| `executive.enabled`   | `true` / `false`  | Builds the "Executive summary" page in both languages and its navigation entry.                                                                                                 |
+| `executive.topRisks`  | 1–10              | How many projects the page lists under "Top risks".                                                                                                                             |
+| `executive.trendDays` | 1–90              | Age of the comparison column of the trend table ("7 days ago").                                                                                                                 |
+
+The collector reads `metrics`; the site build reads `executive` (through `POLICIES_FILE` when the
+policies live in a separate configuration). What each output contains is in
+[Outputs](outputs.md).
+
 ## Policy decision cases: `config/policy-cases/*.yaml`
 
 A decision case is a tiny synthetic scenario with the status you expect. `npm run policy:check`

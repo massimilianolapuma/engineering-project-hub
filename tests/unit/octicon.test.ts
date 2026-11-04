@@ -42,6 +42,11 @@ describe('octiconSvg', () => {
     for (const name of Object.values(NAV_ICON)) expect(() => octiconSvg(name)).not.toThrow();
   });
 
+  it('resolves the executive summary icon (briefcase)', () => {
+    expect(NAV_ICON.executive).toBe('briefcase');
+    expect(octiconSvg('briefcase')).toContain('<svg');
+  });
+
   it('throws on an unknown name', () => {
     expect(() => octiconSvg('no-such-icon' as OcticonName)).toThrow(/no-such-icon/);
   });

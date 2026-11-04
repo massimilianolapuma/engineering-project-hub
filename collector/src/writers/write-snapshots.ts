@@ -1,4 +1,4 @@
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   CatalogSnapshotSchema,
@@ -19,6 +19,7 @@ import {
 } from '@model/index';
 import { assertPublishable, SanitizationError } from '../sanitizers/sanitize';
 import { formatIssues } from '../config/load';
+import type { MetricsTruncation, RenderedMetrics } from '../outputs/prometheus';
 
 export class SnapshotValidationError extends Error {
   constructor(
@@ -170,6 +171,13 @@ export interface CollectionReport {
     entries: number;
     notes: string[];
   } | null;
+  /** metrics/hub.prom: "off" when outputs.metrics.enabled is false. */
+  metrics: {
+    state: 'written' | 'off';
+    series: number;
+    bytes: number;
+    truncated: MetricsTruncation;
+  };
 }
 
 export function buildReport(
@@ -177,6 +185,7 @@ export function buildReport(
   projects: ProjectSnapshot[],
   history: HistoryFile | null = null,
   notes: readonly string[] = [],
+  metrics: RenderedMetrics | null = null,
 ): CollectionReport {
   const seen = new Set<string>();
   const errors = projects
@@ -228,7 +237,23 @@ export function buildReport(
       : notes.length
         ? { state: 'not-written', entries: 0, notes: [...notes] }
         : null,
+    metrics: metrics
+      ? {
+          state: 'written',
+          series: metrics.series,
+          bytes: metrics.bytes,
+          truncated: metrics.truncated,
+        }
+      : { state: 'off', series: 0, bytes: 0, truncated: 'none' },
   };
+}
+
+/** "written 182 series (11.4 KB)", "… (11.4 KB, truncated: dimensions)" or "off". */
+export function metricsLine(m: CollectionReport['metrics']): string {
+  if (m.state === 'off') return 'off';
+  const kb = (m.bytes / 1024).toFixed(1);
+  const cut = m.truncated === 'none' ? '' : `, truncated: ${m.truncated}`;
+  return `written ${m.series} series (${kb} KB${cut})`;
 }
 
 function historyLine(h: CollectionReport['history']): string {
@@ -270,6 +295,7 @@ export function reportMarkdown(r: CollectionReport): string {
     `| Duration | ${r.durationMs} ms |`,
     `| Repositories | ${r.repositories.total} total · ${r.repositories.ok} ok · ${r.repositories.withErrors} with errors · ${r.repositories.unavailable} unavailable |`,
     `| History | ${historyLine(r.history)} |`,
+    `| Metrics | ${metricsLine(r.metrics)} |`,
     '',
     exceptionsLine(r.exceptions),
     '',
@@ -306,9 +332,17 @@ export async function writeSnapshots(
   discovery: DiscoveryResult | null = null,
   extras?: HistoryExtras,
   teams: TeamsResult | null = null,
+  metrics: RenderedMetrics | null = null,
 ): Promise<CollectionReport> {
   const files = serialise(index, projects, catalog, discovery, extras, teams);
-  const report = buildReport(index, projects, extras?.history ?? null, extras?.notes ?? []);
+  if (metrics) assertPublishable(metrics.text, 'metrics/hub.prom');
+  const report = buildReport(
+    index,
+    projects,
+    extras?.history ?? null,
+    extras?.notes ?? [],
+    metrics,
+  );
   const reportJson = `${JSON.stringify(report, null, 2)}\n`;
   const reportMd = reportMarkdown(report);
   assertPublishable(reportJson, 'collection-report.json');
@@ -319,6 +353,13 @@ export async function writeSnapshots(
   for (const [name, text] of files) await writeFile(join(outDir, name), text, 'utf8');
   await writeFile(join(outDir, 'collection-report.json'), reportJson, 'utf8');
   await writeFile(join(outDir, 'collection-report.md'), reportMd, 'utf8');
+  if (metrics) {
+    // Last and atomic: a scraper never reads a half-written file.
+    await mkdir(join(outDir, 'metrics'), { recursive: true });
+    const tmp = join(outDir, 'metrics', 'hub.prom.tmp');
+    await writeFile(tmp, metrics.text, 'utf8');
+    await rename(tmp, join(outDir, 'metrics', 'hub.prom'));
+  }
   return report;
 }
 

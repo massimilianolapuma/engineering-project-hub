@@ -15,3 +15,7 @@
 # Snapshots must always reflect the last collection (and never sit in shared caches).
 /data/*
   Cache-Control: no-store
+
+# Prometheus scrapes the metrics file; Prometheus 3 needs a text/plain type (or a fallback).
+/data/metrics/*
+  Content-Type: text/plain; version=0.0.4; charset=utf-8

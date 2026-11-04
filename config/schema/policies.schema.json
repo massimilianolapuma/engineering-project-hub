@@ -1053,6 +1053,53 @@
       },
       "additionalProperties": false
     },
+    "outputs": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "metrics": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "default": true,
+              "type": "boolean"
+            },
+            "maxBytes": {
+              "default": 4194304,
+              "type": "integer",
+              "minimum": 65536,
+              "maximum": 16777216
+            }
+          },
+          "additionalProperties": false
+        },
+        "executive": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "default": true,
+              "type": "boolean"
+            },
+            "topRisks": {
+              "default": 5,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            },
+            "trendDays": {
+              "default": 7,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 90
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "publication": {
       "type": "object",
       "properties": {

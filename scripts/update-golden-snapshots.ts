@@ -6,6 +6,7 @@
 import { loadConfig } from '../collector/src/config/load';
 import { buildHistoryExtras } from '../collector/src/history/extras';
 import { loadPreviousHistory } from '../collector/src/history/load';
+import { renderMetrics } from '../collector/src/outputs/prometheus';
 import { createMockExternalProviders } from '../collector/src/providers/external/mock';
 import { MockProvider } from '../collector/src/providers/mock/mock-provider';
 import { runCollection } from '../collector/src/run';
@@ -50,5 +51,6 @@ await writeSnapshots(
   result.discovery,
   buildHistoryExtras(previous, result.index, result.projects, catalog, policies, now),
   result.teams,
+  policies.outputs.metrics.enabled ? renderMetrics(result.index, policies.outputs.metrics) : null,
 );
 console.log('✔ fixtures/snapshots regenerated');

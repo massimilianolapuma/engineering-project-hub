@@ -85,6 +85,9 @@ runs:
         # The DB is shared through the default cache dir with the table scan above, so a
         # second restore (which would download the whole DB again) is skipped.
         cache: 'false'
+        # The table scan above already installed Trivy and put it on the job's PATH: reuse it
+        # instead of downloading the binary a second time (one fewer network dependency).
+        skip-setup-trivy: 'true'
 
     # always(): upload the SARIF report even when Trivy exits non-zero.
     # !env.ACT: Code Scanning upload is not available under nektos/act.

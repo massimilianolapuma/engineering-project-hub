@@ -76,6 +76,10 @@ flowchart LR
 
 5. Policy **Allow**, Include: **GitHub organization** `<your-org>` (or specific emails).
    Session duration: 24 h or less. Identity providers: GitHub only.
+6. Optional, for Prometheus: a **service token** and a second application for the path
+   `hub.<your-domain>/data/metrics/` with a **Service Auth** policy on that token, so the token
+   opens the metrics file and nothing else. See
+   [Outputs](outputs.md#metrics-behind-cloudflare-access).
 
 ### 3. GitHub App (read-only collector)
 

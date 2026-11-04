@@ -48,6 +48,7 @@ export const OCTICON_NAMES = [
   'unverified',
   'heart',
   'sync',
+  'briefcase',
 ] as const;
 export type OcticonName = (typeof OCTICON_NAMES)[number];
 

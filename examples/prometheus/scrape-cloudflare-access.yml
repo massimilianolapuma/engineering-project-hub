@@ -1,0 +1,19 @@
+# Prometheus scrapes the hub's metrics file from a site behind Cloudflare Access, with a service
+# token that opens only the metrics path (see "Metrics behind Cloudflare Access" in
+# docs/outputs.md). Replace hub.example.com and <client-id>. The secret stays in a file.
+scrape_configs:
+  - job_name: engineering-project-hub
+    scrape_interval: 15m
+    scrape_timeout: 30s
+    scheme: https
+    metrics_path: /data/metrics/hub.prom
+    # The hub's _headers file sets text/plain on Cloudflare Pages; the fallback is kept for
+    # hosts that do not apply it.
+    fallback_scrape_protocol: PrometheusText0.0.4
+    http_headers:
+      CF-Access-Client-Id:
+        values: ['<client-id>.access']
+      CF-Access-Client-Secret:
+        files: ['/etc/prometheus/secrets/cf-access-client-secret']
+    static_configs:
+      - targets: ['hub.example.com']

@@ -1,0 +1,278 @@
+# HELP hub_info Engineering Project Hub collection metadata; always 1.
+# TYPE hub_info gauge
+hub_info{collector_version="0.13.0",data_source="mock",schema_version="1.8"} 1
+# HELP hub_collection_timestamp_seconds When the data was collected, as Unix seconds.
+# TYPE hub_collection_timestamp_seconds gauge
+hub_collection_timestamp_seconds 1768478400
+# HELP hub_collection_duration_seconds Duration of the last collection in seconds.
+# TYPE hub_collection_duration_seconds gauge
+hub_collection_duration_seconds 0
+# HELP hub_projects Number of projects in the catalog.
+# TYPE hub_projects gauge
+hub_projects 4
+# HELP hub_portfolio_projects Projects per overall status (grey = not visible, a state, not a zero).
+# TYPE hub_portfolio_projects gauge
+hub_portfolio_projects{status="amber"} 1
+hub_portfolio_projects{status="green"} 0
+hub_portfolio_projects{status="grey"} 1
+hub_portfolio_projects{status="red"} 2
+# HELP hub_project_status Overall project status, one-hot over green, amber, red, grey.
+# TYPE hub_project_status gauge
+hub_project_status{project="platform",status="amber"} 0
+hub_project_status{project="platform",status="green"} 0
+hub_project_status{project="platform",status="grey"} 0
+hub_project_status{project="platform",status="red"} 1
+hub_project_status{project="project-alpha",status="amber"} 1
+hub_project_status{project="project-alpha",status="green"} 0
+hub_project_status{project="project-alpha",status="grey"} 0
+hub_project_status{project="project-alpha",status="red"} 0
+hub_project_status{project="project-beta",status="amber"} 0
+hub_project_status{project="project-beta",status="green"} 0
+hub_project_status{project="project-beta",status="grey"} 0
+hub_project_status{project="project-beta",status="red"} 1
+hub_project_status{project="project-gamma",status="amber"} 0
+hub_project_status{project="project-gamma",status="green"} 0
+hub_project_status{project="project-gamma",status="grey"} 1
+hub_project_status{project="project-gamma",status="red"} 0
+# HELP hub_project_dimension_status Status per dimension, one-hot over green, amber, red, grey; "coverage" means security controls coverage.
+# TYPE hub_project_dimension_status gauge
+hub_project_dimension_status{dimension="coverage",project="platform",status="amber"} 0
+hub_project_dimension_status{dimension="coverage",project="platform",status="green"} 1
+hub_project_dimension_status{dimension="coverage",project="platform",status="grey"} 0
+hub_project_dimension_status{dimension="coverage",project="platform",status="red"} 0
+hub_project_dimension_status{dimension="coverage",project="project-alpha",status="amber"} 1
+hub_project_dimension_status{dimension="coverage",project="project-alpha",status="green"} 0
+hub_project_dimension_status{dimension="coverage",project="project-alpha",status="grey"} 0
+hub_project_dimension_status{dimension="coverage",project="project-alpha",status="red"} 0
+hub_project_dimension_status{dimension="coverage",project="project-beta",status="amber"} 1
+hub_project_dimension_status{dimension="coverage",project="project-beta",status="green"} 0
+hub_project_dimension_status{dimension="coverage",project="project-beta",status="grey"} 0
+hub_project_dimension_status{dimension="coverage",project="project-beta",status="red"} 0
+hub_project_dimension_status{dimension="coverage",project="project-gamma",status="amber"} 0
+hub_project_dimension_status{dimension="coverage",project="project-gamma",status="green"} 0
+hub_project_dimension_status{dimension="coverage",project="project-gamma",status="grey"} 1
+hub_project_dimension_status{dimension="coverage",project="project-gamma",status="red"} 0
+hub_project_dimension_status{dimension="delivery",project="platform",status="amber"} 0
+hub_project_dimension_status{dimension="delivery",project="platform",status="green"} 1
+hub_project_dimension_status{dimension="delivery",project="platform",status="grey"} 0
+hub_project_dimension_status{dimension="delivery",project="platform",status="red"} 0
+hub_project_dimension_status{dimension="delivery",project="project-alpha",status="amber"} 0
+hub_project_dimension_status{dimension="delivery",project="project-alpha",status="green"} 1
+hub_project_dimension_status{dimension="delivery",project="project-alpha",status="grey"} 0
+hub_project_dimension_status{dimension="delivery",project="project-alpha",status="red"} 0
+hub_project_dimension_status{dimension="delivery",project="project-beta",status="amber"} 0
+hub_project_dimension_status{dimension="delivery",project="project-beta",status="green"} 0
+hub_project_dimension_status{dimension="delivery",project="project-beta",status="grey"} 0
+hub_project_dimension_status{dimension="delivery",project="project-beta",status="red"} 1
+hub_project_dimension_status{dimension="delivery",project="project-gamma",status="amber"} 0
+hub_project_dimension_status{dimension="delivery",project="project-gamma",status="green"} 0
+hub_project_dimension_status{dimension="delivery",project="project-gamma",status="grey"} 1
+hub_project_dimension_status{dimension="delivery",project="project-gamma",status="red"} 0
+hub_project_dimension_status{dimension="governance",project="platform",status="amber"} 0
+hub_project_dimension_status{dimension="governance",project="platform",status="green"} 1
+hub_project_dimension_status{dimension="governance",project="platform",status="grey"} 0
+hub_project_dimension_status{dimension="governance",project="platform",status="red"} 0
+hub_project_dimension_status{dimension="governance",project="project-alpha",status="amber"} 0
+hub_project_dimension_status{dimension="governance",project="project-alpha",status="green"} 1
+hub_project_dimension_status{dimension="governance",project="project-alpha",status="grey"} 0
+hub_project_dimension_status{dimension="governance",project="project-alpha",status="red"} 0
+hub_project_dimension_status{dimension="governance",project="project-beta",status="amber"} 1
+hub_project_dimension_status{dimension="governance",project="project-beta",status="green"} 0
+hub_project_dimension_status{dimension="governance",project="project-beta",status="grey"} 0
+hub_project_dimension_status{dimension="governance",project="project-beta",status="red"} 0
+hub_project_dimension_status{dimension="governance",project="project-gamma",status="amber"} 0
+hub_project_dimension_status{dimension="governance",project="project-gamma",status="green"} 0
+hub_project_dimension_status{dimension="governance",project="project-gamma",status="grey"} 1
+hub_project_dimension_status{dimension="governance",project="project-gamma",status="red"} 0
+hub_project_dimension_status{dimension="quality",project="platform",status="amber"} 0
+hub_project_dimension_status{dimension="quality",project="platform",status="green"} 0
+hub_project_dimension_status{dimension="quality",project="platform",status="grey"} 0
+hub_project_dimension_status{dimension="quality",project="platform",status="red"} 1
+hub_project_dimension_status{dimension="quality",project="project-alpha",status="amber"} 0
+hub_project_dimension_status{dimension="quality",project="project-alpha",status="green"} 1
+hub_project_dimension_status{dimension="quality",project="project-alpha",status="grey"} 0
+hub_project_dimension_status{dimension="quality",project="project-alpha",status="red"} 0
+hub_project_dimension_status{dimension="quality",project="project-beta",status="amber"} 1
+hub_project_dimension_status{dimension="quality",project="project-beta",status="green"} 0
+hub_project_dimension_status{dimension="quality",project="project-beta",status="grey"} 0
+hub_project_dimension_status{dimension="quality",project="project-beta",status="red"} 0
+hub_project_dimension_status{dimension="quality",project="project-gamma",status="amber"} 0
+hub_project_dimension_status{dimension="quality",project="project-gamma",status="green"} 0
+hub_project_dimension_status{dimension="quality",project="project-gamma",status="grey"} 1
+hub_project_dimension_status{dimension="quality",project="project-gamma",status="red"} 0
+hub_project_dimension_status{dimension="security",project="platform",status="amber"} 0
+hub_project_dimension_status{dimension="security",project="platform",status="green"} 0
+hub_project_dimension_status{dimension="security",project="platform",status="grey"} 0
+hub_project_dimension_status{dimension="security",project="platform",status="red"} 1
+hub_project_dimension_status{dimension="security",project="project-alpha",status="amber"} 1
+hub_project_dimension_status{dimension="security",project="project-alpha",status="green"} 0
+hub_project_dimension_status{dimension="security",project="project-alpha",status="grey"} 0
+hub_project_dimension_status{dimension="security",project="project-alpha",status="red"} 0
+hub_project_dimension_status{dimension="security",project="project-beta",status="amber"} 0
+hub_project_dimension_status{dimension="security",project="project-beta",status="green"} 0
+hub_project_dimension_status{dimension="security",project="project-beta",status="grey"} 0
+hub_project_dimension_status{dimension="security",project="project-beta",status="red"} 1
+hub_project_dimension_status{dimension="security",project="project-gamma",status="amber"} 0
+hub_project_dimension_status{dimension="security",project="project-gamma",status="green"} 0
+hub_project_dimension_status{dimension="security",project="project-gamma",status="grey"} 1
+hub_project_dimension_status{dimension="security",project="project-gamma",status="red"} 0
+hub_project_dimension_status{dimension="version",project="platform",status="amber"} 0
+hub_project_dimension_status{dimension="version",project="platform",status="green"} 1
+hub_project_dimension_status{dimension="version",project="platform",status="grey"} 0
+hub_project_dimension_status{dimension="version",project="platform",status="red"} 0
+hub_project_dimension_status{dimension="version",project="project-alpha",status="amber"} 1
+hub_project_dimension_status{dimension="version",project="project-alpha",status="green"} 0
+hub_project_dimension_status{dimension="version",project="project-alpha",status="grey"} 0
+hub_project_dimension_status{dimension="version",project="project-alpha",status="red"} 0
+hub_project_dimension_status{dimension="version",project="project-beta",status="amber"} 1
+hub_project_dimension_status{dimension="version",project="project-beta",status="green"} 0
+hub_project_dimension_status{dimension="version",project="project-beta",status="grey"} 0
+hub_project_dimension_status{dimension="version",project="project-beta",status="red"} 0
+hub_project_dimension_status{dimension="version",project="project-gamma",status="amber"} 0
+hub_project_dimension_status{dimension="version",project="project-gamma",status="green"} 0
+hub_project_dimension_status{dimension="version",project="project-gamma",status="grey"} 1
+hub_project_dimension_status{dimension="version",project="project-gamma",status="red"} 0
+# HELP hub_project_score Project score 0-100; series absent when the score could not be measured (see hub_project_measure_known).
+# TYPE hub_project_score gauge
+hub_project_score{project="platform"} 49
+hub_project_score{project="project-alpha"} 78
+hub_project_score{project="project-beta"} 40
+# HELP hub_project_open_alerts Open security alerts per severity; a severity whose count is unknown has no series.
+# TYPE hub_project_open_alerts gauge
+hub_project_open_alerts{project="platform",severity="critical"} 0
+hub_project_open_alerts{project="platform",severity="high"} 2
+hub_project_open_alerts{project="platform",severity="low"} 0
+hub_project_open_alerts{project="platform",severity="medium"} 1
+hub_project_open_alerts{project="project-alpha",severity="critical"} 0
+hub_project_open_alerts{project="project-alpha",severity="high"} 1
+hub_project_open_alerts{project="project-alpha",severity="low"} 6
+hub_project_open_alerts{project="project-alpha",severity="medium"} 4
+hub_project_open_alerts{project="project-beta",severity="critical"} 1
+hub_project_open_alerts{project="project-beta",severity="high"} 3
+hub_project_open_alerts{project="project-beta",severity="low"} 2
+hub_project_open_alerts{project="project-beta",severity="medium"} 4
+# HELP hub_project_open_alerts_complete 1 when the open alert counts are complete, 0 when they are a lower bound.
+# TYPE hub_project_open_alerts_complete gauge
+hub_project_open_alerts_complete{project="platform"} 1
+hub_project_open_alerts_complete{project="project-alpha"} 1
+hub_project_open_alerts_complete{project="project-beta"} 0
+hub_project_open_alerts_complete{project="project-gamma"} 0
+# HELP hub_project_overdue_alerts Open alerts past their remediation deadline (class "all" or "critical_high"); absent when not measured.
+# TYPE hub_project_overdue_alerts gauge
+hub_project_overdue_alerts{class="all",project="platform"} 1
+hub_project_overdue_alerts{class="all",project="project-alpha"} 0
+hub_project_overdue_alerts{class="all",project="project-beta"} 0
+hub_project_overdue_alerts{class="critical_high",project="platform"} 1
+hub_project_overdue_alerts{class="critical_high",project="project-alpha"} 0
+hub_project_overdue_alerts{class="critical_high",project="project-beta"} 0
+# HELP hub_project_accepted_alerts Open alerts accepted under a valid security exception; absent when not measured.
+# TYPE hub_project_accepted_alerts gauge
+hub_project_accepted_alerts{project="platform"} 1
+hub_project_accepted_alerts{project="project-alpha"} 1
+hub_project_accepted_alerts{project="project-beta"} 1
+# HELP hub_project_exception_issues Security exceptions that are expired, stale, unverifiable or invalid.
+# TYPE hub_project_exception_issues gauge
+hub_project_exception_issues{project="platform"} 1
+hub_project_exception_issues{project="project-alpha"} 1
+hub_project_exception_issues{project="project-beta"} 1
+hub_project_exception_issues{project="project-gamma"} 0
+# HELP hub_project_repository_controls_ratio Share of repository controls passed (0-1); absent when not measured.
+# TYPE hub_project_repository_controls_ratio gauge
+hub_project_repository_controls_ratio{project="platform"} 0.8
+hub_project_repository_controls_ratio{project="project-alpha"} 1
+hub_project_repository_controls_ratio{project="project-beta"} 0.42
+# HELP hub_project_supply_chain_repositories Repositories considered for supply-chain evidence; absent when unknown.
+# TYPE hub_project_supply_chain_repositories gauge
+hub_project_supply_chain_repositories{project="platform"} 1
+hub_project_supply_chain_repositories{project="project-alpha"} 5
+hub_project_supply_chain_repositories{project="project-beta"} 4
+hub_project_supply_chain_repositories{project="project-gamma"} 2
+# HELP hub_project_sbom_available Repositories with a readable SBOM; absent when unknown.
+# TYPE hub_project_sbom_available gauge
+hub_project_sbom_available{project="platform"} 1
+hub_project_sbom_available{project="project-alpha"} 3
+hub_project_sbom_available{project="project-beta"} 0
+# HELP hub_project_unsigned_images Distinct container images (by digest) without a verified signature; absent when unknown.
+# TYPE hub_project_unsigned_images gauge
+hub_project_unsigned_images{project="platform"} 0
+hub_project_unsigned_images{project="project-alpha"} 0
+hub_project_unsigned_images{project="project-beta"} 1
+# HELP hub_project_flagged_licenses Packages with a flagged license; absent when unknown.
+# TYPE hub_project_flagged_licenses gauge
+hub_project_flagged_licenses{project="platform"} 2
+hub_project_flagged_licenses{project="project-alpha"} 0
+# HELP hub_provider_enabled 1 when the optional provider is enabled in providers.yaml.
+# TYPE hub_provider_enabled gauge
+hub_provider_enabled{provider="argocd"} 1
+hub_provider_enabled{provider="harbor"} 1
+hub_provider_enabled{provider="sonarqube"} 1
+# HELP hub_provider_state Optional provider state, one-hot over off, available, partial, not-authorised, unknown.
+# TYPE hub_provider_state gauge
+hub_provider_state{provider="argocd",state="available"} 0
+hub_provider_state{provider="argocd",state="not-authorised"} 0
+hub_provider_state{provider="argocd",state="off"} 0
+hub_provider_state{provider="argocd",state="partial"} 1
+hub_provider_state{provider="argocd",state="unknown"} 0
+hub_provider_state{provider="harbor",state="available"} 1
+hub_provider_state{provider="harbor",state="not-authorised"} 0
+hub_provider_state{provider="harbor",state="off"} 0
+hub_provider_state{provider="harbor",state="partial"} 0
+hub_provider_state{provider="harbor",state="unknown"} 0
+hub_provider_state{provider="sonarqube",state="available"} 0
+hub_provider_state{provider="sonarqube",state="not-authorised"} 0
+hub_provider_state{provider="sonarqube",state="off"} 0
+hub_provider_state{provider="sonarqube",state="partial"} 1
+hub_provider_state{provider="sonarqube",state="unknown"} 0
+# HELP hub_project_controls_coverage_ratio Required security controls available (0-1); absent when not measured.
+# TYPE hub_project_controls_coverage_ratio gauge
+hub_project_controls_coverage_ratio{project="platform"} 1
+hub_project_controls_coverage_ratio{project="project-alpha"} 0.75
+hub_project_controls_coverage_ratio{project="project-beta"} 0.5
+# HELP hub_project_quality_coverage_ratio Test line coverage (0-1); absent when not measured.
+# TYPE hub_project_quality_coverage_ratio gauge
+hub_project_quality_coverage_ratio{project="platform"} 0.58
+hub_project_quality_coverage_ratio{project="project-alpha"} 0.847
+hub_project_quality_coverage_ratio{project="project-beta"} 0.667
+# HELP hub_project_collection_errors Data sources that could not be read in the last collection.
+# TYPE hub_project_collection_errors gauge
+hub_project_collection_errors{project="platform"} 0
+hub_project_collection_errors{project="project-alpha"} 1
+hub_project_collection_errors{project="project-beta"} 7
+hub_project_collection_errors{project="project-gamma"} 3
+# HELP hub_project_measure_known 1 when the measure was known in the last collection, 0 when it was not (never read a missing series as 0).
+# TYPE hub_project_measure_known gauge
+hub_project_measure_known{measure="controls_coverage",project="platform"} 1
+hub_project_measure_known{measure="controls_coverage",project="project-alpha"} 1
+hub_project_measure_known{measure="controls_coverage",project="project-beta"} 1
+hub_project_measure_known{measure="controls_coverage",project="project-gamma"} 0
+hub_project_measure_known{measure="flagged_licenses",project="platform"} 1
+hub_project_measure_known{measure="flagged_licenses",project="project-alpha"} 1
+hub_project_measure_known{measure="flagged_licenses",project="project-beta"} 0
+hub_project_measure_known{measure="flagged_licenses",project="project-gamma"} 0
+hub_project_measure_known{measure="open_alerts",project="platform"} 1
+hub_project_measure_known{measure="open_alerts",project="project-alpha"} 1
+hub_project_measure_known{measure="open_alerts",project="project-beta"} 1
+hub_project_measure_known{measure="open_alerts",project="project-gamma"} 0
+hub_project_measure_known{measure="overdue_alerts",project="platform"} 1
+hub_project_measure_known{measure="overdue_alerts",project="project-alpha"} 1
+hub_project_measure_known{measure="overdue_alerts",project="project-beta"} 1
+hub_project_measure_known{measure="overdue_alerts",project="project-gamma"} 0
+hub_project_measure_known{measure="quality_coverage",project="platform"} 1
+hub_project_measure_known{measure="quality_coverage",project="project-alpha"} 1
+hub_project_measure_known{measure="quality_coverage",project="project-beta"} 1
+hub_project_measure_known{measure="quality_coverage",project="project-gamma"} 0
+hub_project_measure_known{measure="sbom",project="platform"} 1
+hub_project_measure_known{measure="sbom",project="project-alpha"} 1
+hub_project_measure_known{measure="sbom",project="project-beta"} 1
+hub_project_measure_known{measure="sbom",project="project-gamma"} 0
+hub_project_measure_known{measure="score",project="platform"} 1
+hub_project_measure_known{measure="score",project="project-alpha"} 1
+hub_project_measure_known{measure="score",project="project-beta"} 1
+hub_project_measure_known{measure="score",project="project-gamma"} 0
+hub_project_measure_known{measure="unsigned_images",project="platform"} 1
+hub_project_measure_known{measure="unsigned_images",project="project-alpha"} 1
+hub_project_measure_known{measure="unsigned_images",project="project-beta"} 1
+hub_project_measure_known{measure="unsigned_images",project="project-gamma"} 0
+# HELP hub_metrics_truncated 1 when the file was cut down to stay under outputs.metrics.maxBytes, else 0.
+# TYPE hub_metrics_truncated gauge
+hub_metrics_truncated 0

@@ -24,6 +24,12 @@ describe('scan-output (publication gate)', () => {
     expect(findings).toContain(`${join(dir, 'export.csv')}: github-token`);
   });
 
+  it('a .prom metrics file with a ghp_ token is reported', async () => {
+    await writeFile(join(dir, 'hub.prom'), 'hub_info{x="ghp_exampleSecretValue"} 1\n');
+    const { findings } = await scan([dir]);
+    expect(findings).toContain(`${join(dir, 'hub.prom')}: github-token`);
+  });
+
   it('fails closed on files too large to scan instead of skipping them', async () => {
     const big = join(dir, 'big.json');
     await writeFile(big, Buffer.alloc(MAX_SCAN_BYTES + 1, 'a'));

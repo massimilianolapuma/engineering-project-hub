@@ -744,6 +744,34 @@ salvo `--allow-date-tokens`). Anche `npm run validate:config` valida il file.
 
 Cosa viene pubblicato e cosa nascosto è in [Sicurezza](security.md#eccezioni-di-sicurezza).
 
+### Output (`outputs`)
+
+Dalla v0.14.0 l'hub costruisce due output in sola lettura dai dati che già pubblica. Entrambi sono
+attivi di default; il blocco è facoltativo e questi sono i suoi valori predefiniti:
+
+```yaml
+outputs:
+  metrics:
+    enabled: true # false = nessun data/metrics/hub.prom
+    maxBytes: 4194304 # 65536–16777216
+  executive:
+    enabled: true # false = nessuna pagina di sintesi direzionale e nessuna voce di navigazione
+    topRisks: 5 # 1–10
+    trendDays: 7 # 1–90
+```
+
+| Chiave                | Intervallo        | Significato                                                                                                                                                                                 |
+| --------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `metrics.enabled`     | `true` / `false`  | Scrive `metrics/hub.prom` (formato testo di Prometheus) accanto allo snapshot.                                                                                                              |
+| `metrics.maxBytes`    | 65 536–16 777 216 | Limite di dimensione. Oltre, il file toglie prima gli stati per dimensione, poi tiene solo le metriche di portfolio, e lo segnala in `hub_metrics_truncated`. La raccolta non fallisce mai. |
+| `executive.enabled`   | `true` / `false`  | Costruisce la pagina "Sintesi direzionale" in entrambe le lingue e la sua voce di navigazione.                                                                                              |
+| `executive.topRisks`  | 1–10              | Quanti progetti la pagina elenca in "Rischi principali".                                                                                                                                    |
+| `executive.trendDays` | 1–90              | Età della colonna di confronto della tabella dell'andamento ("7 giorni fa").                                                                                                                |
+
+Il collector legge `metrics`; la build del sito legge `executive` (tramite `POLICIES_FILE` quando
+le policy stanno in una configurazione separata). Cosa contiene ciascun output è in
+[Output](outputs.md).
+
 ## Casi di decisione delle policy: `config/policy-cases/*.yaml`
 
 Un caso di decisione è un piccolo scenario sintetico con lo stato atteso. `npm run policy:check`

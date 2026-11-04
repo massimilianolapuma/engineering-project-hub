@@ -257,6 +257,31 @@ describe('policies.yaml validation', () => {
     expect(d.freshness.qualityReportStaleDays).toBe(14);
   });
 
+  it('outputs block defaults (metrics on, 4 MiB; executive on, 5 risks, 7 days)', () => {
+    const p = parseYamlWith(PoliciesSchema, policiesText, 'policies.yaml');
+    const { outputs: _omit, ...rest } = p;
+    const d = PoliciesSchema.parse(rest);
+    expect(d.outputs).toEqual({
+      metrics: { enabled: true, maxBytes: 4194304 },
+      executive: { enabled: true, topRisks: 5, trendDays: 7 },
+    });
+    expect(p.outputs).toEqual(d.outputs);
+  });
+
+  it('rejects out-of-range or unknown outputs settings', () => {
+    const base = parseYamlWith(PoliciesSchema, policiesText, 'p.yaml');
+    const bad = [
+      { metrics: { maxBytes: 1000 } },
+      { executive: { topRisks: 11 } },
+      { executive: { trendDays: 0 } },
+      { slack: {} },
+    ];
+    for (const outputs of bad)
+      expect(PoliciesSchema.safeParse({ ...base, outputs }).success, JSON.stringify(outputs)).toBe(
+        false,
+      );
+  });
+
   it('rejects a quality amber threshold above the green one', () => {
     expect(() =>
       parseYamlWith(
