@@ -10,7 +10,11 @@ export interface SummaryRow {
   skipped: { reason: string; count: number }[];
 }
 
-const cell = (s: string) => s.replace(/\|/g, '\\|').replace(/[\r\n]+/g, ' ');
+const cell = (s: string) =>
+  s
+    .replace(/\\/g, '\\\\')
+    .replace(/\|/g, '\\|')
+    .replace(/[\r\n]+/g, ' ');
 
 export function renderSummary(rows: readonly SummaryRow[], header = ''): string {
   const lines = [

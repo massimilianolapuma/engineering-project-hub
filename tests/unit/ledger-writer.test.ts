@@ -170,4 +170,11 @@ describe('renderSummary', () => {
     ]);
     expect(text).toContain('| example-org/example-service | prod | 4 | 2 | not-completed: 2 |');
   });
+
+  it('escapes backslashes before pipes, so a cell cannot break out of its column', () => {
+    const text = renderSummary([
+      { repository: 'a/b', environment: 'x\\|y', read: 0, written: 0, skipped: [] },
+    ]);
+    expect(text).toContain('| a/b | x\\\\\\|y | 0 | 0 | – |');
+  });
 });
