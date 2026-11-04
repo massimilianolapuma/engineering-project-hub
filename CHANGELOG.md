@@ -7,22 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- Control map: change failure rate follows the DevOps Research and Assessment "four keys"
-  definition (failed deployments / deployments); a rollback marks the deploy it undoes as failed and
-  is no longer counted as a deployment.
-
-### Fixed
-
-- Control map: the delivery workflow's runs are filtered by day (`created:>=YYYY-MM-DD`, GitHub
-  search syntax) instead of a full timestamp.
-
-### Docs
-
-- Control map: DORA and RTS 2024/1774 references checked against the Official Journal text (titles
-  listed), delivery metric definitions, and a permissions table per reading (push protection needs
-  repository admin).
+## [0.16.0] - 2026-11-04
 
 ### Added
 
@@ -34,16 +19,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   references table. Not a compliance assessment; governance is out of scope.
   - Only for `publication.audience: restricted` or demo data; `policies.controlMap` (thresholds,
     windows, `enabled`).
-  - Unknown is never 0: unreadable sources are "not visible" with a reason; "% of repositories"
-    checks use readable repositories only and refuse below half.
+  - Unknown is never 0: unreadable or disabled sources and misconfigured deploy signals are "not
+    visible" with a reason; "% of repositories" checks use readable repositories only and refuse
+    below half.
   - Catalog: per-environment `deploySignal` (`workflow`, `versions-file`, `argocd`, `release`,
-    `external`), `delivery`, `githubEnvironment`; per-project `controlMap.notApplicable`. Delivery
-    metrics (frequency, lead time, change failure rate, time to restore) from the signal; a
-    versions file counts promotions and rollbacks from its commits.
+    `external`), `delivery`, `githubEnvironment`; per-project `controlMap.notApplicable`.
+  - Delivery metrics from the signal, with the DevOps Research and Assessment "four keys"
+    definitions (change failure rate = failed deployments / deployments; a rollback marks the
+    deploy it undoes as failed). A versions file counts promotions and rollbacks from its commits;
+    the delivery workflow's runs are read over the whole window on every ref.
   - New read-only readings: push protection status, GitHub environments, closed-alert dates,
-    commits of a path, file at a commit, releases; OIDC use from workflow files already read.
+    commits of a path, file at a commit, commit dates, releases, delivery workflow runs; OIDC use
+    from workflow files already read.
   - Project page "Controls" block, `exports/control-map.csv`, metrics
     `hub_project_control_{score,measured,applicable,level}` and a Grafana panel.
+- Docs: [Control map](docs/control-map.md) with the article titles checked against the Official
+  Journal text and a permissions table per reading (push protection needs repository admin; the
+  read-only App keeps `secret-scanning` at level 3 at most).
 
 ### Changed
 
@@ -476,7 +468,8 @@ Tagged after the fact (2026-10-21) and not deployed on its own: its changes ship
 - Read-only by design: no write calls, alert dismissals or workflow triggers. Secret scanning alerts are fetched with `hide_secret=true` and only the secret type is kept.
 - The public demo publishes synthetic mock data only.
 
-[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.15.0...HEAD
+[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.14.1...v0.15.0
 [0.14.1]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.13.0...v0.14.0
