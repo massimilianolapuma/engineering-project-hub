@@ -425,7 +425,9 @@ and history starts again (state `none`).
 `npm run ci:build` runs `collect:mock`, which overwrites `public/data`. A local real-data
 snapshot (for example from `collect:github`) must be re-collected after it.
 
-**Upgrading to snapshot 1.5** (repository controls): the site reads only `schemaVersion` 1.5. An existing 1.4 `public/data` fails validation until it is re-collected (`collect:github`, or the next scheduled run). `history.json` 1.0 is still read; the history schema moves to 1.1 on the first collection.
+**Upgrading to snapshot 1.10** (environment versions from deploy signals): the site reads only `schemaVersion` 1.10. An existing 1.9 `public/data` fails validation until it is re-collected (`collect:github`, or the next scheduled run).
+
+**Earlier note, snapshot 1.5** (repository controls): the site reads only `schemaVersion` 1.5. An existing 1.4 `public/data` fails validation until it is re-collected (`collect:github`, or the next scheduled run). `history.json` 1.0 is still read; the history schema moves to 1.1 on the first collection.
 
 **Earlier note, snapshot 1.4** (Quality dimension): the site reads only `schemaVersion` 1.4.
 An existing 1.3 `public/data` fails validation until it is re-collected (`collect:github`, or

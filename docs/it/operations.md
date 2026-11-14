@@ -437,7 +437,9 @@ tempo, la catena si perde e lo storico riparte (stato `none`).
 `npm run ci:build` esegue `collect:mock`, che sovrascrive `public/data`. Uno snapshot locale
 con dati reali (per esempio da `collect:github`) va raccolto di nuovo dopo di esso.
 
-**Aggiornamento allo snapshot 1.5** (controlli repository): il sito legge solo `schemaVersion` 1.5. Un `public/data` 1.4 esistente non supera la validazione finché non viene raccolto di nuovo (`collect:github`, o la prossima esecuzione pianificata). `history.json` 1.0 viene ancora letto; lo schema dello storico passa a 1.1 alla prima raccolta.
+**Aggiornamento allo snapshot 1.10** (versioni degli ambienti dai segnali di deploy): il sito legge solo `schemaVersion` 1.10. Un `public/data` 1.9 esistente non supera la validazione finché non viene raccolto di nuovo (`collect:github`, o la prossima esecuzione pianificata).
+
+**Nota precedente, snapshot 1.5** (controlli repository): il sito legge solo `schemaVersion` 1.5. Un `public/data` 1.4 esistente non supera la validazione finché non viene raccolto di nuovo (`collect:github`, o la prossima esecuzione pianificata). `history.json` 1.0 viene ancora letto; lo schema dello storico passa a 1.1 alla prima raccolta.
 
 **Nota precedente, snapshot 1.4** (dimensione Qualità): il sito legge solo
 `schemaVersion` 1.4. Un `public/data` 1.3 esistente non supera la validazione finché non viene

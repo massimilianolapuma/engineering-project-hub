@@ -648,6 +648,8 @@ export type ComponentSnapshot = z.infer<typeof ComponentSnapshotSchema>;
 /** What Argo CD reports for an environment (null on the environment when nothing is mapped). */
 export const EnvironmentDeploymentSchema = z
   .object({
+    /** Where the deployment was read: an Argo CD application or the GitHub deployments ledger. */
+    kind: z.enum(['argocd', 'github-deployments']),
     state: z.enum(['available', 'not-authorised', 'not-found', 'unknown']),
     sync: z.enum(['synced', 'out-of-sync', 'unknown']).nullable(),
     health: z
@@ -655,6 +657,8 @@ export const EnvironmentDeploymentSchema = z
       .nullable(),
     /** 7-character short SHA, or a version-like reference. */
     revision: z.string().max(100).nullable(),
+    /** Branch or tag the deployment was made from (GitHub deployments), else null. */
+    ref: z.string().max(100).nullable(),
     version: z.string().max(100).nullable(),
     deployedAt: isoDate.nullable(),
     images: z
@@ -672,14 +676,20 @@ export const EnvironmentSnapshotSchema = z
   .object({
     id: z.string().max(64),
     name: z.string().max(50),
-    /** Effective version: the deployed one when Argo CD reports it, else the declared one. */
+    /**
+     * Effective version: the deployed one (Argo CD, else the deployments ledger) when known,
+     * else the declared one.
+     */
     version: z.string().max(100).nullable(),
-    /** Version declared by the release manifest. */
+    /** Version declared by the release manifest, else by the environment's versions file. */
     declaredVersion: z.string().max(100).nullable(),
-    source: z.enum(['argocd', 'manifest', 'unknown']),
+    source: z.enum(['argocd', 'github-deployments', 'manifest', 'versions-file', 'unknown']),
     /** Effective version against the coordinator's. */
     status: z.enum(['aligned', 'behind', 'mismatch', 'unknown']),
-    /** null when no Argo CD application is mapped or Argo CD is off. */
+    /**
+     * The Argo CD application when one is mapped and Argo CD is on, else the latest successful
+     * GitHub deployment of a github-deployments signal, else null.
+     */
     deployment: EnvironmentDeploymentSchema.nullable(),
   })
   .strict();

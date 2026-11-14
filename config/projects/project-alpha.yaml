@@ -55,7 +55,14 @@ environments:
   - id: dev
     name: DEV
     argocdApplication: { name: alpha-dev, namespace: argocd, project: alpha }
-  - { id: test, name: TEST } # not managed by Argo CD
+  # Not managed by Argo CD: the promote workflow declares its version in a versions file.
+  - id: test
+    name: TEST
+    deploySignal:
+      type: versions-file
+      repository: coordinator
+      path: environments/test.yaml
+      key: umbrella
   - id: uat
     name: UAT
     argocdApplication: { name: alpha-uat, namespace: argocd, project: alpha }

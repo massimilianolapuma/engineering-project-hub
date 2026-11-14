@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.9",
+  "schemaVersion": "1.10",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-beta",
@@ -256,6 +256,25 @@
   ],
   "environments": [
     {
+      "id": "lab",
+      "name": "LAB",
+      "version": null,
+      "declaredVersion": null,
+      "source": "github-deployments",
+      "status": "unknown",
+      "deployment": {
+        "kind": "github-deployments",
+        "state": "available",
+        "sync": null,
+        "health": null,
+        "revision": "971a7f0",
+        "ref": "main",
+        "version": null,
+        "deployedAt": "2026-01-15T09:00:00.000Z",
+        "images": []
+      }
+    },
+    {
       "id": "dev",
       "name": "DEV",
       "version": "3.2.0",
@@ -263,10 +282,12 @@
       "source": "manifest",
       "status": "aligned",
       "deployment": {
+        "kind": "argocd",
         "state": "not-authorised",
         "sync": null,
         "health": null,
         "revision": null,
+        "ref": null,
         "version": null,
         "deployedAt": null,
         "images": []
@@ -289,10 +310,12 @@
       "source": "argocd",
       "status": "behind",
       "deployment": {
+        "kind": "argocd",
         "state": "available",
         "sync": "synced",
         "health": "degraded",
         "revision": "bbbbbbb",
+        "ref": null,
         "version": "3.1.0",
         "deployedAt": "2026-01-11T12:00:00.000Z",
         "images": []
@@ -1275,6 +1298,15 @@
           "component": "API service",
           "declared": "3.2.0",
           "pinned": "3.1.0"
+        }
+      },
+      {
+        "code": "environment-version-unknown",
+        "level": "info",
+        "params": {
+          "environment": "LAB",
+          "version": "",
+          "expected": "3.2.0"
         }
       },
       {
@@ -2713,7 +2745,7 @@
         "threshold": 100,
         "readable": {
           "k": 1,
-          "n": 3
+          "n": 4
         },
         "reason": null,
         "note": null,

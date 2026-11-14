@@ -345,6 +345,22 @@ through the [deployments ledger](deployments-ledger.md): push step, Azure DevOps
 declared records (`config/deployments-declare.yaml`, schema
 `config/schema/deployments-declare.schema.json`), all in the calling deploy repository.
 
+### Environment versions from deploy signals
+
+Two deploy signals also say what an environment runs **now**, on every environment (not only
+the delivery one), and fill the Versions page:
+
+| Signal               | What the Versions page shows                                                                                                                                                                                                                                            |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `versions-file`      | The **declared** version: the semver at `key` in the file on the default branch (source "Versions file"). The release manifest wins when it declares the environment.                                                                                                   |
+| `github-deployments` | The **deployed** version: the newest deployment with a success status (by the real deploy time). The version comes from the ledger payload, else from a version-like tag ref (`tagPrefix`). A deployment from a branch has no version and is shown as `main @ 1a2b3c4`. |
+
+Precedence: Argo CD (when an application is mapped and Argo CD is on), then the GitHub
+deployment, then the manifest, then the versions file. A deployment that cannot be read is shown
+as unknown and recorded as a `deploy-signal` collection error, never as "not deployed". A
+declared version is what the promotion says, not proof that it runs: an override or a failed
+deploy in an external pipeline does not change the file.
+
 ### Adding a project (no code change)
 
 Preferred: open `/catalog/`, add a discovered proposal (or create a project), then
@@ -862,7 +878,8 @@ environments: # what each environment is declared to run
 
 If there is no manifest, the coordinator version falls back to its latest release, then its
 latest tag, and Version health is amber ("versions only partially known"). An unknown
-component id in the manifest is red.
+component id in the manifest is red. Environment versions can also come from deploy signals
+(see [Environment versions from deploy signals](#environment-versions-from-deploy-signals)).
 
 ### `.security/project-security-status.json` (each repository, optional)
 

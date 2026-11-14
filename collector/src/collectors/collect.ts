@@ -1,3 +1,4 @@
+import type { EnvironmentState } from './environment-states';
 import type { ControlMapRaw } from './collect-control-map';
 import {
   projectTargets,
@@ -154,6 +155,8 @@ export interface RawProjectData {
   argocd?: Map<string, ProviderResult<ArgoApplicationDTO> | 'off'>;
   /** Control map readings; absent when the map is not published for this audience. */
   controlMap?: ControlMapRaw;
+  /** Current state of the environments with a versions-file or github-deployments signal. */
+  environmentStates?: Map<string, EnvironmentState>;
 }
 
 export interface CollectContext {

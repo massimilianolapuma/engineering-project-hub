@@ -347,6 +347,22 @@ Azure DevOps (`config/deployments-bridge.yaml`, schema
 (`config/deployments-declare.yaml`, schema `config/schema/deployments-declare.schema.json`), tutti
 nella repository di deploy chiamante.
 
+### Versioni degli ambienti dai segnali di deploy
+
+Due segnali di deploy dicono anche cosa gira **ora** in un ambiente, per ogni ambiente (non solo
+quello di delivery), e alimentano la pagina Versioni:
+
+| Segnale              | Cosa mostra la pagina Versioni                                                                                                                                                                                                                                         |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `versions-file`      | La versione **dichiarata**: la semver alla chiave `key` del file sul branch di default (fonte "File versioni"). Il release manifest prevale quando dichiara l'ambiente.                                                                                                |
+| `github-deployments` | La versione **deployata**: il deployment più recente con stato success (per ora reale del deploy). La versione viene dal payload del registro, altrimenti da un ref di tipo tag (`tagPrefix`). Un deploy da un branch non ha versione e si vede come `main @ 1a2b3c4`. |
+
+Precedenza: Argo CD (se è mappata un'applicazione e Argo CD è attivo), poi il deployment GitHub,
+poi il manifest, poi il file versioni. Un deployment che non si può leggere è mostrato come
+sconosciuto e registrato come errore di raccolta `deploy-signal`, mai come "non deployato". Una
+versione dichiarata è ciò che dice la promozione, non la prova che giri: un override o un deploy
+fallito in una pipeline esterna non cambia il file.
+
 ### Aggiungere un progetto (senza modifiche al codice)
 
 Metodo consigliato: apri `/it/catalog/`, aggiungi una proposta scoperta (o crea un
@@ -877,7 +893,9 @@ environments: # what each environment is declared to run
 
 In assenza di manifest, la versione del coordinator ripiega sulla sua ultima release,
 poi sul suo ultimo tag, e la salute delle Versioni è ambra ("versioni note solo in parte").
-Un id di componente sconosciuto nel manifest è rosso.
+Un id di componente sconosciuto nel manifest è rosso. Le versioni degli ambienti possono venire
+anche dai segnali di deploy (vedi
+[Versioni degli ambienti dai segnali di deploy](#versioni-degli-ambienti-dai-segnali-di-deploy)).
 
 ### `.security/project-security-status.json` (ogni repository, opzionale)
 

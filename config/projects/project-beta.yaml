@@ -42,6 +42,8 @@ components:
     notApplicableControls: [containerScanning]
 
 environments:
+  # LAB runs main, deployed by GitHub Actions jobs with `environment: lab`: shown as "main @ sha".
+  - { id: lab, name: LAB, deploySignal: { type: github-deployments, repository: coordinator } }
   - id: dev
     name: DEV
     argocdApplication: { name: beta-dev, namespace: argocd, project: beta }

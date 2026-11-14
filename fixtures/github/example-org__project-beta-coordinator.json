@@ -197,6 +197,26 @@
         "payload": {},
         "creator": "github-actions[bot]"
       }
+    ],
+    "lab": [
+      {
+        "id": 601,
+        "sha": "971a7f034dadeeaea0d6daacfc265dd40cde39e8",
+        "ref": "main",
+        "environment": "lab",
+        "createdAt": "@now-3h",
+        "payload": {},
+        "creator": "github-actions[bot]"
+      },
+      {
+        "id": 600,
+        "sha": "5c0ffee5c0ffee5c0ffee5c0ffee5c0ffee5c0ff",
+        "ref": "main",
+        "environment": "lab",
+        "createdAt": "@now-1d",
+        "payload": {},
+        "creator": "github-actions[bot]"
+      }
     ]
   },
   "deploymentStatuses": {
@@ -238,6 +258,22 @@
       {
         "state": "success",
         "createdAt": "@now-20d"
+      }
+    ],
+    "601": [
+      {
+        "state": "success",
+        "createdAt": "@now-3h"
+      }
+    ],
+    "600": [
+      {
+        "state": "inactive",
+        "createdAt": "@now-3h"
+      },
+      {
+        "state": "success",
+        "createdAt": "@now-1d"
       }
     ]
   },
