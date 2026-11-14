@@ -146,6 +146,8 @@ export interface WorkflowRunDTO {
 export interface DeploymentDTO {
   id: number;
   sha: string;
+  /** Branch or tag name (or SHA) the deployment was created from; absent in older fixtures. */
+  ref?: string | null;
   environment: string;
   createdAt: string;
   payload: unknown;

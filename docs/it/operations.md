@@ -57,7 +57,10 @@ dato non aggiornato (`freshness.snapshotStaleHours`) superiore all'intervallo.
   `gh api repos/<owner>/<repo>/dispatches -f event_type=collect-data`. Esegue la raccolta
   senza deploy.
 - **In locale**: `DATA_SOURCE=github GH_READ_TOKEN=… npm run collect:github && npm run
-validate:snapshots`.
+validate:snapshots`, oppure `npm run refresh:local` per raccogliere un catalogo
+  `config.local/` in .gitignore, validare, fare la build e la scansione in un solo passo (token da
+  `GH_READ_TOKEN`, dalle variabili dell'App o da `gh auth token`; `--gh-user <login>` sceglie un
+  account gh).
 
 ## Dati non aggiornati
 
@@ -434,7 +437,9 @@ tempo, la catena si perde e lo storico riparte (stato `none`).
 `npm run ci:build` esegue `collect:mock`, che sovrascrive `public/data`. Uno snapshot locale
 con dati reali (per esempio da `collect:github`) va raccolto di nuovo dopo di esso.
 
-**Aggiornamento allo snapshot 1.5** (controlli repository): il sito legge solo `schemaVersion` 1.5. Un `public/data` 1.4 esistente non supera la validazione finché non viene raccolto di nuovo (`collect:github`, o la prossima esecuzione pianificata). `history.json` 1.0 viene ancora letto; lo schema dello storico passa a 1.1 alla prima raccolta.
+**Aggiornamento allo snapshot 1.10** (versioni degli ambienti dai segnali di deploy): il sito legge solo `schemaVersion` 1.10. Un `public/data` 1.9 esistente non supera la validazione finché non viene raccolto di nuovo (`collect:github`, o la prossima esecuzione pianificata).
+
+**Nota precedente, snapshot 1.5** (controlli repository): il sito legge solo `schemaVersion` 1.5. Un `public/data` 1.4 esistente non supera la validazione finché non viene raccolto di nuovo (`collect:github`, o la prossima esecuzione pianificata). `history.json` 1.0 viene ancora letto; lo schema dello storico passa a 1.1 alla prima raccolta.
 
 **Nota precedente, snapshot 1.4** (dimensione Qualità): il sito legge solo
 `schemaVersion` 1.4. Un `public/data` 1.3 esistente non supera la validazione finché non viene

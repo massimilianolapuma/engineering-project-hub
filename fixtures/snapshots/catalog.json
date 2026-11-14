@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.9",
+  "schemaVersion": "1.10",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "catalog": {
     "discovery": {
@@ -251,7 +251,11 @@
             "id": "test",
             "name": "TEST",
             "deploySignal": {
-              "type": "external"
+              "type": "versions-file",
+              "repository": "coordinator",
+              "path": "environments/test.yaml",
+              "key": "umbrella",
+              "tagPrefix": "v"
             }
           },
           {
@@ -414,6 +418,15 @@
           }
         ],
         "environments": [
+          {
+            "id": "lab",
+            "name": "LAB",
+            "deploySignal": {
+              "type": "github-deployments",
+              "repository": "coordinator",
+              "tagPrefix": "v"
+            }
+          },
           {
             "id": "dev",
             "name": "DEV",

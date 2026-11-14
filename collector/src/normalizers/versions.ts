@@ -11,6 +11,7 @@ import {
   type Submodule,
 } from '@model/index';
 import type { RawProjectData } from '../collectors/collect';
+import type { EnvironmentState, LedgerCurrent } from '../collectors/environment-states';
 import { associateSubmodules } from './association';
 import { scrubIdentifier } from '../sanitizers/sanitize';
 import { compareVersions, normaliseVersion, parseVersion } from '../util/semver';
@@ -316,11 +317,13 @@ function toDeployment(
     return {
       version: null,
       deployment: {
+        kind: 'argocd',
         state:
           c === 'not-authorised' ? 'not-authorised' : c === 'not-found' ? 'not-found' : 'unknown',
         sync: null,
         health: null,
         revision: null,
+        ref: null,
         version: null,
         deployedAt: null,
         images: [],
@@ -349,10 +352,12 @@ function toDeployment(
   return {
     version,
     deployment: {
+      kind: 'argocd',
       state: 'available',
       sync: dto.sync,
       health: dto.health,
       revision: revision ? scrubIdentifier(revision, 100) : null,
+      ref: null,
       version,
       deployedAt: dto.deployedAt,
       images: matched.slice(0, MAX_DEPLOYMENT_IMAGES),
@@ -360,10 +365,47 @@ function toDeployment(
   };
 }
 
+/** The newest successful GitHub deployment as an environment deployment (no Sync / Health). */
+function toLedgerDeployment(
+  result: ProviderResult<LedgerCurrent | null>,
+): NonNullable<EnvironmentSnapshot['deployment']> | null {
+  const empty = {
+    kind: 'github-deployments' as const,
+    sync: null,
+    health: null,
+    revision: null,
+    ref: null,
+    version: null,
+    deployedAt: null,
+    images: [],
+  };
+  if (!result.ok) {
+    const c = result.error.classification;
+    return {
+      ...empty,
+      state:
+        c === 'not-authorised' ? 'not-authorised' : c === 'not-found' ? 'not-found' : 'unknown',
+    };
+  }
+  if (!result.data) return null;
+  const d = result.data;
+  return {
+    ...empty,
+    state: 'available',
+    revision: FULL_SHA.test(d.sha) ? d.sha.slice(0, 7) : null,
+    ref: scrubIdentifier(d.ref, 100) ?? null,
+    version: d.version ? (scrubIdentifier(d.version, 100) ?? null) : null,
+    deployedAt: d.deployedAt,
+  };
+}
+
 /**
- * Environments (spec 5.9). The effective version is the deployed one when Argo CD reports a
- * version (a version-like targetRevision, else the coordinator tag at its revision), else the
- * manifest's declared one; both are published. Argo CD off or not mapped → `deployment: null`.
+ * Environments (spec 5.9, snapshot 1.10). The effective version is the deployed one when it is
+ * known (Argo CD: a version-like targetRevision, else the coordinator tag at its revision; else
+ * the newest successful GitHub deployment of a github-deployments signal), else the declared
+ * one (the release manifest, else the environment's versions file); both are published.
+ * `deployment` is the Argo CD application when one is mapped and Argo CD is on, else the
+ * GitHub deployment, else null.
  */
 export function toEnvironments(
   config: ProjectConfig,
@@ -372,27 +414,44 @@ export function toEnvironments(
   deployments: Map<string, ProviderResult<ArgoApplicationDTO> | 'off'> = new Map(),
   coordinatorTags: TagDTO[] = [],
   images: ImageMapping[] = [],
+  states: Map<string, EnvironmentState> = new Map(),
 ): EnvironmentSnapshot[] {
   return config.environments.map((env) => {
-    const declared = normaliseVersion(scrubIdentifier(manifest?.environments[env.id]?.version));
+    const state = states.get(env.id);
+    const fromManifest = normaliseVersion(scrubIdentifier(manifest?.environments[env.id]?.version));
+    const fromFile =
+      state?.declared?.ok && state.declared.data
+        ? (scrubIdentifier(state.declared.data, 100) ?? null)
+        : null;
+    const declared = fromManifest ?? fromFile;
     const result = env.argocdApplication ? deployments.get(env.id) : undefined;
-    const mapped =
-      result && result !== 'off' ? toDeployment(result, coordinatorTags, images) : null;
-    const deployed = mapped?.version ?? null;
+    const argo = result && result !== 'off' ? toDeployment(result, coordinatorTags, images) : null;
+    const ledger = !argo && state?.ledger ? toLedgerDeployment(state.ledger) : null;
+    const deployment = argo?.deployment ?? ledger;
+    const deployed = argo?.version ?? ledger?.version ?? null;
     const version = deployed ?? declared;
     let status: EnvironmentSnapshot['status'] = 'unknown';
     if (version && coordinator) {
       const cmp = compareVersions(version, coordinator);
       status = cmp === 0 ? 'aligned' : cmp === -1 ? 'behind' : 'mismatch';
     }
+    const source: EnvironmentSnapshot['source'] = argo?.version
+      ? 'argocd'
+      : ledger?.state === 'available' && (ledger.version || !declared)
+        ? 'github-deployments'
+        : fromManifest
+          ? 'manifest'
+          : fromFile
+            ? 'versions-file'
+            : 'unknown';
     return {
       id: env.id,
       name: env.name,
       version,
       declaredVersion: declared,
-      source: deployed ? 'argocd' : declared ? 'manifest' : 'unknown',
+      source,
       status,
-      deployment: mapped?.deployment ?? null,
+      deployment,
     };
   });
 }

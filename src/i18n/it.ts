@@ -458,7 +458,18 @@ export const it: Dict = {
     },
     gate: { passed: 'Gate superato', failed: 'Gate non superato' },
     newCode: 'Codice nuovo {p}',
-    env: { argocd: 'Argo CD', manifest: 'Manifest', unknown: 'Sconosciuto' },
+    env: {
+      argocd: 'Argo CD',
+      'github-deployments': 'GitHub Deployments',
+      manifest: 'Manifest',
+      'versions-file': 'File versioni',
+      unknown: 'Sconosciuto',
+    },
+    /** Un deploy fatto da un branch, non da una release: "main @ 1a2b3c4". */
+    refAt: '{ref} @ {sha}',
+    /** Stato di un deploy da branch: non confrontabile con la release del coordinator. */
+    notRelease: 'Non è una release',
+    deployedOn: 'deploy del {d}',
     declared: 'dichiarata {v}',
     sync: {
       synced: 'Sincronizzata',
@@ -477,6 +488,11 @@ export const it: Dict = {
       'not-authorised': 'Argo CD non autorizzato',
       'not-found': 'Non trovata in Argo CD',
       unknown: 'Argo CD sconosciuto',
+    },
+    ledgerState: {
+      'not-authorised': 'GitHub Deployments non autorizzato',
+      'not-found': 'GitHub Deployments non trovato',
+      unknown: 'GitHub Deployments sconosciuto',
     },
     imagesDeployed: '{n} immagini distribuite',
     imagesDeployedOne: '1 immagine distribuita',

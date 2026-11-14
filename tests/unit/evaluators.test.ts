@@ -822,10 +822,12 @@ describe('version: Argo CD environment reasons', () => {
     source: 'argocd',
     status: 'aligned',
     deployment: deployment && {
+      kind: 'argocd',
       state: 'available',
       sync: 'synced',
       health: 'healthy',
       revision: null,
+      ref: null,
       version: '1.4.0',
       deployedAt: null,
       images: [],

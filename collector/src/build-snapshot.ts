@@ -155,7 +155,22 @@ export function buildProjectSnapshot(
     raw.argocd,
     raw.coordinatorTags?.ok ? raw.coordinatorTags.data : [],
     imageMappings,
+    raw.environmentStates,
   );
+  // An environment signal that cannot be read is a collection error (once per repository,
+  // source and classification: the control map may report the same deploy signal).
+  for (const state of raw.environmentStates?.values() ?? []) {
+    for (const result of [state.declared, state.ledger]) {
+      if (!result || result.ok) continue;
+      const seen = ctx.errors.some(
+        (e) =>
+          e.repository === state.repository &&
+          e.source === 'deploy-signal' &&
+          e.classification === result.error.classification,
+      );
+      if (!seen) recordError(ctx, state.repository, undefined, 'deploy-signal', result);
+    }
+  }
 
   // Workflows.
   const workflows = raw.workflows.map((w) => {

@@ -169,7 +169,7 @@ describe('catalog editor: per-project YAML', () => {
   it('keeps the hand-written style', () => {
     const alpha = projectToYaml(project('project-alpha'));
     expect(alpha).toContain('notApplicableControls: [containerScanning]');
-    expect(alpha).toContain('- { id: test, name: TEST }');
+    expect(projectToYaml(project('project-beta'))).toContain('- { id: uat, name: UAT }');
     // Provider mappings are kept, in the same flow style.
     expect(alpha).toContain(
       'argocdApplication: { name: alpha-dev, namespace: argocd, project: alpha }',

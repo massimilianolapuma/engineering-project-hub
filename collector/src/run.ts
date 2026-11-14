@@ -19,6 +19,7 @@ import {
 } from '@model/index';
 import { buildProjectSnapshot, toProjectSummary } from './build-snapshot';
 import { collectControlMap, controlMapPublished } from './collectors/collect-control-map';
+import { collectEnvironmentStates } from './collectors/environment-states';
 import type { LoadedExceptions } from './config/load';
 import { orphanedExceptionIds } from './policy/exceptions';
 import { discover } from './discovery/discover';
@@ -195,6 +196,8 @@ export async function runCollection(opts: RunOptions): Promise<RunResult> {
   const entries = exceptions.file?.exceptions ?? [];
   // Control map readings (spec 2026-11-04): only when the map is published for this audience.
   if (controlMapPublished(policies, provider.dataSource)) await collectControlMap(ctx, raws, now);
+  // What each environment runs now, from its deploy signal (Versions page, snapshot 1.10).
+  await collectEnvironmentStates(ctx, raws);
   const projects = raws.map((raw) => buildProjectSnapshot(raw, policies, now, reusable, entries));
   const finishedAt = clock();
 

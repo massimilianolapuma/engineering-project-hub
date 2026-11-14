@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Snapshot schema **1.10**: an existing 1.9 `public/data` must be re-collected.
+
 ### Fixed
 
 - The "latest tag" fallback (no GitHub Release) took the first tag GitHub lists, whose order is
@@ -17,6 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Environment versions from deploy signals** (snapshot 1.10): the Versions page and the
+  project page read what each environment runs from its deploy signal, on every environment.
+  `versions-file` gives the declared version (the semver at `key` on the default branch, e.g. a
+  promote workflow's `environments/<env>.yaml`); `github-deployments` gives the newest successful
+  deployment, with its version from the ledger payload or a tag ref, or `main @ <sha>` for a
+  branch deployment. Precedence: Argo CD, GitHub deployment, release manifest, versions file.
+  Environment deployments now carry `kind` (`argocd` / `github-deployments`) and `ref`; the
+  environment `source` adds `github-deployments` and `versions-file`. Demo: Alpha TEST declared
+  by a versions file, Beta LAB deployed from main.
 - **GitHub App setup page** (`/setup/github-app/`, EN/IT): creates the hub's read-only GitHub App
   in one click through GitHub's App manifest flow (Metadata, Contents, Actions, Code scanning
   alerts, Dependabot alerts, Secret scanning alerts, Deployments; optional organisation Members),
@@ -25,6 +38,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   restricted builds link the public demo page instead.
 - README and protected hosting guide link the deployment template repository
   (`engineering-project-hub-template`).
+- `npm run refresh:local`: one command for a local real-data refresh. It validates a
+  git-ignored catalog (default `config.local/`, the committed synthetic `config/` is refused),
+  collects from GitHub, validates the snapshots, builds the site and scans the output. It uses
+  the App variables or `GH_READ_TOKEN` when set, otherwise `gh auth token` (`--gh-user` or
+  `HUB_GH_USER` picks the account); the token is passed through the environment only.
 
 ## [0.17.0] - 2026-11-04
 
