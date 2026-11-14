@@ -5,7 +5,7 @@
  * only the problems, each explained in a sentence. Aligned components are collapsed; a fully
  * aligned project is a single line; an unreadable project is a dashed card with its cause.
  */
-import type { ProjectSnapshot } from '@model/index';
+import type { EnvironmentSnapshot, ProjectSnapshot } from '@model/index';
 import EnvDeployment from '../../components/EnvDeployment.astro';
 import ErrorState from '../../components/ErrorState.astro';
 import ExtLink from '../../components/ExtLink.astro';
@@ -15,6 +15,7 @@ import StatusDot from '../../components/StatusDot.astro';
 import UnknownValue from '../../components/UnknownValue.astro';
 import Octicon from '../../components/Octicon.astro';
 import Base from '../../layouts/Base.astro';
+import { branchDeployment } from '../../lib/env-version';
 import { displayVersion, shortSha } from '../../lib/format';
 import { pageContext } from '../../lib/page';
 import { exportHref, href, localeParams } from '../../lib/routes';
@@ -59,6 +60,11 @@ const lead =
 const listFmt = new Intl.ListFormat(locale, { type: 'conjunction' });
 const unknownText = d.common.unknownValue;
 const ver = (x: string | null | undefined) => displayVersion(x) ?? unknownText;
+/** An environment's version; a deployment from a branch shows "main @ 1a2b3c4" instead. */
+const envVersion = (e: EnvironmentSnapshot) => {
+  const branch = branchDeployment(e);
+  return branch ? f(d.sources.refAt, branch) : ver(e.version);
+};
 
 /** Pill tone and label of an issue; the sentence below explains it. */
 function issuePill(issue: VersionIssue): { tone: Tone; label: string } {
@@ -240,8 +246,13 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
                           )}
                           <span class:list={['vpath__env', `vpath__env--${e.status}`]}>
                             <strong>{e.name}</strong>
-                            <span class="mono">{ver(e.version)}</span>
-                            <Pill tone={driftTone(e.status)} label={d.envStatus[e.status]} />
+                            <span class="mono">{envVersion(e)}</span>
+                            <Pill
+                              tone={driftTone(e.status)}
+                              label={
+                                branchDeployment(e) ? d.sources.notRelease : d.envStatus[e.status]
+                              }
+                            />
                             <EnvDeployment
                               e={e}
                               i18n={i18n}

@@ -455,7 +455,18 @@ export const en = {
     },
     gate: { passed: 'Gate passed', failed: 'Gate failed' },
     newCode: 'New code {p}',
-    env: { argocd: 'Argo CD', manifest: 'Manifest', unknown: 'Unknown' },
+    env: {
+      argocd: 'Argo CD',
+      'github-deployments': 'GitHub Deployments',
+      manifest: 'Manifest',
+      'versions-file': 'Versions file',
+      unknown: 'Unknown',
+    },
+    /** A deployment made from a branch, not a release: "main @ 1a2b3c4". */
+    refAt: '{ref} @ {sha}',
+    /** Status of a branch deployment: not comparable with the coordinator release. */
+    notRelease: 'Not a release',
+    deployedOn: 'deployed {d}',
     declared: 'declared {v}',
     sync: { synced: 'Synced', 'out-of-sync': 'Out of sync', unknown: 'Sync unknown' },
     health: {
@@ -470,6 +481,11 @@ export const en = {
       'not-authorised': 'Argo CD not authorised',
       'not-found': 'Not found in Argo CD',
       unknown: 'Argo CD unknown',
+    },
+    ledgerState: {
+      'not-authorised': 'GitHub Deployments not authorised',
+      'not-found': 'GitHub Deployments not found',
+      unknown: 'GitHub Deployments unknown',
     },
     imagesDeployed: '{n} images deployed',
     imagesDeployedOne: '1 image deployed',

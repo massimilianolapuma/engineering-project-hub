@@ -75,7 +75,7 @@ function runEvents(runs: readonly WorkflowRunDTO[], since: number): DeployEvent[
 }
 
 /** Ledger payload of a deployment, or null (Actions jobs and anything that does not parse). */
-function ledgerPayload(raw: unknown): LedgerPayload | null {
+export function ledgerPayload(raw: unknown): LedgerPayload | null {
   let value = raw;
   if (typeof raw === 'string') {
     try {

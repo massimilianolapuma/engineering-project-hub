@@ -166,7 +166,7 @@
   "metrics": {
     "state": "written",
     "series": 302,
-    "bytes": 26310,
+    "bytes": 26311,
     "truncated": "none"
   }
 }

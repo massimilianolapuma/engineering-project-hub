@@ -522,6 +522,7 @@ export class GitHubProvider implements SourceProvider {
       return data.map((d) => ({
         id: d.id,
         sha: d.sha,
+        ref: d.ref,
         environment: d.environment,
         createdAt: d.created_at,
         payload: d.payload,

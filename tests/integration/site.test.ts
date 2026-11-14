@@ -329,15 +329,20 @@ describe('static site', () => {
         expect(html).toMatch(new RegExp(`\\bid="${id}"`));
     });
 
-    it('draws environments as a DEV → UAT → PROD path with PROD behind', async () => {
+    it('draws environments as a LAB → DEV → UAT → PROD path with PROD behind', async () => {
       const html = await page('projects/project-beta');
       const envs = [...html.matchAll(/data-env="(\w+)"[^>]*data-env-status="(\w+)"/g)];
       expect(envs.map((m) => [m[1], m[2]])).toEqual([
+        ['LAB', 'unknown'],
         ['DEV', 'aligned'],
         ['UAT', 'aligned'],
         ['PROD', 'behind'],
       ]);
       expect(between(html, 'data-env="PROD"', '</li>')).toContain('Behind');
+      // LAB runs main: the branch deployment instead of "Unknown".
+      expect(textOf(between(html, 'data-env="LAB"', '</li>'))).toMatch(
+        /main @ 971a7f0[\s\S]*Not a release/,
+      );
     });
 
     it('collapses workflows, security, coverage and collection errors', async () => {
@@ -1884,7 +1889,12 @@ describe('static site', () => {
       expect(env('project-alpha', 'DEV')).toMatch(/Argo CD[\s\S]*Synced[\s\S]*Healthy/);
       expect(env('project-alpha', 'DEV')).toContain('2 images deployed');
       expect(env('project-alpha', 'UAT')).toContain('Out of sync');
-      expect(env('project-alpha', 'TEST')).toContain('Manifest');
+      expect(env('project-alpha', 'TEST')).toContain('Versions file');
+      expect(env('project-alpha', 'UAT')).toContain('Manifest');
+      // LAB: the newest successful GitHub deployment, from main.
+      expect(env('project-beta', 'LAB')).toMatch(/main @ 971a7f0[\s\S]*GitHub Deployments/);
+      expect(env('project-beta', 'LAB')).toContain('deployed');
+      expect(env('project-beta', 'LAB')).not.toMatch(/Sync unknown|Health unknown/);
       expect(env('project-beta', 'PROD')).toContain('Degraded');
       expect(env('project-beta', 'DEV')).toContain('Manifest');
       expect(env('project-beta', 'DEV')).toContain('Argo CD not authorised');
@@ -1983,7 +1993,7 @@ describe('static site', () => {
     const idx = join(data, 'index.json');
     await writeFile(
       idx,
-      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.9"', '"schemaVersion": "9.0"'),
+      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.10"', '"schemaVersion": "9.0"'),
     );
     const out = join(work, 'dist-bad');
     await buildSite(data, out);

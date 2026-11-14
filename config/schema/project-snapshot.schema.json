@@ -5,7 +5,7 @@
     "schemaVersion": {
       "type": "string",
       "enum": [
-        "1.9"
+        "1.10"
       ]
     },
     "generatedAt": {
@@ -957,7 +957,9 @@
             "type": "string",
             "enum": [
               "argocd",
+              "github-deployments",
               "manifest",
+              "versions-file",
               "unknown"
             ]
           },
@@ -975,6 +977,13 @@
               {
                 "type": "object",
                 "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "argocd",
+                      "github-deployments"
+                    ]
+                  },
                   "state": {
                     "type": "string",
                     "enum": [
@@ -1018,6 +1027,17 @@
                     ]
                   },
                   "revision": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "ref": {
                     "anyOf": [
                       {
                         "type": "string",
@@ -1082,10 +1102,12 @@
                   }
                 },
                 "required": [
+                  "kind",
                   "state",
                   "sync",
                   "health",
                   "revision",
+                  "ref",
                   "version",
                   "deployedAt",
                   "images"

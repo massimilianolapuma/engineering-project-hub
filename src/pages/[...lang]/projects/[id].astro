@@ -32,6 +32,7 @@ import UnknownValue from '../../../components/UnknownValue.astro';
 import Octicon from '../../../components/Octicon.astro';
 import Base from '../../../layouts/Base.astro';
 import { loadHistory, loadSiteData } from '../../../lib/data';
+import { branchDeployment } from '../../../lib/env-version';
 import { displayVersion } from '../../../lib/format';
 import { pageContext } from '../../../lib/page';
 import { loadSitePolicies } from '../../../lib/policies';
@@ -562,8 +563,15 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
                 )}
                 <span class={`envpath__card envpath__card--${e.status}`}>
                   <strong>{e.name}</strong>
-                  <span class="mono">{displayVersion(e.version) ?? d.common.unknown}</span>
-                  <Pill tone={driftTone(e.status)} label={d.envStatus[e.status]} />
+                  <span class="mono">
+                    {branchDeployment(e)
+                      ? f(d.sources.refAt, branchDeployment(e)!)
+                      : (displayVersion(e.version) ?? d.common.unknown)}
+                  </span>
+                  <Pill
+                    tone={driftTone(e.status)}
+                    label={branchDeployment(e) ? d.sources.notRelease : d.envStatus[e.status]}
+                  />
                   {(e.status === 'behind' || e.status === 'mismatch') && s.coordinator.version && (
                     <span class="envpath__expected">
                       {f(d.project.envExpected, {
