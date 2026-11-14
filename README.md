@@ -262,6 +262,14 @@ never treated as "no problems".
 > npm run build:site && npm run preview      # local preview only — do not publish real data
 > ```
 >
+> Or in one command, which validates, collects, validates the snapshots, builds and scans:
+>
+> ```bash
+> npm run refresh:local                       # catalog config.local/, token from GH_READ_TOKEN or `gh auth token`
+> npm run refresh:local -- --gh-user <login>  # a specific gh account (or HUB_GH_USER); --no-build to collect only
+> npm run preview
+> ```
+>
 > The token needs read access to those repositories (fine-grained PAT: select them under
 > _Repository access_; permissions in the table below).
 

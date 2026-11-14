@@ -21,6 +21,7 @@
     "collect": "tsx collector/src/index.ts",
     "collect:mock": "tsx collector/src/index.ts --source mock",
     "collect:github": "tsx collector/src/index.ts --source github",
+    "refresh:local": "tsx scripts/refresh-local.ts",
     "validate:config": "tsx scripts/validate-config.ts",
     "validate:snapshots": "tsx scripts/validate-snapshots.ts",
     "build:site": "astro build",
