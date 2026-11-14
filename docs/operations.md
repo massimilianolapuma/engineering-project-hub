@@ -54,7 +54,9 @@ To change the frequency, edit the `cron` in `deploy-pages.yml`. Keep the stale t
   `gh api repos/<owner>/<repo>/dispatches -f event_type=collect-data`. This collects
   without deploying.
 - **Locally**: `DATA_SOURCE=github GH_READ_TOKEN=… npm run collect:github && npm run
-validate:snapshots`.
+validate:snapshots`, or `npm run refresh:local` to collect a git-ignored `config.local/`
+  catalog, validate, build and scan in one step (token from `GH_READ_TOKEN`, the App variables
+  or `gh auth token`; `--gh-user <login>` picks a gh account).
 
 ## Stale data
 

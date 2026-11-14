@@ -21,6 +21,7 @@
     "collect": "tsx collector/src/index.ts",
     "collect:mock": "tsx collector/src/index.ts --source mock",
     "collect:github": "tsx collector/src/index.ts --source github",
+    "refresh:local": "tsx scripts/refresh-local.ts",
     "validate:config": "tsx scripts/validate-config.ts",
     "validate:snapshots": "tsx scripts/validate-snapshots.ts",
     "build:site": "astro build",
@@ -51,7 +52,7 @@
     "@octokit/rest": "22.0.1",
     "@primer/octicons": "19.42.0",
     "@primer/primitives": "11.10.0",
-    "astro": "7.4.2",
+    "astro": "7.4.7",
     "yaml": "2.9.1",
     "zod": "4.6.7"
   },

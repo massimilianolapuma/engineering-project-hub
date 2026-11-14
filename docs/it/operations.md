@@ -57,7 +57,10 @@ dato non aggiornato (`freshness.snapshotStaleHours`) superiore all'intervallo.
   `gh api repos/<owner>/<repo>/dispatches -f event_type=collect-data`. Esegue la raccolta
   senza deploy.
 - **In locale**: `DATA_SOURCE=github GH_READ_TOKEN=… npm run collect:github && npm run
-validate:snapshots`.
+validate:snapshots`, oppure `npm run refresh:local` per raccogliere un catalogo
+  `config.local/` in .gitignore, validare, fare la build e la scansione in un solo passo (token da
+  `GH_READ_TOKEN`, dalle variabili dell'App o da `gh auth token`; `--gh-user <login>` sceglie un
+  account gh).
 
 ## Dati non aggiornati
 
