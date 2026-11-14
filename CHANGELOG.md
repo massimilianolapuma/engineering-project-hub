@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   restricted builds link the public demo page instead.
 - README and protected hosting guide link the deployment template repository
   (`engineering-project-hub-template`).
+- `npm run refresh:local`: one command for a local real-data refresh. It validates a
+  git-ignored catalog (default `config.local/`, the committed synthetic `config/` is refused),
+  collects from GitHub, validates the snapshots, builds the site and scans the output. It uses
+  the App variables or `GH_READ_TOKEN` when set, otherwise `gh auth token` (`--gh-user` or
+  `HUB_GH_USER` picks the account); the token is passed through the environment only.
 
 ## [0.17.0] - 2026-11-04
 

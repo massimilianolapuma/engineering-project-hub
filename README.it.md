@@ -277,6 +277,14 @@ problema".
 > npm run build:site && npm run preview      # solo anteprima locale — non pubblicare dati reali
 > ```
 >
+> Oppure con un solo comando, che valida, raccoglie, valida gli snapshot, fa la build e la scansione:
+>
+> ```bash
+> npm run refresh:local                       # catalogo config.local/, token da GH_READ_TOKEN o `gh auth token`
+> npm run refresh:local -- --gh-user <login>  # un account gh specifico (o HUB_GH_USER); --no-build per la sola raccolta
+> npm run preview
+> ```
+>
 > Il token deve poter leggere quei repository (PAT fine-grained: selezionali in
 > _Repository access_; permessi nella tabella più sotto).
 
