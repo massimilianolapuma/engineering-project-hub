@@ -447,6 +447,62 @@ describe('GitHubProvider', () => {
     });
   });
 
+  it('latest tag: the highest semver tag reachable from the branch, never a foreign one', async () => {
+    const seen: string[] = [];
+    const tag = (name: string, c: string) => ({
+      name,
+      commit: { sha: c.repeat(40), url: 'x' },
+      zipball_url: 'x',
+    });
+    const cmp = (status: string) => ({
+      status: 200,
+      body: { status, ahead_by: 0, behind_by: 0, total_commits: 0 },
+    });
+    const p = provider(
+      {
+        // GitHub's order: neither by version nor by date.
+        '/repos/o/a/tags': {
+          status: 200,
+          body: [tag('v0.9.0', 'a'), tag('nightly', 'e'), tag('v0.12.2', 'b'), tag('v0.11.8', 'c')],
+        },
+        [`/repos/o/a/compare/${'b'.repeat(40)}...main`]: cmp('diverged'), // another project
+        [`/repos/o/a/compare/${'c'.repeat(40)}...main`]: cmp('ahead'),
+      },
+      seen,
+    );
+    expect(await p.getLatestTag('o/a', 'main')).toEqual({
+      ok: true,
+      data: { name: 'v0.11.8', sha: 'c'.repeat(40) },
+    });
+    expect(seen.filter((u) => u.includes('/compare/'))).toHaveLength(2);
+    expect(seen.find((u) => u.startsWith('/repos/o/a/tags'))).toContain('per_page=100');
+  });
+
+  it('latest tag: reads the default branch when none is given, 404 when nothing is reachable', async () => {
+    const seen: string[] = [];
+    const p = provider(
+      {
+        '/repos/o/a/tags': {
+          status: 200,
+          body: [{ name: 'v2.0.0', commit: { sha: 'f'.repeat(40), url: 'x' }, zipball_url: 'x' }],
+        },
+        '/repos/o/a': { status: 200, body: { default_branch: 'trunk' } },
+        [`/repos/o/a/compare/${'f'.repeat(40)}...trunk`]: {
+          status: 200,
+          body: { status: 'behind', ahead_by: 0, behind_by: 2, total_commits: 0 },
+        },
+      },
+      seen,
+    );
+    const r = await p.getLatestTag('o/a');
+    expect(r.ok).toBe(false);
+    expect(!r.ok && r.error.classification).toBe('not-found');
+    expect(seen).toContain(`/repos/o/a/compare/${'f'.repeat(40)}...trunk?per_page=1`);
+    const empty = provider({ '/repos/o/a/tags': { status: 200, body: [] } });
+    const none = await empty.getLatestTag('o/a', 'main');
+    expect(!none.ok && none.error.classification).toBe('not-found');
+  });
+
   it('lists tags with their commit SHA and compares base...head (counters only)', async () => {
     const seen: string[] = [];
     const p = provider(

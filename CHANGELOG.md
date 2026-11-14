@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The "latest tag" fallback (no GitHub Release) took the first tag GitHub lists, whose order is
+  neither by version nor by date, so a tag imported from another project could become the
+  coordinator or component version. It is now the highest semver tag reachable from the default
+  branch (at most 5 candidates checked with a compare); none reachable means unknown, never a
+  wrong version.
+
 ### Added
 
 - **GitHub App setup page** (`/setup/github-app/`, EN/IT): creates the hub's read-only GitHub App

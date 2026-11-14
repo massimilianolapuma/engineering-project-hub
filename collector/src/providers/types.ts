@@ -323,7 +323,11 @@ export interface SourceProvider {
   listWorkflows(repo: string): Promise<ProviderResult<WorkflowDTO[]>>;
   getBranchHead(repo: string, branch: string): Promise<ProviderResult<CommitRefDTO>>;
   getLatestRelease(repo: string): Promise<ProviderResult<ReleaseDTO>>;
-  getLatestTag(repo: string): Promise<ProviderResult<TagDTO>>;
+  /**
+   * Highest tag reachable from `branch` (default: the repository's default branch): a tag that
+   * no branch contains, such as one imported from another project, is never "latest".
+   */
+  getLatestTag(repo: string, branch?: string): Promise<ProviderResult<TagDTO>>;
   /** Most recent tags (name + commit SHA), bounded; used to resolve submodule SHAs to versions. */
   listTags(repo: string): Promise<ProviderResult<TagDTO[]>>;
   /** Compares base...head (e.g. latest release tag ... submodule SHA). */

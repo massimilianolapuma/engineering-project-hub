@@ -861,7 +861,8 @@ environments: # what each environment is declared to run
 ```
 
 If there is no manifest, the coordinator version falls back to its latest release, then its
-latest tag, and Version health is amber ("versions only partially known"). An unknown
+latest tag (the highest semver tag reachable from the default branch: a tag no branch contains,
+such as one imported from another project, is ignored), and Version health is amber ("versions only partially known"). An unknown
 component id in the manifest is red.
 
 ### `.security/project-security-status.json` (each repository, optional)

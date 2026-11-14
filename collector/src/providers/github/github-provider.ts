@@ -43,6 +43,7 @@ import {
   WORKFLOW_FILE,
 } from '../types';
 import { DownloadError, downloadBounded } from '../../util/bounded-fetch';
+import { MAX_TAG_CANDIDATES, orderTagCandidates } from '../../util/latest-tag';
 import { readZipEntry, ZipError } from '../../util/zip';
 import { classifyGitHubError, type ClassifyOptions } from './errors';
 
@@ -567,12 +568,26 @@ export class GitHubProvider implements SourceProvider {
     });
   }
 
-  getLatestTag(repo: string): Promise<ProviderResult<TagDTO>> {
+  getLatestTag(repo: string, branch?: string): Promise<ProviderResult<TagDTO>> {
     return guard(async () => {
-      const { data } = await this.client.rest.repos.listTags({ ...split(repo), per_page: 1 });
-      const tag = data[0];
-      if (!tag) throw Object.assign(new Error('no tags'), { status: 404 });
-      return { name: tag.name, sha: tag.commit.sha };
+      // One page of tags, ordered by semver (GitHub's order is neither by version nor by date),
+      // then the first few checked for reachability: tag...branch is "identical" or "ahead".
+      const { data } = await this.client.rest.repos.listTags({ ...split(repo), per_page: 100 });
+      const candidates = orderTagCandidates(
+        data.map((t) => ({ name: t.name, sha: t.commit.sha })),
+      ).slice(0, MAX_TAG_CANDIDATES);
+      if (candidates.length === 0) throw Object.assign(new Error('no tags'), { status: 404 });
+      const head =
+        branch ?? (await this.client.rest.repos.get({ ...split(repo) })).data.default_branch;
+      for (const tag of candidates) {
+        const { data: cmp } = await this.client.rest.repos.compareCommitsWithBasehead({
+          ...split(repo),
+          basehead: `${tag.sha}...${head}`,
+          per_page: 1,
+        });
+        if (cmp.status === 'identical' || cmp.status === 'ahead') return tag;
+      }
+      throw Object.assign(new Error('no tag reachable from the default branch'), { status: 404 });
     });
   }
 

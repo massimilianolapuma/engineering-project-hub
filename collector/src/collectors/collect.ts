@@ -291,7 +291,7 @@ export async function collectRepository(
   // Fall back to the latest tag only when there is no GitHub Release.
   const tag =
     !release.ok && release.error.classification === 'not-found'
-      ? await call(ctx, `tag:${repository}`, () => p.getLatestTag(repository))
+      ? await call(ctx, `tag:${repository}@${branch}`, () => p.getLatestTag(repository, branch))
       : null;
   return {
     componentId,
