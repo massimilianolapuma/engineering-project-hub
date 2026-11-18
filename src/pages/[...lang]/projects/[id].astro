@@ -585,6 +585,13 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
           </ol>
         )}
         <p class="note">{d.project.envBehindNote}</p>
+        {s.coordinator.umbrellaChart && (
+          <p>
+            <a href={`${href(locale, 'versions')}#v-${s.project.id}`}>
+              {d.versionsPage.matrix.title} →
+            </a>
+          </p>
+        )}
       </section>
 
       <section class="block" aria-labelledby="h-components">

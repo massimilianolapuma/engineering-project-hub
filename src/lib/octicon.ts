@@ -31,6 +31,7 @@ export const OCTICON_NAMES = [
   'device-desktop',
   // content
   'arrow-right',
+  'arrow-up',
   'chevron-down',
   'chevron-right',
   'info',

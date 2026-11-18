@@ -10,6 +10,7 @@ import {
 } from '@model/index';
 import { NA, toCsv, type CsvValue } from './csv';
 import type { SiteData } from './data';
+import { matrixOf } from './umbrella-matrix';
 
 /*
  * Rows of the three CSV exports, built from the same validated data the pages use.
@@ -98,6 +99,8 @@ export const VERSIONS_HEADERS: readonly string[] = [
   'environment_declared_version',
   'sync_status',
   'health_status',
+  // Umbrella chart (schema 1.11): the ref the chart was read at, on component-environment rows.
+  'chart_ref',
 ];
 
 export const SUPPLY_CHAIN_HEADERS: readonly string[] = [
@@ -252,6 +255,7 @@ function projectVersionRows(p: ProjectSnapshot): CsvValue[][] {
       NA,
       NA,
       NA,
+      NA,
     ],
   ];
   for (const k of p.components)
@@ -268,6 +272,7 @@ function projectVersionRows(p: ProjectSnapshot): CsvValue[][] {
       k.drift,
       k.manifestConsistency,
       k.pin?.status ?? null,
+      NA,
       NA,
       NA,
       NA,
@@ -293,7 +298,38 @@ function projectVersionRows(p: ProjectSnapshot): CsvValue[][] {
       e.declaredVersion,
       e.deployment ? e.deployment.sync : NA,
       e.deployment ? e.deployment.health : NA,
+      NA,
     ]);
+  // Components by environment: one row per umbrella component and environment whose chart was
+  // read (or skipped); the version is unknown when that read gives none.
+  const matrix = matrixOf(p);
+  if (matrix)
+    for (const row of matrix.rows) {
+      const k = p.components.find((x) => x.id === row.componentId);
+      matrix.environments.forEach((e, i) => {
+        if (e.ref === null) return;
+        rows.push([
+          'component-environment',
+          id,
+          `${row.componentId}@${e.id}`,
+          `${row.name} @ ${e.name}`,
+          k?.repository.fullName ?? null,
+          row.cells[i]?.version ?? null,
+          'umbrella',
+          NA,
+          NA,
+          NA,
+          NA,
+          NA,
+          e.status,
+          p.environments[i]!.source,
+          NA,
+          NA,
+          NA,
+          e.ref || null,
+        ]);
+      });
+    }
   return rows;
 }
 

@@ -145,6 +145,7 @@ describe('export rows (golden data)', () => {
       'environment_declared_version',
       'sync_status',
       'health_status',
+      'chart_ref',
     ]);
   });
 
@@ -265,16 +266,55 @@ describe('export rows (golden data)', () => {
   it('versionsRows: coordinator, component and environment rows; alpha frontend drift', () => {
     const rows = asObjects(VERSIONS_HEADERS, versionsRows(golden()));
     const types = new Set(rows.map((r) => r.row_type));
-    expect(types).toEqual(new Set(['coordinator', 'component', 'environment']));
+    expect(types).toEqual(
+      new Set(['coordinator', 'component', 'environment', 'component-environment']),
+    );
     const fe = rows.find((r) => r.project_id === 'project-alpha' && r.item_id === 'frontend')!;
     expect(fe.version).toBe('2.1.0');
     expect(fe.drift).toBe('drift');
   });
 });
 
+describe('versions CSV: components by environment (umbrella chart)', () => {
+  const rows = () =>
+    asObjects(VERSIONS_HEADERS, versionsRows(golden())).filter(
+      (r) => r.row_type === 'component-environment',
+    );
+
+  it('one row per umbrella component and environment with a chart read, with the chart ref', () => {
+    const ce = rows();
+    // Only Alpha has an umbrella chart: 3 components × 4 environments.
+    expect(new Set(ce.map((r) => r.project_id))).toEqual(new Set(['project-alpha']));
+    expect(ce).toHaveLength(12);
+    expect(ce.find((r) => r.item_id === 'frontend@prod')).toMatchObject({
+      project_id: 'project-alpha',
+      item_name: 'Frontend @ PROD',
+      repository: 'example-org/project-alpha-frontend',
+      version: '2.0.3',
+      version_source: 'umbrella',
+      environment_status: 'behind',
+      environment_source: 'argocd',
+      chart_ref: 'v1.3.0',
+    });
+    expect(ce.find((r) => r.item_id === 'backend@test')).toMatchObject({
+      version: '1.4.0',
+      environment_source: 'versions-file',
+      chart_ref: 'v1.4.0',
+    });
+    // The helm component is outside the umbrella: no rows.
+    expect(ce.some((r) => String(r.item_id).startsWith('helm@'))).toBe(false);
+  });
+
+  it('chart_ref is n/a on every other row', () => {
+    const all = asObjects(VERSIONS_HEADERS, versionsRows(golden()));
+    for (const r of all.filter((x) => x.row_type !== 'component-environment'))
+      expect(r.chart_ref).toEqual(NA);
+  });
+});
+
 describe('versions and supply chain CSV (schema 1.8)', () => {
   it('versions.csv ends with the Argo CD columns, n/a outside environment rows', () => {
-    expect(VERSIONS_HEADERS.slice(-4)).toEqual([
+    expect(VERSIONS_HEADERS.slice(-5, -1)).toEqual([
       'environment_source',
       'environment_declared_version',
       'sync_status',

@@ -262,6 +262,7 @@ export const it: Dict = {
     unknown: 'sconosciuta',
     submodule: 'SHA del submodule · tag verificato',
     auto: 'auto',
+    umbrella: 'umbrella chart',
   },
   pinStatus: {
     tagged: 'Su tag',
@@ -311,6 +312,7 @@ export const it: Dict = {
     'quality-report': 'Report di qualità',
     'github-environments': 'Ambienti GitHub',
     'deploy-signal': 'Segnale di deploy',
+    'umbrella-chart': 'Umbrella chart',
   },
   availability: {
     available: 'Disponibile',
@@ -910,6 +912,35 @@ export const it: Dict = {
     present: 'presente',
     unknownCause: 'Versioni non leggibili',
     seeDataQuality: 'Vedi in Qualità dati',
+    matrix: {
+      title: 'Componenti per ambiente',
+      caption: 'Componenti per ambiente · {project}',
+      colLatest: 'Ultima release',
+      colMain: 'Umbrella (main)',
+      header: {
+        declared: 'dichiarata',
+        deployed: 'deployata',
+        branch: 'branch',
+        unknown: 'fonte sconosciuta',
+      },
+      chart: 'Umbrella chart',
+      chartVersion: 'versione {v}',
+      outside: "Fuori dall'umbrella ({n})",
+      unmapped: 'Dipendenze del chart non nel catalogo:',
+      legend:
+        "Una versione più nuova è in attesa: l'ultima release è sopra l'umbrella su main, oppure un ambiente è sotto quello alla sua sinistra.",
+      waitingLatest: "Una versione più nuova è in attesa: sopra l'umbrella su main",
+      waitingEnv: 'Una versione più nuova è in attesa a sinistra',
+      reason: {
+        'not-found': 'Non trovato',
+        invalid: 'Chart non valido',
+        'not-authorised': 'Non autorizzato',
+        unknown: 'Non leggibile',
+        skipped: 'Troppe versioni da leggere',
+        conflict: 'Versioni in conflitto nel chart',
+        'no-version': 'Nessuna versione da leggere',
+      },
+    },
   },
   securityPage: {
     atLeast: 'almeno',
