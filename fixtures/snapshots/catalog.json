@@ -169,7 +169,11 @@
           "notApplicableControls": [
             "containerScanning"
           ],
-          "notApplicableChecks": []
+          "notApplicableChecks": [],
+          "umbrellaChart": {
+            "path": "deploy/helm/alpha/Chart.yaml",
+            "tagPrefix": "v"
+          }
         },
         "components": [
           {

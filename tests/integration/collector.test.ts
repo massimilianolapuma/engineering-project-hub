@@ -279,6 +279,25 @@ describe('mock collection', () => {
     ]);
   });
 
+  it('umbrella demo: Alpha has per-environment component versions', async () => {
+    const { projects } = await mockRun();
+    const byId = Object.fromEntries(projects.map((p) => [p.project.id, p])) as Record<
+      string,
+      ProjectSnapshot
+    >;
+    const alpha = byId['project-alpha']!;
+    expect(alpha.coordinator.umbrellaChart).toMatchObject({ state: 'ok', chartVersion: '1.5.0' });
+    expect(alpha.coordinator.umbrellaChart!.unmapped).toContain('alpha-legacy-reports');
+    const env = (id: string) => alpha.environments.find((e) => e.id === id)!.componentVersions;
+    expect(env('prod')).toMatchObject({ ref: 'v1.3.0', state: 'ok' });
+    expect(env('prod')!.versions.find((v) => v.componentId === 'frontend')?.version).toBe('2.0.3');
+    expect(env('test')!.ref).toBe('v1.4.0');
+    expect(env('uat')!.ref).toBe('v1.4.0');
+    for (const id of ['platform', 'project-beta', 'project-gamma']) {
+      expect(byId[id]!.coordinator.umbrellaChart).toBeNull();
+    }
+  });
+
   it('keeps collecting other repositories when one fails (partial data)', async () => {
     const { index } = await mockRun();
     expect(index.run.repositories).toMatchObject({ total: 12, unavailable: 2 });
