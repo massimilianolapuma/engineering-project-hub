@@ -8,7 +8,7 @@ import type { RawProjectData } from '../collectors/collect';
 import { environmentVersionRefs } from '../collectors/umbrella-chart';
 import type { FileDTO, ProviderResult } from '../providers/types';
 import { scrubIdentifier } from '../sanitizers/sanitize';
-import { recordError, type BuildContext } from './model';
+import { pushError, recordError, type BuildContext } from './model';
 import { mapChartToComponents, parseUmbrellaChart, type ChartMapping } from './umbrella-chart';
 
 export interface UmbrellaModel {
@@ -23,7 +23,22 @@ interface ReadChart {
   mapping: ChartMapping | null;
 }
 
-function readChart(raw: RawProjectData, result: ProviderResult<FileDTO>): ReadChart {
+const MAX_LISTED = 50;
+const MAX_ENV_VERSIONS = 100;
+
+/** Chart-derived text is untrusted: scrubbed and bounded before it reaches the snapshot. */
+function scrubList(names: string[]): string[] {
+  return names
+    .map((n) => scrubIdentifier(n, 100))
+    .filter((n): n is string => n !== null)
+    .slice(0, MAX_LISTED);
+}
+
+function readChart(
+  ctx: BuildContext,
+  raw: RawProjectData,
+  result: ProviderResult<FileDTO>,
+): ReadChart {
   if (!result.ok) {
     const c = result.error.classification;
     const state: UmbrellaChartState =
@@ -31,11 +46,36 @@ function readChart(raw: RawProjectData, result: ProviderResult<FileDTO>): ReadCh
     return { state, chartVersion: null, mapping: null };
   }
   const chart = parseUmbrellaChart(result.data.text);
-  if (!chart) return { state: 'invalid', chartVersion: null, mapping: null };
+  if (!chart) {
+    const repository = raw.config.coordinator.repository;
+    const seen = ctx.errors.some(
+      (e) =>
+        e.repository === repository &&
+        e.source === 'umbrella-chart' &&
+        e.classification === 'invalid-data',
+    );
+    if (!seen)
+      pushError(ctx, repository, undefined, 'umbrella-chart', {
+        classification: 'invalid-data',
+        message: 'umbrella chart is not a valid Chart.yaml',
+      });
+    return { state: 'invalid', chartVersion: null, mapping: null };
+  }
+  const mapped = mapChartToComponents(raw.config, chart);
+  const byComponent = new Map(
+    [...mapped.byComponent].map(([id, v]) => [
+      id,
+      { version: scrubIdentifier(v.version, 100), conflict: v.conflict },
+    ]),
+  );
   return {
     state: 'ok',
-    chartVersion: chart.version,
-    mapping: mapChartToComponents(raw.config, chart),
+    chartVersion: scrubIdentifier(chart.version, 100),
+    mapping: {
+      byComponent,
+      unmapped: scrubList(mapped.unmapped),
+      aliases: scrubList(mapped.aliases),
+    },
   };
 }
 
@@ -45,8 +85,8 @@ export function umbrellaModel(ctx: BuildContext, raw: RawProjectData): UmbrellaM
   if (!config) return { summary: null, components: new Map(), environments: new Map() };
   const repository = raw.config.coordinator.repository;
   const data = raw.umbrella;
-  const main = data ? readChart(raw, data.main) : null;
-  const release = data?.release ? readChart(raw, data.release.file) : null;
+  const main = data ? readChart(ctx, raw, data.main) : null;
+  const release = data?.release ? readChart(ctx, raw, data.release.file) : null;
 
   // Collection errors: once per classification (a missing environment tag is a real problem).
   const results: ProviderResult<FileDTO>[] = [];
@@ -94,15 +134,19 @@ export function umbrellaModel(ctx: BuildContext, raw: RawProjectData): UmbrellaM
       : new Map<string, string>();
     for (const [id, read] of data.environments) {
       if (read === 'skipped') {
-        environments.set(id, { ref: refs.get(id) ?? '', state: 'skipped', versions: [] });
+        environments.set(id, {
+          ref: scrubIdentifier(refs.get(id), 100) ?? '',
+          state: 'skipped',
+          versions: [],
+        });
         continue;
       }
-      const chart = readChart(raw, read.file);
+      const chart = readChart(ctx, raw, read.file);
       environments.set(id, {
-        ref: read.ref,
+        ref: scrubIdentifier(read.ref, 100) ?? '',
         state: chart.state,
         versions: chart.mapping
-          ? [...chart.mapping.byComponent].map(([componentId, v]) => ({
+          ? [...chart.mapping.byComponent].slice(0, MAX_ENV_VERSIONS).map(([componentId, v]) => ({
               componentId,
               version: v.version,
               conflict: v.conflict,

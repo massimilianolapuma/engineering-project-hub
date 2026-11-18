@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { ProjectConfigSchema, type ProjectConfig } from '@model/index';
+import {
+  ComponentUmbrellaSchema,
+  EnvironmentComponentVersionsSchema,
+  ProjectConfigSchema,
+  UmbrellaChartSummarySchema,
+  type ProjectConfig,
+} from '@model/index';
 import type { RawProjectData } from '../../collector/src/collectors/collect';
 import type { EnvironmentState } from '../../collector/src/collectors/environment-states';
 import type { BuildContext } from '../../collector/src/normalizers/model';
@@ -70,6 +76,7 @@ function build(
   cfg: ProjectConfig,
   umbrella: RawProjectData['umbrella'],
   envVersions: Record<string, string> = {},
+  declared: Record<string, string> = { api: '0.9.0', web: '0.8.0' },
 ) {
   const states = new Map<string, EnvironmentState>(
     Object.entries(envVersions).map(([id, v]) => [
@@ -96,7 +103,18 @@ function build(
   } as unknown as RawProjectData;
   const ctx: BuildContext = { projectId: 'p', policies: policies(), now: NOW, errors: [] };
   const model = umbrellaModel(ctx, raw);
-  const components = toComponents(ctx, raw, null, [], model.components);
+  const components = toComponents(
+    ctx,
+    raw,
+    {
+      schemaVersion: '1.0',
+      version: '1.0.0',
+      components: Object.fromEntries(Object.entries(declared).map(([k, v]) => [k, { version: v }])),
+      environments: {},
+    },
+    [],
+    model.components,
+  );
   const environments = toEnvironments(
     cfg,
     null,
@@ -144,8 +162,8 @@ describe('umbrellaModel', () => {
       conflict: false,
     });
     const web = components.find((c) => c.id === 'web')!;
-    expect(web.effectiveVersion).toBeNull();
-    expect(web.effectiveVersionSource).toBe('unknown');
+    expect(web.effectiveVersion).toBe('0.8.0');
+    expect(web.effectiveVersionSource).toBe('manifest');
     expect(web.umbrella).toEqual({
       inUmbrella: true,
       main: '3.0.0',
@@ -163,6 +181,58 @@ describe('umbrellaModel', () => {
     const api = components.find((c) => c.id === 'api')!;
     expect(api.effectiveVersion).toBeNull();
     expect(api.effectiveVersionSource).toBe('unknown');
+  });
+
+  it('falls through to the manifest when the release chart has a conflict', () => {
+    const dup = ok<FileDTO>({
+      text: 'version: 1.5.0\ndependencies:\n  - name: api\n    version: 1.1.0\n  - name: api\n    version: 1.2.0\n',
+    });
+    const { components } = build(config(), {
+      main: chart({ api: '1.0.0' }),
+      release: read('v1.5.0', dup),
+      environments: new Map(),
+    });
+    const api = components.find((c) => c.id === 'api')!;
+    expect(api.umbrella?.conflict).toBe(true);
+    expect(api.effectiveVersion).toBe('0.9.0');
+    expect(api.effectiveVersionSource).toBe('manifest');
+  });
+
+  it('records an invalid chart once as an umbrella-chart collection error', () => {
+    const bad = ok<FileDTO>({ text: 'dependencies: [unclosed' });
+    const { ctx, model } = build(config(), {
+      main: bad,
+      release: read('v1.5.0', bad),
+      environments: new Map([['dev', read('v1.4.0', bad)]]),
+    });
+    expect(model.summary?.state).toBe('invalid');
+    const errors = ctx.errors.filter((e) => e.source === 'umbrella-chart');
+    expect(errors).toHaveLength(1);
+    expect(errors[0]!.classification).toBe('invalid-data');
+  });
+
+  it('bounds and scrubs chart content so the snapshot schemas accept it', () => {
+    const deps = Object.fromEntries(Array.from({ length: 60 }, (_, i) => [`dep-${i}`, '1.0.0']));
+    const long = 'x'.repeat(150);
+    const text = [
+      `version: ${long}`,
+      'dependencies:',
+      ...Object.entries({ ...deps, api: long }).flatMap(([n, v]) => [
+        `  - name: ${n}`,
+        `    version: ${v}`,
+      ]),
+    ].join('\n');
+    const file = ok<FileDTO>({ text });
+    const { model, components } = build(config(), {
+      main: file,
+      release: read('v1.5.0', file),
+      environments: new Map([['dev', read('v1.4.0', file)]]),
+    });
+    expect(model.summary!.unmapped.length).toBeLessThanOrEqual(50);
+    expect(() => UmbrellaChartSummarySchema.parse(model.summary)).not.toThrow();
+    for (const u of model.components.values()) ComponentUmbrellaSchema.parse(u);
+    for (const e of model.environments.values()) EnvironmentComponentVersionsSchema.parse(e);
+    expect(components.find((c) => c.id === 'api')!.umbrella!.main!.length).toBeLessThanOrEqual(100);
   });
 
   it('fills environment component versions, conflict cells and skipped environments', () => {
