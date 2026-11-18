@@ -2,6 +2,8 @@ import { parse as parseYaml } from 'yaml';
 import {
   ReleaseManifestSchema,
   type ComponentSnapshot,
+  type ComponentUmbrella,
+  type EnvironmentComponentVersions,
   type Pin,
   type EnvironmentSnapshot,
   type ProjectConfig,
@@ -212,6 +214,7 @@ export function toComponents(
   raw: RawProjectData,
   manifest: ReleaseManifest | null,
   submodules: Submodule[],
+  umbrellaByComponent: Map<string, ComponentUmbrella> = new Map(),
 ): ComponentSnapshot[] {
   return raw.config.components.map((comp) => {
     const data = raw.repos.find((r) => r.componentId === comp.id)!;
@@ -225,6 +228,8 @@ export function toComponents(
     const submodule = submodules.find((s) => s.componentId === comp.id) ?? null;
     const pin = resolvePin(raw, comp, submodule);
     const pinned = pin?.status === 'tagged' ? pin.version : null;
+    const umbrella = umbrellaByComponent.get(comp.id) ?? null;
+    const fromUmbrella = umbrella && !umbrella.conflict ? umbrella.release : null;
 
     // Current version according to the configured source (auto: verified pin → manifest).
     let effectiveVersion: string | null = null;
@@ -246,8 +251,10 @@ export function toComponents(
         pick(latest, 'release');
         break;
       case 'umbrella':
-        break; // read from the umbrella chart (not yet collected)
+        pick(fromUmbrella, 'umbrella');
+        break;
       default:
+        pick(fromUmbrella, 'umbrella');
         pick(pinned, 'submodule');
         pick(declared, 'manifest');
     }
@@ -274,7 +281,7 @@ export function toComponents(
       effectiveVersionSource,
       manifestConsistency,
       drift,
-      umbrella: null,
+      umbrella,
     };
   });
 }
@@ -418,6 +425,7 @@ export function toEnvironments(
   coordinatorTags: TagDTO[] = [],
   images: ImageMapping[] = [],
   states: Map<string, EnvironmentState> = new Map(),
+  componentVersions: Map<string, EnvironmentComponentVersions> = new Map(),
 ): EnvironmentSnapshot[] {
   return config.environments.map((env) => {
     const state = states.get(env.id);
@@ -455,7 +463,7 @@ export function toEnvironments(
       source,
       status,
       deployment,
-      componentVersions: null,
+      componentVersions: componentVersions.get(env.id) ?? null,
     };
   });
 }

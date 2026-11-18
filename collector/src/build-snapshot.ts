@@ -81,6 +81,7 @@ import {
   toEnvironments,
   unknownManifestComponents,
 } from './normalizers/versions';
+import { umbrellaModel } from './normalizers/umbrella-model';
 
 const ALERT_SOURCES = ['codeScanning', 'dependabot', 'secretScanning'] as const;
 
@@ -138,7 +139,8 @@ export function buildProjectSnapshot(
       )
     : null;
   const coord = coordinatorVersion(manifest, coordinatorRelease);
-  const components = toComponents(ctx, raw, manifest, submodules);
+  const umbrellaData = umbrellaModel(ctx, raw);
+  const components = toComponents(ctx, raw, manifest, submodules, umbrellaData.components);
   const imageMappings = [
     { componentId: 'coordinator', images: config.coordinator.containerImages },
     ...config.components.map((c) => ({ componentId: c.id, images: c.containerImages })),
@@ -156,6 +158,7 @@ export function buildProjectSnapshot(
     raw.coordinatorTags?.ok ? raw.coordinatorTags.data : [],
     imageMappings,
     raw.environmentStates,
+    umbrellaData.environments,
   );
   // An environment signal that cannot be read is a collection error (once per repository,
   // source and classification: the control map may report the same deploy signal).
@@ -539,7 +542,7 @@ export function buildProjectSnapshot(
       latestRelease: coordinatorRelease,
       manifest: { path: config.coordinator.manifestPath, status: manifestState },
       submodules,
-      umbrellaChart: null,
+      umbrellaChart: umbrellaData.summary,
     },
     components,
     environments,
