@@ -892,7 +892,8 @@ environments: # what each environment is declared to run
 ```
 
 In assenza di manifest, la versione del coordinator ripiega sulla sua ultima release,
-poi sul suo ultimo tag, e la salute delle Versioni è ambra ("versioni note solo in parte").
+poi sul suo ultimo tag (il tag semver più alto raggiungibile dal branch di default: un tag che
+nessun branch contiene, per esempio importato da un altro progetto, è ignorato), e la salute delle Versioni è ambra ("versioni note solo in parte").
 Un id di componente sconosciuto nel manifest è rosso. Le versioni degli ambienti possono venire
 anche dai segnali di deploy (vedi
 [Versioni degli ambienti dai segnali di deploy](#versioni-degli-ambienti-dai-segnali-di-deploy)).
