@@ -539,6 +539,7 @@ export function buildProjectSnapshot(
       latestRelease: coordinatorRelease,
       manifest: { path: config.coordinator.manifestPath, status: manifestState },
       submodules,
+      umbrellaChart: null,
     },
     components,
     environments,

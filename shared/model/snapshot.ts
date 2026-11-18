@@ -72,6 +72,7 @@ export const CollectionErrorSchema = z
       'argocd',
       'github-environments',
       'deploy-signal',
+      'umbrella-chart',
     ]),
     classification: ErrorClassificationSchema,
     httpStatus: z.number().int().min(100).max(599).optional(),
@@ -613,6 +614,59 @@ export const PinSchema = z
   .strict();
 export type Pin = z.infer<typeof PinSchema>;
 
+export const UmbrellaChartStateSchema = z.enum([
+  'ok',
+  'not-found',
+  'invalid',
+  'not-authorised',
+  'unknown',
+]);
+export type UmbrellaChartState = z.infer<typeof UmbrellaChartStateSchema>;
+
+/** Umbrella chart of the coordinator (schema 1.11); null when none is configured. */
+export const UmbrellaChartSummarySchema = z
+  .object({
+    path: z.string().max(255),
+    state: UmbrellaChartStateSchema,
+    chartVersion: z.string().max(100).nullable(),
+    /** Chart dependencies not mapped to any component. */
+    unmapped: z.array(z.string().max(100)).max(50),
+    aliases: z.array(z.string().max(100)).max(50),
+  })
+  .strict();
+export type UmbrellaChartSummary = z.infer<typeof UmbrellaChartSummarySchema>;
+
+/** What the umbrella chart says about a component; null when no umbrella chart is configured. */
+export const ComponentUmbrellaSchema = z
+  .object({
+    inUmbrella: z.boolean(),
+    main: z.string().max(100).nullable(),
+    release: z.string().max(100).nullable(),
+    conflict: z.boolean(),
+  })
+  .strict();
+export type ComponentUmbrella = z.infer<typeof ComponentUmbrellaSchema>;
+
+/** Component versions read from the umbrella chart at an environment's ref. */
+export const EnvironmentComponentVersionsSchema = z
+  .object({
+    ref: z.string().max(100),
+    state: z.union([UmbrellaChartStateSchema, z.literal('skipped')]),
+    versions: z
+      .array(
+        z
+          .object({
+            componentId: z.string().max(64),
+            version: z.string().max(100).nullable(),
+            conflict: z.boolean(),
+          })
+          .strict(),
+      )
+      .max(100),
+  })
+  .strict();
+export type EnvironmentComponentVersions = z.infer<typeof EnvironmentComponentVersionsSchema>;
+
 export const ComponentSnapshotSchema = z
   .object({
     id: z.string().max(64),
@@ -631,11 +685,12 @@ export const ComponentSnapshotSchema = z
     pin: PinSchema.nullable(),
     /** Current version according to versionSource, and where it actually came from. */
     effectiveVersion: z.string().max(100).nullable(),
-    effectiveVersionSource: z.enum(['submodule', 'manifest', 'release', 'unknown']),
+    effectiveVersionSource: z.enum(['submodule', 'manifest', 'release', 'umbrella', 'unknown']),
     /** Manifest declaration vs version pinned by the submodule. */
     manifestConsistency: z.enum(['consistent', 'mismatch', 'unknown']),
     /** Effective version vs latest release. */
     drift: z.enum(['aligned', 'drift', 'unknown']),
+    umbrella: ComponentUmbrellaSchema.nullable(),
   })
   .strict();
 export type ComponentSnapshot = z.infer<typeof ComponentSnapshotSchema>;
@@ -691,6 +746,8 @@ export const EnvironmentSnapshotSchema = z
      * GitHub deployment of a github-deployments signal, else null.
      */
     deployment: EnvironmentDeploymentSchema.nullable(),
+    /** Component versions from the umbrella chart at the environment's ref; null when unused. */
+    componentVersions: EnvironmentComponentVersionsSchema.nullable(),
   })
   .strict();
 export type EnvironmentSnapshot = z.infer<typeof EnvironmentSnapshotSchema>;
@@ -903,6 +960,7 @@ export const ProjectSnapshotSchema = z
           })
           .strict(),
         submodules: z.array(SubmoduleSchema),
+        umbrellaChart: UmbrellaChartSummarySchema.nullable(),
       })
       .strict(),
     components: z.array(ComponentSnapshotSchema),

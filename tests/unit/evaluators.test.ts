@@ -473,6 +473,7 @@ describe('version health', () => {
     effectiveVersionSource: 'manifest',
     manifestConsistency: 'unknown',
     drift,
+    umbrella: null,
     ...extra,
   });
   const pin = (
@@ -530,6 +531,7 @@ describe('version health', () => {
       source: 'manifest' as const,
       status: 'behind' as const,
       deployment: null,
+      componentVersions: null,
     };
     expect(
       evaluateVersion({ ...base, components: [component('aligned')], environments: [env] }, P)
@@ -833,6 +835,7 @@ describe('version: Argo CD environment reasons', () => {
       images: [],
       ...deployment,
     },
+    componentVersions: null,
   });
   const base = {
     coordinatorVersion: '1.4.0',

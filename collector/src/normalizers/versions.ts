@@ -245,6 +245,8 @@ export function toComponents(
       case 'release':
         pick(latest, 'release');
         break;
+      case 'umbrella':
+        break; // read from the umbrella chart (not yet collected)
       default:
         pick(pinned, 'submodule');
         pick(declared, 'manifest');
@@ -272,6 +274,7 @@ export function toComponents(
       effectiveVersionSource,
       manifestConsistency,
       drift,
+      umbrella: null,
     };
   });
 }
@@ -452,6 +455,7 @@ export function toEnvironments(
       source,
       status,
       deployment,
+      componentVersions: null,
     };
   });
 }

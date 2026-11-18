@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.10",
+  "schemaVersion": "1.11",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "platform",
@@ -48,7 +48,8 @@
       "path": "release-manifest.yaml",
       "status": "ok"
     },
-    "submodules": []
+    "submodules": [],
+    "umbrellaChart": null
   },
   "components": [
     {
@@ -92,7 +93,8 @@
       "effectiveVersion": "2.0.1",
       "effectiveVersionSource": "release",
       "manifestConsistency": "unknown",
-      "drift": "aligned"
+      "drift": "aligned",
+      "umbrella": null
     },
     {
       "id": "api",
@@ -135,7 +137,8 @@
       "effectiveVersion": "1.8.0",
       "effectiveVersionSource": "manifest",
       "manifestConsistency": "unknown",
-      "drift": "aligned"
+      "drift": "aligned",
+      "umbrella": null
     },
     {
       "id": "worker",
@@ -178,7 +181,8 @@
       "effectiveVersion": "0.4.0",
       "effectiveVersionSource": "release",
       "manifestConsistency": "unknown",
-      "drift": "aligned"
+      "drift": "aligned",
+      "umbrella": null
     }
   ],
   "environments": [
@@ -189,7 +193,8 @@
       "declaredVersion": "2026.10.1",
       "source": "manifest",
       "status": "aligned",
-      "deployment": null
+      "deployment": null,
+      "componentVersions": null
     },
     {
       "id": "prod",
@@ -198,7 +203,8 @@
       "declaredVersion": "2026.10.1",
       "source": "manifest",
       "status": "aligned",
-      "deployment": null
+      "deployment": null,
+      "componentVersions": null
     }
   ],
   "workflows": [

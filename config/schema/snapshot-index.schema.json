@@ -5,7 +5,7 @@
     "schemaVersion": {
       "type": "string",
       "enum": [
-        "1.10"
+        "1.11"
       ]
     },
     "generatedAt": {
@@ -128,7 +128,8 @@
                   "harbor",
                   "argocd",
                   "github-environments",
-                  "deploy-signal"
+                  "deploy-signal",
+                  "umbrella-chart"
                 ]
               },
               "classification": {

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.10",
+  "schemaVersion": "1.11",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-alpha",
@@ -80,7 +80,8 @@
         "association": "configured-path",
         "status": "resolved"
       }
-    ]
+    ],
+    "umbrellaChart": null
   },
   "components": [
     {
@@ -138,7 +139,8 @@
       "effectiveVersion": "1.4.0",
       "effectiveVersionSource": "submodule",
       "manifestConsistency": "consistent",
-      "drift": "aligned"
+      "drift": "aligned",
+      "umbrella": null
     },
     {
       "id": "frontend",
@@ -195,7 +197,8 @@
       "effectiveVersion": "2.1.0",
       "effectiveVersionSource": "submodule",
       "manifestConsistency": "consistent",
-      "drift": "drift"
+      "drift": "drift",
+      "umbrella": null
     },
     {
       "id": "worker",
@@ -252,7 +255,8 @@
       "effectiveVersion": "1.2.0",
       "effectiveVersionSource": "manifest",
       "manifestConsistency": "unknown",
-      "drift": "aligned"
+      "drift": "aligned",
+      "umbrella": null
     },
     {
       "id": "helm",
@@ -309,7 +313,8 @@
       "effectiveVersion": "0.9.0",
       "effectiveVersionSource": "release",
       "manifestConsistency": "consistent",
-      "drift": "aligned"
+      "drift": "aligned",
+      "umbrella": null
     }
   ],
   "environments": [
@@ -339,7 +344,8 @@
             "version": "2.1.0"
           }
         ]
-      }
+      },
+      "componentVersions": null
     },
     {
       "id": "test",
@@ -348,7 +354,8 @@
       "declaredVersion": "1.4.0",
       "source": "versions-file",
       "status": "aligned",
-      "deployment": null
+      "deployment": null,
+      "componentVersions": null
     },
     {
       "id": "uat",
@@ -367,7 +374,8 @@
         "version": null,
         "deployedAt": "2026-01-15T07:00:00.000Z",
         "images": []
-      }
+      },
+      "componentVersions": null
     },
     {
       "id": "prod",
@@ -386,7 +394,8 @@
         "version": "1.3.0",
         "deployedAt": "2026-01-06T12:00:00.000Z",
         "images": []
-      }
+      },
+      "componentVersions": null
     }
   ],
   "workflows": [

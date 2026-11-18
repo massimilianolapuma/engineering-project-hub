@@ -1993,7 +1993,7 @@ describe('static site', () => {
     const idx = join(data, 'index.json');
     await writeFile(
       idx,
-      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.10"', '"schemaVersion": "9.0"'),
+      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.11"', '"schemaVersion": "9.0"'),
     );
     const out = join(work, 'dist-bad');
     await buildSite(data, out);

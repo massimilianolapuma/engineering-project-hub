@@ -1172,7 +1172,7 @@ describe('sanitisation end to end', () => {
 describe('snapshot schema versions', () => {
   it('fails in a controlled way on an unsupported schemaVersion', async () => {
     const text = (await readFile('fixtures/snapshots/index.json', 'utf8')).replace(
-      '"schemaVersion": "1.10"',
+      '"schemaVersion": "1.11"',
       '"schemaVersion": "9.0"',
     );
     const r = validatePortfolio(text);
@@ -1246,10 +1246,10 @@ describe('repository controls (mock run)', () => {
     p.repositoryControls.repositories.find((r) => r.repository === `example-org/${name}`)!;
   const states = (p: ProjectSnapshot, name: string) => repoOf(p, name).checks.map((c) => c.state);
 
-  it('writes snapshot schema 1.10', async () => {
+  it('writes snapshot schema 1.11', async () => {
     const { index, projects } = await byId();
-    expect(index.schemaVersion).toBe('1.10');
-    for (const p of Object.values(projects)) expect(p.schemaVersion).toBe('1.10');
+    expect(index.schemaVersion).toBe('1.11');
+    for (const p of Object.values(projects)) expect(p.schemaVersion).toBe('1.11');
   });
 
   it('counts the checks per project over unique repositories', async () => {
@@ -1610,12 +1610,12 @@ describe('risk governance (mock run)', () => {
   const finding = (p: ProjectSnapshot, id: string) =>
     p.securityFindings.find((f) => f.id === `${id}`)!;
 
-  it('schemaVersion is "1.10" in index, projects and catalog', async () => {
+  it('schemaVersion is "1.11" in index, projects and catalog', async () => {
     const { index, projects } = await mockRun();
-    expect(index.schemaVersion).toBe('1.10');
-    for (const p of projects) expect(p.schemaVersion).toBe('1.10');
+    expect(index.schemaVersion).toBe('1.11');
+    for (const p of projects) expect(p.schemaVersion).toBe('1.11');
     const catalog = JSON.parse(await readFile('fixtures/snapshots/catalog.json', 'utf8'));
-    expect(catalog.schemaVersion).toBe('1.10');
+    expect(catalog.schemaVersion).toBe('1.11');
   });
 
   it('index.run.exceptions equals { source: "fixture", total: 7, orphaned: ["EXC-LEGACY-001"] }', async () => {
@@ -1869,9 +1869,9 @@ describe('control map (spec 2026-11-04)', () => {
   const golden = async (f: string) =>
     JSON.parse(await readFile(join('fixtures/snapshots', f), 'utf8')) as Golden;
 
-  it('golden index: schema 1.10, every project summary has 25 control levels', async () => {
+  it('golden index: schema 1.11, every project summary has 25 control levels', async () => {
     const index = await golden('index.json');
-    expect(index.schemaVersion).toBe('1.10');
+    expect(index.schemaVersion).toBe('1.11');
     for (const p of index.projects) expect(Object.keys(p.controlMap.levels)).toHaveLength(25);
   });
 

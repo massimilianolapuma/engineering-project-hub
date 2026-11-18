@@ -1170,12 +1170,14 @@ export const en = {
       submodule: 'Submodule',
       manifest: 'Release manifest',
       release: 'Latest release',
+      umbrella: 'Umbrella chart',
     },
     versionSourceHelp: {
       auto: 'Tag of the pinned submodule SHA, then the release manifest, then the latest release.',
       submodule: 'Only the tag resolved from the SHA pinned by the coordinator (verified).',
       manifest: "Only the version declared in the coordinator's release manifest.",
       release: "Only the component's latest release.",
+      umbrella: "Only the version in the coordinator's umbrella chart.",
     },
     suggestions: 'Suggestions',
     suggestionsIntro:
