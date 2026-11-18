@@ -231,12 +231,13 @@ Up to 300 most recent tags are scanned (`GET /tags`); when no tag matches, one
 
 `versionSource` (per component, default `auto`) chooses the **current version**:
 
-| Value       | Current version                                                           |
-| ----------- | ------------------------------------------------------------------------- |
-| `auto`      | Verified pin (tag on the submodule SHA) → manifest declaration → unknown. |
-| `submodule` | Only the verified pin.                                                    |
-| `manifest`  | Only the release manifest declaration.                                    |
-| `release`   | The component's latest release (component deployed on its own cadence).   |
+| Value       | Current version                                                                                                               |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `auto`      | Verified pin (tag on the submodule SHA) → manifest declaration → unknown. With an `umbrellaChart`: umbrella → pin → manifest. |
+| `submodule` | Only the verified pin.                                                                                                        |
+| `manifest`  | Only the release manifest declaration.                                                                                        |
+| `umbrella`  | The version in the umbrella chart at the latest release tag (see below).                                                      |
+| `release`   | The component's latest release (component deployed on its own cadence).                                                       |
 
 Version checks (levels in `policies.yaml` → `version`):
 
@@ -360,6 +361,60 @@ deployment, then the manifest, then the versions file. A deployment that cannot 
 as unknown and recorded as a `deploy-signal` collection error, never as "not deployed". A
 declared version is what the promotion says, not proof that it runs: an override or a failed
 deploy in an external pipeline does not change the file.
+
+### Component versions from an umbrella chart
+
+When the coordinator deploys through an **umbrella Helm chart**, the collector can read which
+component versions each environment runs. Nothing changes for a project without `umbrellaChart`.
+
+```yaml
+coordinator:
+  repository: example-org/alpha-coordinator
+  umbrellaChart:
+    path: deploy/helm/alpha/Chart.yaml # relative path, required
+    tagPrefix: v # optional, default "v": environment version 1.4.0 reads tag v1.4.0
+components:
+  - id: backend
+    repository: example-org/alpha-backend
+    chartDependency: alpha-api # optional: dependency alias, else name
+```
+
+Mapping of a component to a chart dependency, first match wins:
+
+1. `chartDependency` (matches a dependency `alias`, else its `name`);
+2. a dependency named like the repository without the owner (`example-org/alpha-backend` →
+   `alpha-backend`), only when no other component shares that repository;
+3. a dependency named like the component id.
+
+Entries with the same name (aliases) and the same version count once; diverging versions are a
+**conflict**: the version is unknown and the note names the aliases. Dependencies that match no
+component are listed as unmapped; components that match none are shown as "outside the umbrella".
+
+Reads, on the coordinator repository:
+
+- the chart on the default branch;
+- the chart at the **latest release tag**;
+- one read per distinct environment version, at `tagPrefix` + version, newest first, **at most
+  10**; the rest are marked skipped.
+
+`versionSource: umbrella` takes the component version from the umbrella at the latest release
+tag. `auto` becomes umbrella, then submodule pin, then manifest, **only** when `umbrellaChart` is
+configured and the component is in it; otherwise the order is unchanged. Drift compares the
+umbrella version with the component's latest release.
+
+A missing file or tag, an unreadable chart and a 403 are recorded as `umbrella-chart` collection
+errors (`not-found`, `invalid-data`, `not-authorised`), never as an empty chart.
+
+Limits: `condition` values of dependencies are not evaluated, so a disabled dependency still
+counts; an environment on a branch (for example LAB, `main @ 1a2b3c4`) has no tag and shows no
+component versions; the hub does not call OCI registries or Harbor.
+
+The Versions page adds a **Components by environment** table to each project with an umbrella.
+It is open on check cards, in place of the environment path, and a closed disclosure on aligned
+and unknown cards. The mark ▲ says a newer version is waiting on the left: the latest release is
+above the umbrella on main, or an environment is below the nearest known version on its left.
+Snapshot 1.11 adds `coordinator.umbrellaChart`, `component.umbrella` and
+`environment.componentVersions`.
 
 ### Adding a project (no code change)
 
@@ -1122,7 +1177,7 @@ separator: use Data, From Text/CSV.
 
 - `portfolio.csv`: `project_id, project_name, business_unit, lifecycle, overall, score, score_measured, score_required, delivery, version, security, controls_coverage, controls_coverage_percent, governance, quality, quality_percent, open_critical, open_high, open_medium, open_low, counts_complete, open_secret_alerts, failed_critical_workflows, collection_errors, collected_at, previous_overall, previous_score, previous_collected_at, controls_passed, controls_failed, controls_unknown, overdue, overdue_critical_high, accepted, exception_issues, teams`. The `previous_*` columns are `n/a` when there is no previous collection. `teams` lists the project's teams (`org/slug`) joined with `;`, empty when it has none.
 - `findings-summary.csv`: `project_id, component_id, repository, open_critical, open_high, open_medium, open_low, open_informational, open_unknown, sources_complete, overdue, accepted`. `overdue` and `accepted` count that repository's findings (`unknown` when SLAs are off or no alert source was readable). All counts are `unknown` when no alert source was readable; when only some were, the counts are a lower bound and `sources_complete` is `false`.
-- `versions.csv`: `row_type (coordinator|component|environment), project_id, item_id, item_name, repository, version, version_source, declared_version, latest_release, drift, manifest_consistency, pin_status, environment_status, environment_source, environment_declared_version, sync_status, health_status`. The last four apply to environment rows (`n/a` elsewhere): `environment_source` is `argocd` or `manifest`, `environment_declared_version` the manifest's version of the environment, `sync_status` and `health_status` what Argo CD reported (`n/a` without Argo CD).
+- `versions.csv`: `row_type (coordinator|component|environment|component-environment), project_id, item_id, item_name, repository, version, version_source, declared_version, latest_release, drift, manifest_consistency, pin_status, environment_status, environment_source, environment_declared_version, sync_status, health_status, chart_ref`. The four columns before `chart_ref` apply to environment rows (`n/a` elsewhere): `environment_source` is `argocd` or `manifest`, `environment_declared_version` the manifest's version of the environment, `sync_status` and `health_status` what Argo CD reported (`n/a` without Argo CD). `component-environment` rows give one component in one environment from the umbrella chart; `chart_ref` is the chart tag it was read at (`n/a` on other rows).
 - `supply-chain.csv`: `project_id, repository, component_ids, sbom_state, sbom_source, packages, without_license, flagged, attestation_state, assets_checked, assets_with_provenance, images, images_signed, images_unsigned, container_scanning_source, iac_scanning_source, dast_source, summary_state`. `component_ids` is joined with `;`. Counts are `unknown` when the source could not be read, never 0.
 - `control-map.csv` (only when the [control map](control-map.md) is published): `project_id, business_unit, check, area, level, state, value, unit, readable, reason, source_environment, signal, collected_at`. `level` and `value` are `n/a` when not measured, never 0; `readable` is `k/n` repositories read.
 

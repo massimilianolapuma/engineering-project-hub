@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Snapshot schema **1.11**: an existing 1.10 `public/data` must be re-collected.
+
+### Added
+
+- **Component versions per environment from an umbrella Helm chart** (snapshot 1.11): with
+  `coordinator.umbrellaChart: { path, tagPrefix }` the collector reads the umbrella `Chart.yaml`
+  on the default branch, at the latest release tag and at the tag of each distinct environment
+  version (at most 10), and maps dependencies to components (`component.chartDependency`,
+  repository name, component id; aliases with the same version count once, diverging versions are
+  a conflict). `versionSource: umbrella` is new and `auto` becomes umbrella, pin, manifest when an
+  umbrella is configured. The Versions page gains a "Components by environment" table (open on
+  check cards, a closed disclosure otherwise; a mark when a newer version waits on the left).
+  `versions.csv` gets the `component-environment` rows and a trailing `chart_ref` column. Read
+  failures are `umbrella-chart` collection errors. `condition` values are not evaluated and
+  branch environments show `main @ sha`. Demo: Project Alpha has an umbrella chart.
+
 ## [0.18.0] - 2026-11-18
 
 ### Changed
