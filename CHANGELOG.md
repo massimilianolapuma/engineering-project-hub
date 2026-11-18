@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-11-18
+
 ### Changed
 
 - Snapshot schema **1.10**: an existing 1.9 `public/data` must be re-collected.
@@ -529,7 +531,8 @@ Tagged after the fact (2026-10-21) and not deployed on its own: its changes ship
 - Read-only by design: no write calls, alert dismissals or workflow triggers. Secret scanning alerts are fetched with `hide_secret=true` and only the secret type is kept.
 - The public demo publishes synthetic mock data only.
 
-[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.17.0...HEAD
+[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.14.1...v0.15.0
