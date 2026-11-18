@@ -928,7 +928,7 @@ export const it: Dict = {
       outside: "Fuori dall'umbrella ({n})",
       unmapped: 'Dipendenze del chart non nel catalogo:',
       legend:
-        "Una versione più nuova è in attesa: l'ultima release è sopra l'umbrella su main, oppure un ambiente è sotto quello alla sua sinistra.",
+        "Una versione più nuova è in attesa: l'ultima release è sopra l'umbrella su main, oppure un ambiente è sotto la versione nota più vicina alla sua sinistra (Umbrella (main) compresa).",
       waitingLatest: "Una versione più nuova è in attesa: sopra l'umbrella su main",
       waitingEnv: 'Una versione più nuova è in attesa a sinistra',
       reason: {

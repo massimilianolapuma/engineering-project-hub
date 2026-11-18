@@ -73,10 +73,15 @@ function headerOf(e: EnvironmentSnapshot, branch: MatrixEnvironment['branch']): 
 const lower = (a: string | null, b: string | null): boolean =>
   a !== null && b !== null && compareVersions(a, b) === -1;
 
-function cellOf(e: EnvironmentSnapshot, componentId: string): Omit<MatrixCell, 'waiting'> {
+function cellOf(
+  e: EnvironmentSnapshot,
+  branch: MatrixEnvironment['branch'],
+  componentId: string,
+): Omit<MatrixCell, 'waiting'> {
   const read = e.componentVersions;
-  // No chart read for this environment: it has no (semver) version to read the chart at.
-  if (!read) return { version: null, reason: e.version ? 'unknown' : 'no-version' };
+  // No chart read. A branch deployment (LAB on main) has no release to read the chart at: the
+  // not-applicable dash. Any other environment is unknown, never "not deployed".
+  if (!read) return { version: null, reason: branch ? 'no-version' : 'unknown' };
   if (read.state !== 'ok') return { version: null, reason: read.state };
   const entry = read.versions.find((v) => v.componentId === componentId);
   if (!entry) return { version: null, reason: 'not-found' };
@@ -126,8 +131,8 @@ export function matrixOf(s: ProjectSnapshot): Matrix | null {
     // Each environment against the nearest version on its left (the umbrella on main first);
     // a column without a version (a branch, an unreadable chart) is skipped, never guessed.
     let left = main;
-    const cells = s.environments.map((e) => {
-      const cell = cellOf(e, c.id);
+    const cells = s.environments.map((e, i) => {
+      const cell = cellOf(e, environments[i]!.branch, c.id);
       const waiting = lower(cell.version, left);
       if (cell.version !== null) left = cell.version;
       return { ...cell, waiting };

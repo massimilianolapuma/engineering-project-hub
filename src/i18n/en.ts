@@ -918,7 +918,7 @@ export const en = {
       outside: 'Outside the umbrella ({n})',
       unmapped: 'Chart dependencies not in the catalog:',
       legend:
-        'A newer version is waiting: the latest release is above the umbrella on main, or an environment is below the one on its left.',
+        'A newer version is waiting: the latest release is above the umbrella on main, or an environment is below the nearest known version on its left (Umbrella (main) included).',
       waitingLatest: 'A newer version is waiting: above the umbrella on main',
       waitingEnv: 'A newer version is waiting on the left',
       reason: {

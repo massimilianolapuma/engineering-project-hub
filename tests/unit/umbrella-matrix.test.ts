@@ -126,6 +126,21 @@ describe('matrixOf (components by environment)', () => {
     expect(fe.cells[1]).toEqual({ version: '2.1.0', reason: null, waiting: false });
   });
 
+  it('an environment with no readable version is unknown, never the not-applicable dash', () => {
+    const s = clone(alpha);
+    const uat = s.environments.find((e) => e.id === 'uat')!;
+    uat.version = null;
+    uat.status = 'unknown';
+    uat.source = 'unknown';
+    uat.deployment = null;
+    uat.componentVersions = null;
+    const m = matrixOf(s)!;
+    const i = m.environments.findIndex((e) => e.id === 'uat');
+    expect(m.environments[i]).toMatchObject({ ref: null, header: 'unknown', branch: null });
+    for (const row of m.rows)
+      expect(row.cells[i]).toEqual({ version: null, reason: 'unknown', waiting: false });
+  });
+
   it('an environment below the umbrella on main is marked waiting', () => {
     const s = clone(alpha);
     s.environments.find((e) => e.id === 'dev')!.componentVersions!.versions[1]!.version = '2.0.0';
