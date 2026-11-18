@@ -24,8 +24,9 @@ export interface ChartMapping {
 }
 
 function versionText(raw: unknown): string | null {
-  if (typeof raw !== 'string' && typeof raw !== 'number') return null;
-  const text = String(raw).trim();
+  // An unquoted `1.10` is the YAML number 1.1: unknown, never a rewritten version.
+  if (typeof raw !== 'string') return null;
+  const text = raw.trim();
   if (!text) return null;
   const normalised = normaliseVersion(text);
   return normalised && parseVersion(normalised) ? normalised : text;
@@ -66,7 +67,11 @@ export function mapChartToComponents(config: ProjectConfig, chart: ParsedChart):
   const used = new Set<ChartDependency>();
   const aliasEntries = new Set<ChartDependency>();
   const deps = chart.dependencies;
-  const repoName = (c: { repository: string }): string => c.repository.split('/')[1] ?? '';
+  // Helm names are lower case and GitHub names are case-insensitive: compare lower-cased.
+  const repoName = (c: { repository: string }): string =>
+    (c.repository.split('/')[1] ?? '').toLowerCase();
+  const named = (name: string): ChartDependency[] =>
+    deps.filter((d) => d.name.toLowerCase() === name);
   const repoCount = new Map<string, number>();
   for (const c of config.components) {
     const key = c.repository.toLowerCase();
@@ -88,9 +93,9 @@ export function mapChartToComponents(config: ProjectConfig, chart: ParsedChart):
     const rn = repoName(c);
     if (group.length === 0 && rn && repoCount.get(c.repository.toLowerCase()) === 1) {
       // Every entry with the repository name (aliased ones join the non-aliased one).
-      group = deps.filter((d) => d.name === rn);
+      group = named(rn);
     }
-    if (group.length === 0) group = deps.filter((d) => d.name === c.id);
+    if (group.length === 0) group = named(c.id.toLowerCase());
     if (group.length === 0) continue;
     for (const d of group) used.add(d);
     const versions = new Set(group.map((d) => d.version));

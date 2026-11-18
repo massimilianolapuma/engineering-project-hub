@@ -183,6 +183,26 @@ describe('umbrellaModel', () => {
     expect(api.effectiveVersionSource).toBe('unknown');
   });
 
+  it('does not treat a version range in the release chart as a version (no false drift)', () => {
+    const { components } = build(config(), {
+      main: chart({ api: '~1.2.0' }),
+      release: read('v1.5.0', chart({ api: '~1.2.0' })),
+      environments: new Map(),
+    });
+    const api = components.find((c) => c.id === 'api')!;
+    expect(api.umbrella?.release).toBe('~1.2.0');
+    expect(api.effectiveVersionSource).not.toBe('umbrella');
+    expect(api.effectiveVersion).toBe('0.9.0');
+    expect(api.drift).not.toBe('drift');
+    const only = build(config('umbrella'), {
+      main: chart({ api: '^1.2.0' }),
+      release: read('v1.5.0', chart({ api: '^1.2.0' })),
+      environments: new Map(),
+    }).components.find((c) => c.id === 'api')!;
+    expect(only.effectiveVersion).toBeNull();
+    expect(only.effectiveVersionSource).toBe('unknown');
+  });
+
   it('falls through to the manifest when the release chart has a conflict', () => {
     const dup = ok<FileDTO>({
       text: 'version: 1.5.0\ndependencies:\n  - name: api\n    version: 1.1.0\n  - name: api\n    version: 1.2.0\n',

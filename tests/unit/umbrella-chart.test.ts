@@ -105,3 +105,27 @@ describe('mapChartToComponents', () => {
     expect(m.unmapped).toEqual(['mono']);
   });
 });
+
+describe('umbrella chart review fixes', () => {
+  it('maps repository and component names case-insensitively', () => {
+    const cfg = config([{ id: 'Alpha-Web', repository: 'Example-Org/Alpha-Api' }]);
+    const m = mapChartToComponents(cfg, {
+      version: null,
+      dependencies: [dep('alpha-api', '1.0.0')],
+    });
+    expect(m.byComponent.get('Alpha-Web')).toEqual({ version: '1.0.0', conflict: false });
+    const byId = mapChartToComponents(config([{ id: 'Alpha-Web', repository: 'o/x' }]), {
+      version: null,
+      dependencies: [dep('alpha-web', '2.0.0')],
+    });
+    expect(byId.byComponent.get('Alpha-Web')?.version).toBe('2.0.0');
+  });
+
+  it('treats an unquoted numeric version as unknown, not as a rewritten value', () => {
+    const parsed = parseUmbrellaChart(
+      'version: 1.10\ndependencies:\n  - name: a\n    version: 2.20\n  - name: b\n    version: "2.20.0"\n',
+    );
+    expect(parsed?.version).toBeNull();
+    expect(parsed?.dependencies.map((d) => d.version)).toEqual([null, '2.20.0']);
+  });
+});

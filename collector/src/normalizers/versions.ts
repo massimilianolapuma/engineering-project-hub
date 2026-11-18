@@ -229,7 +229,14 @@ export function toComponents(
     const pin = resolvePin(raw, comp, submodule);
     const pinned = pin?.status === 'tagged' ? pin.version : null;
     const umbrella = umbrellaByComponent.get(comp.id) ?? null;
-    const fromUmbrella = umbrella && !umbrella.conflict ? umbrella.release : null;
+    // A range such as ~1.2.0 is kept as text in the chart but is no version to compare.
+    const fromUmbrella =
+      umbrella &&
+      !umbrella.conflict &&
+      umbrella.release &&
+      parseVersion(normaliseVersion(umbrella.release) ?? '')
+        ? umbrella.release
+        : null;
 
     // Current version according to the configured source (auto: verified pin → manifest).
     let effectiveVersion: string | null = null;

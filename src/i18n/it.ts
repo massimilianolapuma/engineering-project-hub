@@ -1218,7 +1218,7 @@ export const it: Dict = {
       umbrella: 'Umbrella chart',
     },
     versionSourceHelp: {
-      auto: 'Tag dello SHA del submodule fissato, poi il release manifest, poi l’ultima release.',
+      auto: 'Il chart umbrella (solo se il coordinator ne ha uno configurato), poi il tag dello SHA del submodule fissato, poi il release manifest.',
       submodule: 'Solo il tag risolto dallo SHA fissato dal coordinator (verificato).',
       manifest: 'Solo la versione dichiarata nel release manifest del coordinator.',
       release: 'Solo l’ultima release del componente.',

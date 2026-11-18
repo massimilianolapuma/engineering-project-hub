@@ -151,6 +151,16 @@ describe('matrixOf (components by environment)', () => {
     expect(fe.cells[1]!.waiting).toBe(false);
   });
 
+  it('a non-semver version (a range) never produces a waiting marker', () => {
+    const s = clone(alpha);
+    const fe = s.components.find((c) => c.id === 'frontend')!;
+    fe.umbrella = { ...fe.umbrella!, main: '~2.1.0' };
+    s.environments.find((e) => e.id === 'dev')!.componentVersions!.versions[1]!.version = '^2.0.0';
+    const row = matrixOf(s)!.rows.find((r) => r.componentId === 'frontend')!;
+    expect(row.latestWaiting).toBe(false);
+    expect(row.cells[0]).toMatchObject({ version: '^2.0.0', waiting: false });
+  });
+
   it('never lists a component as outside the umbrella when main could not be read', () => {
     const s = clone(alpha);
     s.coordinator.umbrellaChart = { ...s.coordinator.umbrellaChart!, state: 'not-found' };

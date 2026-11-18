@@ -147,7 +147,8 @@ export const ComponentConfigSchema = z
     notApplicableChecks: z.array(RepositoryCheckIdSchema).default([]),
     /**
      * Where the component's current version comes from:
-     * - auto: submodule (tag resolved from the SHA pinned by the coordinator) → manifest → latest release
+     * - auto: umbrella chart (only when `coordinator.umbrellaChart` is configured) → submodule (tag
+     *   resolved from the SHA pinned by the coordinator) → manifest
      * - submodule: only the tag resolved from the submodule SHA (verified)
      * - manifest: only the version declared in the coordinator's release manifest
      * - release: the component's latest release

@@ -1204,7 +1204,7 @@ export const en = {
       umbrella: 'Umbrella chart',
     },
     versionSourceHelp: {
-      auto: 'Tag of the pinned submodule SHA, then the release manifest, then the latest release.',
+      auto: 'The umbrella chart (only when the coordinator has one configured), then the tag of the pinned submodule SHA, then the release manifest.',
       submodule: 'Only the tag resolved from the SHA pinned by the coordinator (verified).',
       manifest: "Only the version declared in the coordinator's release manifest.",
       release: "Only the component's latest release.",
