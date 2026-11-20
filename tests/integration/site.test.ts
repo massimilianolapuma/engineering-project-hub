@@ -909,6 +909,52 @@ describe('static site', () => {
       expect(html).toContain('Non ultima');
       expect(html).toContain('Non censito');
     });
+
+    describe('components by environment (umbrella chart)', () => {
+      it('Alpha (to check) shows the table open instead of the environment path', async () => {
+        const alpha = card(await page('versions'), 'project-alpha');
+        expect(alpha).toContain('data-card="check"');
+        expect(alpha).toContain('Components by environment');
+        expect(alpha).not.toContain('class="vpath"');
+        const table = alpha.slice(alpha.indexOf('<table'), alpha.indexOf('</table>'));
+        // Each environment header keeps its version and status pill.
+        expect(table).toMatch(/data-env="PROD"[^>]*data-env-status="behind"/);
+        expect(textOf(table)).toContain('Behind');
+        expect(textOf(table)).toContain('Umbrella (main)');
+        expect(textOf(table)).toContain('2.0.3');
+        // ▲ is an icon plus visually hidden text, never colour alone.
+        expect(table).toMatch(/<svg[^>]*octicon-arrow-up/);
+        expect(table).toMatch(/class="visually-hidden"[^>]*>A newer version is waiting/);
+        expect(alpha).toContain('alpha-legacy-reports');
+        expect(alpha).toMatch(/Outside the umbrella \(1\)/);
+        // The table scrolls inside its own container.
+        expect(alpha).toMatch(/<div[^>]*class="[^"]*um-wrap[^"]*"[^>]*tabindex="0"/);
+        // The "To check" table still follows.
+        expect(alpha.indexOf('Components by environment')).toBeLessThan(alpha.indexOf('To check'));
+      });
+
+      it('projects without an umbrella chart are unchanged', async () => {
+        const html = await page('versions');
+        for (const id of ['project-beta', 'project-gamma', 'platform'])
+          expect(card(html, id), id).not.toContain('Components by environment');
+        expect(card(html, 'project-beta')).toContain('<ol class="vpath"');
+      });
+
+      it('is in Italian on /it/versions', async () => {
+        const alpha = card(await page('it/versions'), 'project-alpha');
+        expect(alpha).toContain('Componenti per ambiente');
+        expect(alpha).toContain('Fuori dall&#39;umbrella (1)');
+        expect(alpha).not.toContain('Components by environment');
+      });
+
+      it('the Alpha project page links to its Versions card; Beta has no such link', async () => {
+        const alpha = await page('projects/project-alpha');
+        expect(alpha).toMatch(/href="[^"]*\/versions\/#v-project-alpha"/);
+        expect(alpha).toContain('Components by environment →');
+        expect(await page('it/projects/project-alpha')).toContain('Componenti per ambiente →');
+        expect(await page('projects/project-beta')).not.toContain('#v-project-beta');
+      });
+    });
   });
 
   it('ships no inline script (CSP script-src self) and no secret patterns', async () => {
@@ -937,6 +983,17 @@ describe('static site', () => {
       expect((await csv('versions.csv')).startsWith('\uFEFFrow_type,project_id,item_id,')).toBe(
         true,
       );
+    });
+
+    it('versions.csv has component-environment rows and a trailing chart_ref column', async () => {
+      const lines = (await csv('versions.csv')).replace('﻿', '').split('\r\n').filter(Boolean);
+      expect(lines[0]!.endsWith(',chart_ref')).toBe(true);
+      const prod = lines.find((l) =>
+        l.startsWith('component-environment,project-alpha,frontend@prod,'),
+      );
+      expect(prod).toBeDefined();
+      expect(prod).toContain(',2.0.3,');
+      expect(prod!.endsWith(',v1.3.0')).toBe(true);
     });
 
     it('supply-chain.csv has its header and one row per project and repository', async () => {
@@ -1993,7 +2050,7 @@ describe('static site', () => {
     const idx = join(data, 'index.json');
     await writeFile(
       idx,
-      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.10"', '"schemaVersion": "9.0"'),
+      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.11"', '"schemaVersion": "9.0"'),
     );
     const out = join(work, 'dist-bad');
     await buildSite(data, out);

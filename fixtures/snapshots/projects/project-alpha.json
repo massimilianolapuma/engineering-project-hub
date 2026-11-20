@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.10",
+  "schemaVersion": "1.11",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-alpha",
@@ -80,7 +80,16 @@
         "association": "configured-path",
         "status": "resolved"
       }
-    ]
+    ],
+    "umbrellaChart": {
+      "path": "deploy/helm/alpha/Chart.yaml",
+      "state": "ok",
+      "chartVersion": "1.5.0",
+      "unmapped": [
+        "alpha-legacy-reports"
+      ],
+      "aliases": []
+    }
   },
   "components": [
     {
@@ -136,9 +145,15 @@
         "behindBy": null
       },
       "effectiveVersion": "1.4.0",
-      "effectiveVersionSource": "submodule",
+      "effectiveVersionSource": "umbrella",
       "manifestConsistency": "consistent",
-      "drift": "aligned"
+      "drift": "aligned",
+      "umbrella": {
+        "inUmbrella": true,
+        "main": "1.4.0",
+        "release": "1.4.0",
+        "conflict": false
+      }
     },
     {
       "id": "frontend",
@@ -193,9 +208,15 @@
         "behindBy": null
       },
       "effectiveVersion": "2.1.0",
-      "effectiveVersionSource": "submodule",
+      "effectiveVersionSource": "umbrella",
       "manifestConsistency": "consistent",
-      "drift": "drift"
+      "drift": "drift",
+      "umbrella": {
+        "inUmbrella": true,
+        "main": "2.1.0",
+        "release": "2.1.0",
+        "conflict": false
+      }
     },
     {
       "id": "worker",
@@ -250,9 +271,15 @@
         "behindBy": 0
       },
       "effectiveVersion": "1.2.0",
-      "effectiveVersionSource": "manifest",
+      "effectiveVersionSource": "umbrella",
       "manifestConsistency": "unknown",
-      "drift": "aligned"
+      "drift": "aligned",
+      "umbrella": {
+        "inUmbrella": true,
+        "main": "1.2.0",
+        "release": "1.2.0",
+        "conflict": false
+      }
     },
     {
       "id": "helm",
@@ -309,7 +336,13 @@
       "effectiveVersion": "0.9.0",
       "effectiveVersionSource": "release",
       "manifestConsistency": "consistent",
-      "drift": "aligned"
+      "drift": "aligned",
+      "umbrella": {
+        "inUmbrella": false,
+        "main": null,
+        "release": null,
+        "conflict": false
+      }
     }
   ],
   "environments": [
@@ -339,6 +372,27 @@
             "version": "2.1.0"
           }
         ]
+      },
+      "componentVersions": {
+        "ref": "v1.4.0",
+        "state": "ok",
+        "versions": [
+          {
+            "componentId": "backend",
+            "version": "1.4.0",
+            "conflict": false
+          },
+          {
+            "componentId": "frontend",
+            "version": "2.1.0",
+            "conflict": false
+          },
+          {
+            "componentId": "worker",
+            "version": "1.2.0",
+            "conflict": false
+          }
+        ]
       }
     },
     {
@@ -348,7 +402,28 @@
       "declaredVersion": "1.4.0",
       "source": "versions-file",
       "status": "aligned",
-      "deployment": null
+      "deployment": null,
+      "componentVersions": {
+        "ref": "v1.4.0",
+        "state": "ok",
+        "versions": [
+          {
+            "componentId": "backend",
+            "version": "1.4.0",
+            "conflict": false
+          },
+          {
+            "componentId": "frontend",
+            "version": "2.1.0",
+            "conflict": false
+          },
+          {
+            "componentId": "worker",
+            "version": "1.2.0",
+            "conflict": false
+          }
+        ]
+      }
     },
     {
       "id": "uat",
@@ -367,6 +442,27 @@
         "version": null,
         "deployedAt": "2026-01-15T07:00:00.000Z",
         "images": []
+      },
+      "componentVersions": {
+        "ref": "v1.4.0",
+        "state": "ok",
+        "versions": [
+          {
+            "componentId": "backend",
+            "version": "1.4.0",
+            "conflict": false
+          },
+          {
+            "componentId": "frontend",
+            "version": "2.1.0",
+            "conflict": false
+          },
+          {
+            "componentId": "worker",
+            "version": "1.2.0",
+            "conflict": false
+          }
+        ]
       }
     },
     {
@@ -386,6 +482,27 @@
         "version": "1.3.0",
         "deployedAt": "2026-01-06T12:00:00.000Z",
         "images": []
+      },
+      "componentVersions": {
+        "ref": "v1.3.0",
+        "state": "ok",
+        "versions": [
+          {
+            "componentId": "backend",
+            "version": "1.4.0",
+            "conflict": false
+          },
+          {
+            "componentId": "frontend",
+            "version": "2.0.3",
+            "conflict": false
+          },
+          {
+            "componentId": "worker",
+            "version": "1.2.0",
+            "conflict": false
+          }
+        ]
       }
     }
   ],
@@ -1553,7 +1670,7 @@
         "params": {
           "component": "Frontend",
           "current": "2.1.0",
-          "source": "submodule",
+          "source": "umbrella",
           "latest": "v2.2.0"
         }
       },

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.10",
+  "schemaVersion": "1.11",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "catalog": {
     "discovery": {
@@ -169,7 +169,11 @@
           "notApplicableControls": [
             "containerScanning"
           ],
-          "notApplicableChecks": []
+          "notApplicableChecks": [],
+          "umbrellaChart": {
+            "path": "deploy/helm/alpha/Chart.yaml",
+            "tagPrefix": "v"
+          }
         },
         "components": [
           {

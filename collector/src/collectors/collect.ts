@@ -1,4 +1,5 @@
 import type { EnvironmentState } from './environment-states';
+import type { UmbrellaRaw } from './umbrella-chart';
 import type { ControlMapRaw } from './collect-control-map';
 import {
   projectTargets,
@@ -157,6 +158,8 @@ export interface RawProjectData {
   controlMap?: ControlMapRaw;
   /** Current state of the environments with a versions-file or github-deployments signal. */
   environmentStates?: Map<string, EnvironmentState>;
+  /** Umbrella chart reads (main, release, environment tags); absent without `umbrellaChart`. */
+  umbrella?: UmbrellaRaw;
 }
 
 export interface CollectContext {

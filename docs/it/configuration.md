@@ -230,12 +230,13 @@ e contatori).
 
 `versionSource` (per componente, default `auto`) sceglie la **versione attuale**:
 
-| Valore      | Versione attuale                                                                         |
-| ----------- | ---------------------------------------------------------------------------------------- |
-| `auto`      | Pin verificato (tag sullo SHA del submodule) → dichiarazione del manifest → sconosciuta. |
-| `submodule` | Solo il pin verificato.                                                                  |
-| `manifest`  | Solo la dichiarazione del release manifest.                                              |
-| `release`   | L'ultima release del componente (componente rilasciato con una cadenza propria).         |
+| Valore      | Versione attuale                                                                                                                         |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `auto`      | Pin verificato (tag sullo SHA del submodule) → dichiarazione del manifest → sconosciuta. Con `umbrellaChart`: umbrella → pin → manifest. |
+| `submodule` | Solo il pin verificato.                                                                                                                  |
+| `manifest`  | Solo la dichiarazione del release manifest.                                                                                              |
+| `umbrella`  | La versione nel chart umbrella al tag dell'ultima release (vedi sotto).                                                                  |
+| `release`   | L'ultima release del componente (componente rilasciato con una cadenza propria).                                                         |
 
 Controlli sulle versioni (livelli in `policies.yaml` → `version`):
 
@@ -362,6 +363,62 @@ poi il manifest, poi il file versioni. Un deployment che non si può leggere è 
 sconosciuto e registrato come errore di raccolta `deploy-signal`, mai come "non deployato". Una
 versione dichiarata è ciò che dice la promozione, non la prova che giri: un override o un deploy
 fallito in una pipeline esterna non cambia il file.
+
+### Versioni dei componenti da un chart umbrella
+
+Quando il coordinator rilascia tramite un **chart Helm umbrella**, il collector può leggere
+quali versioni dei componenti gira ogni ambiente. Nulla cambia per un progetto senza
+`umbrellaChart`.
+
+```yaml
+coordinator:
+  repository: example-org/alpha-coordinator
+  umbrellaChart:
+    path: deploy/helm/alpha/Chart.yaml # percorso relativo, obbligatorio
+    tagPrefix: v # opzionale, default "v": la versione 1.4.0 legge il tag v1.4.0
+components:
+  - id: backend
+    repository: example-org/alpha-backend
+    chartDependency: alpha-api # opzionale: alias della dipendenza, altrimenti name
+```
+
+Abbinamento di un componente a una dipendenza del chart, vince la prima corrispondenza:
+
+1. `chartDependency` (corrisponde a un `alias` della dipendenza, altrimenti al suo `name`);
+2. una dipendenza con il nome del repository senza owner (`example-org/alpha-backend` →
+   `alpha-backend`), solo se nessun altro componente condivide quel repository;
+3. una dipendenza con il nome uguale all'id del componente.
+
+Voci con lo stesso nome (alias) e la stessa versione contano una volta; versioni divergenti sono
+un **conflitto**: la cella è sconosciuta con il motivo "versioni in conflitto nel chart"; gli alias sono pubblicati in `coordinator.umbrellaChart.aliases`. Le dipendenze che non
+corrispondono a nessun componente sono elencate come non abbinate; i componenti che non ne hanno
+sono mostrati come "fuori dall'umbrella".
+
+Letture, sul repository del coordinator:
+
+- il chart sul branch di default;
+- il chart al **tag dell'ultima release**;
+- una lettura per ogni versione distinta degli ambienti, a `tagPrefix` + versione, dalla più
+  recente, **al massimo 10**; le altre sono segnate come saltate.
+
+`versionSource: umbrella` prende la versione del componente dall'umbrella al tag dell'ultima
+release. `auto` diventa umbrella, poi pin del submodule, poi manifest, **solo** se `umbrellaChart`
+è configurato e il componente è presente; altrimenti l'ordine non cambia. Il drift confronta la
+versione nell'umbrella con l'ultima release del componente.
+
+Un file o tag mancante, un chart illeggibile e un 403 sono registrati come errori di raccolta
+`umbrella-chart` (`not-found`, `invalid-data`, `not-authorised`), mai come chart vuoto.
+
+Limiti: i valori `condition` delle dipendenze non sono valutati, quindi una dipendenza
+disattivata conta comunque; un ambiente su un branch (per esempio LAB, `main @ 1a2b3c4`) non ha
+tag e non mostra versioni dei componenti; l'hub non chiama registry OCI né Harbor.
+
+La pagina Versioni aggiunge una tabella **Componenti per ambiente** a ogni progetto con un
+umbrella. È aperta sulle schede da verificare, al posto del percorso degli ambienti, e chiusa
+(disclosure) su quelle allineate e sconosciute. Il segno ▲ indica che una versione più recente
+aspetta a sinistra: l'ultima release è sopra l'umbrella su main, oppure un ambiente è sotto la
+versione nota più vicina alla sua sinistra. Lo snapshot 1.11 aggiunge
+`coordinator.umbrellaChart`, `component.umbrella` e `environment.componentVersions`.
 
 ### Aggiungere un progetto (senza modifiche al codice)
 
@@ -1146,7 +1203,7 @@ numeri non hanno mai prefissi. Excel con separatore di elenco `;`: usa Dati, Da 
 
 - `portfolio.csv`: `project_id, project_name, business_unit, lifecycle, overall, score, score_measured, score_required, delivery, version, security, controls_coverage, controls_coverage_percent, governance, quality, quality_percent, open_critical, open_high, open_medium, open_low, counts_complete, open_secret_alerts, failed_critical_workflows, collection_errors, collected_at, previous_overall, previous_score, previous_collected_at, controls_passed, controls_failed, controls_unknown, overdue, overdue_critical_high, accepted, exception_issues, teams`. Le colonne `previous_*` sono `n/a` quando non c'è una raccolta precedente. `teams` elenca i team del progetto (`org/slug`) uniti da `;`, vuota quando non ne ha.
 - `findings-summary.csv`: `project_id, component_id, repository, open_critical, open_high, open_medium, open_low, open_informational, open_unknown, sources_complete, overdue, accepted`. `overdue` e `accepted` contano i finding di quel repository (`unknown` quando gli SLA sono spenti o nessuna fonte di alert era leggibile). Tutti i conteggi sono `unknown` quando nessuna fonte di alert era leggibile; quando solo alcune lo erano, i conteggi sono un limite inferiore e `sources_complete` è `false`.
-- `versions.csv`: `row_type (coordinator|component|environment), project_id, item_id, item_name, repository, version, version_source, declared_version, latest_release, drift, manifest_consistency, pin_status, environment_status, environment_source, environment_declared_version, sync_status, health_status`. Le ultime quattro valgono per le righe di ambiente (`n/a` altrove): `environment_source` è `argocd` o `manifest`, `environment_declared_version` la versione dell'ambiente nel manifest, `sync_status` e `health_status` quanto riportato da Argo CD (`n/a` senza Argo CD).
+- `versions.csv`: `row_type (coordinator|component|environment|component-environment), project_id, item_id, item_name, repository, version, version_source, declared_version, latest_release, drift, manifest_consistency, pin_status, environment_status, environment_source, environment_declared_version, sync_status, health_status, chart_ref`. Le quattro colonne prima di `chart_ref` valgono per le righe di ambiente (`n/a` sulle righe di componente e coordinator); le righe `component-environment` valorizzano anche `environment_status` e `environment_source`. `environment_source` è `argocd` o `manifest`, `environment_declared_version` la versione dell'ambiente nel manifest, `sync_status` e `health_status` quanto riportato da Argo CD (`n/a` senza Argo CD). Le righe `component-environment` danno un componente in un ambiente dal chart umbrella; `chart_ref` è il tag del chart da cui è letto (`n/a` sulle altre righe).
 - `supply-chain.csv`: `project_id, repository, component_ids, sbom_state, sbom_source, packages, without_license, flagged, attestation_state, assets_checked, assets_with_provenance, images, images_signed, images_unsigned, container_scanning_source, iac_scanning_source, dast_source, summary_state`. `component_ids` è unito con `;`. I conteggi sono `unknown` quando la fonte non era leggibile, mai 0.
 - `control-map.csv` (solo quando la [mappa dei controlli](control-map.md) è pubblicata): `project_id, business_unit, check, area, level, state, value, unit, readable, reason, source_environment, signal, collected_at`. `level` e `value` sono `n/a` quando non misurati, mai 0; `readable` è `k/n` repository lette.
 

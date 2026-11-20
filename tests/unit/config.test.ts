@@ -653,6 +653,26 @@ describe('catalog: supply chain mappings', () => {
     ...over,
   });
 
+  it('accepts coordinator.umbrellaChart with a default tag prefix and component.chartDependency', () => {
+    const r = mutate((p) => {
+      p.coordinator.umbrellaChart = { path: 'deploy/helm/alpha/Chart.yaml' };
+      p.components[0]!.chartDependency = 'alpha-api';
+      p.components[0]!.versionSource = 'umbrella';
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.coordinator.umbrellaChart).toEqual({
+        path: 'deploy/helm/alpha/Chart.yaml',
+        tagPrefix: 'v',
+      });
+      expect(r.data.components[0]!.chartDependency).toBe('alpha-api');
+      expect(r.data.components[0]!.versionSource).toBe('umbrella');
+    }
+    for (const path of ['/abs', 'a/../b'])
+      expect(mutate((p) => void (p.coordinator.umbrellaChart = { path })).success).toBe(false);
+    expect(mutate((p) => void (p.components[0]!.chartDependency = 'Bad Name')).success).toBe(false);
+  });
+
   it('accepts a sonar key, container images and an argocd application', () => {
     const r = mutate((p) => {
       p.components[0]!.sonarProjectKey = 'example-org_project-alpha-backend';

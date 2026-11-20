@@ -378,6 +378,23 @@ test('security page: the remediation queue causes no horizontal scroll at 412 px
   }
 });
 
+test('versions page: the components table causes no horizontal scroll at 412 px', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, 'phone layout only (Pixel 7 is 412 px wide)');
+  await page.goto('/versions/');
+  const alpha = page.locator('[data-project="project-alpha"]');
+  await expect(alpha.getByRole('heading', { name: 'Components by environment' })).toBeVisible();
+  await expect(alpha.locator('.um-table')).toBeVisible();
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+  // The table scrolls inside its own region, reachable by keyboard.
+  await expect(alpha.locator('.um-wrap')).toHaveAttribute('tabindex', '0');
+});
+
 test('project page: the Supply chain fold opens with the keyboard', async ({ page }) => {
   await page.goto('/projects/project-alpha/');
   const fold = page.locator('details#supply-chain');

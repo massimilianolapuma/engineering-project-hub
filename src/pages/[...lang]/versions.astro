@@ -4,6 +4,9 @@
  * coordinator version, the environments as a DEV → … → PROD path and a "To check" table with
  * only the problems, each explained in a sentence. Aligned components are collapsed; a fully
  * aligned project is a single line; an unreadable project is a dashed card with its cause.
+ * With an umbrella chart, a check card shows the components by environment in place of the path
+ * (each environment header keeps its version, pill and source); aligned and unknown cards keep
+ * their design and add the table in a closed disclosure.
  */
 import type { EnvironmentSnapshot, ProjectSnapshot } from '@model/index';
 import EnvDeployment from '../../components/EnvDeployment.astro';
@@ -13,6 +16,7 @@ import Legend from '../../components/Legend.astro';
 import Pill from '../../components/Pill.astro';
 import StatusDot from '../../components/StatusDot.astro';
 import UnknownValue from '../../components/UnknownValue.astro';
+import UmbrellaMatrix from '../../components/UmbrellaMatrix.astro';
 import Octicon from '../../components/Octicon.astro';
 import Base from '../../layouts/Base.astro';
 import { branchDeployment } from '../../lib/env-version';
@@ -208,6 +212,9 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
               aria-labelledby={`v-${s.project.id}`}
             >
               {head}
+              {card.kind === 'aligned' && s.coordinator.umbrellaChart && (
+                <UmbrellaMatrix s={s} i18n={i18n} />
+              )}
               {card.kind === 'unknown' && (
                 <div class="vcard__cause">
                   <p>
@@ -233,9 +240,13 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
                   </a>
                 </div>
               )}
+              {card.kind === 'unknown' && s.coordinator.umbrellaChart && (
+                <UmbrellaMatrix s={s} i18n={i18n} />
+              )}
               {card.kind === 'check' && (
                 <>
-                  {s.environments.length > 0 && (
+                  {s.coordinator.umbrellaChart && <UmbrellaMatrix s={s} i18n={i18n} open />}
+                  {!s.coordinator.umbrellaChart && s.environments.length > 0 && (
                     <ol class="vpath" aria-label={d.project.environments}>
                       {s.environments.map((e, i) => (
                         <li class="vpath__step" data-env={e.name} data-env-status={e.status}>

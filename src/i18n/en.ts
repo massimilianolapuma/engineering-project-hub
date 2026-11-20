@@ -260,6 +260,7 @@ export const en = {
     unknown: 'unknown',
     submodule: 'submodule SHA · verified tag',
     auto: 'auto',
+    umbrella: 'umbrella chart',
   },
   pinStatus: {
     tagged: 'Tagged',
@@ -309,6 +310,7 @@ export const en = {
     argocd: 'Argo CD',
     'github-environments': 'GitHub environments',
     'deploy-signal': 'Deploy signal',
+    'umbrella-chart': 'Umbrella chart',
   },
   availability: {
     available: 'Available',
@@ -900,6 +902,35 @@ export const en = {
     present: 'present',
     unknownCause: 'Versions not readable',
     seeDataQuality: 'See in Data quality',
+    matrix: {
+      title: 'Components by environment',
+      caption: 'Components by environment · {project}',
+      colLatest: 'Latest release',
+      colMain: 'Umbrella (main)',
+      header: {
+        declared: 'declared',
+        deployed: 'deployed',
+        branch: 'branch',
+        unknown: 'source unknown',
+      },
+      chart: 'Umbrella chart',
+      chartVersion: 'version {v}',
+      outside: 'Outside the umbrella ({n})',
+      unmapped: 'Chart dependencies not in the catalog:',
+      legend:
+        'A newer version is waiting: the latest release is above the umbrella on main, or an environment is below the nearest known version on its left (Umbrella (main) included).',
+      waitingLatest: 'A newer version is waiting: above the umbrella on main',
+      waitingEnv: 'A newer version is waiting on the left',
+      reason: {
+        'not-found': 'Not found',
+        invalid: 'Chart not valid',
+        'not-authorised': 'Not authorised',
+        unknown: 'Not readable',
+        skipped: 'Too many versions to read',
+        conflict: 'Conflicting versions in the chart',
+        'no-version': 'No version to read',
+      },
+    },
   },
   securityPage: {
     atLeast: 'at least',
@@ -1170,12 +1201,14 @@ export const en = {
       submodule: 'Submodule',
       manifest: 'Release manifest',
       release: 'Latest release',
+      umbrella: 'Umbrella chart',
     },
     versionSourceHelp: {
-      auto: 'Tag of the pinned submodule SHA, then the release manifest, then the latest release.',
+      auto: 'The umbrella chart (only when the coordinator has one configured), then the tag of the pinned submodule SHA, then the release manifest.',
       submodule: 'Only the tag resolved from the SHA pinned by the coordinator (verified).',
       manifest: "Only the version declared in the coordinator's release manifest.",
       release: "Only the component's latest release.",
+      umbrella: "Only the version in the coordinator's umbrella chart.",
     },
     suggestions: 'Suggestions',
     suggestionsIntro:

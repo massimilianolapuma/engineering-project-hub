@@ -5,7 +5,7 @@
     "schemaVersion": {
       "type": "string",
       "enum": [
-        "1.10"
+        "1.11"
       ]
     },
     "generatedAt": {
@@ -405,6 +405,67 @@
             ],
             "additionalProperties": false
           }
+        },
+        "umbrellaChart": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "ok",
+                    "not-found",
+                    "invalid",
+                    "not-authorised",
+                    "unknown"
+                  ]
+                },
+                "chartVersion": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unmapped": {
+                  "maxItems": 50,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 100
+                  }
+                },
+                "aliases": {
+                  "maxItems": 50,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 100
+                  }
+                }
+              },
+              "required": [
+                "path",
+                "state",
+                "chartVersion",
+                "unmapped",
+                "aliases"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -413,7 +474,8 @@
         "versionSource",
         "latestRelease",
         "manifest",
-        "submodules"
+        "submodules",
+        "umbrellaChart"
       ],
       "additionalProperties": false
     },
@@ -616,7 +678,8 @@
               "auto",
               "submodule",
               "manifest",
-              "release"
+              "release",
+              "umbrella"
             ]
           },
           "declaredVersion": {
@@ -879,6 +942,7 @@
               "submodule",
               "manifest",
               "release",
+              "umbrella",
               "unknown"
             ]
           },
@@ -897,6 +961,53 @@
               "drift",
               "unknown"
             ]
+          },
+          "umbrella": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "inUmbrella": {
+                    "type": "boolean"
+                  },
+                  "main": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "release": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "conflict": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "inUmbrella",
+                  "main",
+                  "release",
+                  "conflict"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -913,7 +1024,8 @@
           "effectiveVersion",
           "effectiveVersionSource",
           "manifestConsistency",
-          "drift"
+          "drift",
+          "umbrella"
         ],
         "additionalProperties": false
       }
@@ -1118,6 +1230,79 @@
                 "type": "null"
               }
             ]
+          },
+          "componentVersions": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "ref": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "state": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "ok",
+                          "not-found",
+                          "invalid",
+                          "not-authorised",
+                          "unknown"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "const": "skipped"
+                      }
+                    ]
+                  },
+                  "versions": {
+                    "maxItems": 100,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "componentId": {
+                          "type": "string",
+                          "maxLength": 64
+                        },
+                        "version": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 100
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "conflict": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "componentId",
+                        "version",
+                        "conflict"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "ref",
+                  "state",
+                  "versions"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -1127,7 +1312,8 @@
           "declaredVersion",
           "source",
           "status",
-          "deployment"
+          "deployment",
+          "componentVersions"
         ],
         "additionalProperties": false
       }
@@ -5818,7 +6004,8 @@
               "harbor",
               "argocd",
               "github-environments",
-              "deploy-signal"
+              "deploy-signal",
+              "umbrella-chart"
             ]
           },
           "classification": {

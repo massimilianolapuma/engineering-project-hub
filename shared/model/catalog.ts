@@ -10,7 +10,7 @@ import { ociRepository } from './contracts';
 import { TeamRefSchema, TeamsConfigSchema, teamSlug } from './teams';
 import { DeploySignalSchema, ProjectControlMapConfigSchema } from './control-map';
 
-export const VersionSourceSchema = z.enum(['auto', 'submodule', 'manifest', 'release']);
+export const VersionSourceSchema = z.enum(['auto', 'submodule', 'manifest', 'release', 'umbrella']);
 export type VersionSource = z.infer<typeof VersionSourceSchema>;
 
 const slug = z
@@ -32,6 +32,13 @@ const relativePath = z
   .min(1)
   .max(255)
   .refine((p) => !p.startsWith('/') && !p.split('/').includes('..'), 'must be a relative path');
+
+/** Dependency name in an umbrella Helm chart (Chart.yaml `dependencies[].name` or alias). */
+const chartDependency = z
+  .string()
+  .min(1)
+  .max(100)
+  .regex(/^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/, 'invalid chart dependency name');
 
 /** SonarQube project key (published with the catalog: a name, never a host or a token). */
 const sonarProjectKey = z
@@ -105,6 +112,14 @@ export const CoordinatorConfigSchema = z
     /** SonarQube project of the repository (read only when SonarQube is enabled). */
     sonarProjectKey: sonarProjectKey.optional(),
     sonarBranch: branch.optional(),
+    /** Umbrella Helm chart of the coordinator, read for component versions per environment. */
+    umbrellaChart: z
+      .object({
+        path: relativePath,
+        tagPrefix: z.string().max(50).default('v'),
+      })
+      .strict()
+      .optional(),
     /** Harbor images scanned and signed for this repository (max 5). */
     containerImages: containerImages.optional(),
   })
@@ -132,7 +147,8 @@ export const ComponentConfigSchema = z
     notApplicableChecks: z.array(RepositoryCheckIdSchema).default([]),
     /**
      * Where the component's current version comes from:
-     * - auto: submodule (tag resolved from the SHA pinned by the coordinator) → manifest → latest release
+     * - auto: umbrella chart (only when `coordinator.umbrellaChart` is configured) → submodule (tag
+     *   resolved from the SHA pinned by the coordinator) → manifest
      * - submodule: only the tag resolved from the submodule SHA (verified)
      * - manifest: only the version declared in the coordinator's release manifest
      * - release: the component's latest release
@@ -142,6 +158,8 @@ export const ComponentConfigSchema = z
     testCoverage: TestCoverageSchema.optional(),
     sonarProjectKey: sonarProjectKey.optional(),
     sonarBranch: branch.optional(),
+    /** Name of this component in the coordinator's umbrella chart dependencies. */
+    chartDependency: chartDependency.optional(),
     containerImages: containerImages.optional(),
   })
   .strict();

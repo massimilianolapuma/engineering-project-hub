@@ -1,0 +1,318 @@
+---
+/**
+ * Versions page: components by environment, from the coordinator's umbrella chart. One row per
+ * component of the chart, the latest release, the umbrella on main and one column per
+ * environment (its version, status pill and where the version comes from). ▲ is an icon plus
+ * visually hidden text, never colour alone; an unreadable cell is the dashed "unknown" label with
+ * its reason. The table scrolls inside its own region; the page never scrolls sideways.
+ * `open`: a section (check cards, in place of the environment path, with each environment's
+ * deployment line); otherwise a closed disclosure (aligned and unknown cards).
+ */
+import type { ProjectSnapshot } from '@model/index';
+import type { I18n } from '../i18n';
+import { displayVersion } from '../lib/format';
+import { driftTone } from '../lib/tones';
+import { matrixOf, type CellReason } from '../lib/umbrella-matrix';
+import EnvDeployment from './EnvDeployment.astro';
+import EvidenceLabel from './EvidenceLabel.astro';
+import Octicon from './Octicon.astro';
+import Pill from './Pill.astro';
+import UnknownValue from './UnknownValue.astro';
+interface Props {
+  s: ProjectSnapshot;
+  i18n: I18n;
+  open?: boolean;
+}
+const { s, i18n, open = false } = Astro.props;
+const { d, f } = i18n;
+const t = d.versionsPage.matrix;
+const m = matrixOf(s);
+const chart = s.coordinator.umbrellaChart;
+const titleId = `um-${s.project.id}`;
+const caption = f(t.caption, { project: s.project.name });
+const names = Object.fromEntries(s.components.map((c) => [c.id, c.name]));
+const reasonText = (r: CellReason) => (r ? t.reason[r] : d.common.unknown);
+const Wrapper = open ? 'section' : 'details';
+---
+
+{m && chart && (
+  <Wrapper
+    class:list={['um', { 'vmatrix disclosure': !open }]}
+    aria-labelledby={open ? titleId : undefined}
+    data-umbrella={s.project.id}
+  >
+    {open ? (
+      <h3 id={titleId} class="um__title">
+        {t.title}
+      </h3>
+    ) : (
+      <summary>{t.title}</summary>
+    )}
+    <p class="um__chart">
+      <span class="muted">{t.chart}</span> <code>{chart.path}</code>
+      {chart.state === 'ok' ? (
+        chart.chartVersion && (
+          <span class="muted">· {f(t.chartVersion, { v: chart.chartVersion })}</span>
+        )
+      ) : (
+        <EvidenceLabel level="unknown" text={t.reason[chart.state]} i18n={i18n} />
+      )}
+    </p>
+    {(m.rows.length > 0 || m.environments.length > 0) && (
+      <div class="table-wrap um-wrap" tabindex="0" role="region" aria-label={caption}>
+        <table class="um-table">
+          <caption class="visually-hidden">{caption}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{d.common.component}</th>
+              <th scope="col">{t.colLatest}</th>
+              <th scope="col">{t.colMain}</th>
+              {m.environments.map((e, i) => (
+                <th
+                  scope="col"
+                  class:list={['um-env', `um-env--${e.status}`]}
+                  data-env={e.name}
+                  data-env-status={e.status}
+                >
+                  <span class="um-env__stack">
+                    <span class="um-env__name">{e.name}</span>
+                    <span class="mono">
+                      {e.branch
+                        ? f(d.sources.refAt, e.branch)
+                        : (displayVersion(s.environments[i]!.version) ?? d.common.unknownValue)}
+                    </span>
+                    <Pill
+                      tone={driftTone(e.status)}
+                      label={e.branch ? d.sources.notRelease : d.envStatus[e.status]}
+                    />
+                    <span class="um-env__src">{t.header[e.header]}</span>
+                    {open && <EnvDeployment e={s.environments[i]!} i18n={i18n} names={names} />}
+                  </span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {m.rows.map((r) => (
+              <tr data-component={r.componentId}>
+                <th scope="row">{r.name}</th>
+                <td class="mono">
+                  {r.latest ? (
+                    <span class="um-v">
+                      {r.latest}
+                      {r.latestWaiting && (
+                        <span class="um-up" title={t.waitingLatest}>
+                          <Octicon name="arrow-up" size={12} />
+                          <span class="visually-hidden">{t.waitingLatest}</span>
+                        </span>
+                      )}
+                    </span>
+                  ) : (
+                    <UnknownValue i18n={i18n} class="muted" />
+                  )}
+                </td>
+                <td class="mono">
+                  {r.main ?? (
+                    <span title={reasonText(r.mainReason)}>
+                      <EvidenceLabel level="unknown" i18n={i18n} />
+                      <span class="visually-hidden">{reasonText(r.mainReason)}</span>
+                    </span>
+                  )}
+                </td>
+                {r.cells.map((c, i) => (
+                  <td
+                    class="mono"
+                    data-env={m.environments[i]!.name}
+                    data-reason={c.reason ?? undefined}
+                  >
+                    {c.version ? (
+                      <span class="um-v">
+                        {c.version}
+                        {c.waiting && (
+                          <span class="um-up" title={t.waitingEnv}>
+                            <Octicon name="arrow-up" size={12} />
+                            <span class="visually-hidden">{t.waitingEnv}</span>
+                          </span>
+                        )}
+                      </span>
+                    ) : c.reason === 'no-version' ? (
+                      <span class="muted" title={reasonText(c.reason)}>
+                        <span aria-hidden="true">–</span>
+                        <span class="visually-hidden">{reasonText(c.reason)}</span>
+                      </span>
+                    ) : (
+                      <span title={reasonText(c.reason)}>
+                        <EvidenceLabel level="unknown" i18n={i18n} />
+                        <span class="visually-hidden">{reasonText(c.reason)}</span>
+                      </span>
+                    )}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+    {m.rows.length > 0 && (
+      <p class="note um-legend">
+        <span class="um-up">
+          <Octicon name="arrow-up" size={12} />
+        </span>{' '}
+        {t.legend}
+      </p>
+    )}
+    {m.outside.length > 0 && (
+      <details class="um-outside disclosure">
+        <summary>{f(t.outside, { n: m.outside.length })}</summary>
+        <ul class="um-outside__list">
+          {m.outside.map((o) => (
+            <li>
+              {o.name}{' '}
+              <span class="mono">{displayVersion(o.version) ?? d.common.unknownValue}</span>
+            </li>
+          ))}
+        </ul>
+      </details>
+    )}
+    {m.unmapped.length > 0 && (
+      <p class="note um-unmapped">
+        {t.unmapped}{' '}
+        {m.unmapped.map((u, i) => (
+          <>
+            {i > 0 && ', '}
+            <code>{u}</code>
+          </>
+        ))}
+      </p>
+    )}
+  </Wrapper>
+)}
+
+<style>
+  .um {
+    display: flex;
+    flex-direction: column;
+    gap: var(--base-size-8);
+    min-width: 0;
+    margin: 0;
+  }
+  details.um {
+    border-top: 1px solid var(--borderColor-default);
+    padding-top: 10px;
+  }
+  details.um > summary {
+    padding: 10px 0;
+    min-height: 40px;
+    box-sizing: border-box;
+    color: var(--fgColor-muted);
+  }
+  .um__title {
+    margin: 0;
+    font-size: var(--text-body-size-medium);
+    font-weight: 600;
+  }
+  .um__chart {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--base-size-4) var(--base-size-8);
+    margin: 0;
+    font-size: var(--text-body-size-small);
+    overflow-wrap: anywhere;
+  }
+  /* The table scrolls inside its own box, also on phones (where `.table-wrap` stops
+     scrolling): the page never scrolls sideways. */
+  .um-wrap {
+    position: relative; /* clips the visually hidden labels inside the scroll box */
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--borderColor-default);
+    border-radius: var(--borderRadius-medium);
+    background: var(--bgColor-default);
+  }
+  .um-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-body-size-medium);
+    font-variant-numeric: tabular-nums;
+  }
+  .um-table th,
+  .um-table td {
+    padding: var(--base-size-8) var(--base-size-12);
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--borderColor-default);
+    white-space: nowrap;
+  }
+  .um-table tbody tr:last-child > * {
+    border-bottom: 0;
+  }
+  .um-table thead th {
+    font-size: var(--text-body-size-small);
+    color: var(--fgColor-muted);
+    font-weight: 600;
+  }
+  .um-table tbody th {
+    font-weight: 600;
+  }
+  /* The component names stay in view while the environments scroll sideways. */
+  .um-table th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--bgColor-default);
+  }
+  /* Environment header: name, version, status pill, where the version comes from. */
+  .um-table thead th.um-env {
+    min-width: 130px;
+    color: var(--fgColor-default);
+    white-space: normal;
+  }
+  .um-env__stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--base-size-4);
+  }
+  .um-env--behind,
+  .um-env--mismatch {
+    background: var(--bgColor-attention-muted);
+  }
+  .um-env__name {
+    font-weight: 600;
+  }
+  .um-env__src {
+    color: var(--fgColor-muted);
+    font-weight: 400;
+  }
+  .um-v {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--base-size-4);
+  }
+  .um-up {
+    display: inline-flex;
+    align-items: center;
+    color: var(--fgColor-attention);
+  }
+  .um-legend,
+  .um-unmapped {
+    margin: 0;
+  }
+  .um-legend {
+    display: flex;
+    align-items: baseline;
+    gap: var(--base-size-4);
+  }
+  .um-outside > summary {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    color: var(--fgColor-muted);
+  }
+  .um-outside__list {
+    margin: var(--base-size-4) 0 0;
+    padding-left: 1.25rem;
+  }
+</style>

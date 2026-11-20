@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.10",
+  "schemaVersion": "1.11",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-gamma",
@@ -31,7 +31,8 @@
       "path": "release-manifest.yaml",
       "status": "unknown"
     },
-    "submodules": []
+    "submodules": [],
+    "umbrellaChart": null
   },
   "components": [
     {
@@ -61,7 +62,8 @@
       "effectiveVersion": null,
       "effectiveVersionSource": "unknown",
       "manifestConsistency": "unknown",
-      "drift": "unknown"
+      "drift": "unknown",
+      "umbrella": null
     }
   ],
   "environments": [
@@ -72,7 +74,8 @@
       "declaredVersion": null,
       "source": "unknown",
       "status": "unknown",
-      "deployment": null
+      "deployment": null,
+      "componentVersions": null
     }
   ],
   "workflows": [

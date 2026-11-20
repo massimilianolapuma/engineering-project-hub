@@ -44,6 +44,7 @@ export interface DraftComponent {
   /** Provider mappings are not edited here, but they are kept when a project is saved. */
   sonarProjectKey?: string;
   sonarBranch?: string;
+  chartDependency?: string;
   containerImages?: ContainerImage[];
 }
 export interface DraftEnvironment {
@@ -82,6 +83,7 @@ export interface DraftProject {
     testCoverage?: TestCoverage;
     sonarProjectKey?: string;
     sonarBranch?: string;
+    umbrellaChart?: { path: string; tagPrefix: string };
     containerImages?: ContainerImage[];
   };
   components: DraftComponent[];
@@ -123,6 +125,7 @@ export function projectToDraft(p: ProjectConfig): DraftProject {
       testCoverage: p.coordinator.testCoverage,
       sonarProjectKey: p.coordinator.sonarProjectKey,
       sonarBranch: p.coordinator.sonarBranch,
+      umbrellaChart: p.coordinator.umbrellaChart ? { ...p.coordinator.umbrellaChart } : undefined,
       containerImages: p.coordinator.containerImages?.map((i) => ({ ...i })),
     },
     components: p.components.map(componentToDraft),
@@ -152,6 +155,7 @@ function componentToDraft(c: ComponentConfig): DraftComponent {
     testCoverage: c.testCoverage,
     sonarProjectKey: c.sonarProjectKey,
     sonarBranch: c.sonarBranch,
+    chartDependency: c.chartDependency,
     containerImages: c.containerImages?.map((i) => ({ ...i })),
   };
 }
@@ -220,6 +224,7 @@ export function toProjectInput(p: DraftProject): Record<string, unknown> {
       testCoverage: p.coordinator.testCoverage,
       sonarProjectKey: p.coordinator.sonarProjectKey,
       sonarBranch: p.coordinator.sonarBranch,
+      umbrellaChart: p.coordinator.umbrellaChart,
       containerImages: imagesInput(p.coordinator.containerImages),
     }),
     // Empty for a single-repository project (the coordinator is the only repository).
@@ -240,6 +245,7 @@ export function toProjectInput(p: DraftProject): Record<string, unknown> {
             testCoverage: c.testCoverage,
             sonarProjectKey: c.sonarProjectKey,
             sonarBranch: c.sonarBranch,
+            chartDependency: c.chartDependency,
             containerImages: imagesInput(c.containerImages),
           }),
         )

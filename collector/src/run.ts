@@ -20,6 +20,7 @@ import {
 import { buildProjectSnapshot, toProjectSummary } from './build-snapshot';
 import { collectControlMap, controlMapPublished } from './collectors/collect-control-map';
 import { collectEnvironmentStates } from './collectors/environment-states';
+import { collectUmbrellaCharts } from './collectors/umbrella-chart';
 import type { LoadedExceptions } from './config/load';
 import { orphanedExceptionIds } from './policy/exceptions';
 import { discover } from './discovery/discover';
@@ -198,6 +199,8 @@ export async function runCollection(opts: RunOptions): Promise<RunResult> {
   if (controlMapPublished(policies, provider.dataSource)) await collectControlMap(ctx, raws, now);
   // What each environment runs now, from its deploy signal (Versions page, snapshot 1.10).
   await collectEnvironmentStates(ctx, raws);
+  // Umbrella chart at main, at the release and at each environment's tag (component versions).
+  await collectUmbrellaCharts(ctx, raws);
   const projects = raws.map((raw) => buildProjectSnapshot(raw, policies, now, reusable, entries));
   const finishedAt = clock();
 

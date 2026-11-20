@@ -81,6 +81,24 @@ describe('catalog editor: draft → catalog', () => {
     expect(again.controlMap).toEqual(withMap.controlMap);
   });
 
+  it('keeps umbrellaChart and chartDependency when a project is saved', () => {
+    const base = snapshot.catalog.projects[0]!;
+    const original = ProjectConfigSchema.parse({
+      ...base,
+      coordinator: {
+        ...base.coordinator,
+        umbrellaChart: { path: 'deploy/helm/alpha/Chart.yaml', tagPrefix: 'rel-' },
+      },
+      components: base.components.map((c, i) =>
+        i === 0 ? { ...c, chartDependency: 'alpha-api', versionSource: 'umbrella' } : c,
+      ),
+    });
+    const again = ProjectConfigSchema.parse(parse(projectToYaml(projectToDraft(original))));
+    expect(again.coordinator.umbrellaChart).toEqual(original.coordinator.umbrellaChart);
+    expect(again.components[0]!.chartDependency).toBe('alpha-api');
+    expect(again.components[0]!.versionSource).toBe('umbrella');
+  });
+
   it('keeps a github-deployments deploy signal when a project is saved', () => {
     const base = snapshot.catalog.projects[0]!;
     const withSignal = ProjectConfigSchema.parse({

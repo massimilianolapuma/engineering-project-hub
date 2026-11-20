@@ -19,6 +19,7 @@ coordinator:
   defaultBranch: main
   manifestPath: release-manifest.yaml
   notApplicableControls: [containerScanning]
+  umbrellaChart: { path: deploy/helm/alpha/Chart.yaml }
 
 components:
   - id: backend

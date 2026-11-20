@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.10",
+  "schemaVersion": "1.11",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-beta",
@@ -79,7 +79,8 @@
         "association": "unmapped",
         "status": "resolved"
       }
-    ]
+    ],
+    "umbrellaChart": null
   },
   "components": [
     {
@@ -137,7 +138,8 @@
       "effectiveVersion": "3.1.0",
       "effectiveVersionSource": "submodule",
       "manifestConsistency": "mismatch",
-      "drift": "drift"
+      "drift": "drift",
+      "umbrella": null
     },
     {
       "id": "web",
@@ -194,7 +196,8 @@
       "effectiveVersion": "3.1.0",
       "effectiveVersionSource": "submodule",
       "manifestConsistency": "consistent",
-      "drift": "aligned"
+      "drift": "aligned",
+      "umbrella": null
     },
     {
       "id": "helm",
@@ -251,7 +254,8 @@
       "effectiveVersion": "1.0.0",
       "effectiveVersionSource": "submodule",
       "manifestConsistency": "consistent",
-      "drift": "aligned"
+      "drift": "aligned",
+      "umbrella": null
     }
   ],
   "environments": [
@@ -272,7 +276,8 @@
         "version": null,
         "deployedAt": "2026-01-15T09:00:00.000Z",
         "images": []
-      }
+      },
+      "componentVersions": null
     },
     {
       "id": "dev",
@@ -291,7 +296,8 @@
         "version": null,
         "deployedAt": null,
         "images": []
-      }
+      },
+      "componentVersions": null
     },
     {
       "id": "uat",
@@ -300,7 +306,8 @@
       "declaredVersion": "3.2.0",
       "source": "manifest",
       "status": "aligned",
-      "deployment": null
+      "deployment": null,
+      "componentVersions": null
     },
     {
       "id": "prod",
@@ -319,7 +326,8 @@
         "version": "3.1.0",
         "deployedAt": "2026-01-11T12:00:00.000Z",
         "images": []
-      }
+      },
+      "componentVersions": null
     }
   ],
   "workflows": [

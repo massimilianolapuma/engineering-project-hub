@@ -2,6 +2,8 @@ import { parse as parseYaml } from 'yaml';
 import {
   ReleaseManifestSchema,
   type ComponentSnapshot,
+  type ComponentUmbrella,
+  type EnvironmentComponentVersions,
   type Pin,
   type EnvironmentSnapshot,
   type ProjectConfig,
@@ -212,6 +214,7 @@ export function toComponents(
   raw: RawProjectData,
   manifest: ReleaseManifest | null,
   submodules: Submodule[],
+  umbrellaByComponent: Map<string, ComponentUmbrella> = new Map(),
 ): ComponentSnapshot[] {
   return raw.config.components.map((comp) => {
     const data = raw.repos.find((r) => r.componentId === comp.id)!;
@@ -225,6 +228,15 @@ export function toComponents(
     const submodule = submodules.find((s) => s.componentId === comp.id) ?? null;
     const pin = resolvePin(raw, comp, submodule);
     const pinned = pin?.status === 'tagged' ? pin.version : null;
+    const umbrella = umbrellaByComponent.get(comp.id) ?? null;
+    // A range such as ~1.2.0 is kept as text in the chart but is no version to compare.
+    const fromUmbrella =
+      umbrella &&
+      !umbrella.conflict &&
+      umbrella.release &&
+      parseVersion(normaliseVersion(umbrella.release) ?? '')
+        ? umbrella.release
+        : null;
 
     // Current version according to the configured source (auto: verified pin → manifest).
     let effectiveVersion: string | null = null;
@@ -245,7 +257,11 @@ export function toComponents(
       case 'release':
         pick(latest, 'release');
         break;
+      case 'umbrella':
+        pick(fromUmbrella, 'umbrella');
+        break;
       default:
+        pick(fromUmbrella, 'umbrella');
         pick(pinned, 'submodule');
         pick(declared, 'manifest');
     }
@@ -272,6 +288,7 @@ export function toComponents(
       effectiveVersionSource,
       manifestConsistency,
       drift,
+      umbrella,
     };
   });
 }
@@ -415,6 +432,7 @@ export function toEnvironments(
   coordinatorTags: TagDTO[] = [],
   images: ImageMapping[] = [],
   states: Map<string, EnvironmentState> = new Map(),
+  componentVersions: Map<string, EnvironmentComponentVersions> = new Map(),
 ): EnvironmentSnapshot[] {
   return config.environments.map((env) => {
     const state = states.get(env.id);
@@ -452,6 +470,7 @@ export function toEnvironments(
       source,
       status,
       deployment,
+      componentVersions: componentVersions.get(env.id) ?? null,
     };
   });
 }

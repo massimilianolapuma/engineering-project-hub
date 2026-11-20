@@ -33,7 +33,10 @@
     "environments/prod.yaml@4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d": "# Versions installed on PROD (synthetic)\numbrella: 2.3.0\n",
     "environments/prod.yaml@5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e": "# Versions installed on PROD (synthetic)\numbrella: 2.4.1\n",
     "environments/prod.yaml": "# Versions installed on PROD (synthetic)\numbrella: 2.4.1\n",
-    "environments/test.yaml": "# Version promoted to TEST (synthetic)\numbrella: 1.4.0\n"
+    "environments/test.yaml": "# Version promoted to TEST (synthetic)\numbrella: 1.4.0\n",
+    "deploy/helm/alpha/Chart.yaml": "apiVersion: v2\nname: alpha\nversion: 1.5.0\ndependencies:\n  - name: project-alpha-backend\n    version: 1.4.0\n  - name: project-alpha-frontend\n    version: 2.1.0\n  - name: project-alpha-worker\n    version: 1.2.0\n  - name: alpha-legacy-reports\n    version: 0.3.0\n",
+    "deploy/helm/alpha/Chart.yaml@v1.4.0": "apiVersion: v2\nname: alpha\nversion: 1.4.0\ndependencies:\n  - name: project-alpha-backend\n    version: 1.4.0\n  - name: project-alpha-frontend\n    version: 2.1.0\n  - name: project-alpha-worker\n    version: 1.2.0\n  - name: alpha-legacy-reports\n    version: 0.3.0\n",
+    "deploy/helm/alpha/Chart.yaml@v1.3.0": "apiVersion: v2\nname: alpha\nversion: 1.3.0\ndependencies:\n  - name: project-alpha-backend\n    version: 1.4.0\n  - name: project-alpha-frontend\n    version: 2.0.3\n  - name: project-alpha-worker\n    version: 1.2.0\n  - name: alpha-legacy-reports\n    version: 0.3.0\n"
   },
   "submodules": {
     "services/backend": "a854f48ad1aa650b2594455e44d9016866a5d5b3",
