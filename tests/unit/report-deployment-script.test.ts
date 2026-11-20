@@ -213,4 +213,70 @@ describe('report-deployment.sh', async () => {
     expect(r.code).not.toBe(0);
     expect(calls).toHaveLength(0);
   });
+
+  // Component deployments spec §5.1: a deploy by version has no commit, only the release tag.
+  const lookup = () => calls.find((c) => c.method === 'GET' && c.path.includes('/deployments?'))!;
+  const reset = () => {
+    calls = [];
+    deployments = [];
+    createStatus = 201;
+    statusPost = 201;
+  };
+
+  it.skipIf(!ready)('records a deploy by tag with REF', async () => {
+    reset();
+    const r = await run({ SHA: '', REF: 'v0.9.0', VERSION: '0.9.0' });
+    expect(r.code).toBe(0);
+    const create = calls.find((c) => c.method === 'POST' && c.path.endsWith('/deployments'))!;
+    expect(create.body).toMatchObject({ ref: 'v0.9.0', payload: { version: '0.9.0' } });
+    expect(lookup().path).toContain('ref=v0.9.0');
+    expect(lookup().path).not.toContain('sha=');
+  });
+
+  it.skipIf(!ready)('URL-encodes a REF with a slash', async () => {
+    reset();
+    const r = await run({ SHA: '', REF: 'release/v1.0' });
+    expect(r.code).toBe(0);
+    // Percent-encoding hex digits are case-insensitive (curl writes %2f).
+    expect(lookup().path).toMatch(/[?&]ref=release%2fv1\.0(&|$)/i);
+  });
+
+  it.skipIf(!ready)('refuses SHA and REF together, and neither', async () => {
+    reset();
+    const both = await run({ REF: 'v0.9.0' });
+    expect(both.code).not.toBe(0);
+    expect(both.out).toContain('set exactly one of SHA or REF');
+    const neither = await run({ SHA: '' });
+    expect(neither.code).not.toBe(0);
+    expect(neither.out).toContain('set exactly one of SHA or REF');
+    expect(calls).toHaveLength(0);
+  });
+
+  it.skipIf(!ready)('refuses an invalid REF before any call', async () => {
+    reset();
+    for (const ref of ['../x', 'a..b', '-x', 'v 1', 'a'.repeat(101)]) {
+      const r = await run({ SHA: '', REF: ref });
+      expect(r.code, ref).not.toBe(0);
+      expect(r.out, ref).toContain('REF must be a tag or branch name');
+    }
+    expect(calls).toHaveLength(0);
+  });
+
+  it.skipIf(!ready)('a REF GitHub does not know is not recorded and does not fail', async () => {
+    reset();
+    createStatus = 422;
+    const r = await run({ SHA: '', REF: 'v9.9.9' });
+    expect(r.code).toBe(0);
+    expect(r.out).toContain('not recorded (HTTP 422)');
+  });
+
+  it.skipIf(!ready)('is idempotent with REF', async () => {
+    reset();
+    const first = await run({ SHA: '', REF: 'v0.9.0' });
+    const second = await run({ SHA: '', REF: 'v0.9.0' });
+    expect(first.code).toBe(0);
+    expect(second.code).toBe(0);
+    expect(second.out).toContain('already recorded');
+    expect(deployments).toHaveLength(1);
+  });
 });
