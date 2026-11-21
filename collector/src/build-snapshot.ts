@@ -81,6 +81,7 @@ import {
   toEnvironments,
   unknownManifestComponents,
 } from './normalizers/versions';
+import { componentEnvironmentVersions } from './normalizers/component-deployments-model';
 import { umbrellaModel } from './normalizers/umbrella-model';
 
 const ALERT_SOURCES = ['codeScanning', 'dependabot', 'secretScanning'] as const;
@@ -140,7 +141,14 @@ export function buildProjectSnapshot(
     : null;
   const coord = coordinatorVersion(manifest, coordinatorRelease);
   const umbrellaData = umbrellaModel(ctx, raw);
-  const components = toComponents(ctx, raw, manifest, submodules, umbrellaData.components);
+  const components = toComponents(
+    ctx,
+    raw,
+    manifest,
+    submodules,
+    umbrellaData.components,
+    componentEnvironmentVersions(ctx, raw),
+  );
   const imageMappings = [
     { componentId: 'coordinator', images: config.coordinator.containerImages },
     ...config.components.map((c) => ({ componentId: c.id, images: c.containerImages })),

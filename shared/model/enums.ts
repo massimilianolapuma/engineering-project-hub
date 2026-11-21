@@ -14,8 +14,10 @@ import { z } from 'zod';
 //       deployment kind and ref).
 // 1.11: umbrella chart component versions (coordinator.umbrellaChart, component.umbrella,
 //       environment.componentVersions, versionSource umbrella, source umbrella-chart).
-export const SNAPSHOT_SCHEMA_VERSION = '1.11';
-export const SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS = ['1.11'] as const;
+// 1.12: component versions per environment from the component's own GitHub deployments
+//       (component.environmentVersions).
+export const SNAPSHOT_SCHEMA_VERSION = '1.12';
+export const SUPPORTED_SNAPSHOT_SCHEMA_VERSIONS = ['1.12'] as const;
 
 export const HealthStatusSchema = z.enum(['green', 'amber', 'red', 'grey']);
 export type HealthStatus = z.infer<typeof HealthStatusSchema>;

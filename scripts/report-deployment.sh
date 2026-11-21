@@ -7,7 +7,9 @@
 # Environment:
 #   GH_APP_ID, GH_INSTALLATION_ID, GH_KEY_FILE   deployment App (Deployments: read and write)
 #   GH_OWNER, GH_REPO_NAME                       the GitHub repository (the mirror's origin)
-#   SHA                                          deployed commit (same SHA as on GitHub)
+#   SHA or REF (exactly one)                     SHA: deployed commit (same SHA as on GitHub);
+#                                                REF: a tag or branch GitHub knows (v0.9.0), for
+#                                                a deploy by version that has no commit at hand
 #   ENV_NAME                                     GitHub environment name (dev, test, prod...)
 #   STATE                                        success | failure
 #   RUN_ID, RUN_URL, ATTEMPT                     the external run (ATTEMPT default 1)
@@ -18,13 +20,25 @@ set -euo pipefail
 set +x
 
 : "${GH_APP_ID:?}" "${GH_INSTALLATION_ID:?}" "${GH_KEY_FILE:?}" "${GH_OWNER:?}" "${GH_REPO_NAME:?}"
-: "${SHA:?}" "${ENV_NAME:?}" "${STATE:?}" "${RUN_ID:?}" "${RUN_URL:?}" "${FINISHED_AT:?}"
+: "${ENV_NAME:?}" "${STATE:?}" "${RUN_ID:?}" "${RUN_URL:?}" "${FINISHED_AT:?}"
+SHA="${SHA:-}"
+REF="${REF:-}"
+[[ -n "$SHA" && -z "$REF" || -z "$SHA" && -n "$REF" ]] || { echo "set exactly one of SHA or REF" >&2; exit 1; }
 GH_API="${GH_API:-https://api.github.com}"
 ATTEMPT="${ATTEMPT:-1}"
 SOURCE="${SOURCE:-azure-devops}"
 PRODUCTION="${PRODUCTION:-false}"
 [[ "$STATE" == success || "$STATE" == failure ]] || { echo "STATE must be success or failure" >&2; exit 1; }
-[[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "SHA must be a full commit SHA" >&2; exit 1; }
+if [[ -n "$SHA" ]]; then
+  [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "SHA must be a full commit SHA" >&2; exit 1; }
+  target="$SHA"
+  lookup="sha=$SHA"
+else
+  [[ "$REF" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]{0,99}$ && "$REF" != *..* ]] ||
+    { echo "REF must be a tag or branch name" >&2; exit 1; }
+  target="$REF"
+  lookup="ref=$REF"
+fi
 [[ "$ATTEMPT" =~ ^[0-9]+$ ]] || { echo "ATTEMPT must be a number" >&2; exit 1; }
 ISO='^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?Z$'
 [[ "$FINISHED_AT" =~ $ISO ]] || { echo "FINISHED_AT must be ISO 8601 UTC (YYYY-MM-DDTHH:MM:SSZ)" >&2; exit 1; }
@@ -47,7 +61,7 @@ api() { curl -sS -H "Authorization: Bearer $token" -H "Accept: application/vnd.g
 repo="$GH_API/repos/$GH_OWNER/$GH_REPO_NAME"
 
 # Idempotency: the same source, run and attempt for this environment is one deploy.
-existing=$(api -G "$repo/deployments" --data-urlencode "sha=$SHA" --data-urlencode "environment=$ENV_NAME" \
+existing=$(api -G "$repo/deployments" --data-urlencode "$lookup" --data-urlencode "environment=$ENV_NAME" \
   --data-urlencode "per_page=100" |
   jq -r --arg s "$SOURCE" --arg r "$RUN_ID" --argjson a "$ATTEMPT" \
     '[.[] | select(.payload.ledger == 1 and .payload.source == $s and .payload.runId == $r and .payload.attempt == $a)] | first | .id // empty')
@@ -71,7 +85,7 @@ if [[ -n "$existing" ]]; then
 fi
 
 payload=$(jq -cn \
-  --arg sha "$SHA" --arg env "$ENV_NAME" --arg src "$SOURCE" --arg run "$RUN_ID" --arg url "$RUN_URL" \
+  --arg sha "$target" --arg env "$ENV_NAME" --arg src "$SOURCE" --arg run "$RUN_ID" --arg url "$RUN_URL" \
   --argjson attempt "$ATTEMPT" --arg started "${STARTED_AT:-}" --arg finished "$FINISHED_AT" \
   --arg version "${VERSION:-}" --argjson production "$PRODUCTION" \
   '{ref: $sha, environment: $env, auto_merge: false, required_contexts: [], transient_environment: false,
@@ -84,7 +98,7 @@ response=$(api -w '\n%{http_code}' -X POST "$repo/deployments" -d "$payload")
 code=${response##*$'\n'}
 body=${response%$'\n'*}
 if [[ "$code" == 422 ]]; then
-  # Usually a commit GitHub does not know (mirror behind); GitHub's message says which.
+  # Usually a commit or tag GitHub does not know (mirror behind); GitHub's message says which.
   echo "not recorded (HTTP 422): $(jq -r '.message // "unprocessable"' <<<"$body" 2>/dev/null | head -c 200)"
   exit 0
 fi

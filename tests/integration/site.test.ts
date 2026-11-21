@@ -926,7 +926,8 @@ describe('static site', () => {
         expect(table).toMatch(/<svg[^>]*octicon-arrow-up/);
         expect(table).toMatch(/class="visually-hidden"[^>]*>A newer version is waiting/);
         expect(alpha).toContain('alpha-legacy-reports');
-        expect(alpha).toMatch(/Outside the umbrella \(1\)/);
+        // The only component outside the chart is deployed on its own: a row, not that list.
+        expect(alpha).not.toContain('Outside the umbrella');
         // The table scrolls inside its own container.
         expect(alpha).toMatch(/<div[^>]*class="[^"]*um-wrap[^"]*"[^>]*tabindex="0"/);
         // The "To check" table still follows.
@@ -943,9 +944,113 @@ describe('static site', () => {
       it('is in Italian on /it/versions', async () => {
         const alpha = card(await page('it/versions'), 'project-alpha');
         expect(alpha).toContain('Componenti per ambiente');
-        expect(alpha).toContain('Fuori dall&#39;umbrella (1)');
+        expect(alpha).toContain('Deployati per conto proprio');
+        expect(alpha).toContain('dichiarato a mano');
         expect(alpha).not.toContain('Components by environment');
       });
+
+      // Components deployed on their own (spec 2026-11-20 §5.4).
+      const ownRow = (html: string, id: string) => {
+        const from = html.indexOf(`<tr data-component="${id}" data-own`);
+        return from < 0 ? '' : html.slice(from, html.indexOf('</tr>', from));
+      };
+      const ownCell = (row: string, env: string) => {
+        const from = row.indexOf(`data-env="${env}"`);
+        return from < 0 ? '' : row.slice(from, row.indexOf('</td>', from));
+      };
+
+      it('Alpha: the helm chart, deployed on its own, is a row read from its deployments', async () => {
+        const alpha = card(await page('versions'), 'project-alpha');
+        expect(textOf(alpha)).toContain('Deployed on their own');
+        const row = ownRow(alpha, 'helm');
+        expect(row).not.toBe('');
+        // After the umbrella rows, in the same table.
+        expect(alpha.indexOf('data-component="worker"')).toBeLessThan(alpha.indexOf('data-own'));
+        expect(alpha.indexOf('data-own')).toBeLessThan(alpha.indexOf('</table>'));
+        // DEV runs a branch: its ref and commit, no version.
+        expect(textOf(ownCell(row, 'DEV'))).toMatch(/main @ [0-9a-f]{7}/);
+        // TEST: a version marked as deployed, icon plus text, never colour alone.
+        const test = ownCell(row, 'TEST');
+        expect(test).toContain('data-state="ok"');
+        expect(textOf(test)).toContain('0.9.0');
+        expect(test).toMatch(/<svg[^>]*octicon-/);
+        expect(test).toMatch(/class="visually-hidden"[^>]*>deployed/);
+        // UAT: declared by hand, and behind TEST.
+        const uat = ownCell(row, 'UAT');
+        expect(textOf(uat)).toContain('0.8.0');
+        expect(textOf(uat)).toContain('declared by hand');
+        expect(textOf(uat)).not.toMatch(/(^|[^a-z])deployed/);
+        expect(uat).toMatch(/octicon-arrow-up/);
+        // PROD: the newest deploy failed, the last good one still runs.
+        expect(textOf(ownCell(row, 'PROD'))).toContain('0.8.0');
+        // Not in the umbrella chart: a dash with its reason, not an unknown.
+        expect(row).toContain('Not in the umbrella chart');
+      });
+
+      it('a project without an umbrella chart gets the table for its own-deployment components', async () => {
+        const data = join(work, 'own-only');
+        await cp('fixtures/snapshots', data, { recursive: true });
+        const file = join(data, 'projects/project-beta.json');
+        const beta = JSON.parse(await readFile(file, 'utf8')) as {
+          environments: { id: string }[];
+          components: { id: string; environmentVersions: unknown }[];
+        };
+        const states = ['none', 'no-success', 'not-authorised', 'ok'];
+        beta.components.find((c) => c.id === 'api')!.environmentVersions = beta.environments.map(
+          (e, i) => ({
+            environmentId: e.id,
+            environment: i === 0 ? 'laboratory' : e.id,
+            state: states[i] ?? 'ok',
+            version: (states[i] ?? 'ok') === 'ok' ? '1.0.0' : null,
+            ref: null,
+            revision: null,
+            deployedAt: (states[i] ?? 'ok') === 'ok' ? '2026-01-10T10:00:00Z' : null,
+            declared: false,
+          }),
+        );
+        // A deploy recorded by commit only (no version, no tag): still shown as deployed.
+        beta.components.find((c) => c.id === 'web')!.environmentVersions = beta.environments.map(
+          (e) => ({
+            environmentId: e.id,
+            environment: e.id,
+            state: 'ok',
+            version: null,
+            ref: null,
+            revision: 'abc1234',
+            deployedAt: '2026-01-10T10:00:00Z',
+            declared: false,
+          }),
+        );
+        await writeFile(file, JSON.stringify(beta));
+        const out = join(work, 'dist-own-only');
+        await buildSite(data, out);
+        const html = card(await readFile(join(out, 'versions/index.html'), 'utf8'), 'project-beta');
+        expect(html).toContain('Components by environment');
+        expect(html).not.toContain('class="vpath"');
+        expect(textOf(html)).not.toContain('Umbrella (main)');
+        expect(textOf(html)).not.toContain('Umbrella chart');
+        expect(textOf(html)).not.toContain('Deployed on their own');
+        const row = ownRow(html, 'api');
+        const cells = row.match(/<td[^>]*data-state="[^"]*"[\s\S]*?<\/td>/g) ?? [];
+        expect(cells.map((c) => /data-state="([^"]*)"/.exec(c)![1])).toEqual(states);
+        // No deployment at all: a dash that names the environment that was read.
+        expect(cells[0]).toContain('No deployment recorded for environment laboratory');
+        // Not "none": deployments exist, or the read failed.
+        expect(textOf(cells[1]!)).toContain('No successful deployment among the newest 10');
+        expect(textOf(cells[2]!)).toContain('Not authorised');
+        expect(textOf(cells[3]!)).toContain('1.0.0');
+        const byCommit = ownRow(html, 'web').match(/<td[^>]*data-state="ok"[\s\S]*?<\/td>/g) ?? [];
+        expect(byCommit).toHaveLength(beta.environments.length);
+        expect(textOf(byCommit[0]!)).toContain('abc1234');
+        expect(byCommit[0]).toMatch(/class="visually-hidden"[^>]*>deployed/);
+        // The other projects of that build are untouched.
+        const all = await readFile(join(out, 'versions/index.html'), 'utf8');
+        expect(card(all, 'project-gamma')).not.toContain('Components by environment');
+        // The project page links to the table.
+        expect(await readFile(join(out, 'projects/project-beta/index.html'), 'utf8')).toMatch(
+          /href="[^"]*\/versions\/#v-project-beta"/,
+        );
+      }, 120_000);
 
       it('the Alpha project page links to its Versions card; Beta has no such link', async () => {
         const alpha = await page('projects/project-alpha');
@@ -994,6 +1099,25 @@ describe('static site', () => {
       expect(prod).toBeDefined();
       expect(prod).toContain(',2.0.3,');
       expect(prod!.endsWith(',v1.3.0')).toBe(true);
+    });
+
+    it('versions.csv has the own-deployment rows, marked deployment or declared', async () => {
+      const lines = (await csv('versions.csv')).replace('\uFEFF', '').split('\r\n').filter(Boolean);
+      const header = lines[0]!.split(',');
+      const row = (item: string) => {
+        const line = lines.find((l) =>
+          l.startsWith(`component-environment,project-alpha,${item},`),
+        );
+        return line ? Object.fromEntries(line.split(',').map((v, i) => [header[i], v])) : null;
+      };
+      expect(row('helm@test')).toMatchObject({ version: '0.9.0', version_source: 'deployment' });
+      expect(row('helm@uat')).toMatchObject({ version: '0.8.0', version_source: 'declared' });
+      expect(row('helm@prod')).toMatchObject({ version: '0.8.0', version_source: 'deployment' });
+      // A branch deployment is a deploy without a version.
+      expect(row('helm@dev')).toMatchObject({ version_source: 'deployment' });
+      expect(row('helm@dev')!.version).not.toMatch(/\d/);
+      // The umbrella rows keep their source.
+      expect(row('frontend@prod')).toMatchObject({ version_source: 'umbrella' });
     });
 
     it('supply-chain.csv has its header and one row per project and repository', async () => {
@@ -2050,7 +2174,7 @@ describe('static site', () => {
     const idx = join(data, 'index.json');
     await writeFile(
       idx,
-      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.11"', '"schemaVersion": "9.0"'),
+      (await readFile(idx, 'utf8')).replace('"schemaVersion": "1.12"', '"schemaVersion": "9.0"'),
     );
     const out = join(work, 'dist-bad');
     await buildSite(data, out);

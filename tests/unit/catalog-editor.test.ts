@@ -99,6 +99,21 @@ describe('catalog editor: draft → catalog', () => {
     expect(again.components[0]!.versionSource).toBe('umbrella');
   });
 
+  it('keeps deployments when a project is saved', () => {
+    // Alpha: every component has its own repository (the flag is refused on a shared one).
+    const base = snapshot.catalog.projects[indexOf('project-alpha')]!;
+    const original = ProjectConfigSchema.parse({
+      ...base,
+      components: base.components.map((c, i) => (i === 0 ? { ...c, deployments: true } : c)),
+    });
+    const yaml = parse(projectToYaml(projectToDraft(original))) as {
+      components: Record<string, unknown>[];
+    };
+    expect(yaml.components[0]!.deployments).toBe(true);
+    expect('deployments' in yaml.components[1]!).toBe(false);
+    expect(ProjectConfigSchema.parse(yaml).components[0]!.deployments).toBe(true);
+  });
+
   it('keeps a github-deployments deploy signal when a project is saved', () => {
     const base = snapshot.catalog.projects[0]!;
     const withSignal = ProjectConfigSchema.parse({

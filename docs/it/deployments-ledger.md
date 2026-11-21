@@ -123,6 +123,28 @@ conosce restituisce HTTP 422: lo script esce con 0 e stampa il messaggio di GitH
 non si riesce a scrivere fa fallire lo step (un avviso, con `continueOnError`) e la prossima
 esecuzione dello step lo aggiunge; il deployment non viene mai scritto due volte.
 
+### Un deploy per versione: `REF` al posto di `SHA`
+
+Alcune pipeline deployano **una versione rilasciata scelta a mano** (un parametro della run come
+`version: 0.9.0`, nessun checkout). Il commit di quella run è la testa del branch di default, non
+quello rilasciato, quindi `SHA: $(Build.SourceVersion)` registrerebbe il commit sbagliato. Si
+passa allo script il tag della release: lo risolve GitHub.
+
+```yaml
+env:
+  REF: v$(deployedVersion) # al posto di SHA
+  VERSION: $(deployedVersion)
+  ENV_NAME: test
+  # le altre variabili come sopra
+```
+
+Si imposta **esattamente uno** tra `SHA` (lo SHA completo di un commit) e `REF` (un tag o un
+branch che esiste su GitHub; lettere, cifre, `.`, `_`, `/`, `-`, al massimo 100 caratteri, senza
+`..`): entrambi o nessuno fermano lo script prima di qualsiasi chiamata. Un nome che GitHub non
+conosce restituisce HTTP 422 e non viene registrato, come un commit sconosciuto. Alla App non
+serve altro che Deployments: read and write. L'hub legge questi record per componente con
+[`deployments: true`](configuration.md#versioni-dei-componenti-dai-deployment-del-componente).
+
 ## Bridge in lettura: Azure DevOps → GitHub
 
 Il bridge legge, per ogni environment Azure DevOps mappato, i suoi record di deploy (api-version

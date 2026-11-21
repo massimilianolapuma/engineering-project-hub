@@ -135,7 +135,13 @@ describe('readEnvironmentState — GitHub deployments', () => {
     );
     expect(seen).toEqual(['example-org/coord:lab']);
     expect(s?.ledger).toEqual(
-      ok({ version: null, ref: 'main', sha: SHA, deployedAt: '2026-03-01T10:05:00Z' }),
+      ok({
+        version: null,
+        ref: 'main',
+        sha: SHA,
+        deployedAt: '2026-03-01T10:05:00Z',
+        declared: false,
+      }),
     );
   });
 
@@ -160,7 +166,13 @@ describe('readEnvironmentState — GitHub deployments', () => {
       env('lab', ledgerSignal()),
     );
     expect(s?.ledger).toEqual(
-      ok({ version: '2.0.0', ref: 'main', sha: SHA, deployedAt: '2026-03-01T11:00:00Z' }),
+      ok({
+        version: '2.0.0',
+        ref: 'main',
+        sha: SHA,
+        deployedAt: '2026-03-01T11:00:00Z',
+        declared: false,
+      }),
     );
   });
 
@@ -218,7 +230,13 @@ describe('toEnvironments with signal states', () => {
       'lab',
       {
         repository: 'example-org/coord',
-        ledger: ok({ version: null, ref: 'main', sha: SHA, deployedAt: '2026-03-01T10:05:00Z' }),
+        ledger: ok({
+          version: null,
+          ref: 'main',
+          sha: SHA,
+          deployedAt: '2026-03-01T10:05:00Z',
+          declared: false,
+        }),
       },
     ],
     ['svil', { repository: 'example-org/coord', declared: ok('0.11.8') }],
@@ -261,6 +279,7 @@ describe('toEnvironments with signal states', () => {
         ref: 'v0.11.8',
         sha: SHA,
         deployedAt: '2026-03-01T10:05:00Z',
+        declared: false,
       }),
     });
     const [lab, , prod] = toEnvironments(

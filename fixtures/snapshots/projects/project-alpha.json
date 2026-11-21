@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.11",
+  "schemaVersion": "1.12",
   "generatedAt": "2026-01-15T12:00:00.000Z",
   "project": {
     "id": "project-alpha",
@@ -153,7 +153,8 @@
         "main": "1.4.0",
         "release": "1.4.0",
         "conflict": false
-      }
+      },
+      "environmentVersions": null
     },
     {
       "id": "frontend",
@@ -216,7 +217,8 @@
         "main": "2.1.0",
         "release": "2.1.0",
         "conflict": false
-      }
+      },
+      "environmentVersions": null
     },
     {
       "id": "worker",
@@ -279,7 +281,8 @@
         "main": "1.2.0",
         "release": "1.2.0",
         "conflict": false
-      }
+      },
+      "environmentVersions": null
     },
     {
       "id": "helm",
@@ -342,7 +345,49 @@
         "main": null,
         "release": null,
         "conflict": false
-      }
+      },
+      "environmentVersions": [
+        {
+          "environmentId": "dev",
+          "environment": "dev",
+          "state": "ok",
+          "version": null,
+          "ref": "main",
+          "revision": "d304f3f",
+          "deployedAt": "2026-01-15T07:00:00.000Z",
+          "declared": false
+        },
+        {
+          "environmentId": "test",
+          "environment": "test",
+          "state": "ok",
+          "version": "0.9.0",
+          "ref": "v0.9.0",
+          "revision": "d304f3f",
+          "deployedAt": "2026-01-13T12:00:00.000Z",
+          "declared": false
+        },
+        {
+          "environmentId": "uat",
+          "environment": "uat",
+          "state": "ok",
+          "version": "0.8.0",
+          "ref": null,
+          "revision": "7b1e5c2",
+          "deployedAt": "2026-01-05T12:00:00.000Z",
+          "declared": true
+        },
+        {
+          "environmentId": "prod",
+          "environment": "production",
+          "state": "ok",
+          "version": "0.8.0",
+          "ref": null,
+          "revision": "7b1e5c2",
+          "deployedAt": "2026-01-03T12:00:00.000Z",
+          "declared": false
+        }
+      ]
     }
   ],
   "environments": [

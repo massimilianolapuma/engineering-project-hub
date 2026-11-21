@@ -416,6 +416,54 @@ above the umbrella on main, or an environment is below the nearest known version
 Snapshot 1.11 adds `coordinator.umbrellaChart`, `component.umbrella` and
 `environment.componentVersions`.
 
+### Component versions from the component's own deployments
+
+A component that is **deployed on its own** (a database published by its own pipeline, a chart
+with its own release cadence) can say so in the catalog:
+
+```yaml
+components:
+  - id: database
+    name: Database
+    repository: example-org/alpha-database
+    type: other
+    deployments: true # optional, default false
+```
+
+For each environment of the project, the collector reads the GitHub Deployments of the
+**component's repository** (one list call and at most 10 status reads, as for the project
+environments):
+
+- environment name: the environment's `githubEnvironment`, else its `id`. The `environment` and
+  `sources` options of the project's `deploySignal` are not used: they belong to the repository
+  that signal reads;
+- version: the `version` of the [ledger](deployments-ledger.md) payload, else the tag the
+  deployment was made from (the component's `releaseTagPrefix`, default `v`). A deployment from a
+  branch has no version and is shown as `main @ 1a2b3c4`;
+- what runs now: the newest deployment with a `success` status, by the real deploy time.
+
+The flag is ignored for a component the umbrella chart on the default branch contains (the chart
+stays its source). `npm run validate:config` refuses it on a repository shared with the coordinator or
+with another component (GitHub Deployments belong to a repository), and on more than **20**
+components in one project.
+
+| State            | Meaning                                                       | In the table                                     |
+| ---------------- | ------------------------------------------------------------- | ------------------------------------------------ |
+| `ok`             | a successful deployment was found                             | version (else branch or commit), marked deployed |
+| `none`           | the environment has no deployment at all                      | `–` naming the environment                       |
+| `no-success`     | deployments exist, none of the 10 newest succeeded            | unknown, with the reason                         |
+| `not-found`      | the repository or its deployments were not found              | unknown, with the reason                         |
+| `not-authorised` | the hub App cannot read them (it needs **Deployments: read**) | unknown, with the reason                         |
+| `unknown`        | any other failed read                                         | unknown, with the reason                         |
+
+A failed read is a `deploy-signal` collection error, never "not deployed". A record declared by
+hand (ledger `declared: true`) is marked **declared by hand**, never deployed.
+
+On the Versions page these components are a second group of rows, **Deployed on their own**, in
+the Components by environment table; a project without an umbrella chart gets the same table
+without the "Umbrella (main)" column. The mark ▲ says the cell is below the nearest known version
+on its left, the latest release first. Snapshot 1.12 adds `component.environmentVersions`.
+
 ### Adding a project (no code change)
 
 Preferred: open `/catalog/`, add a discovered proposal (or create a project), then
@@ -1177,7 +1225,7 @@ separator: use Data, From Text/CSV.
 
 - `portfolio.csv`: `project_id, project_name, business_unit, lifecycle, overall, score, score_measured, score_required, delivery, version, security, controls_coverage, controls_coverage_percent, governance, quality, quality_percent, open_critical, open_high, open_medium, open_low, counts_complete, open_secret_alerts, failed_critical_workflows, collection_errors, collected_at, previous_overall, previous_score, previous_collected_at, controls_passed, controls_failed, controls_unknown, overdue, overdue_critical_high, accepted, exception_issues, teams`. The `previous_*` columns are `n/a` when there is no previous collection. `teams` lists the project's teams (`org/slug`) joined with `;`, empty when it has none.
 - `findings-summary.csv`: `project_id, component_id, repository, open_critical, open_high, open_medium, open_low, open_informational, open_unknown, sources_complete, overdue, accepted`. `overdue` and `accepted` count that repository's findings (`unknown` when SLAs are off or no alert source was readable). All counts are `unknown` when no alert source was readable; when only some were, the counts are a lower bound and `sources_complete` is `false`.
-- `versions.csv`: `row_type (coordinator|component|environment|component-environment), project_id, item_id, item_name, repository, version, version_source, declared_version, latest_release, drift, manifest_consistency, pin_status, environment_status, environment_source, environment_declared_version, sync_status, health_status, chart_ref`. The four columns before `chart_ref` apply to environment rows (`n/a` on component and coordinator rows); `component-environment` rows fill `environment_status` and `environment_source` as well. `environment_source` is `argocd` or `manifest`, `environment_declared_version` the manifest's version of the environment, `sync_status` and `health_status` what Argo CD reported (`n/a` without Argo CD). `component-environment` rows give one component in one environment from the umbrella chart; `chart_ref` is the chart tag it was read at (`n/a` on other rows).
+- `versions.csv`: `row_type (coordinator|component|environment|component-environment), project_id, item_id, item_name, repository, version, version_source, declared_version, latest_release, drift, manifest_consistency, pin_status, environment_status, environment_source, environment_declared_version, sync_status, health_status, chart_ref`. The four columns before `chart_ref` apply to environment rows (`n/a` on component and coordinator rows); `component-environment` rows fill `environment_status` and `environment_source` as well. `environment_source` is `argocd` or `manifest`, `environment_declared_version` the manifest's version of the environment, `sync_status` and `health_status` what Argo CD reported (`n/a` without Argo CD). `component-environment` rows give one component in one environment: from the umbrella chart (`version_source` `umbrella`; `chart_ref` is the chart tag it was read at, `n/a` on other rows), or from the component's own GitHub Deployments (`version_source` `deployment`, or `declared` for a record declared by hand; one row per environment with a successful deployment, `version` `n/a` for a deployment from a branch, `unknown` for one recorded by commit only).
 - `supply-chain.csv`: `project_id, repository, component_ids, sbom_state, sbom_source, packages, without_license, flagged, attestation_state, assets_checked, assets_with_provenance, images, images_signed, images_unsigned, container_scanning_source, iac_scanning_source, dast_source, summary_state`. `component_ids` is joined with `;`. Counts are `unknown` when the source could not be read, never 0.
 - `control-map.csv` (only when the [control map](control-map.md) is published): `project_id, business_unit, check, area, level, state, value, unit, readable, reason, source_environment, signal, collected_at`. `level` and `value` are `n/a` when not measured, never 0; `readable` is `k/n` repositories read.
 

@@ -51,6 +51,9 @@ components:
     submodulePath: deploy/helm
     notApplicableControls: [containerScanning]
     versionSource: release # chart released and deployed on its own cadence
+    # Deployed on its own: its version per environment comes from the GitHub Deployments of its
+    # repository (written by the external pipeline, docs/deployments-ledger.md).
+    deployments: true
 
 environments:
   - id: dev

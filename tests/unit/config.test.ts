@@ -673,6 +673,71 @@ describe('catalog: supply chain mappings', () => {
     expect(mutate((p) => void (p.components[0]!.chartDependency = 'Bad Name')).success).toBe(false);
   });
 
+  // Component deployments spec §5.2: GitHub Deployments belong to a repository.
+  const SHARED =
+    'not allowed when the repository is shared with the coordinator or another component';
+  const messages = (r: ReturnType<typeof mutate>) =>
+    r.success ? [] : r.error.issues.map((i) => i.message);
+
+  it('accepts deployments: true on a component with its own repository', () => {
+    const r = mutate((p) => void (p.components[0]!.deployments = true));
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.components[0]!.deployments).toBe(true);
+      expect('deployments' in r.data.components[1]!).toBe(false);
+    }
+  });
+
+  it('rejects deployments: true on a repository shared with the coordinator or another component', () => {
+    const inCoordinator = mutate((p) => {
+      p.components[0]!.repository = p.coordinator.repository;
+      p.components[0]!.path = 'services/backend';
+      delete p.components[0]!.submodulePath;
+      p.components[0]!.deployments = true;
+    });
+    expect(messages(inCoordinator)).toContain(SHARED);
+    const twoInOne = mutate((p) => {
+      p.components[0]!.repository = 'example-org/alpha-db';
+      p.components[0]!.path = 'a';
+      delete p.components[0]!.submodulePath;
+      p.components[1]!.repository = 'example-org/alpha-db';
+      p.components[1]!.path = 'b';
+      delete p.components[1]!.submodulePath;
+      p.components[1]!.deployments = true;
+    });
+    expect(messages(twoInOne)).toContain(SHARED);
+    const otherCase = mutate((p) => {
+      p.components[0]!.repository = 'Example-Org/Alpha-DB';
+      p.components[0]!.path = 'a';
+      delete p.components[0]!.submodulePath;
+      p.components[1]!.repository = 'example-org/alpha-db';
+      p.components[1]!.path = 'b';
+      delete p.components[1]!.submodulePath;
+      p.components[0]!.deployments = true;
+    });
+    expect(messages(otherCase)).toContain(SHARED);
+  });
+
+  it('rejects more than 20 components with deployments: true', () => {
+    const many = (n: number) =>
+      mutate((p) => {
+        // Added to the existing components: workflows and signals refer to those by id. The
+        // demo's own flag is cleared so that exactly `n` components carry it.
+        for (const c of p.components) delete c.deployments;
+        p.components.push(
+          ...Array.from({ length: n }, (_, i) => ({
+            id: `db-${i}`,
+            name: `DB ${i}`,
+            repository: `example-org/alpha-db-${i}`,
+            type: 'other',
+            deployments: true,
+          })),
+        );
+      });
+    expect(many(20).success).toBe(true);
+    expect(messages(many(21))).toContain('at most 20 components with deployments: true');
+  });
+
   it('accepts a sonar key, container images and an argocd application', () => {
     const r = mutate((p) => {
       p.components[0]!.sonarProjectKey = 'example-org_project-alpha-backend';

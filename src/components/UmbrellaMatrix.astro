@@ -5,6 +5,10 @@
  * environment (its version, status pill and where the version comes from). ▲ is an icon plus
  * visually hidden text, never colour alone; an unreadable cell is the dashed "unknown" label with
  * its reason. The table scrolls inside its own region; the page never scrolls sideways.
+ * Components deployed on their own (catalog `deployments: true`) are a second group of rows, read
+ * from the GitHub Deployments of their repository: every such cell says "deployed" (or "declared
+ * by hand") with an icon plus text, whatever the column header says. Without an umbrella chart
+ * the table has only those rows and no "Umbrella (main)" column.
  * `open`: a section (check cards, in place of the environment path, with each environment's
  * deployment line); otherwise a closed disclosure (aligned and unknown cards).
  */
@@ -12,7 +16,7 @@ import type { ProjectSnapshot } from '@model/index';
 import type { I18n } from '../i18n';
 import { displayVersion } from '../lib/format';
 import { driftTone } from '../lib/tones';
-import { matrixOf, type CellReason } from '../lib/umbrella-matrix';
+import { matrixOf, type CellReason, type OwnCell } from '../lib/umbrella-matrix';
 import EnvDeployment from './EnvDeployment.astro';
 import EvidenceLabel from './EvidenceLabel.astro';
 import Octicon from './Octicon.astro';
@@ -32,10 +36,21 @@ const titleId = `um-${s.project.id}`;
 const caption = f(t.caption, { project: s.project.name });
 const names = Object.fromEntries(s.components.map((c) => [c.id, c.name]));
 const reasonText = (r: CellReason) => (r ? t.reason[r] : d.common.unknown);
+/** Why an own-deployment cell has nothing to show (every state but "ok" and "none"). */
+const ownReason = (c: OwnCell) =>
+  c.state === 'ok' || c.state === 'none' ? t.reason['no-version'] : t.reason[c.state];
+/** "deployed 3 Mar 2026" / "declared by hand · 3 Mar 2026": the cell's title. */
+const ownTitle = (c: OwnCell) => {
+  const when = c.deployedAt ? i18n.date(c.deployedAt) : null;
+  if (c.declared) return when ? `${t.ownDeclared} · ${when}` : t.ownDeclared;
+  return when ? f(d.sources.deployedOn, { d: when }) : t.ownDeployed;
+};
+const columns = (m?.environments.length ?? 0) + (m?.hasUmbrella ? 3 : 2);
+const anyDeclared = m?.own.some((r) => r.cells.some((c) => c.declared)) ?? false;
 const Wrapper = open ? 'section' : 'details';
 ---
 
-{m && chart && (
+{m && (
   <Wrapper
     class:list={['um', { 'vmatrix disclosure': !open }]}
     aria-labelledby={open ? titleId : undefined}
@@ -48,17 +63,19 @@ const Wrapper = open ? 'section' : 'details';
     ) : (
       <summary>{t.title}</summary>
     )}
-    <p class="um__chart">
-      <span class="muted">{t.chart}</span> <code>{chart.path}</code>
-      {chart.state === 'ok' ? (
-        chart.chartVersion && (
-          <span class="muted">· {f(t.chartVersion, { v: chart.chartVersion })}</span>
-        )
-      ) : (
-        <EvidenceLabel level="unknown" text={t.reason[chart.state]} i18n={i18n} />
-      )}
-    </p>
-    {(m.rows.length > 0 || m.environments.length > 0) && (
+    {chart && (
+      <p class="um__chart">
+        <span class="muted">{t.chart}</span> <code>{chart.path}</code>
+        {chart.state === 'ok' ? (
+          chart.chartVersion && (
+            <span class="muted">· {f(t.chartVersion, { v: chart.chartVersion })}</span>
+          )
+        ) : (
+          <EvidenceLabel level="unknown" text={t.reason[chart.state]} i18n={i18n} />
+        )}
+      </p>
+    )}
+    {(m.rows.length > 0 || m.own.length > 0 || m.environments.length > 0) && (
       <div class="table-wrap um-wrap" tabindex="0" role="region" aria-label={caption}>
         <table class="um-table">
           <caption class="visually-hidden">{caption}</caption>
@@ -66,7 +83,7 @@ const Wrapper = open ? 'section' : 'details';
             <tr>
               <th scope="col">{d.common.component}</th>
               <th scope="col">{t.colLatest}</th>
-              <th scope="col">{t.colMain}</th>
+              {m.hasUmbrella && <th scope="col">{t.colMain}</th>}
               {m.environments.map((e, i) => (
                 <th
                   scope="col"
@@ -151,6 +168,64 @@ const Wrapper = open ? 'section' : 'details';
               </tr>
             ))}
           </tbody>
+          {m.own.length > 0 && (
+            <tbody class="um-own">
+              {m.hasUmbrella && (
+                <tr class="um-group">
+                  <th scope="rowgroup" colspan={columns}>
+                    {t.ownGroup}
+                  </th>
+                </tr>
+              )}
+              {m.own.map((r) => (
+                <tr data-component={r.componentId} data-own>
+                  <th scope="row">{r.name}</th>
+                  <td class="mono">{r.latest ?? <UnknownValue i18n={i18n} class="muted" />}</td>
+                  {m.hasUmbrella && (
+                    <td class="mono">
+                      <span class="muted" title={t.notInUmbrella}>
+                        <span aria-hidden="true">–</span>
+                        <span class="visually-hidden">{t.notInUmbrella}</span>
+                      </span>
+                    </td>
+                  )}
+                  {r.cells.map((c, i) => (
+                    <td class="mono" data-env={m.environments[i]!.name} data-state={c.state}>
+                      {c.state === 'ok' && (c.version || c.branch || c.commit) ? (
+                        <span class="um-v">
+                          {c.version ?? (c.branch ? f(d.sources.refAt, c.branch) : c.commit)}
+                          <span class="um-src" title={ownTitle(c)}>
+                            <Octicon name={c.declared ? 'pencil' : 'rocket'} size={12} />
+                            <span class="visually-hidden">
+                              {c.declared ? t.ownDeclared : t.ownDeployed}
+                            </span>
+                          </span>
+                          {c.waiting && (
+                            <span class="um-up" title={t.waitingEnv}>
+                              <Octicon name="arrow-up" size={12} />
+                              <span class="visually-hidden">{t.waitingEnv}</span>
+                            </span>
+                          )}
+                        </span>
+                      ) : c.state === 'none' ? (
+                        <span class="muted" title={f(t.ownNone, { env: c.environment })}>
+                          <span aria-hidden="true">–</span>
+                          <span class="visually-hidden">
+                            {f(t.ownNone, { env: c.environment })}
+                          </span>
+                        </span>
+                      ) : (
+                        <span title={ownReason(c)}>
+                          <EvidenceLabel level="unknown" i18n={i18n} />
+                          <span class="visually-hidden">{ownReason(c)}</span>
+                        </span>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          )}
         </table>
       </div>
     )}
@@ -160,6 +235,22 @@ const Wrapper = open ? 'section' : 'details';
           <Octicon name="arrow-up" size={12} />
         </span>{' '}
         {t.legend}
+      </p>
+    )}
+    {m.own.length > 0 && (
+      <p class="note um-legend">
+        <span class="um-src">
+          <Octicon name="rocket" size={12} />
+        </span>{' '}
+        {t.ownLegend}
+      </p>
+    )}
+    {anyDeclared && (
+      <p class="note um-legend">
+        <span class="um-src">
+          <Octicon name="pencil" size={12} />
+        </span>{' '}
+        {t.ownDeclaredLegend}
       </p>
     )}
     {m.outside.length > 0 && (
@@ -245,8 +336,14 @@ const Wrapper = open ? 'section' : 'details';
     border-bottom: 1px solid var(--borderColor-default);
     white-space: nowrap;
   }
-  .um-table tbody tr:last-child > * {
+  .um-table tbody:last-child tr:last-child > * {
     border-bottom: 0;
+  }
+  /* Heading of the rows read from the components' own deployments. */
+  .um-table tbody .um-group th {
+    font-size: var(--text-body-size-small);
+    color: var(--fgColor-muted);
+    background: var(--bgColor-muted);
   }
   .um-table thead th {
     font-size: var(--text-body-size-small);
@@ -295,6 +392,12 @@ const Wrapper = open ? 'section' : 'details';
     display: inline-flex;
     align-items: center;
     color: var(--fgColor-attention);
+  }
+  /* Where an own-deployment cell comes from (deployed / declared by hand): icon plus text. */
+  .um-src {
+    display: inline-flex;
+    align-items: center;
+    color: var(--fgColor-muted);
   }
   .um-legend,
   .um-unmapped {

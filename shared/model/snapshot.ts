@@ -647,6 +647,36 @@ export const ComponentUmbrellaSchema = z
   .strict();
 export type ComponentUmbrella = z.infer<typeof ComponentUmbrellaSchema>;
 
+/** What a component's own GitHub Deployments say about one environment (schema 1.12). */
+export const ComponentEnvironmentStateSchema = z.enum([
+  /** A successful deployment was found. */
+  'ok',
+  /** The environment has no deployment at all. */
+  'none',
+  /** Deployments exist, none of the newest ones read has a success status. */
+  'no-success',
+  'not-found',
+  'not-authorised',
+  'unknown',
+]);
+export const ComponentEnvironmentVersionSchema = z
+  .object({
+    environmentId: z.string().max(100),
+    /** GitHub environment name that was read (`githubEnvironment`, else the id). */
+    environment: z.string().max(255),
+    state: ComponentEnvironmentStateSchema,
+    version: z.string().max(100).nullable(),
+    /** Branch or tag the deployment was made from. */
+    ref: z.string().max(100).nullable(),
+    /** 7-character short SHA of the deployed commit. */
+    revision: z.string().max(100).nullable(),
+    deployedAt: isoDate.nullable(),
+    /** The record was declared by hand (ledger payload `declared`), not reported by a pipeline. */
+    declared: z.boolean(),
+  })
+  .strict();
+export type ComponentEnvironmentVersion = z.infer<typeof ComponentEnvironmentVersionSchema>;
+
 /** Component versions read from the umbrella chart at an environment's ref. */
 export const EnvironmentComponentVersionsSchema = z
   .object({
@@ -691,6 +721,11 @@ export const ComponentSnapshotSchema = z
     /** Effective version vs latest release. */
     drift: z.enum(['aligned', 'drift', 'unknown']),
     umbrella: ComponentUmbrellaSchema.nullable(),
+    /**
+     * Version per project environment from the component's own GitHub Deployments; null unless
+     * the catalog sets `deployments: true` (and the umbrella chart does not contain it).
+     */
+    environmentVersions: z.array(ComponentEnvironmentVersionSchema).max(50).nullable(),
   })
   .strict();
 export type ComponentSnapshot = z.infer<typeof ComponentSnapshotSchema>;
