@@ -2,6 +2,7 @@ import { parse as parseYaml } from 'yaml';
 import {
   ReleaseManifestSchema,
   type ComponentSnapshot,
+  type ComponentEnvironmentVersion,
   type ComponentUmbrella,
   type EnvironmentComponentVersions,
   type Pin,
@@ -215,6 +216,7 @@ export function toComponents(
   manifest: ReleaseManifest | null,
   submodules: Submodule[],
   umbrellaByComponent: Map<string, ComponentUmbrella> = new Map(),
+  environmentVersionsByComponent: Map<string, ComponentEnvironmentVersion[]> = new Map(),
 ): ComponentSnapshot[] {
   return raw.config.components.map((comp) => {
     const data = raw.repos.find((r) => r.componentId === comp.id)!;
@@ -289,7 +291,7 @@ export function toComponents(
       manifestConsistency,
       drift,
       umbrella,
-      environmentVersions: null,
+      environmentVersions: environmentVersionsByComponent.get(comp.id) ?? null,
     };
   });
 }
