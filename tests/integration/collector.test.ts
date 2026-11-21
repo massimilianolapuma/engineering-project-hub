@@ -298,6 +298,32 @@ describe('mock collection', () => {
     }
   });
 
+  it('Project Alpha: the helm component carries its own environment versions', async () => {
+    const { projects } = await mockRun();
+    const alpha = projects.find((p) => p.project.id === 'project-alpha')!;
+    const helm = alpha.components.find((c) => c.id === 'helm')!;
+    expect(
+      helm.environmentVersions!.map((e) => [
+        e.environmentId,
+        e.environment,
+        e.state,
+        e.version,
+        e.ref,
+        e.declared,
+      ]),
+    ).toEqual([
+      ['dev', 'dev', 'ok', null, 'main', false],
+      ['test', 'test', 'ok', '0.9.0', 'v0.9.0', false],
+      ['uat', 'uat', 'ok', '0.8.0', null, true],
+      // The newest deploy to production failed: the last good one still runs.
+      ['prod', 'production', 'ok', '0.8.0', null, false],
+    ]);
+    for (const p of projects)
+      for (const c of p.components)
+        if (!(p.project.id === 'project-alpha' && c.id === 'helm'))
+          expect(c.environmentVersions, `${p.project.id}/${c.id}`).toBeNull();
+  });
+
   it('keeps collecting other repositories when one fails (partial data)', async () => {
     const { index } = await mockRun();
     expect(index.run.repositories).toMatchObject({ total: 12, unavailable: 2 });

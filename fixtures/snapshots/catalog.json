@@ -235,7 +235,8 @@
               "containerScanning"
             ],
             "notApplicableChecks": [],
-            "versionSource": "release"
+            "versionSource": "release",
+            "deployments": true
           }
         ],
         "environments": [

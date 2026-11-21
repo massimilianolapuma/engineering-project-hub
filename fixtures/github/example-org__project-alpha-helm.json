@@ -77,5 +77,126 @@
       "httpStatus": 403,
       "message": "Dependency graph is not enabled for this repository"
     }
+  },
+  "deployments": {
+    "dev": [
+      {
+        "id": 701,
+        "sha": "d304f3fee80499f3c014fbbb7baea89240a9c334",
+        "ref": "main",
+        "environment": "dev",
+        "createdAt": "@now-5h",
+        "payload": {},
+        "creator": "github-actions[bot]"
+      }
+    ],
+    "test": [
+      {
+        "id": 702,
+        "sha": "d304f3fee80499f3c014fbbb7baea89240a9c334",
+        "ref": "v0.9.0",
+        "environment": "test",
+        "createdAt": "@now-2d",
+        "payload": {
+          "ledger": 1,
+          "source": "azure-devops",
+          "runId": "2101",
+          "runUrl": "https://dev.azure.com/example-org/example-project/_build/results?buildId=2101",
+          "attempt": 1,
+          "finishedAt": "@now-2d",
+          "version": "0.9.0",
+          "kind": "deploy"
+        },
+        "creator": "example-org-deployment-reporter[bot]"
+      }
+    ],
+    "uat": [
+      {
+        "id": 703,
+        "sha": "7b1e5c2a9d4f60813e2c5a7b9d1f3e5a7c9b2d40",
+        "environment": "uat",
+        "createdAt": "@now-9d",
+        "payload": {
+          "ledger": 1,
+          "source": "manual",
+          "runId": "declare-41",
+          "runUrl": "https://github.com/example-org/alpha-deploy/actions/runs/41",
+          "attempt": 1,
+          "finishedAt": "@now-10d",
+          "version": "0.8.0",
+          "declared": true,
+          "kind": "deploy"
+        },
+        "creator": "example-org-deployment-reporter[bot]"
+      }
+    ],
+    "production": [
+      {
+        "id": 705,
+        "sha": "d304f3fee80499f3c014fbbb7baea89240a9c334",
+        "environment": "production",
+        "createdAt": "@now-1d",
+        "payload": {
+          "ledger": 1,
+          "source": "azure-devops",
+          "runId": "2140",
+          "runUrl": "https://dev.azure.com/example-org/example-project/_build/results?buildId=2140",
+          "attempt": 1,
+          "finishedAt": "@now-1d",
+          "version": "0.9.0",
+          "kind": "deploy"
+        },
+        "creator": "example-org-deployment-reporter[bot]"
+      },
+      {
+        "id": 704,
+        "sha": "7b1e5c2a9d4f60813e2c5a7b9d1f3e5a7c9b2d40",
+        "environment": "production",
+        "createdAt": "@now-12d",
+        "payload": {
+          "ledger": 1,
+          "source": "azure-devops",
+          "runId": "2077",
+          "runUrl": "https://dev.azure.com/example-org/example-project/_build/results?buildId=2077",
+          "attempt": 1,
+          "finishedAt": "@now-12d",
+          "version": "0.8.0",
+          "kind": "deploy"
+        },
+        "creator": "example-org-deployment-reporter[bot]"
+      }
+    ]
+  },
+  "deploymentStatuses": {
+    "701": [
+      {
+        "state": "success",
+        "createdAt": "@now-5h"
+      }
+    ],
+    "702": [
+      {
+        "state": "success",
+        "createdAt": "@now-2d"
+      }
+    ],
+    "703": [
+      {
+        "state": "success",
+        "createdAt": "@now-9d"
+      }
+    ],
+    "704": [
+      {
+        "state": "success",
+        "createdAt": "@now-12d"
+      }
+    ],
+    "705": [
+      {
+        "state": "failure",
+        "createdAt": "@now-1d"
+      }
+    ]
   }
 }

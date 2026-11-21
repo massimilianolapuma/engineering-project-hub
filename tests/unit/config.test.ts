@@ -720,7 +720,9 @@ describe('catalog: supply chain mappings', () => {
   it('rejects more than 20 components with deployments: true', () => {
     const many = (n: number) =>
       mutate((p) => {
-        // Added to the existing components: workflows and signals refer to those by id.
+        // Added to the existing components: workflows and signals refer to those by id. The
+        // demo's own flag is cleared so that exactly `n` components carry it.
+        for (const c of p.components) delete c.deployments;
         p.components.push(
           ...Array.from({ length: n }, (_, i) => ({
             id: `db-${i}`,

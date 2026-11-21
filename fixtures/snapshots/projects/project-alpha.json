@@ -346,7 +346,48 @@
         "release": null,
         "conflict": false
       },
-      "environmentVersions": null
+      "environmentVersions": [
+        {
+          "environmentId": "dev",
+          "environment": "dev",
+          "state": "ok",
+          "version": null,
+          "ref": "main",
+          "revision": "d304f3f",
+          "deployedAt": "2026-01-15T07:00:00.000Z",
+          "declared": false
+        },
+        {
+          "environmentId": "test",
+          "environment": "test",
+          "state": "ok",
+          "version": "0.9.0",
+          "ref": "v0.9.0",
+          "revision": "d304f3f",
+          "deployedAt": "2026-01-13T12:00:00.000Z",
+          "declared": false
+        },
+        {
+          "environmentId": "uat",
+          "environment": "uat",
+          "state": "ok",
+          "version": "0.8.0",
+          "ref": null,
+          "revision": "7b1e5c2",
+          "deployedAt": "2026-01-05T12:00:00.000Z",
+          "declared": true
+        },
+        {
+          "environmentId": "prod",
+          "environment": "production",
+          "state": "ok",
+          "version": "0.8.0",
+          "ref": null,
+          "revision": "7b1e5c2",
+          "deployedAt": "2026-01-03T12:00:00.000Z",
+          "declared": false
+        }
+      ]
     }
   ],
   "environments": [
