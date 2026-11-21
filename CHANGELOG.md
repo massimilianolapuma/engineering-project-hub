@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Snapshot schema **1.12**: an existing 1.11 `public/data` must be re-collected.
+
+### Added
+
+- **Component versions per environment from the component's own deployments** (snapshot 1.12):
+  a component marked `deployments: true` in the catalog is read from the GitHub Deployments of
+  its own repository, once per project environment (`githubEnvironment`, else the id; the
+  version from the ledger payload, else from the tag). The Versions page shows these components
+  as a second group of rows, "Deployed on their own", in the Components by environment table:
+  each cell says deployed or declared by hand, a branch deploy shows `main @ sha`, no deployment
+  is a dash naming the environment, and a failed read or no successful deployment among the
+  newest 10 is unknown with its reason. A project without an umbrella chart gets the same table
+  without the "Umbrella (main)" column. `versions.csv` carries those rows with `version_source`
+  `deployment` or `declared`. The flag is refused on a repository shared with the coordinator or
+  another component and on more than 20 components per project; it is ignored for a component
+  the umbrella chart contains. Demo: Project Alpha's helm chart.
+- **`scripts/report-deployment.sh` accepts `REF`** (a tag or branch) instead of `SHA`, for a
+  pipeline that deploys a released version chosen as a run parameter and has no commit at hand.
+  Exactly one of the two must be set.
+
 ## [0.19.0] - 2026-11-20
 
 ### Changed

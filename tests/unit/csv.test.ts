@@ -300,6 +300,10 @@ describe('versions CSV: components by environment (umbrella chart)', () => {
       repository: 'example-org/project-alpha-helm',
       version: '0.9.0',
     });
+    // A deployment from a branch has no version: not applicable, which is not "unknown".
+    const text = toCsv(VERSIONS_HEADERS, versionsRows(golden()));
+    const dev = text.split('\r\n').find((l) => l.includes(',helm@dev,'))!;
+    expect(dev.split(',')[VERSIONS_HEADERS.indexOf('version')]).toBe('n/a');
     expect(ce.find((r) => r.item_id === 'frontend@prod')).toMatchObject({
       project_id: 'project-alpha',
       item_name: 'Frontend @ PROD',

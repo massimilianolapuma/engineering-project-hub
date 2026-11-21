@@ -420,6 +420,55 @@ aspetta a sinistra: l'ultima release è sopra l'umbrella su main, oppure un ambi
 versione nota più vicina alla sua sinistra. Lo snapshot 1.11 aggiunge
 `coordinator.umbrellaChart`, `component.umbrella` e `environment.componentVersions`.
 
+### Versioni dei componenti dai deployment del componente
+
+Un componente **deployato per conto proprio** (un database pubblicato dalla sua pipeline, un
+chart con una sua cadenza di rilascio) può dichiararlo nel catalogo:
+
+```yaml
+components:
+  - id: database
+    name: Database
+    repository: example-org/alpha-database
+    type: other
+    deployments: true # opzionale, default false
+```
+
+Per ogni ambiente del progetto, il collector legge i GitHub Deployments del **repository del
+componente** (una chiamata di lista e al massimo 10 letture di stato, come per gli ambienti del
+progetto):
+
+- nome dell'ambiente: il `githubEnvironment` dell'ambiente, altrimenti il suo `id`. Le opzioni
+  `environment` e `sources` del `deploySignal` del progetto non si usano: appartengono al
+  repository letto da quel segnale;
+- versione: il campo `version` del payload del [registro](deployments-ledger.md), altrimenti il
+  tag da cui è stato fatto il deployment (`releaseTagPrefix` del componente, default `v`). Un
+  deployment da branch non ha versione ed è mostrato come `main @ 1a2b3c4`;
+- cosa gira adesso: il deployment più recente con stato `success`, per data reale del deploy.
+
+Il flag è ignorato per un componente contenuto nell'umbrella chart sul branch di default (la sua
+fonte resta il chart). `npm run validate:config` lo rifiuta su un repository condiviso con il coordinator
+o con un altro componente (i GitHub Deployments appartengono a un repository) e su più di **20**
+componenti in un progetto.
+
+| Stato            | Significato                                                    | Nella tabella               |
+| ---------------- | -------------------------------------------------------------- | --------------------------- |
+| `ok`             | trovato un deployment riuscito                                 | versione, marcata deployato |
+| `none`           | l'ambiente non ha alcun deployment                             | `–` che nomina l'ambiente   |
+| `no-success`     | ci sono deployment, nessuno dei 10 più recenti è riuscito      | sconosciuto, con il motivo  |
+| `not-found`      | il repository o i suoi deployment non sono stati trovati       | sconosciuto, con il motivo  |
+| `not-authorised` | la App dell'hub non può leggerli (serve **Deployments: read**) | sconosciuto, con il motivo  |
+| `unknown`        | qualsiasi altra lettura fallita                                | sconosciuto, con il motivo  |
+
+Una lettura fallita è un errore di raccolta `deploy-signal`, mai "non deployato". Un record
+dichiarato a mano (`declared: true` nel registro) è marcato **dichiarato a mano**, mai deployato.
+
+Nella pagina Versioni questi componenti sono un secondo gruppo di righe, **Deployati per conto
+proprio**, nella tabella Componenti per ambiente; un progetto senza umbrella chart ha la stessa
+tabella senza la colonna "Umbrella (main)". Il segno ▲ indica che la cella è sotto la versione
+nota più vicina alla sua sinistra, a partire dall'ultima release. Lo snapshot 1.12 aggiunge
+`component.environmentVersions`.
+
 ### Aggiungere un progetto (senza modifiche al codice)
 
 Metodo consigliato: apri `/it/catalog/`, aggiungi una proposta scoperta (o crea un
@@ -1203,7 +1252,7 @@ numeri non hanno mai prefissi. Excel con separatore di elenco `;`: usa Dati, Da 
 
 - `portfolio.csv`: `project_id, project_name, business_unit, lifecycle, overall, score, score_measured, score_required, delivery, version, security, controls_coverage, controls_coverage_percent, governance, quality, quality_percent, open_critical, open_high, open_medium, open_low, counts_complete, open_secret_alerts, failed_critical_workflows, collection_errors, collected_at, previous_overall, previous_score, previous_collected_at, controls_passed, controls_failed, controls_unknown, overdue, overdue_critical_high, accepted, exception_issues, teams`. Le colonne `previous_*` sono `n/a` quando non c'è una raccolta precedente. `teams` elenca i team del progetto (`org/slug`) uniti da `;`, vuota quando non ne ha.
 - `findings-summary.csv`: `project_id, component_id, repository, open_critical, open_high, open_medium, open_low, open_informational, open_unknown, sources_complete, overdue, accepted`. `overdue` e `accepted` contano i finding di quel repository (`unknown` quando gli SLA sono spenti o nessuna fonte di alert era leggibile). Tutti i conteggi sono `unknown` quando nessuna fonte di alert era leggibile; quando solo alcune lo erano, i conteggi sono un limite inferiore e `sources_complete` è `false`.
-- `versions.csv`: `row_type (coordinator|component|environment|component-environment), project_id, item_id, item_name, repository, version, version_source, declared_version, latest_release, drift, manifest_consistency, pin_status, environment_status, environment_source, environment_declared_version, sync_status, health_status, chart_ref`. Le quattro colonne prima di `chart_ref` valgono per le righe di ambiente (`n/a` sulle righe di componente e coordinator); le righe `component-environment` valorizzano anche `environment_status` e `environment_source`. `environment_source` è `argocd` o `manifest`, `environment_declared_version` la versione dell'ambiente nel manifest, `sync_status` e `health_status` quanto riportato da Argo CD (`n/a` senza Argo CD). Le righe `component-environment` danno un componente in un ambiente dal chart umbrella; `chart_ref` è il tag del chart da cui è letto (`n/a` sulle altre righe).
+- `versions.csv`: `row_type (coordinator|component|environment|component-environment), project_id, item_id, item_name, repository, version, version_source, declared_version, latest_release, drift, manifest_consistency, pin_status, environment_status, environment_source, environment_declared_version, sync_status, health_status, chart_ref`. Le quattro colonne prima di `chart_ref` valgono per le righe di ambiente (`n/a` sulle righe di componente e coordinator); le righe `component-environment` valorizzano anche `environment_status` e `environment_source`. `environment_source` è `argocd` o `manifest`, `environment_declared_version` la versione dell'ambiente nel manifest, `sync_status` e `health_status` quanto riportato da Argo CD (`n/a` senza Argo CD). Le righe `component-environment` danno un componente in un ambiente: dal chart umbrella (`version_source` `umbrella`; `chart_ref` è il tag del chart da cui è letto, `n/a` sulle altre righe), oppure dai GitHub Deployments del componente (`version_source` `deployment`, o `declared` per un record dichiarato a mano; una riga per ogni ambiente con un deployment riuscito, `version` `n/a` per un deployment da branch).
 - `supply-chain.csv`: `project_id, repository, component_ids, sbom_state, sbom_source, packages, without_license, flagged, attestation_state, assets_checked, assets_with_provenance, images, images_signed, images_unsigned, container_scanning_source, iac_scanning_source, dast_source, summary_state`. `component_ids` è unito con `;`. I conteggi sono `unknown` quando la fonte non era leggibile, mai 0.
 - `control-map.csv` (solo quando la [mappa dei controlli](control-map.md) è pubblicata): `project_id, business_unit, check, area, level, state, value, unit, readable, reason, source_environment, signal, collected_at`. `level` e `value` sono `n/a` quando non misurati, mai 0; `readable` è `k/n` repository lette.
 
