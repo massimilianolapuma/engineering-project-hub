@@ -1,12 +1,17 @@
-import type { EnvironmentSnapshot, ProjectSnapshot } from '@model/index';
+import type {
+  ComponentEnvironmentVersion,
+  EnvironmentSnapshot,
+  ProjectSnapshot,
+} from '@model/index';
 import { compareVersions, normaliseVersion } from '../../shared/semver';
 import { branchDeployment } from './env-version';
 
 /*
  * Components by environment (Versions page): one row per component of the umbrella chart, one
  * column per environment with the component version the chart pins at the environment's ref.
- * Pure. An unreadable cell carries its reason and is never "not deployed" nor guessed from
- * another column.
+ * Components deployed on their own (catalog `deployments: true`) are a second group of rows,
+ * read from the GitHub Deployments of their repository. Pure. An unreadable cell carries its
+ * reason and is never "not deployed" nor guessed from another column.
  */
 
 /** Where an environment column's version comes from: the header line under its name. */
@@ -50,9 +55,35 @@ export interface MatrixRow {
   /** The latest release is above the umbrella on main. */
   latestWaiting: boolean;
 }
+/** A cell of a component deployed on its own: what its GitHub Deployments say. */
+export interface OwnCell {
+  state: ComponentEnvironmentVersion['state'];
+  version: string | null;
+  /** A successful deployment made from a branch (no version): its ref and short commit. */
+  branch: { ref: string; sha: string } | null;
+  /** Declared by hand, not reported by a pipeline. */
+  declared: boolean;
+  deployedAt: string | null;
+  /** GitHub environment name that was read. */
+  environment: string;
+  /** Lower (semver) than the nearest version on its left, the latest release first. */
+  waiting: boolean;
+}
+export interface OwnRow {
+  componentId: string;
+  name: string;
+  /** Latest release tag (e.g. "v0.9.0"). */
+  latest: string | null;
+  /** One cell per project environment, in order. */
+  cells: OwnCell[];
+}
 export interface Matrix {
+  /** False for a project without an umbrella chart: only the own rows exist. */
+  hasUmbrella: boolean;
   environments: MatrixEnvironment[];
   rows: MatrixRow[];
+  /** Components deployed on their own, never also in `rows` or `outside`. */
+  own: OwnRow[];
   /** Components not in the chart on main (only when main was read). */
   outside: { componentId: string; name: string; version: string | null }[];
   /** Chart dependencies mapped to no component. */
@@ -91,13 +122,64 @@ function cellOf(
     : { version: null, reason: 'unknown' };
 }
 
-/** The table for a project with an umbrella chart; null without one. */
+/** The page shows the table: an umbrella chart, or at least one component deployed on its own. */
+export function hasMatrix(s: ProjectSnapshot): boolean {
+  return (
+    s.coordinator.umbrellaChart != null || s.components.some((c) => c.environmentVersions != null)
+  );
+}
+
+function ownRows(s: ProjectSnapshot): OwnRow[] {
+  return s.components
+    .filter((c) => c.environmentVersions != null)
+    .map((c) => {
+      const latest = c.latestRelease?.tag ?? null;
+      // Each environment against the nearest version on its left, the latest release first; a
+      // cell without a version is skipped, never guessed.
+      let left = normaliseVersion(latest);
+      const cells = s.environments.map((e): OwnCell => {
+        const read = c.environmentVersions!.find((v) => v.environmentId === e.id);
+        // No read for this environment: unknown, never "no deployment recorded".
+        if (!read)
+          return {
+            state: 'unknown',
+            version: null,
+            branch: null,
+            declared: false,
+            deployedAt: null,
+            environment: e.id,
+            waiting: false,
+          };
+        const ok = read.state === 'ok';
+        const version = ok ? read.version : null;
+        const waiting = lower(version, left);
+        if (version !== null) left = version;
+        return {
+          state: read.state,
+          version,
+          branch:
+            ok && !version && read.ref && read.revision
+              ? { ref: read.ref, sha: read.revision }
+              : null,
+          declared: ok && read.declared,
+          deployedAt: ok ? read.deployedAt : null,
+          environment: read.environment,
+          waiting,
+        };
+      });
+      return { componentId: c.id, name: c.name, latest, cells };
+    });
+}
+
+/** The table of a project with an umbrella chart or own-deployment components; null otherwise. */
 export function matrixOf(s: ProjectSnapshot): Matrix | null {
+  if (!hasMatrix(s)) return null;
   const chart = s.coordinator.umbrellaChart;
-  if (!chart) return null;
   // `inUmbrella` is false when the main chart could not be read: membership is then unknown,
   // so rows come from the release and environment reads and nothing is "outside".
-  const mainOk = chart.state === 'ok';
+  const mainOk = chart?.state === 'ok';
+  /** Deployed on its own: its row is in `own`, never among the umbrella rows or "outside". */
+  const isOwn = (c: ProjectSnapshot['components'][number]) => c.environmentVersions != null;
 
   const environments: MatrixEnvironment[] = s.environments.map((e) => {
     const branch = branchDeployment(e);
@@ -113,16 +195,20 @@ export function matrixOf(s: ProjectSnapshot): Matrix | null {
 
   const readsOf = (id: string) =>
     s.environments.some((e) => e.componentVersions?.versions.some((v) => v.componentId === id));
-  const inChart = s.components.filter((c) =>
-    mainOk ? c.umbrella?.inUmbrella === true : c.umbrella?.release != null || readsOf(c.id),
-  );
+  const inChart = chart
+    ? s.components.filter(
+        (c) =>
+          !isOwn(c) &&
+          (mainOk ? c.umbrella?.inUmbrella === true : c.umbrella?.release != null || readsOf(c.id)),
+      )
+    : [];
 
   const rows: MatrixRow[] = inChart.map((c) => {
     const main = mainOk ? (c.umbrella?.main ?? null) : null;
     const mainReason: CellReason =
       main !== null
         ? null
-        : chart.state !== 'ok'
+        : chart && chart.state !== 'ok'
           ? chart.state
           : c.umbrella?.conflict
             ? 'conflict'
@@ -150,9 +236,16 @@ export function matrixOf(s: ProjectSnapshot): Matrix | null {
 
   const outside = mainOk
     ? s.components
-        .filter((c) => c.umbrella?.inUmbrella !== true)
+        .filter((c) => !isOwn(c) && c.umbrella?.inUmbrella !== true)
         .map((c) => ({ componentId: c.id, name: c.name, version: c.effectiveVersion }))
     : [];
 
-  return { environments, rows, outside, unmapped: chart.unmapped };
+  return {
+    hasUmbrella: chart != null,
+    environments,
+    rows,
+    own: ownRows(s),
+    outside,
+    unmapped: chart?.unmapped ?? [],
+  };
 }

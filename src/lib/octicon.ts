@@ -54,6 +54,9 @@ export const OCTICON_NAMES = [
   'checklist',
   // GitHub App setup
   'key',
+  // components deployed on their own: deployed, declared by hand
+  'rocket',
+  'pencil',
 ] as const;
 export type OcticonName = (typeof OCTICON_NAMES)[number];
 

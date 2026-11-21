@@ -674,7 +674,8 @@ describe('catalog: supply chain mappings', () => {
   });
 
   // Component deployments spec §5.2: GitHub Deployments belong to a repository.
-  const SHARED = 'not allowed when the repository is shared with the coordinator or another component';
+  const SHARED =
+    'not allowed when the repository is shared with the coordinator or another component';
   const messages = (r: ReturnType<typeof mutate>) =>
     r.success ? [] : r.error.issues.map((i) => i.message);
 

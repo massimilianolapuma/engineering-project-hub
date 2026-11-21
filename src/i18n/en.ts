@@ -921,7 +921,16 @@ export const en = {
         'A newer version is waiting: the latest release is above the umbrella on main, or an environment is below the nearest known version on its left (Umbrella (main) included).',
       waitingLatest: 'A newer version is waiting: above the umbrella on main',
       waitingEnv: 'A newer version is waiting on the left',
+      ownGroup: 'Deployed on their own',
+      ownDeployed: 'deployed',
+      ownDeclared: 'declared by hand',
+      ownNone: 'No deployment recorded for environment {env}',
+      notInUmbrella: 'Not in the umbrella chart',
+      ownLegend:
+        "Deployed: read from the GitHub Deployments of the component's own repository. A newer version is waiting when a cell is below the nearest known version on its left, the latest release first.",
+      ownDeclaredLegend: 'Declared by hand: a record nobody could report automatically.',
       reason: {
+        'no-success': 'No successful deployment among the newest 10',
         'not-found': 'Not found',
         invalid: 'Chart not valid',
         'not-authorised': 'Not authorised',

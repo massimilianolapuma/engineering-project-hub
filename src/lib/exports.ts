@@ -330,6 +330,36 @@ function projectVersionRows(p: ProjectSnapshot): CsvValue[][] {
         ]);
       });
     }
+  // Components deployed on their own: one row per environment with a successful deployment,
+  // from the GitHub Deployments of the component's repository (a branch deploy has no version).
+  if (matrix)
+    for (const row of matrix.own) {
+      const k = p.components.find((x) => x.id === row.componentId);
+      matrix.environments.forEach((e, i) => {
+        const cell = row.cells[i];
+        if (!cell || cell.state !== 'ok') return;
+        rows.push([
+          'component-environment',
+          id,
+          `${row.componentId}@${e.id}`,
+          `${row.name} @ ${e.name}`,
+          k?.repository.fullName ?? null,
+          cell.version,
+          cell.declared ? 'declared' : 'deployment',
+          NA,
+          NA,
+          NA,
+          NA,
+          NA,
+          e.status,
+          p.environments[i]!.source,
+          NA,
+          NA,
+          NA,
+          NA,
+        ]);
+      });
+    }
   return rows;
 }
 

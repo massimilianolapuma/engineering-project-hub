@@ -931,7 +931,17 @@ export const it: Dict = {
         "Una versione più nuova è in attesa: l'ultima release è sopra l'umbrella su main, oppure un ambiente è sotto la versione nota più vicina alla sua sinistra (Umbrella (main) compresa).",
       waitingLatest: "Una versione più nuova è in attesa: sopra l'umbrella su main",
       waitingEnv: 'Una versione più nuova è in attesa a sinistra',
+      ownGroup: 'Deployati per conto proprio',
+      ownDeployed: 'deployato',
+      ownDeclared: 'dichiarato a mano',
+      ownNone: "Nessun deployment registrato per l'ambiente {env}",
+      notInUmbrella: "Non nell'umbrella chart",
+      ownLegend:
+        "Deployato: letto dai GitHub Deployments del repository del componente. Una versione più nuova è in attesa quando una cella è sotto la versione nota più vicina alla sua sinistra, a partire dall'ultima release.",
+      ownDeclaredLegend:
+        'Dichiarato a mano: un record che nessun sistema poteva riportare in automatico.',
       reason: {
+        'no-success': 'Nessun deployment riuscito tra i 10 più recenti',
         'not-found': 'Non trovato',
         invalid: 'Chart non valido',
         'not-authorised': 'Non autorizzato',

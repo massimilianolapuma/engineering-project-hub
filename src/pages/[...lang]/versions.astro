@@ -17,6 +17,7 @@ import Pill from '../../components/Pill.astro';
 import StatusDot from '../../components/StatusDot.astro';
 import UnknownValue from '../../components/UnknownValue.astro';
 import UmbrellaMatrix from '../../components/UmbrellaMatrix.astro';
+import { hasMatrix } from '../../lib/umbrella-matrix';
 import Octicon from '../../components/Octicon.astro';
 import Base from '../../layouts/Base.astro';
 import { branchDeployment } from '../../lib/env-version';
@@ -212,9 +213,7 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
               aria-labelledby={`v-${s.project.id}`}
             >
               {head}
-              {card.kind === 'aligned' && s.coordinator.umbrellaChart && (
-                <UmbrellaMatrix s={s} i18n={i18n} />
-              )}
+              {card.kind === 'aligned' && hasMatrix(s) && <UmbrellaMatrix s={s} i18n={i18n} />}
               {card.kind === 'unknown' && (
                 <div class="vcard__cause">
                   <p>
@@ -240,13 +239,11 @@ const statusLabel = (s: ProjectSnapshot) => i18n.status(s.versionHealth.status);
                   </a>
                 </div>
               )}
-              {card.kind === 'unknown' && s.coordinator.umbrellaChart && (
-                <UmbrellaMatrix s={s} i18n={i18n} />
-              )}
+              {card.kind === 'unknown' && hasMatrix(s) && <UmbrellaMatrix s={s} i18n={i18n} />}
               {card.kind === 'check' && (
                 <>
-                  {s.coordinator.umbrellaChart && <UmbrellaMatrix s={s} i18n={i18n} open />}
-                  {!s.coordinator.umbrellaChart && s.environments.length > 0 && (
+                  {hasMatrix(s) && <UmbrellaMatrix s={s} i18n={i18n} open />}
+                  {!hasMatrix(s) && s.environments.length > 0 && (
                     <ol class="vpath" aria-label={d.project.environments}>
                       {s.environments.map((e, i) => (
                         <li class="vpath__step" data-env={e.name} data-env-status={e.status}>

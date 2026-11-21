@@ -393,6 +393,30 @@ test('versions page: the components table causes no horizontal scroll at 412 px'
   expect(overflow).toBeLessThanOrEqual(0);
   // The table scrolls inside its own region, reachable by keyboard.
   await expect(alpha.locator('.um-wrap')).toHaveAttribute('tabindex', '0');
+  // The heading of the own-deployment rows is part of that table, not a wider block.
+  await expect(alpha.locator('tr.um-group th')).toBeVisible();
+});
+
+test('versions page: components deployed on their own are a labelled group of rows', async ({
+  page,
+}) => {
+  await page.goto('/versions/');
+  const table = page.locator('[data-project="project-alpha"] .um-table');
+  await expect(table.locator('tr.um-group th')).toHaveText('Deployed on their own');
+  const helm = table.locator('tr[data-own][data-component="helm"]');
+  await expect(helm).toBeVisible();
+  // Every cell says where it comes from in text, never by the icon or colour alone.
+  await expect(helm.locator('td[data-env="TEST"]')).toContainText('0.9.0');
+  await expect(helm.locator('td[data-env="TEST"]')).toContainText('deployed');
+  await expect(helm.locator('td[data-env="UAT"]')).toContainText('declared by hand');
+  await expect(helm.locator('td[data-env="UAT"]')).toContainText(
+    'A newer version is waiting on the left',
+  );
+  await expect(helm.locator('td[data-env="DEV"]')).toContainText('main @');
+  await page.goto('/it/versions/');
+  const it = page.locator('[data-project="project-alpha"] .um-table');
+  await expect(it.locator('tr.um-group th')).toHaveText('Deployati per conto proprio');
+  await expect(it.locator('tr[data-own] td[data-env="UAT"]')).toContainText('dichiarato a mano');
 });
 
 test('project page: the Supply chain fold opens with the keyboard', async ({ page }) => {

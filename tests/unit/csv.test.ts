@@ -282,10 +282,24 @@ describe('versions CSV: components by environment (umbrella chart)', () => {
     );
 
   it('one row per umbrella component and environment with a chart read, with the chart ref', () => {
-    const ce = rows();
+    const all = rows();
     // Only Alpha has an umbrella chart: 3 components × 4 environments.
-    expect(new Set(ce.map((r) => r.project_id))).toEqual(new Set(['project-alpha']));
+    expect(new Set(all.map((r) => r.project_id))).toEqual(new Set(['project-alpha']));
+    const ce = all.filter((r) => r.version_source === 'umbrella');
     expect(ce).toHaveLength(12);
+    // Plus the helm chart, deployed on its own: one row per environment with a good deploy.
+    const own = all.filter((r) => r.version_source !== 'umbrella');
+    expect(own.map((r) => [r.item_id, r.version_source])).toEqual([
+      ['helm@dev', 'deployment'],
+      ['helm@test', 'deployment'],
+      ['helm@uat', 'declared'],
+      ['helm@prod', 'deployment'],
+    ]);
+    expect(own.find((r) => r.item_id === 'helm@test')).toMatchObject({
+      item_name: 'Helm deployment @ TEST',
+      repository: 'example-org/project-alpha-helm',
+      version: '0.9.0',
+    });
     expect(ce.find((r) => r.item_id === 'frontend@prod')).toMatchObject({
       project_id: 'project-alpha',
       item_name: 'Frontend @ PROD',

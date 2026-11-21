@@ -39,6 +39,7 @@ import { loadSitePolicies } from '../../../lib/policies';
 import { riskLine, sumKnown } from '../../../lib/risk-line';
 import { teamSlug } from '@model/teams';
 import { href, localeParams } from '../../../lib/routes';
+import { hasMatrix } from '../../../lib/umbrella-matrix';
 import { driftTone, severityTone, workflowTone, type Tone } from '../../../lib/tones';
 
 export function getStaticPaths() {
@@ -585,7 +586,7 @@ const levelStatus = (r: Reason): HealthStatus => (r.level === 'info' ? 'green' :
           </ol>
         )}
         <p class="note">{d.project.envBehindNote}</p>
-        {s.coordinator.umbrellaChart && (
+        {hasMatrix(s) && (
           <p>
             <a href={`${href(locale, 'versions')}#v-${s.project.id}`}>
               {d.versionsPage.matrix.title} →
