@@ -1008,6 +1008,19 @@ describe('static site', () => {
             declared: false,
           }),
         );
+        // A deploy recorded by commit only (no version, no tag): still shown as deployed.
+        beta.components.find((c) => c.id === 'web')!.environmentVersions = beta.environments.map(
+          (e) => ({
+            environmentId: e.id,
+            environment: e.id,
+            state: 'ok',
+            version: null,
+            ref: null,
+            revision: 'abc1234',
+            deployedAt: '2026-01-10T10:00:00Z',
+            declared: false,
+          }),
+        );
         await writeFile(file, JSON.stringify(beta));
         const out = join(work, 'dist-own-only');
         await buildSite(data, out);
@@ -1026,6 +1039,10 @@ describe('static site', () => {
         expect(textOf(cells[1]!)).toContain('No successful deployment among the newest 10');
         expect(textOf(cells[2]!)).toContain('Not authorised');
         expect(textOf(cells[3]!)).toContain('1.0.0');
+        const byCommit = ownRow(html, 'web').match(/<td[^>]*data-state="ok"[\s\S]*?<\/td>/g) ?? [];
+        expect(byCommit).toHaveLength(beta.environments.length);
+        expect(textOf(byCommit[0]!)).toContain('abc1234');
+        expect(byCommit[0]).toMatch(/class="visually-hidden"[^>]*>deployed/);
         // The other projects of that build are untouched.
         const all = await readFile(join(out, 'versions/index.html'), 'utf8');
         expect(card(all, 'project-gamma')).not.toContain('Components by environment');

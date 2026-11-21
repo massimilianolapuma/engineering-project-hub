@@ -3,7 +3,7 @@ import type {
   EnvironmentSnapshot,
   ProjectSnapshot,
 } from '@model/index';
-import { compareVersions, normaliseVersion } from '../../shared/semver';
+import { compareVersions, normaliseVersion, parseVersion } from '../../shared/semver';
 import { branchDeployment } from './env-version';
 
 /*
@@ -61,6 +61,8 @@ export interface OwnCell {
   version: string | null;
   /** A successful deployment made from a branch (no version): its ref and short commit. */
   branch: { ref: string; sha: string } | null;
+  /** A successful deployment recorded by commit only (no version, no branch or tag): its short SHA. */
+  commit: string | null;
   /** Declared by hand, not reported by a pipeline. */
   declared: boolean;
   deployedAt: string | null;
@@ -100,6 +102,17 @@ function headerOf(e: EnvironmentSnapshot, branch: MatrixEnvironment['branch']): 
   return 'unknown';
 }
 
+/**
+ * The version a release tag names: the tag without its `v`, else the semver it ends with
+ * ("backend-v1.4.0" → "1.4.0"). The snapshot does not carry the component's tag prefix.
+ */
+function releaseVersion(tag: string | null): string | null {
+  const plain = normaliseVersion(tag);
+  if (plain === null || parseVersion(plain)) return plain;
+  const tail = /(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)$/.exec(plain);
+  return tail ? tail[1]! : plain;
+}
+
 /** Strictly lower in semver; false when either side is missing or not semver. */
 const lower = (a: string | null, b: string | null): boolean =>
   a !== null && b !== null && compareVersions(a, b) === -1;
@@ -136,7 +149,7 @@ function ownRows(s: ProjectSnapshot): OwnRow[] {
       const latest = c.latestRelease?.tag ?? null;
       // Each environment against the nearest version on its left, the latest release first; a
       // cell without a version is skipped, never guessed.
-      let left = normaliseVersion(latest);
+      let left = releaseVersion(latest);
       const cells = s.environments.map((e): OwnCell => {
         const read = c.environmentVersions!.find((v) => v.environmentId === e.id);
         // No read for this environment: unknown, never "no deployment recorded".
@@ -145,6 +158,7 @@ function ownRows(s: ProjectSnapshot): OwnRow[] {
             state: 'unknown',
             version: null,
             branch: null,
+            commit: null,
             declared: false,
             deployedAt: null,
             environment: e.id,
@@ -154,13 +168,15 @@ function ownRows(s: ProjectSnapshot): OwnRow[] {
         const version = ok ? read.version : null;
         const waiting = lower(version, left);
         if (version !== null) left = version;
+        const branch =
+          ok && !version && read.ref && read.revision
+            ? { ref: read.ref, sha: read.revision }
+            : null;
         return {
           state: read.state,
           version,
-          branch:
-            ok && !version && read.ref && read.revision
-              ? { ref: read.ref, sha: read.revision }
-              : null,
+          branch,
+          commit: ok && !version && !branch ? read.revision : null,
           declared: ok && read.declared,
           deployedAt: ok ? read.deployedAt : null,
           environment: read.environment,
@@ -230,7 +246,7 @@ export function matrixOf(s: ProjectSnapshot): Matrix | null {
       main,
       mainReason,
       cells,
-      latestWaiting: lower(main, normaliseVersion(latest)),
+      latestWaiting: lower(main, releaseVersion(latest)),
     };
   });
 

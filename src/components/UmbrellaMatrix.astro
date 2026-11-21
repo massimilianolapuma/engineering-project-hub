@@ -191,9 +191,9 @@ const Wrapper = open ? 'section' : 'details';
                   )}
                   {r.cells.map((c, i) => (
                     <td class="mono" data-env={m.environments[i]!.name} data-state={c.state}>
-                      {c.state === 'ok' && (c.version || c.branch) ? (
+                      {c.state === 'ok' && (c.version || c.branch || c.commit) ? (
                         <span class="um-v">
-                          {c.version ?? f(d.sources.refAt, c.branch!)}
+                          {c.version ?? (c.branch ? f(d.sources.refAt, c.branch) : c.commit)}
                           <span class="um-src" title={ownTitle(c)}>
                             <Octicon name={c.declared ? 'pencil' : 'rocket'} size={12} />
                             <span class="visually-hidden">

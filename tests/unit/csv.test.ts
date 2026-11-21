@@ -301,9 +301,21 @@ describe('versions CSV: components by environment (umbrella chart)', () => {
       version: '0.9.0',
     });
     // A deployment from a branch has no version: not applicable, which is not "unknown".
-    const text = toCsv(VERSIONS_HEADERS, versionsRows(golden()));
-    const dev = text.split('\r\n').find((l) => l.includes(',helm@dev,'))!;
-    expect(dev.split(',')[VERSIONS_HEADERS.indexOf('version')]).toBe('n/a');
+    const versionOf = (data: SiteData, item: string) =>
+      toCsv(VERSIONS_HEADERS, versionsRows(data))
+        .split('\r\n')
+        .find((l) => l.includes(`,${item},`))!
+        .split(',')[VERSIONS_HEADERS.indexOf('version')];
+    expect(versionOf(golden(), 'helm@dev')).toBe('n/a');
+    // A deploy recorded by commit only: something runs there and its version is not known.
+    const byCommit = golden();
+    const helm = byCommit.projects
+      .find((p) => p.project.id === 'project-alpha')!
+      .components.find((c) => c.id === 'helm')!;
+    helm.environmentVersions = helm.environmentVersions!.map((e) =>
+      e.environmentId === 'dev' ? { ...e, ref: null } : e,
+    );
+    expect(versionOf(byCommit, 'helm@dev')).toBe('unknown');
     expect(ce.find((r) => r.item_id === 'frontend@prod')).toMatchObject({
       project_id: 'project-alpha',
       item_name: 'Frontend @ PROD',

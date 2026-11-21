@@ -344,8 +344,9 @@ function projectVersionRows(p: ProjectSnapshot): CsvValue[][] {
           `${row.componentId}@${e.id}`,
           `${row.name} @ ${e.name}`,
           k?.repository.fullName ?? null,
-          // A deployment from a branch has no version: not applicable, never "unknown".
-          cell.version ?? NA,
+          // A deployment from a branch has no version (not applicable); one recorded by commit
+          // only runs a version the hub does not know (unknown).
+          cell.version ?? (cell.branch ? NA : null),
           cell.declared ? 'declared' : 'deployment',
           NA,
           NA,

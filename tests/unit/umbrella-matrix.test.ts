@@ -287,4 +287,40 @@ describe('matrixOf (components by environment)', () => {
     expect(m.rows.map((r) => r.componentId)).toEqual(['frontend', 'worker']);
     expect(m.own.map((r) => r.componentId)).toEqual(['backend', 'helm']);
   });
+
+  // Final review: a deploy recorded by commit (SHA mode, no VERSION) is still a deploy.
+  it('a deployment recorded by commit, without a version, shows the commit as deployed', () => {
+    const s = clone(alpha);
+    s.components.find((c) => c.id === 'helm')!.environmentVersions = [
+      entry('dev', { ref: 'main', revision: 'abcdef0' }),
+      entry('test', { revision: 'd304f3f' }),
+      entry('uat', {}),
+      entry('prod', { version: '0.9.0', revision: 'd304f3f' }),
+    ];
+    const cells = own(s).cells;
+    expect(cells[0]).toMatchObject({ state: 'ok', branch: { ref: 'main' }, commit: null });
+    expect(cells[1]).toMatchObject({ state: 'ok', version: null, branch: null, commit: 'd304f3f' });
+    // Nothing to show at all (no version, ref or commit): no commit either.
+    expect(cells[2]).toMatchObject({ state: 'ok', version: null, branch: null, commit: null });
+    // A version wins: the commit is not shown beside it.
+    expect(cells[3]).toMatchObject({ version: '0.9.0', commit: null });
+  });
+
+  // Final review: the snapshot does not carry the component's tag prefix.
+  it('compares with the latest release when its tag has a component prefix', () => {
+    const s = clone(alpha);
+    const helm = s.components.find((c) => c.id === 'helm')!;
+    helm.latestRelease = { ...helm.latestRelease!, tag: 'helm-v0.9.0' };
+    helm.environmentVersions = s.environments.map((e) => entry(e.id, { version: '0.8.0' }));
+    expect(own(s).cells.map((c) => c.waiting)).toEqual([true, false, false, false]);
+    // The umbrella rows too: the frontend's latest release is above the umbrella on main.
+    const frontend = s.components.find((c) => c.id === 'frontend')!;
+    frontend.latestRelease = { ...frontend.latestRelease!, tag: 'frontend-v2.2.0' };
+    expect(matrixOf(s)!.rows.find((r) => r.componentId === 'frontend')!.latestWaiting).toBe(true);
+    // A tag that names no version never produces a marker.
+    helm.latestRelease = { ...helm.latestRelease!, tag: 'nightly' };
+    frontend.latestRelease = { ...frontend.latestRelease!, tag: 'latest' };
+    expect(own(s).cells.some((c) => c.waiting)).toBe(false);
+    expect(matrixOf(s)!.rows.find((r) => r.componentId === 'frontend')!.latestWaiting).toBe(false);
+  });
 });
