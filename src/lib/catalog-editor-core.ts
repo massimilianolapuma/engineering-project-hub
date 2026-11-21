@@ -45,6 +45,7 @@ export interface DraftComponent {
   sonarProjectKey?: string;
   sonarBranch?: string;
   chartDependency?: string;
+  deployments?: boolean;
   containerImages?: ContainerImage[];
 }
 export interface DraftEnvironment {
@@ -156,6 +157,7 @@ function componentToDraft(c: ComponentConfig): DraftComponent {
     sonarProjectKey: c.sonarProjectKey,
     sonarBranch: c.sonarBranch,
     chartDependency: c.chartDependency,
+    deployments: c.deployments,
     containerImages: c.containerImages?.map((i) => ({ ...i })),
   };
 }
@@ -246,6 +248,7 @@ export function toProjectInput(p: DraftProject): Record<string, unknown> {
             sonarProjectKey: c.sonarProjectKey,
             sonarBranch: c.sonarBranch,
             chartDependency: c.chartDependency,
+            deployments: c.deployments || undefined,
             containerImages: imagesInput(c.containerImages),
           }),
         )

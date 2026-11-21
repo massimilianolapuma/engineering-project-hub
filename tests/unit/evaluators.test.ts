@@ -474,6 +474,7 @@ describe('version health', () => {
     manifestConsistency: 'unknown',
     drift,
     umbrella: null,
+    environmentVersions: null,
     ...extra,
   });
   const pin = (

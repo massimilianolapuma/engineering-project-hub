@@ -125,6 +125,9 @@ export const CoordinatorConfigSchema = z
   })
   .strict();
 
+/** Components of one project whose own GitHub Deployments are read (bounded collection cost). */
+export const MAX_DEPLOYMENT_COMPONENTS = 20;
+
 export const ComponentConfigSchema = z
   .object({
     id: slug.refine((id) => id !== 'coordinator', '"coordinator" is reserved'),
@@ -160,6 +163,12 @@ export const ComponentConfigSchema = z
     sonarBranch: branch.optional(),
     /** Name of this component in the coordinator's umbrella chart dependencies. */
     chartDependency: chartDependency.optional(),
+    /**
+     * The component is deployed on its own: the hub reads the GitHub Deployments of its
+     * repository for every environment of the project (not read when the umbrella chart on the
+     * default branch contains it).
+     */
+    deployments: z.boolean().optional(),
     containerImages: containerImages.optional(),
   })
   .strict();
@@ -297,6 +306,29 @@ export const ProjectConfigSchema = z
           message: 'a component is either a submodule or a monorepo directory, not both',
         });
       }
+    });
+    // GitHub Deployments belong to a repository: on a shared one the hub could not tell whose
+    // deploy it reads.
+    const flagged = p.components.filter((c) => c.deployments);
+    if (flagged.length > MAX_DEPLOYMENT_COMPONENTS)
+      ctx.addIssue({
+        code: 'custom',
+        path: ['components'],
+        message: `at most ${MAX_DEPLOYMENT_COMPONENTS} components with deployments: true`,
+      });
+    p.components.forEach((c, i) => {
+      if (!c.deployments) return;
+      const repository = c.repository.toLowerCase();
+      const shared =
+        repository === coordinator ||
+        p.components.some((o, j) => j !== i && o.repository.toLowerCase() === repository);
+      if (shared)
+        ctx.addIssue({
+          code: 'custom',
+          path: ['components', i, 'deployments'],
+          message:
+            'not allowed when the repository is shared with the coordinator or another component',
+        });
     });
     for (const key of dup(
       p.components.map((c) => `${c.repository.toLowerCase()}:${c.path ?? ''}`),

@@ -5,7 +5,7 @@
     "schemaVersion": {
       "type": "string",
       "enum": [
-        "1.11"
+        "1.12"
       ]
     },
     "generatedAt": {

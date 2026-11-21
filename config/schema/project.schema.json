@@ -270,6 +270,9 @@
             "maxLength": 100,
             "pattern": "^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$"
           },
+          "deployments": {
+            "type": "boolean"
+          },
           "containerImages": {
             "maxItems": 5,
             "type": "array",
