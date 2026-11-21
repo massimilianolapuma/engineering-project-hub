@@ -20,6 +20,7 @@ import {
 import { buildProjectSnapshot, toProjectSummary } from './build-snapshot';
 import { collectControlMap, controlMapPublished } from './collectors/collect-control-map';
 import { collectEnvironmentStates } from './collectors/environment-states';
+import { collectComponentDeployments } from './collectors/component-deployments';
 import { collectUmbrellaCharts } from './collectors/umbrella-chart';
 import type { LoadedExceptions } from './config/load';
 import { orphanedExceptionIds } from './policy/exceptions';
@@ -201,6 +202,8 @@ export async function runCollection(opts: RunOptions): Promise<RunResult> {
   await collectEnvironmentStates(ctx, raws);
   // Umbrella chart at main, at the release and at each environment's tag (component versions).
   await collectUmbrellaCharts(ctx, raws);
+  // Own GitHub Deployments of the components deployed outside the umbrella (snapshot 1.12).
+  await collectComponentDeployments(ctx, raws);
   const projects = raws.map((raw) => buildProjectSnapshot(raw, policies, now, reusable, entries));
   const finishedAt = clock();
 

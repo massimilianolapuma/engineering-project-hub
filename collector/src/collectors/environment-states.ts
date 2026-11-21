@@ -24,6 +24,16 @@ export interface LedgerCurrent {
   ref: string | null;
   sha: string;
   deployedAt: string;
+  /** Declared by hand (ledger payload `declared`), not reported by a pipeline. */
+  declared: boolean;
+}
+
+/** One read of an environment's GitHub Deployments. */
+export interface LedgerRead {
+  /** The newest deployment with a success status; null when none was found. */
+  current: LedgerCurrent | null;
+  /** Deployments of the environment after the source filter: 0 means "none at all". */
+  candidates: number;
 }
 
 export interface EnvironmentState {
@@ -50,6 +60,56 @@ function repositoryOf(config: ProjectConfig, id: string): string | undefined {
     : config.components.find((c) => c.id === id)?.repository;
 }
 
+/**
+ * The newest successful GitHub deployment of `environment` in `repository`. Null when the
+ * provider cannot list deployments. `current: null` with candidates means that none of the
+ * newest `MAX_STATUS_READS` deployments succeeded, not that nothing was ever deployed.
+ */
+export async function readLedger(
+  provider: SourceProvider,
+  repository: string,
+  environment: string,
+  opts: { tagPrefix: string; sources?: readonly string[] },
+): Promise<ProviderResult<LedgerRead> | null> {
+  const listDeployments = provider.listDeployments?.bind(provider);
+  const listStatuses = provider.listDeploymentStatuses?.bind(provider);
+  if (!listDeployments || !listStatuses) return null;
+  const list = await listDeployments(repository, environment);
+  if (!list.ok) return list;
+  const filtered = list.data
+    .map((d) => ({ d, payload: ledgerPayload(d.payload) }))
+    .filter(({ payload }) => {
+      const source = payload?.source ?? 'github-actions';
+      return !opts.sources || opts.sources.includes(source);
+    });
+  const candidates = filtered
+    // Newest real deploy first: a ledger record may be written after the deploy (D10).
+    .sort(
+      (a, b) =>
+        Date.parse(b.payload?.finishedAt ?? b.d.createdAt) -
+        Date.parse(a.payload?.finishedAt ?? a.d.createdAt),
+    )
+    .slice(0, MAX_STATUS_READS);
+  for (const { d, payload } of candidates) {
+    const statuses = await listStatuses(repository, d.id);
+    if (!statuses.ok) return statuses;
+    const success = statuses.data.find((s) => s.state === 'success');
+    if (!success) continue;
+    const ref = d.ref && !FULL_SHA.test(d.ref) ? d.ref : null;
+    return ok({
+      current: {
+        version: semverOf(payload?.version) ?? semverOf(ref, opts.tagPrefix),
+        ref,
+        sha: d.sha,
+        deployedAt: payload?.finishedAt ?? success.createdAt,
+        declared: payload?.declared ?? false,
+      },
+      candidates: filtered.length,
+    });
+  }
+  return ok({ current: null, candidates: filtered.length });
+}
+
 export async function readEnvironmentState(
   provider: SourceProvider,
   config: ProjectConfig,
@@ -66,44 +126,15 @@ export async function readEnvironmentState(
   }
   if (signal.type === 'github-deployments') {
     const repository = repositoryOf(config, signal.repository);
-    const listDeployments = provider.listDeployments?.bind(provider);
-    const listStatuses = provider.listDeploymentStatuses?.bind(provider);
-    if (!repository || !listDeployments || !listStatuses || unreadable(repository)) return null;
-    const list = await listDeployments(
+    if (!repository || unreadable(repository)) return null;
+    const read = await readLedger(
+      provider,
       repository,
       signal.environment ?? env.githubEnvironment ?? env.id,
+      { tagPrefix: signal.tagPrefix, sources: signal.sources },
     );
-    if (!list.ok) return { repository, ledger: list };
-    const candidates = list.data
-      .map((d) => ({ d, payload: ledgerPayload(d.payload) }))
-      .filter(({ payload }) => {
-        const source = payload?.source ?? 'github-actions';
-        return !signal.sources || signal.sources.includes(source);
-      })
-      // Newest real deploy first: a ledger record may be written after the deploy (D10).
-      .sort(
-        (a, b) =>
-          Date.parse(b.payload?.finishedAt ?? b.d.createdAt) -
-          Date.parse(a.payload?.finishedAt ?? a.d.createdAt),
-      )
-      .slice(0, MAX_STATUS_READS);
-    for (const { d, payload } of candidates) {
-      const statuses = await listStatuses(repository, d.id);
-      if (!statuses.ok) return { repository, ledger: statuses };
-      const success = statuses.data.find((s) => s.state === 'success');
-      if (!success) continue;
-      const ref = d.ref && !FULL_SHA.test(d.ref) ? d.ref : null;
-      return {
-        repository,
-        ledger: ok({
-          version: semverOf(payload?.version) ?? semverOf(ref, signal.tagPrefix),
-          ref,
-          sha: d.sha,
-          deployedAt: payload?.finishedAt ?? success.createdAt,
-        }),
-      };
-    }
-    return { repository, ledger: ok(null) };
+    if (!read) return null;
+    return { repository, ledger: read.ok ? ok(read.data.current) : read };
   }
   return null;
 }

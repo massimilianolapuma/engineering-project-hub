@@ -1,4 +1,5 @@
 import type { EnvironmentState } from './environment-states';
+import type { ComponentDeploymentsRaw } from './component-deployments';
 import type { UmbrellaRaw } from './umbrella-chart';
 import type { ControlMapRaw } from './collect-control-map';
 import {
@@ -160,6 +161,8 @@ export interface RawProjectData {
   environmentStates?: Map<string, EnvironmentState>;
   /** Umbrella chart reads (main, release, environment tags); absent without `umbrellaChart`. */
   umbrella?: UmbrellaRaw;
+  /** Own GitHub Deployments of the components marked `deployments: true`; absent without any. */
+  componentDeployments?: ComponentDeploymentsRaw;
 }
 
 export interface CollectContext {
