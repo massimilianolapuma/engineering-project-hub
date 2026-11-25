@@ -263,10 +263,32 @@ dependencies:
     if (!result.ok) expect(result.error.classification).toBe('not-authorised');
   });
 
-  it('skips a component whose repository could not be read', async () => {
+  it('keeps a component whose repository could not be read, with that failure, and makes no call', async () => {
     const s = setup({});
     s.raw.repos[1]!.repo = fail({ classification: 'not-found' });
     await collectComponentDeployments(s.ctx, [s.raw]);
     expect(s.calls).toEqual([]);
+    const reads = s.raw.componentDeployments?.get('db');
+    expect(reads!.map((e) => [e.environmentId, e.environment])).toEqual([
+      ['test', 'test'],
+      ['prod', 'prod'],
+    ]);
+    // As every call skipped behind an unreadable repository: a 404 is not "no deployment".
+    for (const { result } of reads!) {
+      expect(result.ok).toBe(false);
+      if (!result.ok)
+        expect(result.error).toMatchObject({ classification: 'error', skipped: true });
+    }
+    s.raw.repos[1]!.repo = fail({ classification: 'not-authorised' });
+    await collectComponentDeployments(s.ctx, [s.raw]);
+    const denied = s.raw.componentDeployments!.get('db')![0]!.result;
+    if (!denied.ok) expect(denied.error.classification).toBe('not-authorised');
+  });
+
+  it('an unreadable repository of a component in the umbrella chart is still not read', async () => {
+    const s = setup({ chart });
+    s.raw.repos[1]!.repo = fail({ classification: 'not-found' });
+    await collectComponentDeployments(s.ctx, [s.raw]);
+    expect(s.raw.componentDeployments?.get('db')).toBeUndefined();
   });
 });

@@ -151,7 +151,7 @@ components: # optional: empty for single-repository projects
     containerImages: # optional, max 5: Harbor images of this component
       - { project: alpha, repository: backend } # tagTemplate: "{version}" by default
 
-environments: # optional, display order
+environments: # optional, display order, at most 50
   - { id: dev, name: DEV, argocdApplication: { name: alpha-dev } } # optional: Argo CD application
   - { id: prod, name: PROD }
 
@@ -456,7 +456,10 @@ components in one project.
 | `not-authorised` | the hub App cannot read them (it needs **Deployments: read**) | unknown, with the reason                         |
 | `unknown`        | any other failed read                                         | unknown, with the reason                         |
 
-A failed read is a `deploy-signal` collection error, never "not deployed". A record declared by
+A failed read is a `deploy-signal` collection error, never "not deployed". When the component's
+repository itself cannot be read, no deployment is asked for: the row stays among the components
+deployed on their own with every environment unknown (`not-authorised`, else `unknown`), never
+"outside the umbrella", and the failure is the single `repository` error. A record declared by
 hand (ledger `declared: true`) is marked **declared by hand**, never deployed.
 
 On the Versions page these components are a second group of rows, **Deployed on their own**, in

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- A component marked `deployments: true` whose repository cannot be read keeps its row among the
+  components deployed on their own, every environment unknown, instead of falling silently into
+  "Outside the umbrella". No deployment call is made; the failure stays the single `repository`
+  collection error.
+- A project catalog accepts at most **50** environments, the cap the snapshot already put on a
+  component's environment versions (`npm run validate:config` now refuses more, instead of an
+  invalid snapshot).
+
+### Documentation
+
+- `REF` on a branch records the head of that branch when the report runs, not the deployed
+  commit (EN/IT ledger guide).
+
 ## [0.20.0] - 2026-11-21
 
 ### Changed

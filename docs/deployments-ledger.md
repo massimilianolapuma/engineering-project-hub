@@ -139,8 +139,10 @@ env:
 Set **exactly one** of `SHA` (a full commit SHA) and `REF` (a tag or branch that exists on
 GitHub; letters, digits, `.`, `_`, `/`, `-`, at most 100 characters, no `..`): both or neither
 stops the script before any call. A name GitHub does not know returns HTTP 422 and is not
-recorded, like an unknown commit. The App needs nothing more than Deployments: read and write.
-The hub reads such records per component with
+recorded, like an unknown commit. A **branch** `REF` records the commit at the head of that branch
+**when the script runs**, not the one the pipeline deployed: if the branch moves between deploy
+and report, the record points at the newer commit. Use a tag (or `SHA`) whenever the deployed
+commit matters. The App needs nothing more than Deployments: read and write. The hub reads such records per component with
 [`deployments: true`](configuration.md#component-versions-from-the-components-own-deployments).
 
 ## Pull bridge: Azure DevOps → GitHub

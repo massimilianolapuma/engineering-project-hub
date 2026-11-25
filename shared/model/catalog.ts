@@ -213,7 +213,8 @@ export const ProjectConfigSchema = z
     coordinator: CoordinatorConfigSchema,
     /** Empty for single-repository projects (the coordinator is the only repository). */
     components: z.array(ComponentConfigSchema).default([]),
-    environments: z.array(EnvironmentConfigSchema).default([]),
+    /** At most 50: the cap of a component's environment versions, one per environment. */
+    environments: z.array(EnvironmentConfigSchema).max(50).default([]),
     trackedWorkflows: z.array(TrackedWorkflowConfigSchema).default([]),
     securityControls: SecurityControlsConfigSchema,
     securityStatusPath: relativePath.default('.security/project-security-status.json'),

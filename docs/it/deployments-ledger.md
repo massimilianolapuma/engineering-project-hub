@@ -141,7 +141,10 @@ env:
 Si imposta **esattamente uno** tra `SHA` (lo SHA completo di un commit) e `REF` (un tag o un
 branch che esiste su GitHub; lettere, cifre, `.`, `_`, `/`, `-`, al massimo 100 caratteri, senza
 `..`): entrambi o nessuno fermano lo script prima di qualsiasi chiamata. Un nome che GitHub non
-conosce restituisce HTTP 422 e non viene registrato, come un commit sconosciuto. Alla App non
+conosce restituisce HTTP 422 e non viene registrato, come un commit sconosciuto. Un `REF` di tipo
+**branch** registra il commit in testa a quel branch **nel momento in cui lo script gira**, non
+quello che la pipeline ha deployato: se il branch avanza tra deploy e report, il record punta al
+commit più recente. Si usa un tag (o `SHA`) quando conta il commit deployato. Alla App non
 serve altro che Deployments: read and write. L'hub legge questi record per componente con
 [`deployments: true`](configuration.md#versioni-dei-componenti-dai-deployment-del-componente).
 
