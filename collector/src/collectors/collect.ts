@@ -192,7 +192,7 @@ export async function call<T>(
   );
 }
 
-function skipped<T>(repo: ProviderResult<RepositoryDTO>): ProviderResult<T> {
+export function skipped<T>(repo: ProviderResult<RepositoryDTO>): ProviderResult<T> {
   // Repository metadata failed, so dependent calls are not made. A 404 on the repository must
   // not read as "workflow / file / release absent": keep only "not authorised" vs "error".
   const classification =

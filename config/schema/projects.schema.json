@@ -468,6 +468,7 @@
           },
           "environments": {
             "default": [],
+            "maxItems": 50,
             "type": "array",
             "items": {
               "type": "object",

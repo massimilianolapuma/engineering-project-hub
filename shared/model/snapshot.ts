@@ -999,7 +999,7 @@ export const ProjectSnapshotSchema = z
       })
       .strict(),
     components: z.array(ComponentSnapshotSchema),
-    environments: z.array(EnvironmentSnapshotSchema),
+    environments: z.array(EnvironmentSnapshotSchema).max(50),
     workflows: z.array(WorkflowStatusSchema),
     securityFindings: z.array(SecurityFindingSchema),
     /** Sorted by state (invalid, expired, unverifiable, stale, active), then id. */

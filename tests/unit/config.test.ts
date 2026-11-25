@@ -231,6 +231,19 @@ describe('catalog validation (config/projects/<id>.yaml)', () => {
       /"coordinator" is reserved/,
     );
   });
+
+  it('accepts 50 environments and rejects 51 (the per-component environment versions cap)', () => {
+    const base = parse(catalogText) as Record<string, unknown>;
+    const withEnvs = (n: number) =>
+      ProjectConfigSchema.safeParse({
+        ...base,
+        environments: Array.from({ length: n }, (_, i) => ({ id: `env-${i}`, name: `Env ${i}` })),
+      });
+    expect(withEnvs(50).success).toBe(true);
+    const over = withEnvs(51);
+    expect(over.success).toBe(false);
+    if (!over.success) expect(over.error.issues[0]!.path).toEqual(['environments']);
+  });
 });
 
 describe('policies.yaml validation', () => {

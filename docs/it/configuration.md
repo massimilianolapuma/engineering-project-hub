@@ -151,7 +151,7 @@ components: # opzionale: vuoto per i progetti con un solo repository
     containerImages: # opzionale, max 5: immagini Harbor di questo componente
       - { project: alpha, repository: backend } # tagTemplate: "{version}" di default
 
-environments:
+environments: # opzionale, ordine di visualizzazione, al massimo 50
   - { id: dev, name: DEV, argocdApplication: { name: alpha-dev } } # opzionale: applicazione Argo CD
   - { id: prod, name: PROD }
 
@@ -460,8 +460,11 @@ componenti in un progetto.
 | `not-authorised` | la App dell'hub non può leggerli (serve **Deployments: read**) | sconosciuto, con il motivo                               |
 | `unknown`        | qualsiasi altra lettura fallita                                | sconosciuto, con il motivo                               |
 
-Una lettura fallita è un errore di raccolta `deploy-signal`, mai "non deployato". Un record
-dichiarato a mano (`declared: true` nel registro) è marcato **dichiarato a mano**, mai deployato.
+Una lettura fallita è un errore di raccolta `deploy-signal`, mai "non deployato". Se non si può
+leggere il repository stesso del componente, nessun deployment viene richiesto: la riga resta tra
+i componenti deployati per conto proprio con ogni ambiente sconosciuto (`not-authorised`,
+altrimenti `unknown`), mai "fuori dall'umbrella", e il guasto è l'unico errore `repository`. Un
+record dichiarato a mano (`declared: true` nel registro) è marcato **dichiarato a mano**, mai deployato.
 
 Nella pagina Versioni questi componenti sono un secondo gruppo di righe, **Deployati per conto
 proprio**, nella tabella Componenti per ambiente; un progetto senza umbrella chart ha la stessa

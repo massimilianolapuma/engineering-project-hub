@@ -1,6 +1,6 @@
 import { mapChartToComponents, parseUmbrellaChart } from '../normalizers/umbrella-chart';
 import { ok, type ProviderResult } from '../providers/types';
-import { call, type CollectContext, type RawProjectData } from './collect';
+import { call, skipped, type CollectContext, type RawProjectData } from './collect';
 import { readLedger, type LedgerRead } from './environment-states';
 
 /*
@@ -40,13 +40,20 @@ export async function collectComponentDeployments(
       const members = umbrellaMembers(raw);
       const reads: ComponentDeploymentsRaw = new Map();
       for (const component of flagged) {
-        // In the umbrella chart: the chart is its source. Repository unreadable: already
-        // reported once as the repository error.
+        // In the umbrella chart: the chart is its source.
         if (members?.has(component.id)) continue;
-        if (raw.repos.some((r) => r.repository === component.repository && !r.repo.ok)) continue;
+        // Repository unreadable: no call, but the component keeps its own row with every cell
+        // unknown (never "outside the umbrella"); the failure is already the repository error.
+        const unreadable = raw.repos.find(
+          (r) => r.repository === component.repository && !r.repo.ok,
+        );
         const entries: ComponentDeploymentRead[] = [];
         for (const env of raw.config.environments) {
           const environment = env.githubEnvironment ?? env.id;
+          if (unreadable) {
+            entries.push({ environmentId: env.id, environment, result: skipped(unreadable.repo) });
+            continue;
+          }
           const read = await call(
             ctx,
             `component-deployments:${raw.config.id}:${component.id}:${env.id}`,

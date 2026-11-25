@@ -154,6 +154,13 @@ describe('componentEnvironmentVersions', () => {
     ]);
   });
 
+  it('a read skipped behind an unreadable repository is unknown and records no new error', () => {
+    const skipped = fail({ classification: 'error', skipped: true });
+    const { ctx, db } = build([entry(skipped), entry(skipped, 'prod')]);
+    expect(db!.map((e) => e.state)).toEqual(['unknown', 'unknown']);
+    expect(ctx.errors).toEqual([]);
+  });
+
   it('a component without reads has environmentVersions null', () => {
     const { ctx, raw, versions } = build([entry(ok({ current: current(), candidates: 1 }))]);
     const components = toComponents(ctx, raw, null, [], new Map(), versions);
