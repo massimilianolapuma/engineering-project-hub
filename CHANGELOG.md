@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.20.1] - 2026-11-25
+
+### Security
+
+- astro 7.4.7 → 7.4.12: validates `X-Forwarded-Proto`, `X-Forwarded-Host` and
+  `X-Forwarded-Port` together against each `security.allowedDomains` entry (#77, with
+  `@playwright/test` 1.65.1, eslint 10.15.0, prettier 3.10.1, typescript-eslint 8.72.2).
+
 ### Fixed
 
 - A component marked `deployments: true` whose repository cannot be read keeps its row among the
@@ -590,7 +598,8 @@ Tagged after the fact (2026-10-21) and not deployed on its own: its changes ship
 - Read-only by design: no write calls, alert dismissals or workflow triggers. Secret scanning alerts are fetched with `hide_secret=true` and only the secret type is kept.
 - The public demo publishes synthetic mock data only.
 
-[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.20.0...HEAD
+[Unreleased]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.20.1...HEAD
+[0.20.1]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.20.0...v0.20.1
 [0.20.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/massimilianolapuma/engineering-project-hub/compare/v0.17.0...v0.18.0
